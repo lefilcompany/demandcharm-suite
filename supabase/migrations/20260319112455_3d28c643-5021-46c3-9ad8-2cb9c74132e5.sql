@@ -1,0 +1,1 @@
+ALTER TABLE public.board_statuses ADD COLUMN visible_to_roles text[] DEFAULT NULL;

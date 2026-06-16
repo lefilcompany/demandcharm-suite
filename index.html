@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="google-site-verification" content="c9jqBkOHFC83_8qrGlmfRxXs0zdpYu-3cIz2btU0zoE" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SoMA" />
+    <meta name="application-name" content="SoMA" />
+    <meta name="theme-color" content="#f29f05" />
+    <meta name="msapplication-TileColor" content="#e25604" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Icons -->
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Preload sidebar logos to avoid flicker on collapse/expand -->
+    <link rel="preload" as="image" href="/lovable-uploads/8967ad53-156a-4e31-a5bd-b472b7cde839.png" fetchpriority="high" />
+    <link rel="preload" as="image" href="/logo-soma-sidebar.png" fetchpriority="high" />
+
+    <!-- iOS Splash Screens -->
+    <!-- iPhone 14 Pro Max, 15 Pro Max (1284x2778) -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1284x2778.png"
+      media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <!-- iPhone 14 Pro, 15 Pro, 16 (1179x2556) - using closest -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1170x2532.png"
+      media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <!-- iPhone 14, 15, 14 Plus, 15 Plus (1170x2532) -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1170x2532.png"
+      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <!-- iPhone 13, 13 Pro, 12, 12 Pro (1170x2532) -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1170x2532.png"
+      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <!-- iPhone 13 mini, 12 mini (1080x2340) - using closest -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1170x2532.png"
+      media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <!-- iPhone 11 Pro Max, XS Max (1242x2688) - using closest -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1284x2778.png"
+      media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <!-- iPhone 11, XR (828x1792) -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-828x1792.png"
+      media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <!-- iPhone X, XS, 11 Pro (1125x2436) - using closest -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1170x2532.png"
+      media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <!-- iPhone 8 Plus, 7 Plus, 6s Plus (1242x2208) - using closest -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1170x2532.png"
+      media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <!-- iPhone 8, 7, 6s, SE 2nd/3rd gen (750x1334) - using closest -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-750x1624.png"
+      media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <!-- iPad Pro 12.9" (2048x2732) - using closest -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1668x2388.png"
+      media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <!-- iPad Pro 11" (1668x2388) -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1668x2388.png"
+      media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <!-- iPad Air, iPad 10th gen (1640x2360) - using closest -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1668x2388.png"
+      media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <!-- iPad 9th gen, iPad mini (1536x2048) - using closest -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/splash/splash-1668x2388.png"
+      media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)"
+    />
+
+    <title>SoMA - Sistema Operacional de Marketing | Gestão de Demandas</title>
+    <meta name="description" content="SoMA é a plataforma completa de gestão de demandas, projetos e produtividade para equipes de marketing. Organize tarefas, acompanhe entregas e aumente a eficiência do seu time." />
+    <meta name="keywords" content="gestão de demandas, produtividade, marketing, gestão de projetos, kanban, equipes, SoMA" />
+    <meta name="author" content="SoMA - Lefil" />
+    <link rel="canonical" href="https://pla.soma.lefil.com.br/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://pla.soma.lefil.com.br/" />
+    <meta property="og:title" content="SoMA - Sistema Operacional de Marketing" />
+    <meta property="og:description" content="Plataforma completa de gestão de demandas e produtividade para equipes de marketing. Organize, acompanhe e entregue com eficiência." />
+    <meta property="og:image" content="https://pla.soma.lefil.com.br/icons/icon-512x512.png" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="SoMA" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="SoMA - Sistema Operacional de Marketing" />
+    <meta name="twitter:description" content="Plataforma completa de gestão de demandas e produtividade para equipes de marketing." />
+    <meta name="twitter:image" content="https://pla.soma.lefil.com.br/icons/icon-512x512.png" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "SoMA",
+      "alternateName": "Sistema Operacional de Marketing",
+      "url": "https://pla.soma.lefil.com.br",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "description": "Plataforma completa de gestão de demandas, projetos e produtividade para equipes de marketing.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "BRL"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "Lefil",
+        "url": "https://soma.lefil.com.br"
+      }
+    }
+    </script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

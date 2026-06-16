@@ -1,0 +1,386 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+@keyframes loading-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-loading-progress {
+  animation: loading-progress 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Primary glow color for loading effects */
+:root {
+  --primary-glow: 40 95% 60%;
+}
+
+.dark {
+  --primary-glow: 40 95% 55%;
+}
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Base colors - White background */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 11%;
+
+    /* Card colors */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 11%;
+
+    /* Popover colors */
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 11%;
+
+    /* Primary brand color - Orange #F28705 */
+    --primary: 33 95% 49%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary colors - Support Orange #D95204 */
+    --secondary: 24 96% 43%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted colors */
+    --muted: 30 20% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    /* Accent colors - Yellow Orange #F29F05 */
+    --accent: 40 95% 48%;
+    --accent-foreground: 0 0% 11%;
+
+    /* Status colors */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 40 95% 48%;
+    --warning-foreground: 0 0% 11%;
+    
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border and input */
+    --border: 30 15% 90%;
+    --input: 30 15% 90%;
+    --ring: 33 95% 49%;
+
+    --radius: 0.5rem;
+
+    /* Sidebar colors - Dark #1D1D1D */
+    --sidebar-background: 0 0% 11%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 33 95% 49%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 33 95% 49%;
+
+    /* Custom gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(33 95% 49%), hsl(24 96% 43%));
+    --gradient-accent: linear-gradient(135deg, hsl(40 95% 48%), hsl(33 95% 49%));
+    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 35%));
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    --shadow-primary: 0 4px 14px -3px hsl(33 95% 49% / 0.35);
+    --focus-ring: 0 0 0 1px hsl(var(--ring)), 0 0 0 3px hsl(var(--ring) / 0.16);
+    
+    /* Transitions */
+    --transition-base: all 0.2s ease-in-out;
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    /* Dark background #1D1D1D */
+    --background: 0 0% 11%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Primary - Orange */
+    --primary: 33 95% 49%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Deep Orange */
+    --secondary: 24 96% 43%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 40 95% 48%;
+    --accent-foreground: 0 0% 11%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 40 95% 48%;
+    --warning-foreground: 0 0% 11%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 33 95% 49%;
+    
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 33 95% 49%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 33 95% 49%;
+    --focus-ring: 0 0 0 1px hsl(var(--ring)), 0 0 0 3px hsl(var(--ring) / 0.22);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+
+/* --- ESTILIZAÇÃO DA BARRA DE SCROLL --- */
+/* Para navegadores WebKit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/* Fundo da barra de rolagem (a "pista") */
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 8px;
+}
+
+/* A parte que se move ("polegar") */
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, hsl(var(--primary) / 0.6), hsl(var(--secondary) / 0.6));
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.1);
+}
+
+/* Efeito ao passar o mouse sobre o polegar */
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, hsl(var(--primary) / 0.8), hsl(var(--secondary) / 0.8));
+  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.2);
+}
+
+/* Efeito quando a barra está sendo arrastada */
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--secondary)));
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-up-fade {
+  animation: slide-up-fade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* PWA Safe Area Support */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+}
+
+/* Apply safe area to body for PWA */
+body {
+  padding-top: var(--safe-area-inset-top);
+  padding-right: var(--safe-area-inset-right);
+  padding-bottom: var(--safe-area-inset-bottom);
+  padding-left: var(--safe-area-inset-left);
+}
+
+/* Safe area utility classes */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.safe-x {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.safe-y {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-all {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+/* Bottom fixed elements should respect safe area */
+.fixed-bottom-safe {
+  bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Rich text editor highlight styles */
+.ProseMirror mark,
+.prose mark {
+  background-color: var(--highlight-color, #fef08a);
+  padding: 0.125em 0;
+  border-radius: 0.125em;
+}
+
+.ProseMirror mark[data-color="#fef08a"],
+.prose mark[data-color="#fef08a"] {
+  background-color: #fef08a;
+}
+
+.ProseMirror mark[data-color="#bbf7d0"],
+.prose mark[data-color="#bbf7d0"] {
+  background-color: #bbf7d0;
+}
+
+.ProseMirror mark[data-color="#bfdbfe"],
+.prose mark[data-color="#bfdbfe"] {
+  background-color: #bfdbfe;
+}
+
+.ProseMirror mark[data-color="#fbcfe8"],
+.prose mark[data-color="#fbcfe8"] {
+  background-color: #fbcfe8;
+}
+
+.ProseMirror mark[data-color="#fed7aa"],
+.prose mark[data-color="#fed7aa"] {
+  background-color: #fed7aa;
+}
+
+/* TipTap highlight with inline style support */
+.ProseMirror mark[style*="background-color"],
+.prose mark[style*="background-color"] {
+  padding: 0.125em 0;
+  border-radius: 0.125em;
+}
+
+/* Kanban horizontal scroll styling */
+.kanban-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.kanban-scroll::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+.kanban-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 4px;
+}
+
+.kanban-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.35);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

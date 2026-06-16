@@ -1,0 +1,1 @@
+UPDATE public.team_members SET role = 'owner' WHERE id = 'd2057dbb-30a8-42ac-9448-97ae8b511030';

@@ -1,0 +1,1 @@
+DROP TYPE IF EXISTS public.team_membership_role CASCADE;

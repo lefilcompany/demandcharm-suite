@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_demand_history_public boolean NOT NULL DEFAULT false;

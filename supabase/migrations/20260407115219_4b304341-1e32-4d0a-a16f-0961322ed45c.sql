@@ -1,0 +1,1 @@
+ALTER TABLE public.demands ADD COLUMN status_changed_by uuid REFERENCES public.profiles(id);

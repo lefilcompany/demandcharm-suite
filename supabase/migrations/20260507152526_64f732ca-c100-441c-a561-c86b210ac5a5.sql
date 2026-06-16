@@ -1,0 +1,1 @@
+DELETE FROM public.notifications WHERE title LIKE '[Teste E2E]%' OR title LIKE '[E2E AGORA]%';

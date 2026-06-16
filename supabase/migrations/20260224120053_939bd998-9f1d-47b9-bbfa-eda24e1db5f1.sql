@@ -1,0 +1,2 @@
+ALTER TABLE public.recurring_demands DROP CONSTRAINT recurring_demands_frequency_check;
+ALTER TABLE public.recurring_demands ADD CONSTRAINT recurring_demands_frequency_check CHECK (frequency = ANY (ARRAY['daily'::text, 'weekly'::text, 'biweekly'::text, 'monthly'::text]));
