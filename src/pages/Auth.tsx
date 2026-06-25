@@ -315,51 +315,107 @@ export default function Auth() {
       setIsLoading(false);
     }
   };
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const resetResetDialog = () => {
+    setResetStep("email");
+    setResetEmail("");
+    setResetCode("");
+    setResetNewPassword("");
+    setResetConfirmPassword("");
+    setShowResetPassword(false);
+  };
+  const handleSendResetCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent event from bubbling to parent form
-    
-    if (!resetEmail.trim()) {
-      toast.warning("Informe o email", {
-        description: "Digite o email associado à sua conta."
-      });
+    e.stopPropagation();
+
+    const email = resetEmail.trim();
+    if (!email) {
+      toast.warning("Informe o email", { description: "Digite o email associado à sua conta." });
       return;
     }
-
-    if (resetCooldown > 0) {
-      return; // Already in cooldown
-    }
+    if (resetCooldown > 0) return;
 
     setIsResetLoading(true);
     try {
-      await resetPassword(resetEmail.trim());
-      toast.success("Email enviado!", {
-        description: "Verifique sua caixa de entrada para redefinir sua senha."
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
       });
-      setResetDialogOpen(false);
-      setResetEmail("");
+      if (error) throw error;
+      toast.success("Código enviado!", {
+        description: "Verifique seu e-mail e digite o código de 6 dígitos.",
+      });
+      setResetStep("code");
     } catch (error: any) {
       const errorMessage = error?.message?.toLowerCase() || "";
-      
-      // Check for rate limit error and extract seconds
       const rateLimitMatch = errorMessage.match(/after (\d+) seconds/i);
       if (rateLimitMatch) {
         const seconds = parseInt(rateLimitMatch[1], 10);
         setResetCooldown(seconds);
         toast.error("Aguarde para tentar novamente", {
-          description: `Por segurança, você pode solicitar um novo email em ${seconds} segundos.`,
+          description: `Por segurança, você pode solicitar um novo código em ${seconds} segundos.`,
         });
       } else if (errorMessage.includes("rate limit") || errorMessage.includes("security purposes")) {
-        // Generic rate limit without specific seconds
         setResetCooldown(60);
         toast.error("Aguarde para tentar novamente", {
-          description: "Por segurança, aguarde 60 segundos antes de solicitar outro email.",
+          description: "Por segurança, aguarde 60 segundos antes de solicitar outro código.",
         });
       } else {
-        toast.error("Erro ao enviar email", {
-          description: getErrorMessage(error)
-        });
+        toast.error("Erro ao enviar código", { description: getErrorMessage(error) });
       }
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+  const handleVerifyResetCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (resetCode.length !== 6) {
+      toast.warning("Código incompleto", { description: "Digite os 6 dígitos recebidos por e-mail." });
+      return;
+    }
+    setIsResetLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: resetEmail.trim(),
+        token: resetCode,
+        type: "email",
+      });
+      if (error) throw error;
+      setResetStep("password");
+    } catch (error: any) {
+      toast.error("Código inválido", {
+        description: "Verifique o código e tente novamente, ou solicite um novo.",
+      });
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+  const handleUpdatePasswordWithCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (resetNewPassword.length < 6) {
+      toast.warning("Senha muito curta", { description: "Use pelo menos 6 caracteres." });
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      toast.warning("Senhas não coincidem", { description: "Digite a mesma senha nos dois campos." });
+      return;
+    }
+    setIsResetLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: resetNewPassword });
+      if (error) throw error;
+      await supabase.auth.signOut();
+      toast.success("Senha alterada com sucesso!", {
+        description: "Faça login com sua nova senha.",
+      });
+      setResetDialogOpen(false);
+      const savedEmail = resetEmail.trim();
+      resetResetDialog();
+      setLoginData({ email: savedEmail, password: "" });
+      setLoginStep("password");
+    } catch (error: any) {
+      toast.error("Erro ao alterar senha", { description: getErrorMessage(error) });
     } finally {
       setIsResetLoading(false);
     }
