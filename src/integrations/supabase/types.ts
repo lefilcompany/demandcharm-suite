@@ -2187,6 +2187,24 @@ export type Database = {
         Args: { _board_id: string; _user_id: string }
         Returns: boolean
       }
+      is_demand_shared: { Args: { demand_id_param: string }; Returns: boolean }
+      is_folder_owner: {
+        Args: { _folder_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_note_owner: {
+        Args: { _note_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_note_shared: { Args: { note_id_param: string }; Returns: boolean }
+      is_note_shared_with_user: {
+        Args: { _note_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_project_owner: {
+        Args: { _project_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_team_admin: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
@@ -2199,6 +2217,10 @@ export type Database = {
         Args: { _board_id: string; _user_id: string }
         Returns: boolean
       }
+      is_team_creator: {
+        Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_team_member: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
@@ -2206,6 +2228,55 @@ export type Database = {
       is_team_owner: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
+      }
+      join_board_via_share_token: { Args: { p_token: string }; Returns: Json }
+      join_team_with_code: { Args: { p_code: string }; Returns: string }
+      promote_to_admin_by_email: {
+        Args: { p_email: string }
+        Returns: undefined
+      }
+      propagate_status_to_subdemands: {
+        Args: { p_new_status_id: string; p_parent_id: string }
+        Returns: Json
+      }
+      redeem_trial_coupon: {
+        Args: { p_code: string; p_team_id: string }
+        Returns: Json
+      }
+      refresh_overdue_demands: { Args: never; Returns: number }
+      reorder_subdemands: {
+        Args: { p_ordered_ids: string[]; p_parent_id: string }
+        Returns: undefined
+      }
+      update_trial_coupon: {
+        Args: {
+          p_coupon_id: string
+          p_description?: string
+          p_expires_at?: string
+          p_max_uses: number
+          p_plan_id: string
+          p_propagate?: boolean
+          p_trial_days: number
+        }
+        Returns: Json
+      }
+      verify_demand_share_token: {
+        Args: { p_token: string }
+        Returns: {
+          demand_id: string
+          expires_at: string
+          id: string
+          is_active: boolean
+        }[]
+      }
+      verify_note_share_token: {
+        Args: { p_token: string }
+        Returns: {
+          expires_at: string
+          id: string
+          is_active: boolean
+          note_id: string
+        }[]
       }
     }
     Enums: {
