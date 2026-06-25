@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
           "X-Connection-Api-Key": RESEND_API_KEY,
         },
         body: JSON.stringify({
-          from: "SoMA+ <no-reply@lefil.com.br>",
+          from: "SoMA+ <onboarding@resend.dev>",
           to: [normalized],
           subject: `Seu código: ${code.slice(0,3)}-${code.slice(3)}`,
           html,
