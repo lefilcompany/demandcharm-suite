@@ -1958,13 +1958,245 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_create_demand: { Args: { _team_id: string }; Returns: boolean }
+      can_create_demand_with_service: {
+        Args: { _board_id: string; _service_id: string }
+        Returns: boolean
+      }
+      can_edit_note: {
+        Args: { _note_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_manage_demand_assignees: {
+        Args: { _demand_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_demand_channel: {
+        Args: { _channel: string; _demand_id: string; _user_id: string }
+        Returns: boolean
+      }
+      check_access_code_exists: { Args: { code: string }; Returns: boolean }
+      check_plan_limit: {
+        Args: { _resource: string; _team_id: string }
+        Returns: Json
+      }
+      check_subscription_limit: {
+        Args: { _resource_type: string; _team_id: string }
+        Returns: boolean
+      }
+      create_approval_notifications: {
+        Args: {
+          p_demand_id: string
+          p_link?: string
+          p_message: string
+          p_recipient_ids: string[]
+          p_title: string
+          p_type?: string
+        }
+        Returns: number
+      }
+      create_board_membership_notification: {
+        Args: {
+          p_board_id: string
+          p_link?: string
+          p_message: string
+          p_title: string
+          p_type?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      create_board_with_services: {
+        Args: {
+          p_description?: string
+          p_members?: Json
+          p_name: string
+          p_services?: Json
+          p_stages?: Json
+          p_team_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_default: boolean | null
+          monthly_demand_limit: number | null
+          name: string
+          team_id: string
+          updated_at: string
+          whatsapp_enabled: boolean
+        }
+        SetofOptions: {
+          from: "*"
+          to: "boards"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_demand_with_subdemands: {
+        Args: { p_dependencies?: Json; p_parent: Json; p_subdemands?: Json }
+        Returns: Json
+      }
+      email_exists: { Args: { _email: string }; Returns: boolean }
+      get_board_role: {
+        Args: { _board_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["team_role"]
+      }
+      get_board_service_demand_count: {
+        Args: { _board_id: string; _service_id: string }
+        Returns: number
+      }
+      get_join_request_profiles: {
+        Args: { request_team_id: string }
+        Returns: {
+          avatar_url: string
+          email: string
+          full_name: string
+          id: string
+        }[]
+      }
+      get_monthly_demand_count: {
+        Args: { _month: number; _team_id: string; _year: number }
+        Returns: number
+      }
+      get_shared_board_summary: { Args: { p_token: string }; Returns: Json }
+      get_team_active_plan: {
+        Args: { _team_id: string }
+        Returns: {
+          billing_period: string
+          created_at: string | null
+          currency: string
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          max_boards: number | null
+          max_demands_per_month: number | null
+          max_members: number | null
+          max_notes: number | null
+          max_services: number | null
+          max_teams: number | null
+          name: string
+          price_cents: number
+          price_cents_monthly: number
+          price_cents_yearly: number
+          promo_price_cents_monthly: number | null
+          promo_price_cents_yearly: number | null
+          slug: string
+          sort_order: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "plans"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_team_by_access_code: {
+        Args: { code: string }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+        }[]
+      }
+      get_team_plan: {
+        Args: { _team_id: string }
+        Returns: {
+          billing_period: string
+          created_at: string | null
+          currency: string
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          max_boards: number | null
+          max_demands_per_month: number | null
+          max_members: number | null
+          max_notes: number | null
+          max_services: number | null
+          max_teams: number | null
+          name: string
+          price_cents: number
+          price_cents_monthly: number
+          price_cents_yearly: number
+          promo_price_cents_monthly: number | null
+          promo_price_cents_yearly: number | null
+          slug: string
+          sort_order: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "plans"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_user_board_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_team_ids: { Args: { _user_id: string }; Returns: string[] }
+      has_board_role: {
+        Args: {
+          _board_id: string
+          _role: Database["public"]["Enums"]["team_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_folder_access: {
+        Args: { _folder_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_folder_edit_access: {
+        Args: { _folder_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_project_access: {
+        Args: { _project_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_project_edit_access: {
+        Args: { _project_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_team_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["team_role"]
+          _team_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_board_admin_in_team: {
+        Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_board_admin_or_moderator: {
+        Args: { _board_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_board_member: {
+        Args: { _board_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_team_admin: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
       is_team_admin_or_moderator: {
         Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_team_admin_or_moderator_for_board: {
+        Args: { _board_id: string; _user_id: string }
         Returns: boolean
       }
       is_team_member: {
