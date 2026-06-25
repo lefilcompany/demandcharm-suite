@@ -271,7 +271,26 @@ export default function Auth() {
       const { data, error } = await supabase.rpc("email_exists", { _email: email });
       if (error) throw error;
       if (data === true) {
-        setLoginStep("password");
+        // Email cadastrado → enviar código por e-mail e abrir o card de verificação
+        setResetEmail(email);
+        setResetStep("code");
+        setResetCode("");
+        setResetNewPassword("");
+        setResetConfirmPassword("");
+        setResetDialogOpen(true);
+        try {
+          const { error: sendError } = await supabase.functions.invoke("send-reset-code", {
+            body: { email },
+          });
+          if (sendError) throw sendError;
+          toast.success("Código enviado!", {
+            description: "Enviamos um código de 6 dígitos para o seu e-mail.",
+          });
+          setResetCooldown(60);
+        } catch (sendErr: any) {
+          toast.error("Erro ao enviar código", { description: getErrorMessage(sendErr) });
+          setResetStep("email");
+        }
       } else {
         setSignupData(prev => ({ ...prev, email }));
         setActiveTab("signup");
