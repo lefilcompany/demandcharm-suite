@@ -45,6 +45,11 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetCooldown, setResetCooldown] = useState(0); // Cooldown in seconds
+  const [resetStep, setResetStep] = useState<"email" | "code" | "password">("email");
+  const [resetCode, setResetCode] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resetConfirmPassword, setResetConfirmPassword] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginStep, setLoginStep] = useState<"email" | "password">(() => {
     return getLastEmail() && isRecentPasswordLogin() ? "password" : "email";
