@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Eye, EyeOff, Loader2, Mail, Check, X, Info, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Check, X, Info, ArrowLeft, KeyRound, Lock } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import { SEOHead } from "@/components/SEOHead";
 import { getLastEmail, looksLikeClearedCache, isRecentPasswordLogin, rememberLastLoginMethod } from "@/lib/lastUserEmail";
 import logoSomaDark from "@/assets/logo-soma-dark.png";
@@ -44,6 +45,11 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetCooldown, setResetCooldown] = useState(0); // Cooldown in seconds
+  const [resetStep, setResetStep] = useState<"email" | "code" | "password">("email");
+  const [resetCode, setResetCode] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resetConfirmPassword, setResetConfirmPassword] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginStep, setLoginStep] = useState<"email" | "password">(() => {
     return getLastEmail() && isRecentPasswordLogin() ? "password" : "email";
@@ -309,51 +315,107 @@ export default function Auth() {
       setIsLoading(false);
     }
   };
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const resetResetDialog = () => {
+    setResetStep("email");
+    setResetEmail("");
+    setResetCode("");
+    setResetNewPassword("");
+    setResetConfirmPassword("");
+    setShowResetPassword(false);
+  };
+  const handleSendResetCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent event from bubbling to parent form
-    
-    if (!resetEmail.trim()) {
-      toast.warning("Informe o email", {
-        description: "Digite o email associado à sua conta."
-      });
+    e.stopPropagation();
+
+    const email = resetEmail.trim();
+    if (!email) {
+      toast.warning("Informe o email", { description: "Digite o email associado à sua conta." });
       return;
     }
-
-    if (resetCooldown > 0) {
-      return; // Already in cooldown
-    }
+    if (resetCooldown > 0) return;
 
     setIsResetLoading(true);
     try {
-      await resetPassword(resetEmail.trim());
-      toast.success("Email enviado!", {
-        description: "Verifique sua caixa de entrada para redefinir sua senha."
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
       });
-      setResetDialogOpen(false);
-      setResetEmail("");
+      if (error) throw error;
+      toast.success("Código enviado!", {
+        description: "Verifique seu e-mail e digite o código de 6 dígitos.",
+      });
+      setResetStep("code");
     } catch (error: any) {
       const errorMessage = error?.message?.toLowerCase() || "";
-      
-      // Check for rate limit error and extract seconds
       const rateLimitMatch = errorMessage.match(/after (\d+) seconds/i);
       if (rateLimitMatch) {
         const seconds = parseInt(rateLimitMatch[1], 10);
         setResetCooldown(seconds);
         toast.error("Aguarde para tentar novamente", {
-          description: `Por segurança, você pode solicitar um novo email em ${seconds} segundos.`,
+          description: `Por segurança, você pode solicitar um novo código em ${seconds} segundos.`,
         });
       } else if (errorMessage.includes("rate limit") || errorMessage.includes("security purposes")) {
-        // Generic rate limit without specific seconds
         setResetCooldown(60);
         toast.error("Aguarde para tentar novamente", {
-          description: "Por segurança, aguarde 60 segundos antes de solicitar outro email.",
+          description: "Por segurança, aguarde 60 segundos antes de solicitar outro código.",
         });
       } else {
-        toast.error("Erro ao enviar email", {
-          description: getErrorMessage(error)
-        });
+        toast.error("Erro ao enviar código", { description: getErrorMessage(error) });
       }
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+  const handleVerifyResetCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (resetCode.length !== 6) {
+      toast.warning("Código incompleto", { description: "Digite os 6 dígitos recebidos por e-mail." });
+      return;
+    }
+    setIsResetLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: resetEmail.trim(),
+        token: resetCode,
+        type: "email",
+      });
+      if (error) throw error;
+      setResetStep("password");
+    } catch (error: any) {
+      toast.error("Código inválido", {
+        description: "Verifique o código e tente novamente, ou solicite um novo.",
+      });
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+  const handleUpdatePasswordWithCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (resetNewPassword.length < 6) {
+      toast.warning("Senha muito curta", { description: "Use pelo menos 6 caracteres." });
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      toast.warning("Senhas não coincidem", { description: "Digite a mesma senha nos dois campos." });
+      return;
+    }
+    setIsResetLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: resetNewPassword });
+      if (error) throw error;
+      await supabase.auth.signOut();
+      toast.success("Senha alterada com sucesso!", {
+        description: "Faça login com sua nova senha.",
+      });
+      setResetDialogOpen(false);
+      const savedEmail = resetEmail.trim();
+      resetResetDialog();
+      setLoginData({ email: savedEmail, password: "" });
+      setLoginStep("password");
+    } catch (error: any) {
+      toast.error("Erro ao alterar senha", { description: getErrorMessage(error) });
     } finally {
       setIsResetLoading(false);
     }
@@ -788,70 +850,157 @@ export default function Auth() {
               </TabsContent>
             </Tabs>
 
-            {/* Password Reset Dialog - Outside of login form to prevent form submission conflicts */}
-            <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-              <DialogContent 
-                className="sm:max-w-md" 
+            {/* Password Reset Dialog - 3 steps: email -> 6-digit code -> new password */}
+            <Dialog
+              open={resetDialogOpen}
+              onOpenChange={(open) => {
+                setResetDialogOpen(open);
+                if (!open) resetResetDialog();
+              }}
+            >
+              <DialogContent
+                className="sm:max-w-md"
                 onPointerDownOutside={(e) => e.preventDefault()}
                 onKeyDown={(e) => {
-                  // Prevent Enter key from propagating to any parent forms
-                  if (e.key === 'Enter') {
-                    e.stopPropagation();
-                  }
+                  if (e.key === 'Enter') e.stopPropagation();
                 }}
               >
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <Mail className="h-5 w-5" />
-                    Recuperar Senha
+                    {resetStep === "email" && <Mail className="h-5 w-5" />}
+                    {resetStep === "code" && <KeyRound className="h-5 w-5" />}
+                    {resetStep === "password" && <Lock className="h-5 w-5" />}
+                    {resetStep === "email" && "Recuperar senha"}
+                    {resetStep === "code" && "Digite o código"}
+                    {resetStep === "password" && "Defina a nova senha"}
                   </DialogTitle>
                   <DialogDescription>
-                    Digite seu email e enviaremos um link para redefinir sua senha.
+                    {resetStep === "email" && "Informe seu e-mail e enviaremos um código de 6 dígitos para você redefinir sua senha."}
+                    {resetStep === "code" && (<>Enviamos um código de 6 dígitos para <span className="font-medium text-foreground">{resetEmail}</span>. Digite-o abaixo para continuar.</>)}
+                    {resetStep === "password" && "Escolha uma nova senha com pelo menos 6 caracteres."}
                   </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleResetPassword} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="reset-email">Email</Label>
-                    <Input 
-                      id="reset-email" 
-                      type="email" 
-                      placeholder="seu@email.com" 
-                      value={resetEmail} 
-                      onChange={e => setResetEmail(e.target.value)} 
-                      required 
-                      autoFocus
-                      onKeyDown={(e) => {
-                        // Prevent Enter from bubbling up to any parent form
-                        if (e.key === 'Enter') {
-                          e.stopPropagation();
-                        }
-                      }}
-                    />
-                  </div>
-                  {resetCooldown > 0 && (
-                    <div className="flex items-center gap-2 p-3 rounded-md bg-muted text-muted-foreground text-sm">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Aguarde {resetCooldown}s para solicitar novamente</span>
+
+                {resetStep === "email" && (
+                  <form onSubmit={handleSendResetCode} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-email">E-mail</Label>
+                      <Input
+                        id="reset-email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        required
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Enter') e.stopPropagation(); }}
+                      />
                     </div>
-                  )}
-                  <div className="flex gap-2 justify-end">
-                    <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={isResetLoading || resetCooldown > 0}>
-                      {isResetLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : resetCooldown > 0 ? (
-                        `Aguarde ${resetCooldown}s`
-                      ) : (
-                        "Enviar Link"
-                      )}
-                    </Button>
-                  </div>
-                </form>
+                    {resetCooldown > 0 && (
+                      <div className="flex items-center gap-2 p-3 rounded-md bg-muted text-muted-foreground text-sm">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Aguarde {resetCooldown}s para solicitar novamente</span>
+                      </div>
+                    )}
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={isResetLoading || resetCooldown > 0}>
+                        {isResetLoading ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</>
+                        ) : resetCooldown > 0 ? `Aguarde ${resetCooldown}s` : "Enviar código"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {resetStep === "code" && (
+                  <form onSubmit={handleVerifyResetCode} className="space-y-4">
+                    <div className="flex justify-center py-2">
+                      <InputOTP
+                        maxLength={6}
+                        value={resetCode}
+                        onChange={(v) => setResetCode(v)}
+                        autoFocus
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} className="h-12 w-12 text-lg" />
+                          <InputOTPSlot index={1} className="h-12 w-12 text-lg" />
+                          <InputOTPSlot index={2} className="h-12 w-12 text-lg" />
+                        </InputOTPGroup>
+                        <span className="mx-2 text-2xl font-light text-muted-foreground select-none">-</span>
+                        <InputOTPGroup>
+                          <InputOTPSlot index={3} className="h-12 w-12 text-lg" />
+                          <InputOTPSlot index={4} className="h-12 w-12 text-lg" />
+                          <InputOTPSlot index={5} className="h-12 w-12 text-lg" />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="p-0 h-auto text-xs"
+                        disabled={isResetLoading || resetCooldown > 0}
+                        onClick={() => { setResetCode(""); setResetStep("email"); }}
+                      >
+                        <ArrowLeft className="h-3 w-3 mr-1" />
+                        Trocar e-mail / reenviar
+                      </Button>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={isResetLoading || resetCode.length !== 6}>
+                        {isResetLoading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Validando...</>) : "Validar código"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {resetStep === "password" && (
+                  <form onSubmit={handleUpdatePasswordWithCode} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-new-password">Nova senha</Label>
+                      <div className="relative">
+                        <Input
+                          id="reset-new-password"
+                          type={showResetPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="pr-10"
+                          value={resetNewPassword}
+                          onChange={(e) => setResetNewPassword(e.target.value)}
+                          autoFocus
+                          required
+                        />
+                        <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowResetPassword(!showResetPassword)}>
+                          {showResetPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-confirm-password">Confirmar nova senha</Label>
+                      <Input
+                        id="reset-confirm-password"
+                        type={showResetPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={resetConfirmPassword}
+                        onChange={(e) => setResetConfirmPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={isResetLoading}>
+                        {isResetLoading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>) : "Alterar senha"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </DialogContent>
             </Dialog>
 
