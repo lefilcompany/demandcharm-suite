@@ -336,32 +336,17 @@ export default function Auth() {
 
     setIsResetLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: false },
+      const { error } = await supabase.functions.invoke("send-reset-code", {
+        body: { email },
       });
       if (error) throw error;
       toast.success("Código enviado!", {
-        description: "Verifique seu e-mail e digite o código de 6 dígitos.",
+        description: "Se o e-mail estiver cadastrado, você receberá um código de 6 dígitos.",
       });
+      setResetCooldown(60);
       setResetStep("code");
     } catch (error: any) {
-      const errorMessage = error?.message?.toLowerCase() || "";
-      const rateLimitMatch = errorMessage.match(/after (\d+) seconds/i);
-      if (rateLimitMatch) {
-        const seconds = parseInt(rateLimitMatch[1], 10);
-        setResetCooldown(seconds);
-        toast.error("Aguarde para tentar novamente", {
-          description: `Por segurança, você pode solicitar um novo código em ${seconds} segundos.`,
-        });
-      } else if (errorMessage.includes("rate limit") || errorMessage.includes("security purposes")) {
-        setResetCooldown(60);
-        toast.error("Aguarde para tentar novamente", {
-          description: "Por segurança, aguarde 60 segundos antes de solicitar outro código.",
-        });
-      } else {
-        toast.error("Erro ao enviar código", { description: getErrorMessage(error) });
-      }
+      toast.error("Erro ao enviar código", { description: getErrorMessage(error) });
     } finally {
       setIsResetLoading(false);
     }
@@ -375,17 +360,21 @@ export default function Auth() {
     }
     setIsResetLoading(true);
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: resetEmail.trim(),
-        token: resetCode,
-        type: "email",
+      const { data, error } = await supabase.functions.invoke("verify-reset-code", {
+        body: { email: resetEmail.trim(), code: resetCode },
       });
       if (error) throw error;
+      if (!data?.valid) {
+        toast.error("Código inválido", {
+          description: data?.expired ? "Código expirado, solicite um novo." :
+                       data?.locked ? "Muitas tentativas, solicite um novo código." :
+                       "Verifique o código e tente novamente.",
+        });
+        return;
+      }
       setResetStep("password");
     } catch (error: any) {
-      toast.error("Código inválido", {
-        description: "Verifique o código e tente novamente, ou solicite um novo.",
-      });
+      toast.error("Erro ao validar código", { description: getErrorMessage(error) });
     } finally {
       setIsResetLoading(false);
     }
@@ -403,9 +392,11 @@ export default function Auth() {
     }
     setIsResetLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password: resetNewPassword });
+      const { data, error } = await supabase.functions.invoke("reset-password-with-code", {
+        body: { email: resetEmail.trim(), code: resetCode, newPassword: resetNewPassword },
+      });
       if (error) throw error;
-      await supabase.auth.signOut();
+      if (data?.error) throw new Error(data.error);
       toast.success("Senha alterada com sucesso!", {
         description: "Faça login com sua nova senha.",
       });
