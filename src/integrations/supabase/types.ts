@@ -14,122 +14,735 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      demand_assignees: {
+        Row: {
+          assigned_at: string | null
+          demand_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          demand_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          demand_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_assignees_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_assignees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demand_attachments: {
+        Row: {
+          created_at: string
+          demand_id: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          demand_id: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          demand_id?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_attachments_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demand_interactions: {
+        Row: {
+          content: string | null
+          created_at: string
+          demand_id: string
+          id: string
+          interaction_type: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          demand_id: string
+          id?: string
+          interaction_type: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          demand_id?: string
+          id?: string
+          interaction_type?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_interactions_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_interactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demand_requests: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          priority: string | null
+          rejection_reason: string | null
+          responded_at: string | null
+          responded_by: string | null
+          service_id: string | null
+          status: string
+          team_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          priority?: string | null
+          rejection_reason?: string | null
+          responded_at?: string | null
+          responded_by?: string | null
+          service_id?: string | null
+          status?: string
+          team_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          priority?: string | null
+          rejection_reason?: string | null
+          responded_at?: string | null
+          responded_by?: string | null
+          service_id?: string | null
+          status?: string
+          team_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_requests_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_requests_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demand_statuses: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_system: boolean | null
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_system?: boolean | null
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_system?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      demand_subtasks: {
+        Row: {
+          completed: boolean
+          created_at: string
+          demand_id: string
+          id: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          demand_id: string
+          id?: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          demand_id?: string
+          id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_subtasks_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demand_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description_template: string | null
+          id: string
+          name: string
+          priority: string | null
+          service_id: string | null
+          team_id: string
+          title_template: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description_template?: string | null
+          id?: string
+          name: string
+          priority?: string | null
+          service_id?: string | null
+          team_id: string
+          title_template?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description_template?: string | null
+          id?: string
+          name?: string
+          priority?: string | null
+          service_id?: string | null
+          team_id?: string
+          title_template?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_templates_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_templates_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demands: {
+        Row: {
+          archived: boolean
+          archived_at: string | null
+          assigned_to: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          id: string
+          last_started_at: string | null
+          priority: string | null
+          service_id: string | null
+          status_id: string
+          team_id: string
+          time_in_progress_seconds: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          archived?: boolean
+          archived_at?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          last_started_at?: string | null
+          priority?: string | null
+          service_id?: string | null
+          status_id: string
+          team_id: string
+          time_in_progress_seconds?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          archived?: boolean
+          archived_at?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          last_started_at?: string | null
+          priority?: string | null
+          service_id?: string | null
+          status_id?: string
+          team_id?: string
+          time_in_progress_seconds?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demands_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demands_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demands_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demands_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "demand_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demands_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          link: string | null
+          message: string
+          read: boolean | null
+          title: string
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          message: string
+          read?: boolean | null
+          title: string
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_days: number
+          id: string
+          name: string
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_days?: number
+          id?: string
+          name: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_days?: number
+          id?: string
+          name?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_join_requests: {
+        Row: {
+          id: string
+          message: string | null
+          requested_at: string
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          message?: string | null
+          requested_at?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          message?: string | null
+          requested_at?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_join_requests_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_join_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_join_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          id: string
+          joined_at: string
+          role: Database["public"]["Enums"]["team_role"]
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["team_role"]
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["team_role"]
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          access_code: string
+          active: boolean | null
+          contract_end_date: string | null
+          contract_start_date: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          monthly_demand_limit: number | null
+          name: string
+          scope_description: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_code: string
+          active?: boolean | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          monthly_demand_limit?: number | null
+          name: string
+          scope_description?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_code?: string
+          active?: boolean | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          monthly_demand_limit?: number | null
+          name?: string
+          scope_description?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          preference_key: string
+          preference_value: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          preference_key: string
+          preference_value?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          preference_key?: string
+          preference_value?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      can_create_demand: { Args: { _team_id: string }; Returns: boolean }
-      can_create_demand_with_service: {
-        Args: { _board_id: string; _service_id: string }
-        Returns: boolean
-      }
-      can_edit_note: {
-        Args: { _note_id: string; _user_id: string }
-        Returns: boolean
-      }
-      can_manage_demand_assignees: {
-        Args: { _demand_id: string; _user_id: string }
-        Returns: boolean
-      }
-      can_view_demand_channel: {
-        Args: { _channel: string; _demand_id: string; _user_id: string }
-        Returns: boolean
-      }
-      check_access_code_exists: { Args: { code: string }; Returns: boolean }
-      check_plan_limit: {
-        Args: { _resource: string; _team_id: string }
-        Returns: Json
-      }
-      check_subscription_limit: {
-        Args: { _resource_type: string; _team_id: string }
-        Returns: boolean
-      }
-      create_approval_notifications: {
-        Args: {
-          p_demand_id: string
-          p_link?: string
-          p_message: string
-          p_recipient_ids: string[]
-          p_title: string
-          p_type?: string
-        }
-        Returns: number
-      }
-      create_board_membership_notification: {
-        Args: {
-          p_board_id: string
-          p_link?: string
-          p_message: string
-          p_title: string
-          p_type?: string
-          p_user_id: string
-        }
-        Returns: string
-      }
-      create_demand_with_subdemands: {
-        Args: { p_dependencies?: Json; p_parent: Json; p_subdemands?: Json }
-        Returns: Json
-      }
-      email_exists: { Args: { _email: string }; Returns: boolean }
-      get_board_role: {
-        Args: { _board_id: string; _user_id: string }
-        Returns: Database["public"]["Enums"]["team_role"]
-      }
-      get_board_service_demand_count: {
-        Args: { _board_id: string; _service_id: string }
-        Returns: number
-      }
-      get_join_request_profiles: {
-        Args: { request_team_id: string }
-        Returns: {
-          avatar_url: string
-          email: string
-          full_name: string
-          id: string
-        }[]
-      }
-      get_monthly_demand_count: {
-        Args: { _month: number; _team_id: string; _year: number }
-        Returns: number
-      }
-      get_shared_board_summary: { Args: { p_token: string }; Returns: Json }
-      get_team_by_access_code: {
-        Args: { code: string }
-        Returns: {
-          created_at: string
-          description: string
-          id: string
-          name: string
-        }[]
-      }
-      get_user_board_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_team_ids: { Args: { _user_id: string }; Returns: string[] }
-      has_board_role: {
-        Args: {
-          _board_id: string
-          _role: Database["public"]["Enums"]["team_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      has_folder_access: {
-        Args: { _folder_id: string; _user_id: string }
-        Returns: boolean
-      }
-      has_folder_edit_access: {
-        Args: { _folder_id: string; _user_id: string }
-        Returns: boolean
-      }
-      has_project_access: {
-        Args: { _project_id: string; _user_id: string }
-        Returns: boolean
-      }
-      has_project_edit_access: {
-        Args: { _project_id: string; _user_id: string }
-        Returns: boolean
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -145,49 +758,11 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_board_admin_in_team: {
-        Args: { _team_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_board_admin_or_moderator: {
-        Args: { _board_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_board_member: {
-        Args: { _board_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_demand_shared: { Args: { demand_id_param: string }; Returns: boolean }
-      is_folder_owner: {
-        Args: { _folder_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_note_owner: {
-        Args: { _note_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_note_shared: { Args: { note_id_param: string }; Returns: boolean }
-      is_note_shared_with_user: {
-        Args: { _note_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_project_owner: {
-        Args: { _project_id: string; _user_id: string }
-        Returns: boolean
-      }
       is_team_admin: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
       is_team_admin_or_moderator: {
-        Args: { _team_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_team_admin_or_moderator_for_board: {
-        Args: { _board_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_team_creator: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
@@ -199,60 +774,9 @@ export type Database = {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
-      join_board_via_share_token: { Args: { p_token: string }; Returns: Json }
-      join_team_with_code: { Args: { p_code: string }; Returns: string }
-      promote_to_admin_by_email: {
-        Args: { p_email: string }
-        Returns: undefined
-      }
-      propagate_status_to_subdemands: {
-        Args: { p_new_status_id: string; p_parent_id: string }
-        Returns: Json
-      }
-      redeem_trial_coupon: {
-        Args: { p_code: string; p_team_id: string }
-        Returns: Json
-      }
-      refresh_overdue_demands: { Args: never; Returns: number }
-      reorder_subdemands: {
-        Args: { p_ordered_ids: string[]; p_parent_id: string }
-        Returns: undefined
-      }
-      update_trial_coupon: {
-        Args: {
-          p_coupon_id: string
-          p_description?: string
-          p_expires_at?: string
-          p_max_uses: number
-          p_plan_id: string
-          p_propagate?: boolean
-          p_trial_days: number
-        }
-        Returns: Json
-      }
-      verify_demand_share_token: {
-        Args: { p_token: string }
-        Returns: {
-          demand_id: string
-          expires_at: string
-          id: string
-          is_active: boolean
-        }[]
-      }
-      verify_note_share_token: {
-        Args: { p_token: string }
-        Returns: {
-          expires_at: string
-          id: string
-          is_active: boolean
-          note_id: string
-        }[]
-      }
     }
     Enums: {
-      adjustment_type: "none" | "internal" | "external"
       app_role: "admin" | "member"
-      note_share_permission: "viewer" | "editor"
       team_role: "admin" | "moderator" | "requester" | "executor"
     }
     CompositeTypes: {
@@ -381,9 +905,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      adjustment_type: ["none", "internal", "external"],
       app_role: ["admin", "member"],
-      note_share_permission: ["viewer", "editor"],
       team_role: ["admin", "moderator", "requester", "executor"],
     },
   },
