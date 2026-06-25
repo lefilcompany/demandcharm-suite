@@ -850,70 +850,157 @@ export default function Auth() {
               </TabsContent>
             </Tabs>
 
-            {/* Password Reset Dialog - Outside of login form to prevent form submission conflicts */}
-            <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-              <DialogContent 
-                className="sm:max-w-md" 
+            {/* Password Reset Dialog - 3 steps: email -> 6-digit code -> new password */}
+            <Dialog
+              open={resetDialogOpen}
+              onOpenChange={(open) => {
+                setResetDialogOpen(open);
+                if (!open) resetResetDialog();
+              }}
+            >
+              <DialogContent
+                className="sm:max-w-md"
                 onPointerDownOutside={(e) => e.preventDefault()}
                 onKeyDown={(e) => {
-                  // Prevent Enter key from propagating to any parent forms
-                  if (e.key === 'Enter') {
-                    e.stopPropagation();
-                  }
+                  if (e.key === 'Enter') e.stopPropagation();
                 }}
               >
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <Mail className="h-5 w-5" />
-                    Recuperar Senha
+                    {resetStep === "email" && <Mail className="h-5 w-5" />}
+                    {resetStep === "code" && <KeyRound className="h-5 w-5" />}
+                    {resetStep === "password" && <Lock className="h-5 w-5" />}
+                    {resetStep === "email" && "Recuperar senha"}
+                    {resetStep === "code" && "Digite o código"}
+                    {resetStep === "password" && "Defina a nova senha"}
                   </DialogTitle>
                   <DialogDescription>
-                    Digite seu email e enviaremos um link para redefinir sua senha.
+                    {resetStep === "email" && "Informe seu e-mail e enviaremos um código de 6 dígitos para você redefinir sua senha."}
+                    {resetStep === "code" && (<>Enviamos um código de 6 dígitos para <span className="font-medium text-foreground">{resetEmail}</span>. Digite-o abaixo para continuar.</>)}
+                    {resetStep === "password" && "Escolha uma nova senha com pelo menos 6 caracteres."}
                   </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleResetPassword} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="reset-email">Email</Label>
-                    <Input 
-                      id="reset-email" 
-                      type="email" 
-                      placeholder="seu@email.com" 
-                      value={resetEmail} 
-                      onChange={e => setResetEmail(e.target.value)} 
-                      required 
-                      autoFocus
-                      onKeyDown={(e) => {
-                        // Prevent Enter from bubbling up to any parent form
-                        if (e.key === 'Enter') {
-                          e.stopPropagation();
-                        }
-                      }}
-                    />
-                  </div>
-                  {resetCooldown > 0 && (
-                    <div className="flex items-center gap-2 p-3 rounded-md bg-muted text-muted-foreground text-sm">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Aguarde {resetCooldown}s para solicitar novamente</span>
+
+                {resetStep === "email" && (
+                  <form onSubmit={handleSendResetCode} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-email">E-mail</Label>
+                      <Input
+                        id="reset-email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        required
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Enter') e.stopPropagation(); }}
+                      />
                     </div>
-                  )}
-                  <div className="flex gap-2 justify-end">
-                    <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={isResetLoading || resetCooldown > 0}>
-                      {isResetLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : resetCooldown > 0 ? (
-                        `Aguarde ${resetCooldown}s`
-                      ) : (
-                        "Enviar Link"
-                      )}
-                    </Button>
-                  </div>
-                </form>
+                    {resetCooldown > 0 && (
+                      <div className="flex items-center gap-2 p-3 rounded-md bg-muted text-muted-foreground text-sm">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Aguarde {resetCooldown}s para solicitar novamente</span>
+                      </div>
+                    )}
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={isResetLoading || resetCooldown > 0}>
+                        {isResetLoading ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</>
+                        ) : resetCooldown > 0 ? `Aguarde ${resetCooldown}s` : "Enviar código"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {resetStep === "code" && (
+                  <form onSubmit={handleVerifyResetCode} className="space-y-4">
+                    <div className="flex justify-center py-2">
+                      <InputOTP
+                        maxLength={6}
+                        value={resetCode}
+                        onChange={(v) => setResetCode(v)}
+                        autoFocus
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} className="h-12 w-12 text-lg" />
+                          <InputOTPSlot index={1} className="h-12 w-12 text-lg" />
+                          <InputOTPSlot index={2} className="h-12 w-12 text-lg" />
+                        </InputOTPGroup>
+                        <span className="mx-2 text-2xl font-light text-muted-foreground select-none">-</span>
+                        <InputOTPGroup>
+                          <InputOTPSlot index={3} className="h-12 w-12 text-lg" />
+                          <InputOTPSlot index={4} className="h-12 w-12 text-lg" />
+                          <InputOTPSlot index={5} className="h-12 w-12 text-lg" />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="p-0 h-auto text-xs"
+                        disabled={isResetLoading || resetCooldown > 0}
+                        onClick={() => { setResetCode(""); setResetStep("email"); }}
+                      >
+                        <ArrowLeft className="h-3 w-3 mr-1" />
+                        Trocar e-mail / reenviar
+                      </Button>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={isResetLoading || resetCode.length !== 6}>
+                        {isResetLoading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Validando...</>) : "Validar código"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {resetStep === "password" && (
+                  <form onSubmit={handleUpdatePasswordWithCode} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-new-password">Nova senha</Label>
+                      <div className="relative">
+                        <Input
+                          id="reset-new-password"
+                          type={showResetPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="pr-10"
+                          value={resetNewPassword}
+                          onChange={(e) => setResetNewPassword(e.target.value)}
+                          autoFocus
+                          required
+                        />
+                        <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowResetPassword(!showResetPassword)}>
+                          {showResetPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-confirm-password">Confirmar nova senha</Label>
+                      <Input
+                        id="reset-confirm-password"
+                        type={showResetPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={resetConfirmPassword}
+                        onChange={(e) => setResetConfirmPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={isResetLoading}>
+                        {isResetLoading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>) : "Alterar senha"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </DialogContent>
             </Dialog>
 
