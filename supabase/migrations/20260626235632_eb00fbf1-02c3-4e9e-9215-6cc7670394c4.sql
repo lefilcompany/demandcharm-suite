@@ -1,0 +1,1 @@
+ALTER TABLE public.demands DISABLE TRIGGER USER;
