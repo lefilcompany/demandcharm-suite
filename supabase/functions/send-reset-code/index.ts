@@ -78,15 +78,14 @@ Deno.serve(async (req) => {
           <p style="font-size:13px;color:#666;margin-top:24px;">— Equipe SoMA+</p>
         </div>`;
 
-      const resp = await fetch(`${GATEWAY_URL}/emails`, {
+      const resp = await fetch(`https://api.resend.com/emails`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "X-Connection-Api-Key": RESEND_API_KEY,
+          Authorization: `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: "SoMA+ <onboarding@resend.dev>",
+          from: "SoMA+ <no-reply@pla.soma.lefil.com.br>",
           to: [normalized],
           subject: `Seu código: ${code.slice(0,3)}-${code.slice(3)}`,
           html,
