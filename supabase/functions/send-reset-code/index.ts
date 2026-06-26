@@ -62,9 +62,8 @@ Deno.serve(async (req) => {
         expires_at: expiresAt,
       });
 
-      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-      if (!LOVABLE_API_KEY || !RESEND_API_KEY) throw new Error("Missing email credentials");
+      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY_LEFIL") || Deno.env.get("RESEND_API_KEY");
+      if (!RESEND_API_KEY) throw new Error("Missing RESEND_API_KEY");
 
       const html = `
         <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1D1D1D;">
