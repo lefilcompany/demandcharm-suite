@@ -1,0 +1,1 @@
+ALTER TABLE public.demands ENABLE TRIGGER USER;
