@@ -1,0 +1,15 @@
+ALTER TABLE public.demands DISABLE TRIGGER trg_enforce_demand_monthly_limit;
+ALTER TABLE public.demands DISABLE TRIGGER on_demand_created;
+ALTER TABLE public.demands DISABLE TRIGGER on_demand_assigned;
+ALTER TABLE public.demands DISABLE TRIGGER on_demand_status_changed;
+ALTER TABLE public.demands DISABLE TRIGGER on_demand_create_update_usage;
+ALTER TABLE public.demands DISABLE TRIGGER trigger_set_demand_sequence;
+ALTER TABLE public.demands DISABLE TRIGGER trigger_reassign_demand_sequence;
+ALTER TABLE public.demands DISABLE TRIGGER trigger_set_demand_delivered_at;
+ALTER TABLE public.demands DISABLE TRIGGER trigger_update_status_changed_at;
+ALTER TABLE public.demands DISABLE TRIGGER notify_adjustment_completed_trigger;
+ALTER TABLE public.demands DISABLE TRIGGER track_time_in_progress;
+ALTER TABLE public.demands DISABLE TRIGGER enforce_dependency_status;
+ALTER TABLE public.demands DISABLE TRIGGER trg_compute_demand_is_overdue;
+ALTER TABLE public.demands DISABLE TRIGGER trg_normalize_demand_due_date;
+ALTER TABLE public.demands DISABLE TRIGGER trg_set_subdemand_sort_order;

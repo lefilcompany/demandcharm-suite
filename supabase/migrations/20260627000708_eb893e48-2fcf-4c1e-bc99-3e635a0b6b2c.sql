@@ -1,0 +1,23 @@
+ALTER TABLE public.demands ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.demand_assignees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.demand_interactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.demand_attachments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.demand_dependencies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.demand_time_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.demand_share_tokens ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE public.demands ENABLE TRIGGER trg_enforce_demand_monthly_limit;
+ALTER TABLE public.demands ENABLE TRIGGER on_demand_created;
+ALTER TABLE public.demands ENABLE TRIGGER on_demand_assigned;
+ALTER TABLE public.demands ENABLE TRIGGER on_demand_status_changed;
+ALTER TABLE public.demands ENABLE TRIGGER on_demand_create_update_usage;
+ALTER TABLE public.demands ENABLE TRIGGER trigger_set_demand_sequence;
+ALTER TABLE public.demands ENABLE TRIGGER trigger_reassign_demand_sequence;
+ALTER TABLE public.demands ENABLE TRIGGER trigger_set_demand_delivered_at;
+ALTER TABLE public.demands ENABLE TRIGGER trigger_update_status_changed_at;
+ALTER TABLE public.demands ENABLE TRIGGER notify_adjustment_completed_trigger;
+ALTER TABLE public.demands ENABLE TRIGGER track_time_in_progress;
+ALTER TABLE public.demands ENABLE TRIGGER enforce_dependency_status;
+ALTER TABLE public.demands ENABLE TRIGGER trg_compute_demand_is_overdue;
+ALTER TABLE public.demands ENABLE TRIGGER trg_normalize_demand_due_date;
+ALTER TABLE public.demands ENABLE TRIGGER trg_set_subdemand_sort_order;
