@@ -2484,6 +2484,47 @@ export type Database = {
           },
         ]
       }
+      user_board_ai_insights: {
+        Row: {
+          board_id: string
+          created_at: string
+          expires_at: string
+          generated_at: string
+          id: string
+          insights: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          board_id: string
+          created_at?: string
+          expires_at: string
+          generated_at?: string
+          id?: string
+          insights: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          board_id?: string
+          created_at?: string
+          expires_at?: string
+          generated_at?: string
+          id?: string
+          insights?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_board_ai_insights_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_preferences: {
         Row: {
           created_at: string
