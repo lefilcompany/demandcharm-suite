@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { ContentLoader } from "@/components/ContentLoader";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { BoardSelector } from "@/components/BoardSelector";
