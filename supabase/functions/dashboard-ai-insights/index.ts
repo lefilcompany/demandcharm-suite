@@ -269,7 +269,9 @@ Não invente dados que não estão no resumo.`;
         ],
         generationConfig: {
           responseMimeType: "application/json",
-          maxOutputTokens: 2048,
+          temperature: 0.4,
+          maxOutputTokens: 4096,
+          thinkingConfig: { thinkingBudget: 0 },
           responseSchema: {
             type: "OBJECT",
             properties: {
@@ -310,25 +312,44 @@ Não invente dados que não estão no resumo.`;
 
     const aiData = await aiResponse.json();
     let insights: any[] = [];
+    const finishReason = aiData.candidates?.[0]?.finishReason;
+    const truncated = finishReason && finishReason !== "STOP";
 
     try {
       const textContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (textContent) {
+      if (textContent && !truncated) {
         const parsed = JSON.parse(textContent);
         insights = Array.isArray(parsed.insights) ? parsed.insights : [];
+        // Validate: drop entries with missing/incomplete fields
+        insights = insights.filter(
+          (i) =>
+            i &&
+            typeof i.title === "string" &&
+            i.title.trim().length > 0 &&
+            typeof i.description === "string" &&
+            i.description.trim().length >= 15 &&
+            !i.description.trim().endsWith("(") &&
+            !i.description.trim().endsWith(",")
+        );
+      } else if (truncated) {
+        console.error("Gemini response truncated, finishReason:", finishReason);
       }
     } catch (e) {
       console.error("Failed to parse Gemini response:", e);
     }
 
-    if (insights.length === 0) {
+    const usedFallback = insights.length === 0;
+    if (usedFallback) {
       insights = FALLBACK_INSIGHTS;
     }
 
     insights = insights.slice(0, 3);
 
-    // Persist with 24h TTL
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    // Persist with 24h TTL — but only when generation succeeded.
+    // If we used fallback or output was truncated, cache only briefly (5 min)
+    // so the next visit retries instead of showing broken insights for 24h.
+    const ttlMs = usedFallback || truncated ? 5 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    const expiresAt = new Date(Date.now() + ttlMs).toISOString();
     const { error: upsertError } = await supabase
       .from("user_board_ai_insights")
       .upsert(
