@@ -92,10 +92,12 @@ function CreateDemandRoute() {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000,
-      gcTime: 5 * 60 * 1000,
+      staleTime: 3 * 60 * 1000, // 3 minutes — avoid refetching on every nav
+      gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: false,
-      retry: 2,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      retry: 1,
     },
   },
 });
