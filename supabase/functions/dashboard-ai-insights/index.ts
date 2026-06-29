@@ -6,6 +6,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const FALLBACK_INSIGHTS = [
+  { title: "Acompanhe seus prazos", description: "Verifique regularmente suas demandas com prazo próximo para evitar atrasos.", type: "info" },
+  { title: "Organize sua rotina", description: "Comece o dia priorizando as demandas mais críticas em que você é responsável.", type: "info" },
+  { title: "Mantenha o ritmo", description: "Acompanhe também as demandas em que você é seguidor para apoiar a equipe.", type: "success" },
+];
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -35,7 +41,7 @@ Deno.serve(async (req) => {
 
     const userId = user.id;
 
-    const { board_id, is_requester } = await req.json();
+    const { board_id } = await req.json();
     if (!board_id) {
       return new Response(JSON.stringify({ error: "board_id is required" }), {
         status: 400,
@@ -46,7 +52,7 @@ Deno.serve(async (req) => {
     // Authorization: caller must be a member of the requested board
     const { data: membership } = await supabase
       .from("board_members")
-      .select("user_id")
+      .select("user_id, role")
       .eq("board_id", board_id)
       .eq("user_id", userId)
       .maybeSingle();
@@ -57,108 +63,193 @@ Deno.serve(async (req) => {
       });
     }
 
-    const demandsQuery = supabase
-      .from("demands")
-      .select(
-        "id, due_date, delivered_at, is_overdue, created_by, demand_statuses(name), services(name)"
-      )
+    // Cache lookup (24h TTL)
+    const { data: cached } = await supabase
+      .from("user_board_ai_insights")
+      .select("insights, expires_at")
+      .eq("user_id", userId)
       .eq("board_id", board_id)
-      .limit(100);
+      .maybeSingle();
 
-    if (is_requester) {
-      demandsQuery.eq("created_by", userId);
+    if (cached && new Date(cached.expires_at).getTime() > Date.now()) {
+      return new Response(JSON.stringify({ insights: cached.insights }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const [demandsRes, membersRes, boardRes, requestsRes] = await Promise.all([
-      demandsQuery,
-      supabase
-        .from("board_members")
-        .select("user_id, role")
-        .eq("board_id", board_id),
-      supabase
-        .from("boards")
-        .select("name, team_id")
-        .eq("id", board_id)
-        .single(),
-      is_requester
-        ? supabase
-            .from("demand_requests")
-            .select("id, status, created_at, title")
-            .eq("created_by", userId)
-            .eq("board_id", board_id)
-            .order("created_at", { ascending: false })
-            .limit(20)
-        : Promise.resolve({ data: [] }),
-    ]);
+    // Fetch board info
+    const { data: boardData } = await supabase
+      .from("boards")
+      .select("name")
+      .eq("id", board_id)
+      .maybeSingle();
+    const boardName = boardData?.name || "Quadro";
 
-    const demands = demandsRes.data || [];
-    const members = membersRes.data || [];
-    const boardName = boardRes.data?.name || "Quadro";
-    const requests = requestsRes.data || [];
+    // Fetch profile name
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", userId)
+      .maybeSingle();
+    const userName = profileData?.full_name || "Usuário";
 
-    // Calculate summary stats
+    // Demands where the user is assignee (primary or follower)
+    const { data: assigneeRows } = await supabase
+      .from("demand_assignees")
+      .select("demand_id, is_primary")
+      .eq("user_id", userId);
+
+    const assigneeMap = new Map<string, boolean>();
+    for (const row of assigneeRows || []) {
+      // primary wins
+      const existing = assigneeMap.get(row.demand_id);
+      assigneeMap.set(row.demand_id, existing === true ? true : !!row.is_primary);
+    }
+
+    // Also include legacy assigned_to and created_by, but only treat them as fallback if not in assignees
+    const { data: legacyDemands } = await supabase
+      .from("demands")
+      .select("id, assigned_to, created_by")
+      .eq("board_id", board_id)
+      .eq("archived", false)
+      .or(`assigned_to.eq.${userId},created_by.eq.${userId}`);
+
+    for (const d of legacyDemands || []) {
+      if (!assigneeMap.has(d.id)) {
+        // Treat assigned_to as primary, created_by as follower
+        assigneeMap.set(d.id, d.assigned_to === userId);
+      }
+    }
+
+    const demandIds = Array.from(assigneeMap.keys());
+
+    let demands: any[] = [];
+    if (demandIds.length > 0) {
+      const { data: demandsData } = await supabase
+        .from("demands")
+        .select("id, title, due_date, delivered_at, is_overdue, status_id, demand_statuses(name), services(name)")
+        .eq("board_id", board_id)
+        .eq("archived", false)
+        .in("id", demandIds)
+        .limit(500);
+      demands = demandsData || [];
+    }
+
+    // Aggregate metrics
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const in3Days = new Date(today);
+    in3Days.setDate(in3Days.getDate() + 3);
+    const last30 = new Date(today);
+    last30.setDate(last30.getDate() - 30);
+
+    let asResponsibleTotal = 0;
+    let asFollowerTotal = 0;
+    let overdueResponsible = 0;
+    let overdueFollower = 0;
+    let dueTodayResponsible = 0;
+    let dueTodayFollower = 0;
+    let dueSoonResponsible = 0;
+    let dueSoonFollower = 0;
+    let deliveredOnTime30d = 0;
+    let deliveredLate30d = 0;
+    let inAdjustment = 0;
+    let awaitingApproval = 0;
     const statusCounts: Record<string, number> = {};
     const serviceCounts: Record<string, number> = {};
-    let overdueCount = 0;            // não entregues e atrasadas
-    let deliveredCount = 0;          // total entregues (no prazo + com atraso)
-    let deliveredOnTimeCount = 0;    // entregues no prazo
-    let deliveredLateCount = 0;      // entregues com atraso
-    const now = new Date();
+    const critical: { title: string; reason: string }[] = [];
 
     for (const d of demands) {
-      const statusName = (d as any).demand_statuses?.name || "Sem status";
-      const serviceName = (d as any).services?.name || "Sem serviço";
-      const isOverdueFlag = (d as any).is_overdue === true;
+      const isPrimary = assigneeMap.get(d.id) === true;
+      const statusName: string = d.demand_statuses?.name || "Sem status";
+      const serviceName: string = d.services?.name || "Sem serviço";
+      const delivered = !!d.delivered_at || statusName === "Entregue";
+
       statusCounts[statusName] = (statusCounts[statusName] || 0) + 1;
       serviceCounts[serviceName] = (serviceCounts[serviceName] || 0) + 1;
 
-      const isDelivered = !!d.delivered_at || statusName === "Entregue";
+      if (isPrimary) asResponsibleTotal++; else asFollowerTotal++;
 
-      if (isDelivered) {
-        deliveredCount++;
-        if (isOverdueFlag) deliveredLateCount++;
-        else deliveredOnTimeCount++;
-      } else {
-        // Não entregue: vencida se is_overdue=true (ou data passada como fallback)
-        if (isOverdueFlag || (d.due_date && new Date(d.due_date) < now)) {
-          overdueCount++;
+      if (statusName === "Em Ajuste") inAdjustment++;
+      if (statusName === "Aprovação Interna") awaitingApproval++;
+
+      if (delivered) {
+        const deliveredAt = d.delivered_at ? new Date(d.delivered_at) : null;
+        if (deliveredAt && deliveredAt >= last30) {
+          if (d.is_overdue === true) deliveredLate30d++;
+          else deliveredOnTime30d++;
         }
+        continue;
+      }
+
+      if (!d.due_date) continue;
+      const due = new Date(d.due_date);
+      const isOverdue = d.is_overdue === true || due < now;
+      const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+
+      if (isOverdue) {
+        if (isPrimary) overdueResponsible++; else overdueFollower++;
+        if (critical.length < 5) critical.push({ title: d.title, reason: `atrasada (venceu em ${due.toISOString().slice(0, 10)})` });
+      } else if (dueDay.getTime() === today.getTime()) {
+        if (isPrimary) dueTodayResponsible++; else dueTodayFollower++;
+        if (critical.length < 5) critical.push({ title: d.title, reason: "vence hoje" });
+      } else if (dueDay > today && dueDay <= in3Days) {
+        if (isPrimary) dueSoonResponsible++; else dueSoonFollower++;
+        if (critical.length < 5) critical.push({ title: d.title, reason: `vence em ${d.due_date.slice(0, 10)}` });
       }
     }
 
-    const totalMembers = members.length;
-    const totalDemands = demands.length;
-
-    let summaryText: string;
-
-    if (is_requester) {
-      const requestStatusCounts: Record<string, number> = {};
-      for (const r of requests as any[]) {
-        requestStatusCounts[r.status] = (requestStatusCounts[r.status] || 0) + 1;
+    const roleLabel = (() => {
+      switch (membership.role) {
+        case "admin": return "Administrador";
+        case "moderator": return "Coordenador";
+        case "executor": return "Executor";
+        case "requester": return "Solicitante";
+        default: return "Membro";
       }
+    })();
 
-      summaryText = `Quadro: ${boardName}
-Visão do Cliente/Solicitante:
-Total de demandas solicitadas: ${totalDemands}
-Demandas entregues no prazo: ${deliveredOnTimeCount}
-Demandas entregues com atraso: ${deliveredLateCount}
-Demandas vencidas (ainda não entregues): ${overdueCount}
-Status das demandas: ${Object.entries(statusCounts).map(([k, v]) => `${k}: ${v}`).join(", ")}
-Serviços solicitados: ${Object.entries(serviceCounts).map(([k, v]) => `${k}: ${v}`).join(", ")}
-Solicitações recentes: ${(requests as any[]).length} (${Object.entries(requestStatusCounts).map(([k, v]) => `${k}: ${v}`).join(", ")})`;
-    } else {
-      summaryText = `Quadro: ${boardName}
-Total de demandas: ${totalDemands}
-Membros: ${totalMembers}
-Entregues no prazo: ${deliveredOnTimeCount}
-Entregues com atraso: ${deliveredLateCount}
-Vencidas (não entregues): ${overdueCount}
-Status: ${Object.entries(statusCounts).map(([k, v]) => `${k}: ${v}`).join(", ")}
+    const summaryText = `Quadro: ${boardName}
+Usuário: ${userName} (papel: ${roleLabel})
+Data da análise: ${today.toISOString().slice(0, 10)}
 
-IMPORTANTE: diferencie nos insights "entregues no prazo", "entregues com atraso" e "vencidas (ainda não entregues)". Não some essas categorias como se fossem a mesma coisa.`;
-    }
+Total de demandas em que está envolvido: ${demands.length}
+  - Como responsável: ${asResponsibleTotal}
+  - Como acompanhante (seguidor): ${asFollowerTotal}
 
-    // Call Google Gemini AI
+Atrasadas (não entregues):
+  - Como responsável: ${overdueResponsible}
+  - Como acompanhante: ${overdueFollower}
+
+Vencem hoje:
+  - Como responsável: ${dueTodayResponsible}
+  - Como acompanhante: ${dueTodayFollower}
+
+Vencem nos próximos 3 dias:
+  - Como responsável: ${dueSoonResponsible}
+  - Como acompanhante: ${dueSoonFollower}
+
+Em ajuste: ${inAdjustment}
+Aguardando aprovação interna: ${awaitingApproval}
+
+Últimos 30 dias:
+  - Entregues no prazo: ${deliveredOnTime30d}
+  - Entregues com atraso: ${deliveredLate30d}
+
+Distribuição por status: ${Object.entries(statusCounts).map(([k, v]) => `${k}: ${v}`).join(", ") || "—"}
+Distribuição por serviço: ${Object.entries(serviceCounts).map(([k, v]) => `${k}: ${v}`).join(", ") || "—"}
+
+Demandas mais críticas (até 5):
+${critical.length > 0 ? critical.map((c, i) => `${i + 1}. "${c.title}" — ${c.reason}`).join("\n") : "Nenhuma demanda crítica identificada."}`;
+
+    const systemPrompt = `Você é um assistente pessoal de produtividade. Gere exatamente 3 insights curtos, acionáveis e PERSONALIZADOS para o usuário com base apenas nas demandas em que ele está envolvido neste quadro (como responsável ou acompanhante).
+Responda APENAS com um JSON com a chave "insights" contendo um array de 3 objetos.
+Cada objeto deve ter: "title" (máx 6 palavras), "description" (máx 2 frases curtas, fale em segunda pessoa — "Você tem...", "Priorize..."), "type" (um de: "warning", "success", "info").
+Priorize: demandas ATRASADAS, demandas que VENCEM HOJE e demandas que vencem nos próximos 3 dias.
+Diferencie demandas em que o usuário é responsável (ação direta) das que ele é acompanhante (apoiar/acompanhar).
+Se não há demandas atribuídas, gere insights informativos e amigáveis.
+Não invente dados que não estão no resumo.`;
+
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) {
       return new Response(JSON.stringify({ error: "GEMINI_API_KEY not configured" }), {
@@ -167,21 +258,8 @@ IMPORTANTE: diferencie nos insights "entregues no prazo", "entregues com atraso"
       });
     }
 
-    const systemPrompt = is_requester
-      ? `Você é um assistente de acompanhamento de serviços para clientes/solicitantes. Gere exatamente 3 insights curtos e úteis baseados nos dados das demandas do cliente.
-Responda APENAS com um JSON array de 3 objetos, sem markdown, sem code blocks.
-Cada objeto deve ter: "title" (máx 6 palavras), "description" (máx 2 frases curtas), "type" (um de: "warning", "success", "info").
-Foque em: status das entregas, prazos, serviços mais solicitados, e andamento geral das solicitações do cliente.
-Use linguagem amigável e voltada para o cliente. Não mencione membros internos da equipe.
-Se não houver dados suficientes, crie insights sobre como acompanhar melhor as solicitações.`
-      : `Você é um analista de produtividade. Gere exatamente 3 insights curtos e acionáveis baseados nos dados do quadro.
-Responda APENAS com um JSON array de 3 objetos, sem markdown, sem code blocks.
-Cada objeto deve ter: "title" (máx 6 palavras), "description" (máx 2 frases curtas), "type" (um de: "warning", "success", "info").
-Foque em: prazos, gargalos, produtividade e distribuição de carga.
-Se não houver dados suficientes, crie insights genéricos sobre boas práticas de gestão.`;
-
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-    
+
     const aiResponse = await fetch(geminiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -216,13 +294,14 @@ Se não houver dados suficientes, crie insights genéricos sobre boas práticas 
 
     if (!aiResponse.ok) {
       const status = aiResponse.status;
+      const text = await aiResponse.text().catch(() => "");
+      console.error("Gemini AI error:", status, text);
       if (status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      console.error("Gemini AI error:", status, await aiResponse.text());
       return new Response(JSON.stringify({ error: "AI service error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -230,24 +309,44 @@ Se não houver dados suficientes, crie insights genéricos sobre boas práticas 
     }
 
     const aiData = await aiResponse.json();
-    let insights = [];
+    let insights: any[] = [];
 
     try {
       const textContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
       if (textContent) {
         const parsed = JSON.parse(textContent);
-        insights = parsed.insights || [];
+        insights = Array.isArray(parsed.insights) ? parsed.insights : [];
       }
     } catch (e) {
       console.error("Failed to parse Gemini response:", e);
-      insights = [
-        { title: "Acompanhe os prazos", description: "Verifique regularmente as demandas com prazo próximo para evitar atrasos.", type: "info" },
-        { title: "Distribua a carga", description: "Equilibre as demandas entre os membros da equipe para maior produtividade.", type: "info" },
-        { title: "Revise entregas", description: "Analise as demandas entregues para identificar padrões de melhoria.", type: "success" },
-      ];
     }
 
-    return new Response(JSON.stringify({ insights: insights.slice(0, 3) }), {
+    if (insights.length === 0) {
+      insights = FALLBACK_INSIGHTS;
+    }
+
+    insights = insights.slice(0, 3);
+
+    // Persist with 24h TTL
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { error: upsertError } = await supabase
+      .from("user_board_ai_insights")
+      .upsert(
+        {
+          user_id: userId,
+          board_id,
+          insights,
+          generated_at: new Date().toISOString(),
+          expires_at: expiresAt,
+        },
+        { onConflict: "user_id,board_id" }
+      );
+
+    if (upsertError) {
+      console.error("Failed to persist insights:", upsertError);
+    }
+
+    return new Response(JSON.stringify({ insights }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
