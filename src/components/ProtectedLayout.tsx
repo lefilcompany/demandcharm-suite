@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { ContentLoader } from "@/components/ContentLoader";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { BoardSelector } from "@/components/BoardSelector";
@@ -125,11 +126,14 @@ export function ProtectedLayout() {
   // Show loading while checking trial/subscription status
   if (trialLoading || subLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex flex-1 min-h-0 w-full bg-sidebar p-2.5 md:p-3 overflow-hidden">
+        <main className="flex-1 flex flex-col bg-background rounded-xl shadow-xl overflow-hidden min-h-0">
+          <ContentLoader />
+        </main>
       </div>
     );
   }
+
 
   // Show trial expired block if user cannot use the system
   if (!canUseSystem) {
@@ -259,8 +263,11 @@ export function ProtectedLayout() {
             </div>
           </header>
           <div className="flex-1 overflow-y-auto min-h-0 p-3 md:p-6">
-            <Outlet />
+            <Suspense fallback={<ContentLoader />}>
+              <Outlet />
+            </Suspense>
           </div>
+
           <FloatingCreateButton />
         </main>
       </div>
