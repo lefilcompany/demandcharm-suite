@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   try {
     const { email, code, newPassword } = await req.json();
     if (!email || !code || !newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
-      return new Response(JSON.stringify({ error: "invalid input" }), {
+      return new Response(JSON.stringify({ error: "Dados inválidos" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: row } = await supabase
+    const { data: row, error: rowErr } = await supabase
       .from("password_reset_codes")
       .select("id, code_hash, expires_at, used")
       .eq("email", normalized)
@@ -38,32 +38,44 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
+    if (rowErr) {
+      console.error("lookup code error", rowErr);
+      throw rowErr;
+    }
+
     if (!row || row.code_hash !== codeHash || new Date(row.expires_at) < new Date()) {
       return new Response(JSON.stringify({ error: "Código inválido ou expirado" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Find user
-    const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    const user = list?.users?.find((u) => u.email?.toLowerCase() === normalized);
-    if (!user) {
+    // Resolve user via SQL helper (avoids listUsers pagination limits)
+    const { data: userId, error: lookupErr } = await supabase.rpc("get_user_id_by_email", { _email: normalized });
+    if (lookupErr) {
+      console.error("user lookup error", lookupErr);
+      throw lookupErr;
+    }
+    if (!userId) {
       return new Response(JSON.stringify({ error: "Usuário não encontrado" }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { error: updErr } = await supabase.auth.admin.updateUserById(user.id, { password: newPassword });
-    if (updErr) throw updErr;
+    const { error: updErr } = await supabase.auth.admin.updateUserById(userId as string, { password: newPassword });
+    if (updErr) {
+      console.error("updateUserById error", updErr);
+      throw updErr;
+    }
 
+    // Only NOW mark the code as used — never invalidated before a successful password change
     await supabase.from("password_reset_codes").update({ used: true }).eq("id", row.id);
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error(e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
+    console.error("reset-password-with-code failed", e);
+    return new Response(JSON.stringify({ error: (e as Error).message || "Erro interno" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
