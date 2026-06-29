@@ -407,7 +407,31 @@ export default function Auth() {
       setLoginData({ email: savedEmail, password: "" });
       setLoginStep("password");
     } catch (error: any) {
-      toast.error("Erro ao alterar senha", { description: getErrorMessage(error) });
+      const msg = getErrorMessage(error);
+      const needsNewCode = /inv[aá]lido|expirado|not\s*found|n[aã]o\s*encontrado|expired|invalid/i.test(msg);
+      if (needsNewCode) {
+        toast.error("Código inválido ou expirado", {
+          description: "Enviamos um novo código para o seu e-mail. Verifique sua caixa de entrada.",
+        });
+        try {
+          await supabase.functions.invoke("send-reset-code", { body: { email: resetEmail.trim() } });
+        } catch (_) { /* swallow */ }
+        setResetCode("");
+        setResetNewPassword("");
+        setResetConfirmPassword("");
+        setResetStep("code");
+      } else {
+        toast.error("Erro ao alterar senha", {
+          description: `${msg} — Enviamos um novo código para o seu e-mail por segurança.`,
+        });
+        try {
+          await supabase.functions.invoke("send-reset-code", { body: { email: resetEmail.trim() } });
+        } catch (_) { /* swallow */ }
+        setResetCode("");
+        setResetNewPassword("");
+        setResetConfirmPassword("");
+        setResetStep("code");
+      }
     } finally {
       setIsResetLoading(false);
     }
