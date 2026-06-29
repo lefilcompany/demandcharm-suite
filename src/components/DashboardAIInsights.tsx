@@ -1,70 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-
-// Cache key tied to user's refresh_token — survives access_token rotation (~1h),
-// only invalidated on real logout or refresh_token expiry (~30 days)
-const CACHE_PREFIX = "soma:ai-insights:v2:";
-const getCacheKey = (userId: string, boardId: string, isRequester: boolean) =>
-  `${CACHE_PREFIX}${userId}:${boardId}:${isRequester ? "req" : "adm"}`;
-
-interface CachedInsights {
-  insights: AIInsight[];
-  sessionFingerprint: string;
-  cachedAt: number;
-}
-
-// Hash the refresh_token to a short, non-sensitive fingerprint.
-// We never store the raw token — only its SHA-256 fingerprint to detect session changes.
-async function getSessionFingerprint(refreshToken: string | undefined): Promise<string> {
-  if (!refreshToken) return "";
-  try {
-    const data = new TextEncoder().encode(refreshToken);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.slice(0, 16).map((b) => b.toString(16).padStart(2, "0")).join("");
-  } catch {
-    // Fallback for older browsers — last 24 chars of refresh_token
-    return refreshToken.slice(-24);
-  }
-}
-
-function readCache(key: string, currentFingerprint: string): AIInsight[] | null {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CachedInsights;
-    if (parsed.sessionFingerprint !== currentFingerprint) {
-      localStorage.removeItem(key);
-      return null;
-    }
-    return parsed.insights;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(key: string, insights: AIInsight[], sessionFingerprint: string) {
-  try {
-    const payload: CachedInsights = { insights, sessionFingerprint, cachedAt: Date.now() };
-    localStorage.setItem(key, JSON.stringify(payload));
-  } catch {
-    // ignore quota errors
-  }
-}
-
-function clearAllInsightsCache() {
-  try {
-    const keys: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith(CACHE_PREFIX)) keys.push(k);
-    }
-    keys.forEach((k) => localStorage.removeItem(k));
-  } catch {
-    // ignore
-  }
-}
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -105,6 +41,7 @@ const typeConfig = {
     titleColor: "text-primary",
   },
 };
+
 function InsightCard({ insight, isExpanded, onToggle }: { insight: AIInsight; isExpanded: boolean; onToggle: () => void }) {
   const config = typeConfig[insight.type] || typeConfig.info;
   const Icon = config.icon;
@@ -154,78 +91,53 @@ function InsightCard({ insight, isExpanded, onToggle }: { insight: AIInsight; is
   );
 }
 
-
-export function DashboardAIInsights({ boardId, isRequester = false }: DashboardAIInsightsProps) {
+export function DashboardAIInsights({ boardId }: DashboardAIInsightsProps) {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [expandedIndexes, setExpandedIndexes] = useState<Set<number>>(new Set());
 
-  // Listen to auth changes — clear cache on sign out / token loss
+  // Cleanup of legacy localStorage cache (one-time per session)
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        clearAllInsightsCache();
-        queryClient.removeQueries({ queryKey: ["dashboard-ai-insights"] });
+    try {
+      const keys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("soma:ai-insights:")) keys.push(k);
       }
-    });
-    return () => sub.subscription.unsubscribe();
-  }, [queryClient]);
+      keys.forEach((k) => localStorage.removeItem(k));
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["dashboard-ai-insights", boardId, isRequester],
+    queryKey: ["dashboard-ai-insights", boardId],
     queryFn: async () => {
       if (!boardId) return { insights: [] as AIInsight[] };
 
-      // Get current session — if missing, no cache and no call
-      const { data: sessionData } = await supabase.auth.getSession();
-      const session = sessionData.session;
-      if (!session?.user?.id || !session.access_token) {
-        return { insights: [] as AIInsight[] };
-      }
-
-      const fingerprint = await getSessionFingerprint(session.refresh_token);
-      const cacheKey = getCacheKey(session.user.id, boardId, isRequester);
-
-      // Try cache first — only generates again on logout / token rotation invalidation
-      const cached = readCache(cacheKey, fingerprint);
-      if (cached && cached.length > 0) {
-        return { insights: cached };
-      }
-
-      try {
-        const { data, error } = await supabase.functions.invoke("dashboard-ai-insights", {
-          body: { board_id: boardId, is_requester: isRequester },
-        });
-        if (error) {
-          const msg = typeof error === "object" && "message" in error ? (error as any).message : String(error);
-          if (msg.includes("402") || msg.includes("Payment") || msg.includes("429") || msg.includes("Rate limit")) {
-            return { insights: [] as AIInsight[] };
-          }
-          if (msg.includes("401") || msg.includes("Unauthorized")) {
-            const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-            if (refreshError || !refreshed.session) return { insights: [] as AIInsight[] };
-            const { data: retryData, error: retryError } = await supabase.functions.invoke("dashboard-ai-insights", {
-              body: { board_id: boardId, is_requester: isRequester },
-            });
-            if (retryError) return { insights: [] as AIInsight[] };
-            const result = retryData as { insights: AIInsight[] };
-            const newFingerprint = await getSessionFingerprint(refreshed.session.refresh_token);
-            const newKey = getCacheKey(refreshed.session.user.id, boardId, isRequester);
-            if (result?.insights?.length) writeCache(newKey, result.insights, newFingerprint);
-            return result;
-          }
+      const { data, error } = await supabase.functions.invoke("dashboard-ai-insights", {
+        body: { board_id: boardId },
+      });
+      if (error) {
+        const msg = typeof error === "object" && "message" in error ? (error as any).message : String(error);
+        if (msg.includes("402") || msg.includes("Payment") || msg.includes("429") || msg.includes("Rate limit")) {
           return { insights: [] as AIInsight[] };
         }
-        const result = data as { insights: AIInsight[] };
-        if (result?.insights?.length) writeCache(cacheKey, result.insights, fingerprint);
-        return result;
-      } catch {
+        if (msg.includes("401") || msg.includes("Unauthorized")) {
+          const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError || !refreshed.session) return { insights: [] as AIInsight[] };
+          const { data: retryData, error: retryError } = await supabase.functions.invoke("dashboard-ai-insights", {
+            body: { board_id: boardId },
+          });
+          if (retryError) return { insights: [] as AIInsight[] };
+          return retryData as { insights: AIInsight[] };
+        }
         return { insights: [] as AIInsight[] };
       }
+      return data as { insights: AIInsight[] };
     },
     enabled: !!boardId,
-    staleTime: Infinity, // never auto-refetch — cache lives until logout
-    gcTime: Infinity,
+    staleTime: 5 * 60 * 1000, // server is source of truth for the 24h TTL
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
@@ -270,7 +182,6 @@ export function DashboardAIInsights({ boardId, isRequester = false }: DashboardA
           />
         ))}
 
-        {/* CTA Card */}
         <Card className="p-3 md:p-4 border-0 bg-primary flex flex-col justify-between transition-shadow hover:shadow-lg shadow-md">
           <div className="flex items-start gap-2.5">
             <div className="p-1.5 rounded-lg bg-white/20 shrink-0">
