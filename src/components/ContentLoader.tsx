@@ -17,6 +17,11 @@ export function ContentLoader() {
         <img
           src={logoIcon}
           alt="SoMA"
+          width={64}
+          height={64}
+          fetchPriority="high"
+          decoding="sync"
+          loading="eager"
           className="h-16 w-16 drop-shadow-md animate-pulse-subtle"
         />
       </div>
