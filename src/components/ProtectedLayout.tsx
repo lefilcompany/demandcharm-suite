@@ -260,8 +260,11 @@ export function ProtectedLayout() {
             </div>
           </header>
           <div className="flex-1 overflow-y-auto min-h-0 p-3 md:p-6">
-            <Outlet />
+            <Suspense fallback={<ContentLoader />}>
+              <Outlet />
+            </Suspense>
           </div>
+
           <FloatingCreateButton />
         </main>
       </div>
