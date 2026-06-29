@@ -397,7 +397,27 @@ export default function Auth() {
         body: { email: resetEmail.trim(), code: resetCode, newPassword: resetNewPassword },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.ok === false) {
+        if (data.code === "weak_password") {
+          toast.error("Escolha uma senha mais forte", {
+            description: data.error || "Essa senha é muito fraca ou já apareceu em vazamentos. Use outra senha com letras, números e símbolos.",
+          });
+          setResetNewPassword("");
+          setResetConfirmPassword("");
+          return;
+        }
+
+        if (data.code === "same_password") {
+          toast.error("Senha já utilizada", {
+            description: data.error || "A nova senha precisa ser diferente da senha atual.",
+          });
+          setResetNewPassword("");
+          setResetConfirmPassword("");
+          return;
+        }
+
+        throw new Error(data.error || "Não foi possível alterar a senha.");
+      }
       toast.success("Senha alterada com sucesso!", {
         description: "Faça login com sua nova senha.",
       });
