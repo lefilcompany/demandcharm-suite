@@ -584,7 +584,7 @@ export default function BoardDetail() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteBoard} className={cn(buttonVariants({ variant: "destructive" }))}>
+                <AlertDialogAction onClick={handleDeleteBoard} className="bg-destructive text-destructive-foreground border-transparent hover:bg-destructive/90 hover:text-destructive-foreground hover:border-transparent">
                   Excluir
                 </AlertDialogAction>
               </AlertDialogFooter>
