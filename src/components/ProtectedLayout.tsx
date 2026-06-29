@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { BoardSelector } from "@/components/BoardSelector";
@@ -122,14 +122,9 @@ export function ProtectedLayout() {
   const isBillingBlocked = hasSubscriptionRecord && !hasActiveSubscription && !hasActiveTrialing;
   const canUseSystem = !currentTeam || !hasSubscriptionRecord || !isBillingBlocked;
 
-  // Show loading while checking trial/subscription status
-  if (trialLoading || subLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Mantém o shell (sidebar + painel) visível enquanto o status carrega
+  // para evitar flash branco no carregamento.
+  const isStatusLoading = trialLoading || subLoading;
 
 
   // Show trial expired block if user cannot use the system
@@ -260,7 +255,13 @@ export function ProtectedLayout() {
             </div>
           </header>
           <div className="flex-1 overflow-y-auto min-h-0 p-3 md:p-6">
-            <Outlet />
+            <Suspense fallback={<div className="min-h-full w-full bg-background" />}>
+              {isStatusLoading ? (
+                <div className="min-h-full w-full bg-background" />
+              ) : (
+                <Outlet />
+              )}
+            </Suspense>
           </div>
 
           <FloatingCreateButton />
