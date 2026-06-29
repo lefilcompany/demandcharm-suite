@@ -14,12 +14,16 @@ async function sha256Hex(str: string): Promise<string> {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  const json = (body: Record<string, unknown>, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
   try {
     const { email, code, newPassword } = await req.json();
     if (!email || !code || !newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
-      return new Response(JSON.stringify({ error: "Dados inválidos" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: false, code: "invalid_input", error: "Dados inválidos" });
     }
     const normalized = String(email).trim().toLowerCase();
     const codeHash = await sha256Hex(String(code).trim());
@@ -44,9 +48,7 @@ Deno.serve(async (req) => {
     }
 
     if (!row || row.code_hash !== codeHash || new Date(row.expires_at) < new Date()) {
-      return new Response(JSON.stringify({ error: "Código inválido ou expirado" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: false, code: "invalid_code", error: "Código inválido ou expirado" });
     }
 
     // Resolve user via SQL helper (avoids listUsers pagination limits)
@@ -56,27 +58,40 @@ Deno.serve(async (req) => {
       throw lookupErr;
     }
     if (!userId) {
-      return new Response(JSON.stringify({ error: "Usuário não encontrado" }), {
-        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: false, code: "user_not_found", error: "Usuário não encontrado" });
     }
 
     const { error: updErr } = await supabase.auth.admin.updateUserById(userId as string, { password: newPassword });
     if (updErr) {
       console.error("updateUserById error", updErr);
+
+      const authCode = (updErr as { code?: string }).code;
+      const reasons = (updErr as { reasons?: string[] }).reasons || [];
+      if (authCode === "weak_password" || reasons.includes("pwned")) {
+        return json({
+          ok: false,
+          code: "weak_password",
+          error: "Essa senha é muito fraca ou já apareceu em vazamentos. Escolha uma senha mais forte e diferente.",
+        });
+      }
+
+      if (authCode === "same_password") {
+        return json({
+          ok: false,
+          code: "same_password",
+          error: "A nova senha precisa ser diferente da senha atual.",
+        });
+      }
+
       throw updErr;
     }
 
     // Only NOW mark the code as used — never invalidated before a successful password change
     await supabase.from("password_reset_codes").update({ used: true }).eq("id", row.id);
 
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ ok: true });
   } catch (e) {
     console.error("reset-password-with-code failed", e);
-    return new Response(JSON.stringify({ error: (e as Error).message || "Erro interno" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ ok: false, code: "internal_error", error: "Não foi possível alterar a senha agora. Tente novamente em instantes." }, 500);
   }
 });
