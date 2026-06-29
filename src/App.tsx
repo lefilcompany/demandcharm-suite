@@ -123,7 +123,7 @@ const App = () => (
                             <CommandMenu />
                             <PWAInstallPrompt />
                             <CreateDemandGlobal />
-                            <Suspense fallback={<div className="flex min-h-0 flex-1 items-center justify-center" />}>
+                            <Suspense fallback={<div className="flex min-h-0 flex-1 bg-sidebar" />}>
                             <Routes>
                               <Route path="/auth" element={<Auth />} />
                               <Route path="/get-started" element={<GetStarted />} />
