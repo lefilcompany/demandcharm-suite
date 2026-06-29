@@ -20,7 +20,6 @@ import { SwipeNavigationProvider } from "@/components/SwipeNavigationProvider";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { UpdateModal } from "@/components/UpdateModal";
 import { lazy, Suspense, useEffect } from "react";
-import { ContentLoader } from "@/components/ContentLoader";
 
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -124,7 +123,7 @@ const App = () => (
                             <CommandMenu />
                             <PWAInstallPrompt />
                             <CreateDemandGlobal />
-                            <Suspense fallback={<ContentLoader />}>
+                            <Suspense fallback={<div className="flex min-h-0 flex-1 items-center justify-center" />}>
                             <Routes>
                               <Route path="/auth" element={<Auth />} />
                               <Route path="/get-started" element={<GetStarted />} />
