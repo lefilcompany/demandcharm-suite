@@ -195,7 +195,7 @@ const App = () => (
           </div>
         </BrowserRouter>
       </TooltipProvider>
-    </PersistQueryClientProvider>
+    </QueryClientProvider>
   </ThemeProvider>
   </HelmetProvider>
 );
