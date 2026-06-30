@@ -46,6 +46,8 @@ import {
 import { useTranslation } from "react-i18next";
 import logoSomaIcon from "@/assets/logo-soma-logout.png";
 import { NotificationToastStack } from "@/components/NotificationToastStack";
+import { TopLoadingBar } from "@/components/TopLoadingBar";
+
 
 export function ProtectedLayout() {
   const { user, signOut } = useAuth();
