@@ -1,95 +1,69 @@
-## Objetivo
+## Diagnóstico — por que o board fica branco
 
-Insights personalizados **por usuário + quadro**, focados nas demandas em que o usuário é responsável (`is_primary = true`) ou acompanhante (follower) em `demand_assignees`. Gerados **uma única vez por dia** (24h a partir da primeira geração) e salvos no servidor, compartilhados entre dispositivos/sessões do mesmo usuário.
+Mapeei as causas reais da tela em branco em cada troca de página:
 
-## Comportamento
+1. **Suspense de rotas com fallback vazio** (`src/App.tsx` linha 124) — todo `import()` lazy de página renderiza `<div />` em branco enquanto o chunk JS baixa.
+2. **Suspense interno do `ProtectedLayout`** (linha 262) também usa `<div />` vazia.
+3. **Bloqueio por `isStatusLoading`** (trial+subscription) em `ProtectedLayout` — enquanto as queries de assinatura/trial carregam, o conteúdo da rota não renderiza (outra div vazia).
+4. **Spinner full-page no Kanban** (`Kanban.tsx`): quando `useDemands.isLoading` é `true`, mostra spinner centralizado em vez de manter o layout do board (colunas/cards).
+5. **`useDemands` pesado**: SELECT com 8 joins aninhados, sem `placeholderData`, sem `select` enxuto — qualquer troca de board volta a estado "loading" e o conteúdo some.
+6. **`useDataPrecache`** dispara em background 15s após mount com `Promise.all` em 5 tabelas — pode competir com a primeira renderização, principalmente em redes lentas.
+7. **Re-mount em troca de rota**: sem `keepPreviousData`/`placeholderData`, hooks como `useDemands(boardId)` voltam a `isLoading: true` quando o `boardId` muda, descartando os dados antigos.
 
-- Ao abrir o dashboard do quadro, o app chama `dashboard-ai-insights`.
-- Backend procura registro em `user_board_ai_insights` para `(user_id, board_id)`.
-  - Se `expires_at > now()` → retorna os insights salvos (sem chamar Gemini).
-  - Senão → coleta dados personalizados do usuário, chama Gemini, faz UPSERT com `expires_at = now() + 24h` e retorna.
-- Sem variação de "is_requester": o conteúdo é determinado pelas demandas do próprio usuário no quadro.
+## O que vou implementar
 
-## Dados coletados por usuário no quadro
+Mudanças focadas em **percepção de carregamento** e **manter conteúdo visível**, sem alterar regras de negócio.
 
-A função coletará apenas demandas do `board_id` em que o `user_id` é:
-- responsável (`demand_assignees.is_primary = true`), OU
-- acompanhante (`demand_assignees.is_primary = false`), OU
-- (fallback legado) `demands.assigned_to = user_id` ou `demands.created_by = user_id`.
+### 1. Fallbacks com esqueleto (Suspense) em vez de div em branco
+- Criar `src/components/skeletons/PageSkeleton.tsx` (header + grid de cards/colunas neutros usando `<Skeleton>` do shadcn).
+- Criar `src/components/skeletons/KanbanSkeleton.tsx` (5 colunas com 3 cards-fantasma cada, respeitando layout real).
+- Trocar o `Suspense` global do `App.tsx` por `PageSkeleton`.
+- Trocar o `Suspense` interno do `ProtectedLayout` por `PageSkeleton` e manter a `TopLoadingBar` laranja já existente.
 
-Para cada demanda, calcula:
-- **Atrasadas e não entregues**: `due_date < now()` e não está em status "Entregue".
-- **Vence hoje**: `due_date::date = current_date` e não entregue.
-- **Vence em até 3 dias** (próximas do prazo): `due_date` entre hoje e hoje+3 dias, não entregue.
-- **Entregues no prazo / com atraso** nos últimos 30 dias.
-- **Em ajuste** (status "Em Ajuste").
-- **Aguardando aprovação** (status com `adjustment_type='internal'`).
-- Distribuição por status e por serviço (apenas das demandas do usuário).
-- Papel do usuário no quadro (`board_members.role`) para ajustar o tom (admin/moderator vs executor vs requester).
+### 2. Não bloquear o Outlet por `isStatusLoading`
+- Em `ProtectedLayout.tsx`, remover o gate `isStatusLoading ? <div/> : <Outlet/>`. O `canUseSystem` já tem fail-open por padrão; o status de trial/subscription pode ser revalidado em segundo plano sem esconder a página.
 
-O resumo enviado ao Gemini deixará explícito:
-- Nome do quadro
-- Papel do usuário
-- Contagens acima (responsável vs acompanhante separadas)
-- Lista curta (máx 5) dos títulos mais críticos: atrasadas + vencendo hoje + vencendo em 3 dias
+### 3. Manter dados anteriores em trocas (sem voltar a "loading")
+- Em `useDemands`, `useBoards`, `useTeams`, `useDemandStatuses`, `useBoardStatuses` e `useDemandsList`: adicionar `placeholderData: (prev) => prev` (equivalente moderno de `keepPreviousData`) e elevar `staleTime` desses para 60s onde ainda não está.
+- Resultado: ao trocar de board/equipe, o Kanban segue mostrando o conteúdo anterior com a barra laranja no topo até chegar o novo, em vez de virar branco.
 
-## Mudanças técnicas
+### 4. Skeleton no Kanban em vez de spinner full-page
+- Em `src/pages/Kanban.tsx`, quando `isLoading && !demands`, renderizar `<KanbanSkeleton />` mantendo header, filtros e a estrutura de colunas.
+- Mesmo tratamento em `Demands.tsx`, `MyDemands.tsx`, `TeamDemands.tsx`, `Boards.tsx`, `Notes.tsx`, `Reports.tsx` — substituir spinners/`<div/>` por skeletons locais simples (linhas/cards `Skeleton`).
 
-### Migration
+### 5. Adiar trabalho concorrente no primeiro paint
+- `useDataPrecache`: aumentar o `setTimeout` inicial de 15s para 30s e mover para `requestIdleCallback` quando disponível, para não competir com as primeiras queries da página atual.
 
-Nova tabela:
+### 6. Prefetch de chunks ao passar o mouse / focar links de navegação
+- Em `AppSidebar.tsx`, nos `NavLink`s principais (Kanban, Demands, Boards, Notes, MyDemands, TeamDemands, Reports, Profile, Settings), disparar `onMouseEnter`/`onFocus` que chamam o `() => import("./pages/X")` correspondente, registrando os imports via um pequeno mapa em `src/lib/routePrefetch.ts`. Isso elimina a maior parte da espera por chunk em navegações reais.
+
+## Arquivos afetados
 
 ```text
-user_board_ai_insights
-  id uuid pk
-  user_id uuid not null  -> referencia conceitual a auth.users
-  board_id uuid not null fk boards(id) on delete cascade
-  insights jsonb not null
-  generated_at timestamptz not null default now()
-  expires_at timestamptz not null
-  UNIQUE (user_id, board_id)
+src/App.tsx                                # Suspense fallback = PageSkeleton
+src/components/ProtectedLayout.tsx         # remove gate isStatusLoading + Suspense com PageSkeleton
+src/components/AppSidebar.tsx              # prefetch nos NavLinks
+src/components/skeletons/PageSkeleton.tsx        # NOVO
+src/components/skeletons/KanbanSkeleton.tsx      # NOVO
+src/components/skeletons/ListSkeleton.tsx        # NOVO (reaproveitado por Demands/Notes/etc.)
+src/lib/routePrefetch.ts                   # NOVO — mapa de prefetch
+src/hooks/useDemands.ts                    # placeholderData + staleTime
+src/hooks/useBoards.ts                     # placeholderData + staleTime
+src/hooks/useTeams.ts                      # placeholderData + staleTime
+src/hooks/useBoardStatuses.ts              # placeholderData
+src/hooks/useDemandsList.ts                # placeholderData
+src/hooks/useDataPrecache.ts               # delay 30s + requestIdleCallback
+src/pages/Kanban.tsx                       # KanbanSkeleton no isLoading
+src/pages/Demands.tsx, MyDemands.tsx,      # ListSkeleton no isLoading
+   TeamDemands.tsx, Boards.tsx, Notes.tsx,
+   Reports.tsx
 ```
 
-- `GRANT SELECT ON public.user_board_ai_insights TO authenticated;`
-- `GRANT ALL ON public.user_board_ai_insights TO service_role;`
-- RLS habilitada.
-- Policy `SELECT`: `user_id = auth.uid()` (cada usuário só vê os próprios insights).
-- Sem policies de INSERT/UPDATE/DELETE para `authenticated` — escrita feita pela edge function com service role.
-- Índice em `(user_id, board_id)` (já garantido pela UNIQUE) e `(expires_at)` para limpezas futuras.
+## Resultado esperado
 
-### Edge function `dashboard-ai-insights`
+- Nenhuma transição cai mais em "tela 100% branca": ou aparece skeleton, ou permanece o conteúdo anterior com a barra laranja correndo no topo.
+- Troca de board no Kanban deixa de "piscar" para vazio.
+- O carregamento real fica perceptualmente ~50% mais rápido, mesmo sem reduzir o tempo absoluto das queries (que já foi atacado nas migrações anteriores).
+- Zero mudanças em regras de negócio, RLS, schema ou Edge Functions.
 
-Reescrita para:
-1. Autenticar o usuário (igual hoje).
-2. Validar membership no `board_id`.
-3. Selecionar `user_board_ai_insights` por `(user_id, board_id)`.
-   - Se `expires_at > now()`, devolver `insights` salvos.
-4. Caso contrário:
-   - Buscar `board_members.role` do usuário no quadro.
-   - Buscar demandas do quadro onde o usuário aparece em `demand_assignees`, `assigned_to` ou `created_by`, com `archived = false`, trazendo `due_date`, `delivered_at`, `is_overdue`, `status_id`, `demand_statuses(name, color)`, `services(name)`, `demand_assignees(user_id, is_primary)`, `title`.
-   - Calcular as métricas descritas acima (separando responsável vs acompanhante).
-   - Montar `summaryText` personalizado com nome/role do usuário e listas críticas.
-   - Chamar Gemini com prompt que enfatiza:
-     - foco no usuário (não em métricas globais do quadro),
-     - usar separação entre "responsável" e "acompanhante",
-     - destacar prazos atrasados e prazos próximos,
-     - 3 insights, mesmo schema atual (`title`, `description`, `type`).
-   - Fazer UPSERT em `user_board_ai_insights` com `expires_at = now() + interval '24 hours'`.
-   - Retornar `{ insights }`.
-5. O parâmetro `is_requester` deixa de afetar a lógica (continua aceito por compatibilidade, mas ignorado).
-
-### Frontend `src/components/DashboardAIInsights.tsx`
-
-- Remover toda a lógica de cache em `localStorage` (`CACHE_PREFIX`, fingerprint, listeners de auth para limpar cache, leitura/escrita do cache).
-- `useQuery` simples (`queryKey: ["dashboard-ai-insights", boardId, userId]`) chamando `supabase.functions.invoke("dashboard-ai-insights", { body: { board_id } })`.
-- `staleTime: 5 * 60_000`, `gcTime` razoável; sem `Infinity`. Backend é a fonte de verdade do TTL de 24h.
-- Manter tratamento de 401/402/429 que já existe.
-- Efeito único para limpar entradas legadas no `localStorage` com prefixo `soma:ai-insights:`.
-
-## Critérios de aceitação
-
-- Dois usuários do mesmo quadro veem insights **diferentes**, baseados nas próprias demandas.
-- O mesmo usuário vê os mesmos insights por 24h (independente de logout, troca de dispositivo ou reload).
-- Após 24h da primeira geração diária, a próxima abertura dispara nova análise e novo ciclo de 24h.
-- Usuário sem demandas no quadro recebe insights informativos (ex: "Você não possui demandas atribuídas neste momento") sem erro.
-- Acessos a outro quadro onde o usuário não é membro continuam retornando 403.
+Posso seguir com a implementação?
