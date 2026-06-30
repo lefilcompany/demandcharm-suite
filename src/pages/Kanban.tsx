@@ -4,6 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "react-i18next";
 import { KanbanBoard } from "@/components/KanbanBoard";
+import { KanbanSkeleton } from "@/components/skeletons/KanbanSkeleton";
 import { KanbanNotifications } from "@/components/KanbanNotifications";
 import { KanbanFilters, KanbanFiltersState } from "@/components/KanbanFilters";
 import { KanbanStagesManager } from "@/components/KanbanStagesManager";
@@ -259,11 +260,8 @@ export default function Kanban() {
               {t("common.noResults")}
             </p>
           </div>
-        ) : isLoading ? (
-          <div className="text-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-            <p className="text-muted-foreground mt-4">{t("common.loading")}</p>
-          </div>
+        ) : isLoading && (!demands || demands.length === 0) ? (
+          <KanbanSkeleton columns={kanbanColumns?.length || 5} />
         ) : (
           <KanbanBoard 
             demands={filteredDemands} 

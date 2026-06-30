@@ -153,6 +153,8 @@ export function useBoardStatuses(boardId: string | null) {
       })) as BoardStatus[];
     },
     enabled: !!boardId,
+    placeholderData: (prev: any) => prev,
+    staleTime: 60 * 1000,
   });
 
   // Subscribe to realtime updates
