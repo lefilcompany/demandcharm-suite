@@ -128,6 +128,11 @@ export default {
             boxShadow: "0 0 20px 5px var(--badge-color, hsl(var(--primary) / 0))" 
           },
         },
+        "top-loading-bar": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
+
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -138,6 +143,8 @@ export default {
         "badge-unlock": "badge-unlock 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
         "badge-shine": "badge-shine 2s ease-in-out infinite",
         "badge-pulse": "badge-pulse 2s ease-in-out infinite",
+        "top-loading-bar": "top-loading-bar 1.2s ease-in-out infinite",
+
       },
       boxShadow: {
         'sm': 'var(--shadow-sm)',
