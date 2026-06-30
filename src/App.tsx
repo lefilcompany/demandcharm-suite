@@ -94,7 +94,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 3 * 60 * 1000, // 3 minutes — avoid refetching on every nav
-      gcTime: 10 * 60 * 1000,
+      gcTime: 24 * 60 * 60 * 1000, // 24h — keep data in memory for persistence
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       refetchOnReconnect: false,
@@ -103,10 +103,30 @@ const queryClient = new QueryClient({
   },
 });
 
+const persister = typeof window !== "undefined"
+  ? createSyncStoragePersister({
+      storage: window.localStorage,
+      key: "soma-rq-cache-v1",
+      throttleTime: 1000,
+    })
+  : undefined;
+
 const App = () => (
   <HelmetProvider>
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: persister!,
+        maxAge: 24 * 60 * 60 * 1000,
+        buster: "v1",
+        dehydrateOptions: {
+          shouldDehydrateQuery: (q) =>
+            q.state.status === "success" &&
+            !(typeof q.queryKey[0] === "string" && /^(presence|typing|chat|realtime|notifications)/i.test(q.queryKey[0] as string)),
+        },
+      }}
+    >
       <TooltipProvider>
         <BrowserRouter>
           <div className="flex h-[100dvh] flex-col">
