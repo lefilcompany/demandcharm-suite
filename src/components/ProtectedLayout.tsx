@@ -145,8 +145,10 @@ export function ProtectedLayout() {
     <SidebarProvider defaultOpen={defaultSidebarOpen} key={isTablet ? "tablet" : "desktop"}>
       <div className="flex flex-1 min-h-0 w-full bg-sidebar p-2.5 md:p-3 overflow-hidden">
         <AppSidebar />
-        <main className="flex-1 flex flex-col bg-background rounded-xl shadow-xl overflow-hidden min-h-0">
+        <main className="relative flex-1 flex flex-col bg-background rounded-xl shadow-xl overflow-hidden min-h-0">
+          <TopLoadingBar />
           <header className="flex h-10 sm:h-11 shrink-0 items-center justify-between gap-1 sm:gap-2 bg-background px-2 sm:px-3 md:px-5 border-b border-border rounded-t-xl overflow-visible">
+
             <div className="flex items-center gap-1.5 md:gap-3 min-w-0">
               <img
                 src={logoSomaBlack}
