@@ -11,8 +11,8 @@ import {
 } from "@/lib/offlineStorage";
 import { useSyncManager } from "@/hooks/useSyncManager";
 
-const CACHE_REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
-const MIN_PRECACHE_INTERVAL = 10 * 60 * 1000; // 10 minutes minimum between runs
+const CACHE_REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
+const MIN_PRECACHE_INTERVAL = 2 * 60 * 1000; // 2 minutes minimum between runs
 
 export function useDataPrecache() {
   const { user } = useAuth();
@@ -26,10 +26,10 @@ export function useDataPrecache() {
 
   const precacheUserData = useCallback(async () => {
     if (!user || !navigator.onLine) return;
-    
+
     // Hard lock: only one execution at a time
     if (isRunningRef.current) return;
-    
+
     // Enforce minimum interval between runs
     const now = Date.now();
     if (now - lastRunRef.current < MIN_PRECACHE_INTERVAL) return;
@@ -48,6 +48,7 @@ export function useDataPrecache() {
         boardsResult,
         demandsResult,
         servicesResult,
+        profilesResult,
       ] = await Promise.all([
         supabase.from('demand_statuses').select('*'),
         supabase.from('teams').select('*'),
@@ -63,8 +64,9 @@ export function useDataPrecache() {
           `)
           .eq('archived', false)
           .order('updated_at', { ascending: false })
-          .limit(200),
+          .limit(500),
         supabase.from('services').select('*'),
+        supabase.from('profiles').select('id, full_name, avatar_url, email'),
       ]);
 
       const savePromises: Promise<void>[] = [];
@@ -73,6 +75,7 @@ export function useDataPrecache() {
       if (boardsResult.data) savePromises.push(saveBoards(boardsResult.data));
       if (demandsResult.data) savePromises.push(saveDemands(demandsResult.data));
       if (servicesResult.data) savePromises.push(saveServices(servicesResult.data));
+      if (profilesResult.data) savePromises.push(saveProfiles(profilesResult.data));
 
       await Promise.all(savePromises);
 
@@ -98,25 +101,16 @@ export function useDataPrecache() {
     }, 500);
   }, [precacheUserData]);
 
-  // Initial precache on mount (once) — defer heavily so it doesn't compete
-  // with the user's first page render/queries. Prefer requestIdleCallback.
+  // Initial precache on mount (once)
   useEffect(() => {
-    if (!user) return;
-    const ric = (window as any).requestIdleCallback as
-      | ((cb: () => void, opts?: { timeout: number }) => number)
-      | undefined;
-    if (typeof ric === "function") {
-      const handle = ric(() => precacheUserData(), { timeout: 60000 });
-      return () => {
-        const cic = (window as any).cancelIdleCallback as ((h: number) => void) | undefined;
-        if (typeof cic === "function") cic(handle);
-      };
+    if (user) {
+      // Small delay to avoid competing with auth/initial queries
+      const timer = setTimeout(() => precacheUserData(), 5000);
+      return () => clearTimeout(timer);
     }
-    const timer = setTimeout(() => precacheUserData(), 30000);
-    return () => clearTimeout(timer);
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Periodic refresh (every 5 minutes)
+  // Periodic refresh
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(() => {
@@ -131,7 +125,6 @@ export function useDataPrecache() {
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
   }, [debouncedPrecache]);
-
 
   // Cleanup debounce timer
   useEffect(() => {
