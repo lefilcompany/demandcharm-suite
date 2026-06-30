@@ -1,7 +1,5 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { ThemeProvider } from "next-themes";
@@ -93,40 +91,18 @@ function CreateDemandRoute() {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 3 * 60 * 1000, // 3 minutes — avoid refetching on every nav
-      gcTime: 24 * 60 * 60 * 1000, // 24h — keep data in memory for persistence
+      staleTime: 60 * 1000,
+      gcTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      refetchOnReconnect: false,
-      retry: 1,
+      retry: 2,
     },
   },
 });
 
-const persister = typeof window !== "undefined"
-  ? createSyncStoragePersister({
-      storage: window.localStorage,
-      key: "soma-rq-cache-v1",
-      throttleTime: 1000,
-    })
-  : undefined;
-
 const App = () => (
   <HelmetProvider>
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{
-        persister: persister!,
-        maxAge: 24 * 60 * 60 * 1000,
-        buster: "v1",
-        dehydrateOptions: {
-          shouldDehydrateQuery: (q) =>
-            q.state.status === "success" &&
-            !(typeof q.queryKey[0] === "string" && /^(presence|typing|chat|realtime|notifications)/i.test(q.queryKey[0] as string)),
-        },
-      }}
-    >
+    <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
           <div className="flex h-[100dvh] flex-col">
@@ -145,7 +121,7 @@ const App = () => (
                             <CommandMenu />
                             <PWAInstallPrompt />
                             <CreateDemandGlobal />
-                            <Suspense fallback={<div className="flex min-h-0 flex-1 bg-sidebar" />}>
+                            <Suspense fallback={<div className="flex min-h-0 flex-1 items-center justify-center" />}>
                             <Routes>
                               <Route path="/auth" element={<Auth />} />
                               <Route path="/get-started" element={<GetStarted />} />
@@ -219,7 +195,7 @@ const App = () => (
           </div>
         </BrowserRouter>
       </TooltipProvider>
-    </PersistQueryClientProvider>
+    </QueryClientProvider>
   </ThemeProvider>
   </HelmetProvider>
 );
