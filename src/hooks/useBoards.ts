@@ -56,6 +56,8 @@ export function useBoards(teamId: string | null) {
       return data as Board[];
     },
     enabled: !!user && !!teamId,
+    placeholderData: (prev) => prev,
+    staleTime: 60 * 1000,
   });
 }
 

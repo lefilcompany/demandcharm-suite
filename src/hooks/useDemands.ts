@@ -112,6 +112,8 @@ export function useDemands(boardId?: string) {
       return sortDemandsByPriorityAndDueDate(data || []);
     },
     enabled: !!user && !!boardId,
+    placeholderData: (prev: any) => prev,
+    staleTime: 60 * 1000,
     retry: (failureCount, error) => {
       // Don't retry if offline
       if (!isOnline()) return false;

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { ListSkeleton } from "@/components/skeletons/ListSkeleton";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -363,11 +364,10 @@ export default function TeamDemands() {
   const renderDemandList = (demandList: typeof filteredDemands) => {
     if (isLoading) {
       return (
-        <div className="text-center py-12">
+        <>
           <SEOHead title="Visão Geral - Demandas" path="/team-demands" />
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-          <p className="text-muted-foreground mt-4">{t("common.loading")}</p>
-        </div>
+          <ListSkeleton rows={8} />
+        </>
       );
     }
 

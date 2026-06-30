@@ -98,13 +98,22 @@ export function useDataPrecache() {
     }, 500);
   }, [precacheUserData]);
 
-  // Initial precache on mount (once) — defer so it doesn't compete with the
-  // user's first page render/queries.
+  // Initial precache on mount (once) — defer heavily so it doesn't compete
+  // with the user's first page render/queries. Prefer requestIdleCallback.
   useEffect(() => {
-    if (user) {
-      const timer = setTimeout(() => precacheUserData(), 15000);
-      return () => clearTimeout(timer);
+    if (!user) return;
+    const ric = (window as any).requestIdleCallback as
+      | ((cb: () => void, opts?: { timeout: number }) => number)
+      | undefined;
+    if (typeof ric === "function") {
+      const handle = ric(() => precacheUserData(), { timeout: 60000 });
+      return () => {
+        const cic = (window as any).cancelIdleCallback as ((h: number) => void) | undefined;
+        if (typeof cic === "function") cic(handle);
+      };
     }
+    const timer = setTimeout(() => precacheUserData(), 30000);
+    return () => clearTimeout(timer);
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Periodic refresh (every 5 minutes)

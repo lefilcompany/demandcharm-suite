@@ -22,6 +22,8 @@ export function useTeams() {
       return data;
     },
     enabled: !!user,
+    placeholderData: (prev) => prev,
+    staleTime: 60 * 1000,
   });
 }
 

@@ -24,5 +24,7 @@ export function useDemandsList(boardId: string | null) {
       return (data || []) as DemandListItem[];
     },
     enabled: !!boardId,
+    placeholderData: (prev) => prev,
+    staleTime: 60 * 1000,
   });
 }

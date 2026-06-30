@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { ListSkeleton } from "@/components/skeletons/ListSkeleton";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
 import { DemandFolderStrip } from "@/components/DemandFolderStrip";
@@ -377,10 +378,7 @@ export default function Demands() {
   };
   const renderDemandList = (demandList: typeof filteredDemands) => {
     if (activeIsLoading) {
-      return <div className="text-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-          <p className="text-muted-foreground mt-4">{t("common.loading")}</p>
-        </div>;
+      return <ListSkeleton rows={8} />;
     }
     if (demandList.length === 0 && effectiveViewMode !== "calendar") {
       if (searchQuery) {
