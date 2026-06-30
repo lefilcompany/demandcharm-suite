@@ -334,7 +334,7 @@ export function AppSidebar() {
                               flex items-center transition-all duration-200
                               focus:outline-none focus:ring-2 focus:ring-primary/20
                               ${isCollapsed && !isMobile 
-                                ? `w-10 h-10 justify-center rounded-full border border-sidebar-border/50 hover:border-primary/40 hover:bg-primary/10 ${popoverOpen ? 'bg-primary/15 border-primary/40 ring-2 ring-primary/20' : ''}`
+                                ? `w-8 h-8 mx-auto justify-center rounded-full border border-sidebar-border/50 hover:border-primary/40 hover:bg-primary/10 ${popoverOpen ? 'bg-primary/15 border-primary/40 ring-2 ring-primary/20' : ''}`
                                 : `w-full gap-3 p-2.5 rounded-xl border border-sidebar-border/50 hover:border-primary/30 hover:bg-sidebar-accent/50 ${popoverOpen ? 'bg-sidebar-accent/50 border-primary/30' : ''}`
                               }
                             `}
