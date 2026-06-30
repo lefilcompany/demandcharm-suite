@@ -128,6 +128,11 @@ export default {
             boxShadow: "0 0 20px 5px var(--badge-color, hsl(var(--primary) / 0))" 
           },
         },
+        "top-loading-bar": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
+
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
