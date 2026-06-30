@@ -47,6 +47,7 @@ import { useTranslation } from "react-i18next";
 import logoSomaIcon from "@/assets/logo-soma-logout.png";
 import { NotificationToastStack } from "@/components/NotificationToastStack";
 import { TopLoadingBar } from "@/components/TopLoadingBar";
+import { PageSkeleton } from "@/components/skeletons/PageSkeleton";
 
 
 export function ProtectedLayout() {
@@ -259,12 +260,8 @@ export function ProtectedLayout() {
             </div>
           </header>
           <div className="flex-1 overflow-y-auto min-h-0 p-3 md:p-6">
-            <Suspense fallback={<div className="min-h-full w-full bg-background" />}>
-              {isStatusLoading ? (
-                <div className="min-h-full w-full bg-background" />
-              ) : (
-                <Outlet />
-              )}
+            <Suspense fallback={<PageSkeleton />}>
+              <Outlet />
             </Suspense>
           </div>
 
