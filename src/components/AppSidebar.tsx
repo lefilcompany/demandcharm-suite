@@ -155,7 +155,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" data-tour="sidebar">
-      <SidebarContent className="overflow-y-auto flex flex-col group-data-[collapsible=icon]:pl-2.5 md:group-data-[collapsible=icon]:pl-3">
+      <SidebarContent className="overflow-y-auto flex flex-col">
         <NavLink to="/" onClick={closeMobileSidebar} className={`items-center justify-center flex flex-col hover:opacity-80 transition-opacity cursor-pointer my-4 md:my-6 ${isCollapsed && !isMobile ? 'mx-auto w-full' : 'px-0 py-0 mx-0'}`}>
           {/* Both logos are always mounted to avoid reload flicker when toggling sidebar */}
           <img
@@ -228,7 +228,7 @@ export function AppSidebar() {
                 const hasBadge = (item as any).showDemandRequestBadge || (item as any).showJoinRequestBadge || (item as any).showReturnedBadge;
                 return (
                 <SidebarMenuItem key={item.title} className="relative" data-tour={tourId}>
-                    <SidebarMenuButton asChild tooltip={item.title} size="default" className={`h-auto min-h-8 py-1.5 overflow-visible w-full ${showText ? 'items-start' : 'items-center justify-center'}`}>
+                    <SidebarMenuButton asChild tooltip={item.title} size="default" className={`h-auto min-h-8 py-1.5 overflow-visible w-full ${showText ? 'items-start' : 'mx-auto items-center justify-center'}`}>
                       <NavLink to={item.url} end={(item as any).end ?? !isTeamView} onClick={closeMobileSidebar} className={`flex w-full min-w-0 hover:bg-sidebar-accent transition-colors ${showText ? 'items-start gap-2' : 'items-center justify-center'} ${isBack ? 'text-muted-foreground' : ''}`} activeClassName={isBack ? '' : 'bg-sidebar-accent text-sidebar-primary font-medium'}>
                         <item.icon className={`h-4 w-4 shrink-0 ${showText ? 'mt-0.5' : ''}`} />
                         {showText && <span className={`text-sm flex-1 min-w-0 whitespace-normal break-words leading-snug ${hasBadge ? 'pr-7' : ''}`}>{item.title}</span>}
