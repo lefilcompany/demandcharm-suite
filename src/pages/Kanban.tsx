@@ -260,8 +260,9 @@ export default function Kanban() {
               {t("common.noResults")}
             </p>
           </div>
-        ) : isLoading && (!demands || demands.length === 0) ? (
+        ) : isLoading && !demands ? (
           <KanbanSkeleton columns={kanbanColumns?.length || 5} />
+
         ) : (
           <KanbanBoard 
             demands={filteredDemands} 
