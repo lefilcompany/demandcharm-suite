@@ -155,7 +155,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" data-tour="sidebar">
-      <SidebarContent className="overflow-y-auto flex flex-col">
+      <SidebarContent className="overflow-y-auto flex flex-col group-data-[collapsible=icon]:pl-2.5 md:group-data-[collapsible=icon]:pl-3">
         <NavLink to="/" onClick={closeMobileSidebar} className={`items-center justify-center flex flex-col hover:opacity-80 transition-opacity cursor-pointer my-4 md:my-6 ${isCollapsed && !isMobile ? 'mx-auto w-full' : 'px-0 py-0 mx-0'}`}>
           {/* Both logos are always mounted to avoid reload flicker when toggling sidebar */}
           <img
