@@ -299,7 +299,7 @@ export function AppSidebar() {
                         >
                           <div className={`
                             flex items-center justify-center bg-gradient-to-br from-primary/25 to-primary/10
-                            ${isCollapsed && !isMobile ? 'h-7 w-7 rounded-full' : 'h-8 w-8 rounded-full ring-1 ring-primary/20'}
+                            ${isCollapsed && !isMobile ? 'h-6 w-6 rounded-full' : 'h-8 w-8 rounded-full ring-1 ring-primary/20'}
                           `}>
                             <Users className={`text-primary ${isCollapsed && !isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
                           </div>
