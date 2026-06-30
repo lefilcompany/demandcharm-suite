@@ -292,7 +292,7 @@ export function AppSidebar() {
                           className={`
                             flex items-center transition-all duration-200
                             ${isCollapsed && !isMobile
-                              ? 'w-10 h-10 justify-center rounded-full border border-sidebar-border/50'
+                              ? 'w-8 h-8 mx-auto justify-center rounded-full border border-sidebar-border/50'
                               : 'w-full gap-3 p-2.5 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/30'
                             }
                           `}
