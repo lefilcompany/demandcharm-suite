@@ -12,44 +12,49 @@ export function TopLoadingBar() {
   const navType = useNavigationType();
   const [visible, setVisible] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const minShowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shownAt = useRef<number>(0);
+  const isFetchingRef = useRef(isFetching);
+  isFetchingRef.current = isFetching;
 
-  // Trigger on every route change for a brief flash of progress
+  // Show on every route change for a brief progress flash
   useEffect(() => {
     setVisible(true);
     shownAt.current = Date.now();
-    if (hideTimer.current) clearTimeout(hideTimer.current);
-    // Ensure visible for at least 400ms even on instant transitions
-    if (minShowTimer.current) clearTimeout(minShowTimer.current);
-    minShowTimer.current = setTimeout(() => {
-      if (!useIsFetchingRef.current) setVisible(false);
-    }, 500);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+      hideTimer.current = null;
+    }
+    const t = setTimeout(() => {
+      if (isFetchingRef.current === 0) {
+        setVisible(false);
+        shownAt.current = 0;
+      }
+    }, 600);
+    return () => clearTimeout(t);
   }, [location.pathname, navType]);
 
-  // Keep a ref-like flag in sync (avoid stale closure inside timeout)
-  const useIsFetchingRef = useRef(isFetching);
-  useIsFetchingRef.current = isFetching;
-
+  // Track React Query activity
   useEffect(() => {
     if (isFetching > 0) {
       setVisible(true);
-      shownAt.current = shownAt.current || Date.now();
+      if (!shownAt.current) shownAt.current = Date.now();
       if (hideTimer.current) {
         clearTimeout(hideTimer.current);
         hideTimer.current = null;
       }
     } else if (visible) {
-      const elapsed = Date.now() - shownAt.current;
+      const elapsed = Date.now() - (shownAt.current || Date.now());
       const remaining = Math.max(0, 400 - elapsed);
       hideTimer.current = setTimeout(() => {
         setVisible(false);
         shownAt.current = 0;
-      }, remaining + 200);
+      }, remaining + 150);
     }
     return () => {
-      if (hideTimer.current) clearTimeout(hideTimer.current);
+      if (hideTimer.current) {
+        clearTimeout(hideTimer.current);
+        hideTimer.current = null;
+      }
     };
   }, [isFetching, visible]);
 
