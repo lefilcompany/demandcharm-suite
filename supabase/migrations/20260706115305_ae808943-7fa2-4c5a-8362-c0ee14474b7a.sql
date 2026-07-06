@@ -1,0 +1,1 @@
+ALTER TABLE public.boards DISABLE TRIGGER trg_enforce_board_limit;
