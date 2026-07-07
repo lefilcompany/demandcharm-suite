@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
           <p style="font-size:15px;line-height:1.5;">Use o código abaixo para redefinir sua senha. Ele expira em 60 minutos.</p>
           <div style="margin:24px 0;padding:20px;background:#FFF7EE;border:1px solid #F28705;border-radius:12px;text-align:center;">
             <div style="font-size:34px;font-weight:700;letter-spacing:10px;color:#F28705;font-family:monospace;">
-              ${code.slice(0,3)}-${code.slice(3)}
+              ${code}
             </div>
           </div>
           <p style="font-size:13px;color:#666;">Se você não solicitou, ignore este e-mail.</p>
