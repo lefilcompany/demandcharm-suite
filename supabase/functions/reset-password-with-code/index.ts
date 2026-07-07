@@ -89,6 +89,13 @@ Deno.serve(async (req) => {
     // Only NOW mark the code as used — never invalidated before a successful password change
     await supabase.from("password_reset_codes").update({ used: true }).eq("id", row.id);
 
+    // Clear the legacy "needs password reset" flag, if any
+    try {
+      await supabase.rpc("clear_password_reset_required", { _email: normalized });
+    } catch (e) {
+      console.warn("clear_password_reset_required failed", e);
+    }
+
     return json({ ok: true });
   } catch (e) {
     console.error("reset-password-with-code failed", e);

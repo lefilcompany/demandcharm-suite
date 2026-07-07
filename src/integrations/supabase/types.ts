@@ -1775,6 +1775,7 @@ export type Database = {
           job_title: string | null
           linkedin_url: string | null
           location: string | null
+          needs_password_reset: boolean
           phone: string | null
           profile_visibility: Json
           state: string | null
@@ -1800,6 +1801,7 @@ export type Database = {
           job_title?: string | null
           linkedin_url?: string | null
           location?: string | null
+          needs_password_reset?: boolean
           phone?: string | null
           profile_visibility?: Json
           state?: string | null
@@ -1825,6 +1827,7 @@ export type Database = {
           job_title?: string | null
           linkedin_url?: string | null
           location?: string | null
+          needs_password_reset?: boolean
           phone?: string | null
           profile_visibility?: Json
           state?: string | null
@@ -2810,6 +2813,10 @@ export type Database = {
         Args: { _resource_type: string; _team_id: string }
         Returns: boolean
       }
+      clear_password_reset_required: {
+        Args: { _email: string }
+        Returns: undefined
+      }
       create_approval_notifications: {
         Args: {
           p_demand_id: string
@@ -3058,6 +3065,7 @@ export type Database = {
       }
       join_board_via_share_token: { Args: { p_token: string }; Returns: Json }
       join_team_with_code: { Args: { p_code: string }; Returns: string }
+      password_reset_required: { Args: { _email: string }; Returns: boolean }
       promote_to_admin_by_email: {
         Args: { p_email: string }
         Returns: undefined
