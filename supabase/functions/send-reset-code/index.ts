@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           from: "SoMA+ <no-reply@pla.soma.lefil.com.br>",
           to: [normalized],
-          subject: `Seu código: ${code.slice(0,3)}-${code.slice(3)}`,
+          subject: `Seu código: ${code}`,
           html,
         }),
       });
