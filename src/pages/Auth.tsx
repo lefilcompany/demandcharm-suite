@@ -271,6 +271,26 @@ export default function Auth() {
       const { data, error } = await supabase.rpc("email_exists", { _email: email });
       if (error) throw error;
       if (data === true) {
+        // Check if this is a legacy user that must reset the password before logging in
+        try {
+          const { data: mustReset } = await supabase.rpc("password_reset_required", { _email: email });
+          if (mustReset === true) {
+            setResetEmail(email);
+            setResetDialogOpen(true);
+            toast.info("Atualização de segurança", {
+              description: "Por segurança, redefina sua senha para continuar. Enviamos um código para o seu e-mail.",
+            });
+            // Auto-send the reset code
+            try {
+              await supabase.functions.invoke("send-reset-code", { body: { email } });
+              setResetCooldown(60);
+              setResetStep("code");
+            } catch (_) {
+              setResetStep("email");
+            }
+            return;
+          }
+        } catch (_) { /* fail-open to normal login */ }
         // Email cadastrado → seguir para a tela de senha (fluxo normal de login)
         setLoginStep("password");
       } else {
