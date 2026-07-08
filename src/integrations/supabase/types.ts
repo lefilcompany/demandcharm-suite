@@ -863,6 +863,45 @@ export type Database = {
           },
         ]
       }
+      demand_request_submit_blocks: {
+        Row: {
+          board_id: string | null
+          created_at: string
+          draft_snapshot: Json | null
+          failed_validations: string[]
+          form_id: string
+          id: string
+          path: string | null
+          team_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          board_id?: string | null
+          created_at?: string
+          draft_snapshot?: Json | null
+          failed_validations?: string[]
+          form_id: string
+          id?: string
+          path?: string | null
+          team_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          board_id?: string | null
+          created_at?: string
+          draft_snapshot?: Json | null
+          failed_validations?: string[]
+          form_id?: string
+          id?: string
+          path?: string | null
+          team_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       demand_requests: {
         Row: {
           board_id: string | null
