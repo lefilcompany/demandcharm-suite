@@ -81,23 +81,27 @@ export function CreateRequestQuickDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim()) {
-      toast.error("O título é obrigatório");
-      return;
-    }
+    const failed: string[] = [];
+    if (!title.trim()) failed.push("title_empty");
+    if (!description.trim()) failed.push("description_empty");
+    if (!serviceId || serviceId === "none") failed.push("service_missing");
+    if (!selectedBoardId) failed.push("board_missing");
+    if (!currentTeamId) failed.push("team_missing");
 
-    if (!description.trim()) {
-      toast.error("A descrição é obrigatória");
-      return;
-    }
+    if (failed.length > 0) {
+      void logBlockedSubmit({
+        formId: `quick-request-${selectedBoardId || "default"}`,
+        boardId: selectedBoardId,
+        teamId: currentTeamId,
+        failedValidations: failed,
+        draftSnapshot: { title, description, priority, serviceId },
+      });
 
-    if (!serviceId || serviceId === "none") {
-      toast.error("Selecione um serviço");
-      return;
-    }
-
-    if (!selectedBoardId || !currentTeamId) {
-      toast.error("Selecione um quadro primeiro");
+      if (failed.includes("title_empty")) toast.error("O título é obrigatório");
+      else if (failed.includes("description_empty")) toast.error("A descrição é obrigatória");
+      else if (failed.includes("service_missing")) toast.error("Selecione um serviço");
+      else if (failed.includes("board_missing") || failed.includes("team_missing"))
+        toast.error("Selecione um quadro primeiro");
       return;
     }
 
