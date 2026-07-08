@@ -1,7 +1,7 @@
 // Pure helpers for process-recurring-demands.
 // Kept free of I/O so they can be unit-tested in isolation.
 
-export const VALID_FREQUENCIES = ["daily", "weekly", "biweekly", "monthly"] as const;
+export const VALID_FREQUENCIES = ["daily", "weekly", "biweekly", "monthly", "yearly"] as const;
 export type Frequency = (typeof VALID_FREQUENCIES)[number];
 
 export function isValidFrequency(value: unknown): value is Frequency {
