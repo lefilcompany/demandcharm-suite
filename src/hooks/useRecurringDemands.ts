@@ -242,6 +242,17 @@ export function calculateNextRunDate(
     return formatDate(adjustToBusinessDay(nextMonth));
   }
 
+  if (frequency === "yearly") {
+    // Next run: same month/day as start_date, next year (or this year if still ahead)
+    const anchorMonth = start.getMonth();
+    const anchorDay = Math.min(start.getDate(), 28);
+    let candidate = new Date(today.getFullYear(), anchorMonth, anchorDay);
+    if (candidate <= today) {
+      candidate = new Date(today.getFullYear() + 1, anchorMonth, anchorDay);
+    }
+    return formatDate(adjustToBusinessDay(candidate));
+  }
+
   // Fallback
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
