@@ -1008,6 +1008,9 @@ export default function Auth() {
                         </InputOTPGroup>
                       </InputOTP>
                     </div>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Não recebeu? Verifique também a pasta de <span className="font-medium text-foreground">spam</span> ou lixo eletrônico.
+                    </p>
                     <div className="flex items-center justify-between">
                       <Button
                         type="button"
