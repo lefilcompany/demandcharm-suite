@@ -1011,16 +1011,41 @@ export default function Auth() {
                     <p className="text-xs text-muted-foreground text-center">
                       Não recebeu? Verifique também a pasta de <span className="font-medium text-foreground">spam</span> ou lixo eletrônico.
                     </p>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="p-0 h-auto text-xs"
+                        disabled={isResetLoading}
+                        onClick={() => { setResetCode(""); setResetStep("email"); }}
+                      >
+                        <ArrowLeft className="h-3 w-3 mr-1" />
+                        Trocar e-mail
+                      </Button>
                       <Button
                         type="button"
                         variant="link"
                         className="p-0 h-auto text-xs"
                         disabled={isResetLoading || resetCooldown > 0}
-                        onClick={() => { setResetCode(""); setResetStep("email"); }}
+                        onClick={async () => {
+                          const email = resetEmail.trim();
+                          if (!email || resetCooldown > 0) return;
+                          setIsResetLoading(true);
+                          try {
+                            const { error } = await supabase.functions.invoke("send-reset-code", { body: { email } });
+                            if (error) throw error;
+                            setResetCooldown(60);
+                            toast.success("Código reenviado!", {
+                              description: "Verifique seu e-mail (inclusive a pasta de spam).",
+                            });
+                          } catch (error: any) {
+                            toast.error("Erro ao reenviar código", { description: getErrorMessage(error) });
+                          } finally {
+                            setIsResetLoading(false);
+                          }
+                        }}
                       >
-                        <ArrowLeft className="h-3 w-3 mr-1" />
-                        Trocar e-mail / reenviar
+                        {resetCooldown > 0 ? `Reenviar código em ${resetCooldown}s` : "Reenviar código"}
                       </Button>
                     </div>
                     <div className="flex gap-2 justify-end">
