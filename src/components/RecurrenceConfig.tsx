@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 export interface RecurrenceData {
   enabled: boolean;
-  frequency: "daily" | "weekly" | "biweekly" | "monthly";
+  frequency: "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
   weekdays: number[];
   dayOfMonth: number | null;
   startDate: string;
@@ -118,6 +118,8 @@ export function RecurrenceConfig({ value, onChange, compact = false }: Recurrenc
                   {value.frequency === "weekly" && "Semanal"}
                   {value.frequency === "biweekly" && "Quinzenal"}
                   {value.frequency === "monthly" && `Mensal (dia ${value.dayOfMonth || 1})`}
+                  {value.frequency === "yearly" && startDate && `Anual (${format(startDate, "dd/MM", { locale: ptBR })})`}
+                  {value.frequency === "yearly" && !startDate && "Anual"}
                 </span>
                 {startDate && (
                   <span className="text-muted-foreground">
@@ -135,12 +137,13 @@ export function RecurrenceConfig({ value, onChange, compact = false }: Recurrenc
                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Frequência
                 </Label>
-                <div className="grid grid-cols-4 gap-1.5 p-1 bg-muted/50 rounded-lg">
+                <div className="grid grid-cols-5 gap-1.5 p-1 bg-muted/50 rounded-lg">
                   {[
                     { value: "daily" as const, label: "Diária" },
                     { value: "weekly" as const, label: "Semanal" },
                     { value: "biweekly" as const, label: "Quinz." },
                     { value: "monthly" as const, label: "Mensal" },
+                    { value: "yearly" as const, label: "Anual" },
                   ].map((opt) => (
                     <button
                       key={opt.value}
@@ -363,6 +366,10 @@ export function RecurrenceConfig({ value, onChange, compact = false }: Recurrenc
                       : "Selecione pelo menos um dia.")}
                   {value.frequency === "monthly" &&
                     `Todo dia ${value.dayOfMonth || 1} de cada mês.`}
+                  {value.frequency === "yearly" &&
+                    (startDate
+                      ? `Uma vez por ano, em ${format(startDate, "dd 'de' MMMM", { locale: ptBR })}.`
+                      : "Selecione a data de início para definir o dia/mês anual.")}
                 </p>
               </div>
             </div>

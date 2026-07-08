@@ -11,7 +11,7 @@ export interface RecurringDemandInput {
   status_id: string;
   service_id?: string | null;
   assignee_ids?: string[];
-  frequency: "daily" | "weekly" | "biweekly" | "monthly";
+  frequency: "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
   weekdays?: number[];
   day_of_month?: number | null;
   start_date: string;
@@ -91,7 +91,7 @@ export interface RecurringDemandUpdate {
   title?: string;
   description?: string | null;
   priority?: string;
-  frequency?: "daily" | "weekly" | "biweekly" | "monthly";
+  frequency?: "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
   weekdays?: number[];
   day_of_month?: number | null;
   start_date?: string;
@@ -240,6 +240,17 @@ export function calculateNextRunDate(
     const day = dayOfMonth || start.getDate();
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, Math.min(day, 28));
     return formatDate(adjustToBusinessDay(nextMonth));
+  }
+
+  if (frequency === "yearly") {
+    // Next run: same month/day as start_date, next year (or this year if still ahead)
+    const anchorMonth = start.getMonth();
+    const anchorDay = Math.min(start.getDate(), 28);
+    let candidate = new Date(today.getFullYear(), anchorMonth, anchorDay);
+    if (candidate <= today) {
+      candidate = new Date(today.getFullYear() + 1, anchorMonth, anchorDay);
+    }
+    return formatDate(adjustToBusinessDay(candidate));
   }
 
   // Fallback

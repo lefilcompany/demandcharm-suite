@@ -1,7 +1,7 @@
 // Pure helpers for process-recurring-demands.
 // Kept free of I/O so they can be unit-tested in isolation.
 
-export const VALID_FREQUENCIES = ["daily", "weekly", "biweekly", "monthly"] as const;
+export const VALID_FREQUENCIES = ["daily", "weekly", "biweekly", "monthly", "yearly"] as const;
 export type Frequency = (typeof VALID_FREQUENCIES)[number];
 
 export function isValidFrequency(value: unknown): value is Frequency {
@@ -128,6 +128,18 @@ export function calculateNextRunDate(
     current.setUTCMonth(current.getUTCMonth() + 1);
     const maxDay = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 0)).getUTCDate();
     current.setUTCDate(Math.min(day, maxDay));
+    return formatDate(adjustToBusinessDay(current));
+  }
+
+  if (frequency === "yearly") {
+    // Advance exactly one year, preserving month/day (clamped to month length).
+    const anchorMonth = current.getUTCMonth();
+    const anchorDay = current.getUTCDate();
+    current.setUTCDate(1);
+    current.setUTCFullYear(current.getUTCFullYear() + 1);
+    current.setUTCMonth(anchorMonth);
+    const maxDay = new Date(Date.UTC(current.getUTCFullYear(), anchorMonth + 1, 0)).getUTCDate();
+    current.setUTCDate(Math.min(anchorDay, maxDay));
     return formatDate(adjustToBusinessDay(current));
   }
 
