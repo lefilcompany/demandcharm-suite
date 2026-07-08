@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 export interface RecurrenceData {
   enabled: boolean;
-  frequency: "daily" | "weekly" | "biweekly" | "monthly";
+  frequency: "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
   weekdays: number[];
   dayOfMonth: number | null;
   startDate: string;
