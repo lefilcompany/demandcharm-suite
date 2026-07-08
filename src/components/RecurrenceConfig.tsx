@@ -118,6 +118,8 @@ export function RecurrenceConfig({ value, onChange, compact = false }: Recurrenc
                   {value.frequency === "weekly" && "Semanal"}
                   {value.frequency === "biweekly" && "Quinzenal"}
                   {value.frequency === "monthly" && `Mensal (dia ${value.dayOfMonth || 1})`}
+                  {value.frequency === "yearly" && startDate && `Anual (${format(startDate, "dd/MM", { locale: ptBR })})`}
+                  {value.frequency === "yearly" && !startDate && "Anual"}
                 </span>
                 {startDate && (
                   <span className="text-muted-foreground">
