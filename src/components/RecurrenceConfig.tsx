@@ -366,6 +366,10 @@ export function RecurrenceConfig({ value, onChange, compact = false }: Recurrenc
                       : "Selecione pelo menos um dia.")}
                   {value.frequency === "monthly" &&
                     `Todo dia ${value.dayOfMonth || 1} de cada mês.`}
+                  {value.frequency === "yearly" &&
+                    (startDate
+                      ? `Uma vez por ano, em ${format(startDate, "dd 'de' MMMM", { locale: ptBR })}.`
+                      : "Selecione a data de início para definir o dia/mês anual.")}
                 </p>
               </div>
             </div>
