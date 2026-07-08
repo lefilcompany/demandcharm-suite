@@ -11,7 +11,7 @@ export interface RecurringDemandInput {
   status_id: string;
   service_id?: string | null;
   assignee_ids?: string[];
-  frequency: "daily" | "weekly" | "biweekly" | "monthly";
+  frequency: "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
   weekdays?: number[];
   day_of_month?: number | null;
   start_date: string;
@@ -91,7 +91,7 @@ export interface RecurringDemandUpdate {
   title?: string;
   description?: string | null;
   priority?: string;
-  frequency?: "daily" | "weekly" | "biweekly" | "monthly";
+  frequency?: "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
   weekdays?: number[];
   day_of_month?: number | null;
   start_date?: string;
