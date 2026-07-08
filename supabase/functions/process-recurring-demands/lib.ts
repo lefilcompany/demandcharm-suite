@@ -131,6 +131,18 @@ export function calculateNextRunDate(
     return formatDate(adjustToBusinessDay(current));
   }
 
+  if (frequency === "yearly") {
+    // Advance exactly one year, preserving month/day (clamped to month length).
+    const anchorMonth = current.getUTCMonth();
+    const anchorDay = current.getUTCDate();
+    current.setUTCDate(1);
+    current.setUTCFullYear(current.getUTCFullYear() + 1);
+    current.setUTCMonth(anchorMonth);
+    const maxDay = new Date(Date.UTC(current.getUTCFullYear(), anchorMonth + 1, 0)).getUTCDate();
+    current.setUTCDate(Math.min(anchorDay, maxDay));
+    return formatDate(adjustToBusinessDay(current));
+  }
+
   // Fallback
   current.setUTCDate(current.getUTCDate() + 1);
   return formatDate(adjustToBusinessDay(current));
