@@ -137,11 +137,11 @@ export function RecurrenceConfig({ value, onChange, compact = false }: Recurrenc
                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Frequência
                 </Label>
-                <div className="grid grid-cols-5 gap-1.5 p-1 bg-muted/50 rounded-lg">
+                <div className="grid grid-cols-3 gap-2">
                   {[
                     { value: "daily" as const, label: "Diária" },
                     { value: "weekly" as const, label: "Semanal" },
-                    { value: "biweekly" as const, label: "Quinz." },
+                    { value: "biweekly" as const, label: "Quinzenal" },
                     { value: "monthly" as const, label: "Mensal" },
                     { value: "yearly" as const, label: "Anual" },
                   ].map((opt) => (
@@ -150,10 +150,10 @@ export function RecurrenceConfig({ value, onChange, compact = false }: Recurrenc
                       type="button"
                       onClick={() => update({ frequency: opt.value })}
                       className={cn(
-                        "px-2 py-2 text-xs font-medium rounded-md transition-all duration-150 text-center",
+                        "h-9 px-3 text-xs font-medium rounded-lg border transition-all duration-150 text-center",
                         value.frequency === opt.value
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted hover:text-foreground"
                       )}
                     >
                       {opt.label}
