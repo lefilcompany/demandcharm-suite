@@ -25,6 +25,7 @@ import { useCreateDemandRequest } from "@/hooks/useDemandRequests";
 import { useSelectedBoard } from "@/contexts/BoardContext";
 import { useBoardServices } from "@/hooks/useBoardServices";
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { logBlockedSubmit } from "@/lib/submitBlockAudit";
 import { toast } from "sonner";
 import { Calendar, Loader2, Send } from "lucide-react";
 import { getErrorMessage } from "@/lib/errorUtils";
