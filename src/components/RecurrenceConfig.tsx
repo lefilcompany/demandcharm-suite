@@ -137,12 +137,13 @@ export function RecurrenceConfig({ value, onChange, compact = false }: Recurrenc
                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Frequência
                 </Label>
-                <div className="grid grid-cols-4 gap-1.5 p-1 bg-muted/50 rounded-lg">
+                <div className="grid grid-cols-5 gap-1.5 p-1 bg-muted/50 rounded-lg">
                   {[
                     { value: "daily" as const, label: "Diária" },
                     { value: "weekly" as const, label: "Semanal" },
                     { value: "biweekly" as const, label: "Quinz." },
                     { value: "monthly" as const, label: "Mensal" },
+                    { value: "yearly" as const, label: "Anual" },
                   ].map((opt) => (
                     <button
                       key={opt.value}
