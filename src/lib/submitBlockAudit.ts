@@ -31,16 +31,18 @@ export async function logBlockedSubmit(input: LogBlockedSubmitInput): Promise<vo
         )
       : undefined;
 
-    await supabase.from("demand_request_submit_blocks").insert({
-      user_id: user.id,
-      form_id: input.formId,
-      board_id: input.boardId ?? null,
-      team_id: input.teamId ?? null,
-      failed_validations: input.failedValidations,
-      draft_snapshot: snapshot ?? null,
-      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-      path: typeof window !== "undefined" ? window.location.pathname : null,
-    });
+    await supabase.from("demand_request_submit_blocks").insert([
+      {
+        user_id: user.id,
+        form_id: input.formId,
+        board_id: input.boardId ?? undefined,
+        team_id: input.teamId ?? undefined,
+        failed_validations: input.failedValidations,
+        draft_snapshot: (snapshot ?? null) as never,
+        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+        path: typeof window !== "undefined" ? window.location.pathname : undefined,
+      },
+    ]);
 
     if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
