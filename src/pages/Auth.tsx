@@ -145,12 +145,23 @@ export default function Auth() {
     return () => clearInterval(timer);
   }, [resetCooldown]);
 
+  // Same-origin relative path preserved through the login/Google flow.
+  const safeNext = (() => {
+    const raw = new URLSearchParams(window.location.search).get("next");
+    if (!raw) return null;
+    if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+    return raw;
+  })();
+
   const handleGoogleSignIn = useCallback(async () => {
     setIsGoogleLoading(true);
     try {
       rememberLastLoginMethod("google");
+      const redirectUri = safeNext
+        ? `${window.location.origin}/auth?next=${encodeURIComponent(safeNext)}`
+        : window.location.origin;
       const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: redirectUri,
       });
       if (error) {
         toast.error("Erro ao entrar com Google", {
@@ -164,7 +175,7 @@ export default function Auth() {
     } finally {
       setIsGoogleLoading(false);
     }
-  }, []);
+  }, [safeNext]);
 
 
   if (loading) {
@@ -179,6 +190,10 @@ export default function Auth() {
   const isPasswordRecovery = hashParams.get("type") === "recovery" || hashParams.get("access_token");
   
   if (user && !isPasswordRecovery) {
+    if (safeNext) {
+      window.location.replace(safeNext);
+      return null;
+    }
     return <Navigate to="/welcome" replace />;
   }
   const formatPhone = (value: string): string => {
