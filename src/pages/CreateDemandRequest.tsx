@@ -23,6 +23,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
+import { logBlockedSubmit } from "@/lib/submitBlockAudit";
 import { SEOHead } from "@/components/SEOHead";
 
 export default function CreateDemandRequest() {
