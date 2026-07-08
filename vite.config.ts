@@ -3,6 +3,8 @@ import react from "@vitejs/plugin-react-swc";
 import { fileURLToPath } from "url";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
+
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -13,6 +15,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
+    mcpPlugin(),
     VitePWA({
       registerType: "prompt",
       includeAssets: ["favicon.png", "icons/**/*", "splash/**/*", "lovable-uploads/8967ad53-156a-4e31-a5bd-b472b7cde839.png"],
