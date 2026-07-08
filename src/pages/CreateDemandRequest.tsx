@@ -101,7 +101,28 @@ export default function CreateDemandRequest() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim() || !selectedTeamId || !selectedBoardId || !isTeamActive || !serviceId || serviceId === "none") return;
+
+    const failed: string[] = [];
+    if (!title.trim()) failed.push("title_empty");
+    if (!description.trim()) failed.push("description_empty");
+    if (!selectedTeamId) failed.push("team_missing");
+    if (!selectedBoardId) failed.push("board_missing");
+    if (!isTeamActive) failed.push("team_inactive");
+    if (!serviceId || serviceId === "none") failed.push("service_missing");
+
+    if (failed.length > 0) {
+      void logBlockedSubmit({
+        formId: `create-request-${selectedBoardId || "default"}`,
+        boardId: selectedBoardId,
+        teamId: selectedTeamId,
+        failedValidations: failed,
+        draftSnapshot: { title, description, priority, serviceId, pendingFilesCount: pendingFiles.length },
+      });
+      toast.error("Não foi possível enviar", {
+        description: `Verifique os campos obrigatórios: ${failed.join(", ")}`,
+      });
+      return;
+    }
 
     createRequest.mutate(
       {
