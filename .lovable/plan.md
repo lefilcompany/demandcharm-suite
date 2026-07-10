@@ -1,73 +1,55 @@
-## Diagnóstico
+## Objetivo
 
-O projeto **já tem** o sistema de carregamento offline funcional, com os mesmos 3 arquivos do SOMA+:
+Expor uma nova ferramenta MCP `create_demand` no servidor SoMA para que assistentes conectados (ChatGPT, Claude, Cursor, etc.) possam criar demandas em nome do usuário autenticado, respeitando as permissões (RLS) e limites do plano.
 
-- `src/lib/offlineStorage.ts` — IndexedDB (`soma-offline-db` v2) com stores `demands`, `demandStatuses`, `teams`, `boards`, `profiles`, `services`, `syncQueue`, `cacheMetadata`. **Idêntico** ao SOMA+.
-- `src/hooks/useSyncManager.ts` — fila de sync com retry (max 3). **Idêntico** ao SOMA+.
-- `src/hooks/useDataPrecache.ts` — pré-cache acionado no `ProtectedLayout`. **Difere** do SOMA+.
-- `src/hooks/useOfflineStatus.ts` — listener de status online/offline. **Idêntico**.
+## Escopo
 
-Os logs do console confirmam que está rodando sem erros (`Data precache completed at …`, `Connection restored, starting sync...`).
+Uma única ferramenta nova. Sem alterações em tabelas, RLS, ou UI. Continua usando o fluxo OAuth existente do MCP.
 
-## Diferenças vs. SOMA+ (apenas em `useDataPrecache.ts`)
+## Nova ferramenta: `create_demand`
 
-Foram ajustes feitos por mim em turnos anteriores para “não competir com o primeiro render”. Eles tornam o cache offline **menos completo e mais lento** que o do SOMA+:
+Arquivo: `src/lib/mcp/tools/create-demand.ts`
 
-| Item | Atual | SOMA+ |
-| --- | --- | --- |
-| Intervalo de refresh periódico | 30 min | 10 min |
-| Intervalo mínimo entre runs | 10 min | 2 min |
-| Limite de demandas pré-cacheadas | 200 | 500 |
-| Cache de `profiles` | não busca | busca `id, full_name, avatar_url, email` |
-| Início do primeiro pré-cache | `requestIdleCallback` / 30 s | 5 s após montar |
+Entradas (Zod):
+- `board_id` (uuid, obrigatório) — quadro onde a demanda será criada
+- `title` (string, 1–200, obrigatório)
+- `description` (string, opcional)
+- `priority` (`"baixa" | "média" | "alta" | "urgente"`, opcional, default `"média"`)
+- `due_date` (ISO string, opcional)
+- `status_id` (uuid, opcional) — se omitido, usa o primeiro status ativo do quadro (menor `position`)
+- `service_id` (uuid, opcional)
+- `assignee_user_id` (uuid, opcional) — se omitido, o próprio usuário autenticado vira o responsável (`is_primary = true`)
 
-Resultado prático: hoje a primeira visita salva menos dados, demora muito mais para popular o IndexedDB e o cache nunca inclui perfis — exatamente o comportamento que o usuário quer evitar.
+Anotações: `readOnlyHint: false`, `destructiveHint: false`, `idempotentHint: false`, `openWorldHint: false`.
 
-## Plano
+Fluxo do handler:
+1. `ctx.isAuthenticated()` — caso contrário, erro.
+2. Criar client Supabase com o `Authorization: Bearer <ctx.getToken()>` (mesma função utilitária `sb(ctx)` do padrão dos outros tools).
+3. Resolver `team_id` a partir de `boards.team_id` pelo `board_id` (respeita RLS — se o usuário não vê o quadro, erro amigável).
+4. Se `status_id` não vier, buscar em `board_statuses` o menor `position` com `is_active = true` para aquele `board_id`.
+5. Inserir em `demands` com `created_by = ctx.getUserId()`, `team_id`, `board_id`, `status_id`, `title`, `description`, `priority`, `due_date`.
+   - Triggers/policies existentes cuidam de: numeração de sequência, limites do plano/quadro, notificações, `status_changed_at`.
+6. Inserir em `demand_assignees` o responsável (`is_primary = true`) com o `assignee_user_id` (ou o próprio caller).
+7. Retornar `structuredContent: { demand: {...campos principais...} }` e um `content` textual com o id e título.
 
-Editar **só** `src/hooks/useDataPrecache.ts` para replicar o comportamento do SOMA+:
+Tratamento de erros: qualquer erro do Postgres/RLS é retornado como `{ isError: true, content: [{ type: "text", text: error.message }] }` para o cliente MCP ver a razão exata (ex.: limite mensal, sem permissão no quadro, status inexistente).
 
-1. `CACHE_REFRESH_INTERVAL = 10 * 60 * 1000` e `MIN_PRECACHE_INTERVAL = 2 * 60 * 1000`.
-2. Voltar o `Promise.all` a buscar também `profiles` (`id, full_name, avatar_url, email`) e salvar via `saveProfiles`.
-3. Aumentar o `.limit(200)` de demandas para `.limit(500)`.
-4. Trocar o agendamento inicial (`requestIdleCallback` / fallback de 30 s) por um `setTimeout(..., 5000)` simples, como no SOMA+.
+## Registro no servidor MCP
 
-Nenhuma alteração em `offlineStorage.ts`, `useSyncManager.ts`, `useOfflineStatus.ts`, `ProtectedLayout.tsx`, `useDemands.ts`, `CreateDemand.tsx`, `KanbanBoard.tsx` ou `SidebarSyncIndicator.tsx` — tudo já está igual ao SOMA+.
+`src/lib/mcp/index.ts`:
+- Importar `createDemandTool from "./tools/create-demand"`.
+- Adicionar ao array `tools`.
+- Atualizar `instructions` para mencionar `create_demand` como ferramenta de escrita.
 
-## Detalhes técnicos
+## Passos operacionais após editar
 
-```ts
-// src/hooks/useDataPrecache.ts (trecho final)
-const CACHE_REFRESH_INTERVAL = 10 * 60 * 1000;
-const MIN_PRECACHE_INTERVAL  = 2  * 60 * 1000;
+1. `app_mcp_server--extract_mcp_manifest` para regenerar `.lovable/mcp/manifest.json`.
+2. `supabase--deploy_edge_functions` com `function_names: ["mcp"]` para publicar o novo tool no endpoint MCP.
 
-// dentro de precacheUserData:
-const [statusesResult, teamsResult, boardsResult, demandsResult, servicesResult, profilesResult] =
-  await Promise.all([
-    supabase.from('demand_statuses').select('*'),
-    supabase.from('teams').select('*'),
-    supabase.from('boards').select('*'),
-    supabase.from('demands').select(`*, status:demand_statuses(*), service:services(*),
-      creator:profiles!demands_created_by_fkey(id, full_name, avatar_url),
-      assignee:profiles!demands_assigned_to_fkey(id, full_name, avatar_url)`)
-      .eq('archived', false).order('updated_at', { ascending: false }).limit(500),
-    supabase.from('services').select('*'),
-    supabase.from('profiles').select('id, full_name, avatar_url, email'),
-  ]);
-if (profilesResult.data) savePromises.push(saveProfiles(profilesResult.data));
+## Fora de escopo
 
-// initial run
-useEffect(() => {
-  if (user) {
-    const timer = setTimeout(() => precacheUserData(), 5000);
-    return () => clearTimeout(timer);
-  }
-}, [user?.id]);
-```
+- Criação de subtarefas/dependências (o RPC `create_demand_with_subdemands` existe; podemos expor depois se você quiser).
+- Anexos, comentários, aprovações.
+- Ferramentas de atualização/exclusão de demanda (podem vir num próximo passo).
 
-## Verificação
-
-Após aplicar, conferir no console:
-- 1ª linha `Data precache completed at …` aparece ~5 s depois do login (antes só após idle/30 s).
-- DevTools → Application → IndexedDB → `soma-offline-db` mostra as 6 stores populadas, incluindo `profiles`.
-- Nenhum erro novo após `vite` recarregar.
+Se quiser, já incluo suporte a `subtasks` e múltiplos `assignees` (followers) neste mesmo tool — me avise antes de eu implementar.

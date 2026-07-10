@@ -206,18 +206,139 @@ var get_demand_default = defineTool5({
   }
 });
 
+// src/lib/mcp/tools/create-demand.ts
+import { createClient as createClient6 } from "npm:@supabase/supabase-js@2.49.8";
+import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z5 } from "npm:zod@^3.25.76";
+function sb6(ctx) {
+  return createClient6(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY,
+    {
+      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+      auth: { persistSession: false, autoRefreshToken: false }
+    }
+  );
+}
+var create_demand_default = defineTool6({
+  name: "create_demand",
+  title: "Create demand",
+  description: "Create a new SoMA demand on a board as the signed-in user. Resolves the board's team, uses the first active status of the board when status_id is omitted, and assigns the caller as the responsible when assignee_user_id is omitted. Respects RLS and plan limits.",
+  inputSchema: {
+    board_id: z5.string().uuid().describe("Board UUID where the demand will be created."),
+    title: z5.string().trim().min(1).max(200).describe("Demand title."),
+    description: z5.string().optional().describe("Optional demand description."),
+    priority: z5.enum(["baixa", "m\xE9dia", "alta", "urgente"]).default("m\xE9dia").describe("Priority: baixa | m\xE9dia | alta | urgente."),
+    due_date: z5.string().datetime({ offset: true }).optional().describe("Optional ISO-8601 due date (with timezone)."),
+    status_id: z5.string().uuid().optional().describe("Optional board status UUID. Defaults to the first active status on the board."),
+    service_id: z5.string().uuid().optional().describe("Optional service UUID."),
+    assignee_user_id: z5.string().uuid().optional().describe("Optional responsible user UUID. Defaults to the signed-in user.")
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: false
+  },
+  handler: async (input, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const client = sb6(ctx);
+    const userId = ctx.getUserId();
+    const {
+      board_id,
+      title,
+      description,
+      priority,
+      due_date,
+      service_id,
+      assignee_user_id
+    } = input;
+    let { status_id } = input;
+    const { data: board, error: bErr } = await client.from("boards").select("id, team_id").eq("id", board_id).maybeSingle();
+    if (bErr) return { content: [{ type: "text", text: bErr.message }], isError: true };
+    if (!board) {
+      return {
+        content: [{ type: "text", text: "Board not found or not accessible" }],
+        isError: true
+      };
+    }
+    if (!status_id) {
+      const { data: st, error: sErr } = await client.from("board_statuses").select("status_id, position").eq("board_id", board_id).eq("is_active", true).order("position", { ascending: true }).limit(1).maybeSingle();
+      if (sErr) return { content: [{ type: "text", text: sErr.message }], isError: true };
+      if (!st) {
+        return {
+          content: [{ type: "text", text: "No active status found on this board" }],
+          isError: true
+        };
+      }
+      status_id = st.status_id;
+    }
+    const { data: demand, error: dErr } = await client.from("demands").insert({
+      board_id,
+      team_id: board.team_id,
+      status_id,
+      title,
+      description: description ?? null,
+      priority,
+      due_date: due_date ?? null,
+      service_id: service_id ?? null,
+      created_by: userId
+    }).select(
+      "id, title, description, board_id, team_id, status_id, priority, due_date, service_id, created_at"
+    ).single();
+    if (dErr) return { content: [{ type: "text", text: dErr.message }], isError: true };
+    const responsibleId = assignee_user_id ?? userId;
+    const { error: aErr } = await client.from("demand_assignees").insert({
+      demand_id: demand.id,
+      user_id: responsibleId,
+      is_primary: true
+    });
+    if (aErr) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Demand ${demand.id} created but failed to assign responsible: ${aErr.message}`
+          }
+        ],
+        structuredContent: { demand, assignee_error: aErr.message },
+        isError: true
+      };
+    }
+    const result = { ...demand, responsible_user_id: responsibleId };
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Created demand ${demand.id} "${demand.title}" on board ${board_id}.`
+        }
+      ],
+      structuredContent: { demand: result }
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "erxhxmetrvkigjwxchbj";
 var mcp_default = defineMcp({
   name: "soma-mcp",
   title: "SoMA \u2014 Gest\xE3o de Demandas",
   version: "0.1.0",
-  instructions: "Ferramentas de leitura para a plataforma SoMA (quadros, demandas e perfil do usu\xE1rio). Todas as chamadas respeitam as permiss\xF5es (RLS) do usu\xE1rio autenticado. Use `whoami` para confirmar a sess\xE3o, `list_boards` para descobrir quadros, `list_my_demands` para ver as demandas do usu\xE1rio, `search_demands` para busca por texto, e `get_demand` para detalhes de uma demanda espec\xEDfica.",
+  instructions: "Ferramentas para a plataforma SoMA (quadros e demandas). Todas as chamadas respeitam as permiss\xF5es (RLS) do usu\xE1rio autenticado. Leitura: `whoami` (sess\xE3o), `list_boards` (quadros), `list_my_demands` (demandas do usu\xE1rio), `search_demands` (busca por texto) e `get_demand` (detalhes). Escrita: `create_demand` cria uma nova demanda em um quadro, assumindo o usu\xE1rio autenticado como respons\xE1vel quando `assignee_user_id` n\xE3o \xE9 informado.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
-  tools: [whoami_default, list_boards_default, list_my_demands_default, search_demands_default, get_demand_default]
+  tools: [
+    whoami_default,
+    list_boards_default,
+    list_my_demands_default,
+    search_demands_default,
+    get_demand_default,
+    create_demand_default
+  ]
 });
 
 // lovable-mcp-supabase-entry.ts
