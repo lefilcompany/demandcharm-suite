@@ -74,6 +74,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminPlans = lazy(() => import("./pages/admin/AdminPlans"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+const McpDocs = lazy(() => import("./pages/McpDocs"));
 
 function CreateDemandGlobal() {
   return <CreateDemand />;
@@ -138,7 +139,8 @@ const App = () => {
                               <Route path="/shared/summary/:token" element={<SharedBoardSummary />} />
                               <Route path="/reset-password" element={<ResetPassword />} />
                               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                              <Route path="/terms-of-service" element={<TermsOfService />} />
+                             <Route path="/terms-of-service" element={<TermsOfService />} />
+                             <Route path="/mcp-docs" element={<McpDocs />} />
 
                               <Route path="/admin" element={<RequireAuth><AdminLayout /></RequireAuth>}>
                                 <Route index element={<AdminDashboard />} />
