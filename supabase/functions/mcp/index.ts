@@ -2,12 +2,27 @@
 // To take ownership, delete this banner line; the plugin then leaves the file alone.
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
+var __defProp = Object.defineProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
 // src/lib/mcp/index.ts
 import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.20.0";
 
-// src/lib/mcp/tools/whoami.ts
-import { createClient } from "npm:@supabase/supabase-js@2.49.8";
+// src/lib/mcp/tools/session.ts
+var session_exports = {};
+__export(session_exports, {
+  getUserProfileTool: () => getUserProfileTool,
+  updateMyProfileTool: () => updateMyProfileTool,
+  whoamiTool: () => whoamiTool
+});
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z } from "npm:zod@^3.25.76";
+
+// src/lib/mcp/_shared/supabase.ts
+import { createClient } from "npm:@supabase/supabase-js@2.49.8";
 function sb(ctx) {
   return createClient(
     process.env.SUPABASE_URL,
@@ -18,327 +33,2042 @@ function sb(ctx) {
     }
   );
 }
-var whoami_default = defineTool({
+function requireAuth(ctx) {
+  if (!ctx.isAuthenticated()) {
+    return { content: [{ type: "text", text: "PERMISSION_DENIED: Not authenticated" }], isError: true };
+  }
+  return null;
+}
+function ok(data, message) {
+  return {
+    content: [{ type: "text", text: message ?? JSON.stringify(data) }],
+    structuredContent: typeof data === "object" && data !== null ? data : { data }
+  };
+}
+function err(message, code = "ERROR") {
+  return { content: [{ type: "text", text: `${code}: ${message}` }], isError: true };
+}
+function fromPgError(e) {
+  if (!e) return err("Unknown error");
+  const msg = e.message ?? "Database error";
+  if (msg.startsWith("PLAN_LIMIT_")) return err(msg, "PLAN_LIMIT");
+  if (e.code === "42501" || /permission denied/i.test(msg)) return err(msg, "PERMISSION_DENIED");
+  if (e.code === "PGRST116" || /not found/i.test(msg)) return err(msg, "NOT_FOUND");
+  return err(msg, "DB_ERROR");
+}
+
+// src/lib/mcp/tools/session.ts
+var whoamiTool = defineTool({
   name: "whoami",
   title: "Who am I",
-  description: "Return the signed-in SoMA user's profile (id, name, email).",
+  description: "Return the signed-in SoMA user's profile (id, name, email, avatar).",
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
-    }
-    const userId = ctx.getUserId();
-    const { data, error } = await sb(ctx).from("profiles").select("id, full_name, email, avatar_url").eq("id", userId).maybeSingle();
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    const profile = data ?? { id: userId, email: ctx.getUserEmail() ?? null };
-    return {
-      content: [{ type: "text", text: JSON.stringify(profile) }],
-      structuredContent: { profile }
-    };
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("profiles").select("id, full_name, email, avatar_url, job_title, bio").eq("id", ctx.getUserId()).maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ profile: data ?? { id: ctx.getUserId(), email: ctx.getUserEmail() } });
+  }
+});
+var getUserProfileTool = defineTool({
+  name: "get_user_profile",
+  title: "Get user profile",
+  description: "Fetch a specific user's public profile by id. Respects RLS.",
+  inputSchema: { user_id: z.string().uuid().describe("UUID of the user.") },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ user_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("profiles").select("id, full_name, avatar_url, job_title, bio").eq("id", user_id).maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ profile: data });
+  }
+});
+var updateMyProfileTool = defineTool({
+  name: "update_my_profile",
+  title: "Update my profile",
+  description: "Update the signed-in user's profile (full_name, job_title, bio, avatar_url).",
+  inputSchema: {
+    full_name: z.string().trim().min(1).max(120).optional(),
+    job_title: z.string().trim().max(120).optional(),
+    bio: z.string().max(2e3).optional(),
+    avatar_url: z.string().url().optional()
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const patch = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== void 0));
+    if (Object.keys(patch).length === 0) return ok({ updated: false }, "Nada para atualizar");
+    const { data, error } = await sb(ctx).from("profiles").update(patch).eq("id", ctx.getUserId()).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ profile: data });
   }
 });
 
-// src/lib/mcp/tools/list-boards.ts
-import { createClient as createClient2 } from "npm:@supabase/supabase-js@2.49.8";
+// src/lib/mcp/tools/teams.ts
+var teams_exports = {};
+__export(teams_exports, {
+  getPlanLimitsTool: () => getPlanLimitsTool,
+  getTeamTool: () => getTeamTool,
+  joinTeamWithCodeTool: () => joinTeamWithCodeTool,
+  listMyTeamsTool: () => listMyTeamsTool,
+  listTeamMembersTool: () => listTeamMembersTool,
+  listTeamPositionsTool: () => listTeamPositionsTool
+});
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z } from "npm:zod@^3.25.76";
-function sb2(ctx) {
-  return createClient2(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-      auth: { persistSession: false, autoRefreshToken: false }
+import { z as z2 } from "npm:zod@^3.25.76";
+var listMyTeamsTool = defineTool2({
+  name: "list_my_teams",
+  title: "List my teams",
+  description: "List teams the signed-in user belongs to, with their role.",
+  inputSchema: {},
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (_input, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("team_members").select("role, team_id, teams(id, name, description, access_code, created_at)").eq("user_id", ctx.getUserId());
+    if (error) return fromPgError(error);
+    return ok({ teams: data ?? [] });
+  }
+});
+var getTeamTool = defineTool2({
+  name: "get_team",
+  title: "Get team",
+  description: "Fetch a team's details including the active plan.",
+  inputSchema: { team_id: z2.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ team_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const client = sb(ctx);
+    const { data: team, error } = await client.from("teams").select("*").eq("id", team_id).maybeSingle();
+    if (error) return fromPgError(error);
+    if (!team) return err("Team not found", "NOT_FOUND");
+    const { data: plan } = await client.rpc("get_team_active_plan", { _team_id: team_id });
+    return ok({ team, plan });
+  }
+});
+var listTeamMembersTool = defineTool2({
+  name: "list_team_members",
+  title: "List team members",
+  description: "List members of a team with profile and role.",
+  inputSchema: { team_id: z2.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ team_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("team_members").select("user_id, role, joined_at, profiles(id, full_name, avatar_url, email, job_title)").eq("team_id", team_id);
+    if (error) return fromPgError(error);
+    return ok({ members: data ?? [] });
+  }
+});
+var listTeamPositionsTool = defineTool2({
+  name: "list_team_positions",
+  title: "List team positions",
+  description: "List job positions (cargos) configured for a team.",
+  inputSchema: { team_id: z2.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ team_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("team_positions").select("*").eq("team_id", team_id).order("name");
+    if (error) return fromPgError(error);
+    return ok({ positions: data ?? [] });
+  }
+});
+var joinTeamWithCodeTool = defineTool2({
+  name: "join_team_with_code",
+  title: "Join team with access code",
+  description: "Join a team using its 20-character access code. The caller is added as a 'requester' (member).",
+  inputSchema: { code: z2.string().trim().min(4).max(40) },
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  handler: async ({ code }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).rpc("join_team_with_code", { p_code: code });
+    if (error) return fromPgError(error);
+    return ok({ team_id: data });
+  }
+});
+var getPlanLimitsTool = defineTool2({
+  name: "get_plan_limits",
+  title: "Get plan limits and usage",
+  description: "Return current usage vs plan limits for a team (boards, members, demands, services, notes).",
+  inputSchema: { team_id: z2.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ team_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const client = sb(ctx);
+    const resources = ["boards", "members", "demands", "services", "notes"];
+    const results = {};
+    for (const r of resources) {
+      const { data, error } = await client.rpc("check_plan_limit", { _team_id: team_id, _resource: r });
+      if (error) return fromPgError(error);
+      results[r] = data;
     }
-  );
-}
-var list_boards_default = defineTool2({
+    return ok({ limits: results });
+  }
+});
+
+// src/lib/mcp/tools/boards.ts
+var boards_exports = {};
+__export(boards_exports, {
+  addBoardMemberTool: () => addBoardMemberTool,
+  archiveBoardTool: () => archiveBoardTool,
+  attachServiceToBoardTool: () => attachServiceToBoardTool,
+  createBoardTool: () => createBoardTool,
+  deleteBoardTool: () => deleteBoardTool,
+  detachServiceFromBoardTool: () => detachServiceFromBoardTool,
+  getBoardTool: () => getBoardTool,
+  listBoardMembersTool: () => listBoardMembersTool,
+  listBoardServicesTool: () => listBoardServicesTool,
+  listBoardStatusesTool: () => listBoardStatusesTool,
+  listBoardsTool: () => listBoardsTool,
+  removeBoardMemberTool: () => removeBoardMemberTool,
+  updateBoardMemberRoleTool: () => updateBoardMemberRoleTool,
+  updateBoardTool: () => updateBoardTool
+});
+import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z3 } from "npm:zod@^3.25.76";
+var boardRole = z3.enum(["admin", "moderator", "executor", "requester"]);
+var listBoardsTool = defineTool3({
   name: "list_boards",
   title: "List boards",
-  description: "List SoMA boards the signed-in user has access to (via RLS).",
+  description: "List boards the signed-in user has access to (via RLS).",
   inputSchema: {
-    limit: z.number().int().min(1).max(100).default(50).describe("Max boards to return.")
+    team_id: z3.string().uuid().optional().describe("Optional team filter."),
+    limit: z3.number().int().min(1).max(200).default(100)
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ limit }, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
-    }
-    const { data, error } = await sb2(ctx).from("boards").select("id, name, description, team_id, created_at").order("created_at", { ascending: false }).limit(limit);
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    return {
-      content: [{ type: "text", text: JSON.stringify(data ?? []) }],
-      structuredContent: { boards: data ?? [] }
-    };
+  handler: async ({ team_id, limit }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    let q = sb(ctx).from("boards").select("id, name, description, team_id, is_default, monthly_demand_limit, archived, created_at").order("created_at", { ascending: false }).limit(limit);
+    if (team_id) q = q.eq("team_id", team_id);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    return ok({ boards: data ?? [] });
+  }
+});
+var getBoardTool = defineTool3({
+  name: "get_board",
+  title: "Get board",
+  description: "Fetch a board with its statuses, services and members.",
+  inputSchema: { board_id: z3.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ board_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    const { data: board, error } = await c.from("boards").select("*").eq("id", board_id).maybeSingle();
+    if (error) return fromPgError(error);
+    if (!board) return err("Board not found", "NOT_FOUND");
+    const [{ data: statuses }, { data: services }, { data: members }] = await Promise.all([
+      c.from("board_statuses").select("status_id, position, is_active, adjustment_type, demand_statuses(id, name, color)").eq("board_id", board_id).order("position"),
+      c.from("board_services").select("service_id, monthly_limit, services(id, name, category, parent_id)").eq("board_id", board_id),
+      c.from("board_members").select("user_id, role, added_by, profiles(id, full_name, avatar_url)").eq("board_id", board_id)
+    ]);
+    return ok({ board, statuses: statuses ?? [], services: services ?? [], members: members ?? [] });
+  }
+});
+var createBoardTool = defineTool3({
+  name: "create_board",
+  title: "Create board",
+  description: "Create a new board with default stages (or custom stages) and optional services and members. Requires team admin or moderator.",
+  inputSchema: {
+    team_id: z3.string().uuid(),
+    name: z3.string().trim().min(1).max(100),
+    description: z3.string().optional(),
+    services: z3.array(z3.object({ service_id: z3.string().uuid(), monthly_limit: z3.number().int().min(0).optional() })).optional(),
+    stages: z3.array(z3.object({ name: z3.string().min(1), color: z3.string().optional(), adjustment_type: z3.enum(["none", "internal", "external"]).optional() })).optional(),
+    members: z3.array(z3.object({ user_id: z3.string().uuid(), role: boardRole.optional() })).optional()
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).rpc("create_board_with_services", {
+      p_team_id: input.team_id,
+      p_name: input.name,
+      p_description: input.description ?? null,
+      p_services: input.services ?? [],
+      p_stages: input.stages ?? null,
+      p_members: input.members ?? []
+    });
+    if (error) return fromPgError(error);
+    return ok({ board: data });
+  }
+});
+var updateBoardTool = defineTool3({
+  name: "update_board",
+  title: "Update board",
+  description: "Update board name, description or monthly_demand_limit. Requires board admin/moderator.",
+  inputSchema: {
+    board_id: z3.string().uuid(),
+    name: z3.string().trim().min(1).max(100).optional(),
+    description: z3.string().optional(),
+    monthly_demand_limit: z3.number().int().min(0).optional()
+  },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ board_id, ...patch }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== void 0));
+    if (!Object.keys(clean).length) return ok({ updated: false });
+    const { data, error } = await sb(ctx).from("boards").update(clean).eq("id", board_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ board: data });
+  }
+});
+var archiveBoardTool = defineTool3({
+  name: "archive_board",
+  title: "Archive board",
+  description: "Archive a board (soft-delete). Requires board admin.",
+  inputSchema: { board_id: z3.string().uuid(), archived: z3.boolean().default(true) },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ board_id, archived }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("boards").update({ archived }).eq("id", board_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ board: data });
+  }
+});
+var deleteBoardTool = defineTool3({
+  name: "delete_board",
+  title: "Delete board",
+  description: "Permanently delete a board and its cascading data. Requires board admin. Irreversible.",
+  inputSchema: { board_id: z3.string().uuid(), confirm: z3.literal(true).describe("Must be true to confirm irreversible delete.") },
+  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
+  handler: async ({ board_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("boards").delete().eq("id", board_id);
+    if (error) return fromPgError(error);
+    return ok({ deleted: board_id });
+  }
+});
+var listBoardMembersTool = defineTool3({
+  name: "list_board_members",
+  title: "List board members",
+  description: "List all members of a board with their board role.",
+  inputSchema: { board_id: z3.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ board_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("board_members").select("user_id, role, added_by, profiles(id, full_name, avatar_url, email, job_title)").eq("board_id", board_id);
+    if (error) return fromPgError(error);
+    return ok({ members: data ?? [] });
+  }
+});
+var addBoardMemberTool = defineTool3({
+  name: "add_board_member",
+  title: "Add board member",
+  description: "Add a team member to a board with a given role (admin/moderator/executor/requester). Requires board admin.",
+  inputSchema: { board_id: z3.string().uuid(), user_id: z3.string().uuid(), role: boardRole.default("executor") },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ board_id, user_id, role }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("board_members").upsert({ board_id, user_id, role, added_by: ctx.getUserId() }, { onConflict: "board_id,user_id" }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ member: data });
+  }
+});
+var updateBoardMemberRoleTool = defineTool3({
+  name: "update_board_member_role",
+  title: "Update board member role",
+  description: "Change a board member's role. Requires board admin.",
+  inputSchema: { board_id: z3.string().uuid(), user_id: z3.string().uuid(), role: boardRole },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ board_id, user_id, role }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("board_members").update({ role }).eq("board_id", board_id).eq("user_id", user_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ member: data });
+  }
+});
+var removeBoardMemberTool = defineTool3({
+  name: "remove_board_member",
+  title: "Remove board member",
+  description: "Remove a user from a board. Requires board admin.",
+  inputSchema: { board_id: z3.string().uuid(), user_id: z3.string().uuid() },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ board_id, user_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("board_members").delete().eq("board_id", board_id).eq("user_id", user_id);
+    if (error) return fromPgError(error);
+    return ok({ removed: user_id });
+  }
+});
+var listBoardStatusesTool = defineTool3({
+  name: "list_board_statuses",
+  title: "List board statuses",
+  description: "List active statuses (columns/stages) of a board in order.",
+  inputSchema: { board_id: z3.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ board_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("board_statuses").select("status_id, position, is_active, adjustment_type, demand_statuses(id, name, color)").eq("board_id", board_id).order("position");
+    if (error) return fromPgError(error);
+    return ok({ statuses: data ?? [] });
+  }
+});
+var listBoardServicesTool = defineTool3({
+  name: "list_board_services",
+  title: "List board services",
+  description: "List services attached to a board with their monthly limits.",
+  inputSchema: { board_id: z3.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ board_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("board_services").select("service_id, monthly_limit, services(id, name, category, parent_id)").eq("board_id", board_id);
+    if (error) return fromPgError(error);
+    return ok({ services: data ?? [] });
+  }
+});
+var attachServiceToBoardTool = defineTool3({
+  name: "attach_service_to_board",
+  title: "Attach service to board",
+  description: "Attach a team service to a board with optional monthly_limit (0 = unlimited).",
+  inputSchema: { board_id: z3.string().uuid(), service_id: z3.string().uuid(), monthly_limit: z3.number().int().min(0).default(0) },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ board_id, service_id, monthly_limit }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("board_services").upsert({ board_id, service_id, monthly_limit }, { onConflict: "board_id,service_id" }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ board_service: data });
+  }
+});
+var detachServiceFromBoardTool = defineTool3({
+  name: "detach_service_from_board",
+  title: "Detach service from board",
+  description: "Remove a service from a board.",
+  inputSchema: { board_id: z3.string().uuid(), service_id: z3.string().uuid() },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ board_id, service_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("board_services").delete().eq("board_id", board_id).eq("service_id", service_id);
+    if (error) return fromPgError(error);
+    return ok({ detached: service_id });
   }
 });
 
-// src/lib/mcp/tools/list-my-demands.ts
-import { createClient as createClient3 } from "npm:@supabase/supabase-js@2.49.8";
-import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z2 } from "npm:zod@^3.25.76";
-function sb3(ctx) {
-  return createClient3(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-      auth: { persistSession: false, autoRefreshToken: false }
-    }
-  );
-}
-var list_my_demands_default = defineTool3({
-  name: "list_my_demands",
-  title: "List my demands",
-  description: "List demands where the signed-in user is a responsible or follower assignee. Optionally filter by board.",
-  inputSchema: {
-    board_id: z2.string().uuid().optional().describe("Optional board UUID to filter by."),
-    include_archived: z2.boolean().default(false).describe("Include archived demands."),
-    limit: z2.number().int().min(1).max(100).default(50)
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ board_id, include_archived, limit }, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
-    }
-    const client = sb3(ctx);
-    const userId = ctx.getUserId();
-    const { data: assignments, error: aErr } = await client.from("demand_assignees").select("demand_id").eq("user_id", userId);
-    if (aErr) return { content: [{ type: "text", text: aErr.message }], isError: true };
-    const ids = (assignments ?? []).map((a) => a.demand_id);
-    if (ids.length === 0) {
-      return {
-        content: [{ type: "text", text: "[]" }],
-        structuredContent: { demands: [] }
-      };
-    }
-    let query = client.from("demands").select("id, title, description, status_id, board_id, priority, due_date, created_at, archived").in("id", ids).order("created_at", { ascending: false }).limit(limit);
-    if (board_id) query = query.eq("board_id", board_id);
-    if (!include_archived) query = query.eq("archived", false);
-    const { data, error } = await query;
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    return {
-      content: [{ type: "text", text: JSON.stringify(data ?? []) }],
-      structuredContent: { demands: data ?? [] }
-    };
-  }
+// src/lib/mcp/tools/demands.ts
+var demands_exports = {};
+__export(demands_exports, {
+  addDemandAssigneeTool: () => addDemandAssigneeTool,
+  addDependencyTool: () => addDependencyTool,
+  archiveDemandTool: () => archiveDemandTool,
+  changeDemandStatusTool: () => changeDemandStatusTool,
+  createDemandTool: () => createDemandTool,
+  createDemandWithSubdemandsTool: () => createDemandWithSubdemandsTool,
+  deleteDemandTool: () => deleteDemandTool,
+  getDemandTool: () => getDemandTool,
+  listDemandAssigneesTool: () => listDemandAssigneesTool,
+  listDemandDependenciesTool: () => listDemandDependenciesTool,
+  listDemandsTool: () => listDemandsTool,
+  listMyDemandsTool: () => listMyDemandsTool,
+  moveDemandToBoardTool: () => moveDemandToBoardTool,
+  removeDemandAssigneeTool: () => removeDemandAssigneeTool,
+  removeDependencyTool: () => removeDependencyTool,
+  reorderSubdemandsTool: () => reorderSubdemandsTool,
+  searchDemandsTool: () => searchDemandsTool,
+  setPrimaryAssigneeTool: () => setPrimaryAssigneeTool,
+  updateDemandTool: () => updateDemandTool
 });
-
-// src/lib/mcp/tools/search-demands.ts
-import { createClient as createClient4 } from "npm:@supabase/supabase-js@2.49.8";
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z3 } from "npm:zod@^3.25.76";
-function sb4(ctx) {
-  return createClient4(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-      auth: { persistSession: false, autoRefreshToken: false }
-    }
-  );
+import { z as z4 } from "npm:zod@^3.25.76";
+var priority = z4.enum(["baixa", "m\xE9dia", "alta", "urgente"]);
+var demandFields = "id, title, description, board_id, team_id, status_id, priority, due_date, service_id, created_by, created_at, updated_at, delivered_at, archived, is_overdue, board_sequence_number, parent_demand_id";
+async function resolveFirstStatus(client, board_id) {
+  const { data } = await client.from("board_statuses").select("status_id").eq("board_id", board_id).eq("is_active", true).order("position").limit(1).maybeSingle();
+  return data?.status_id;
 }
-var search_demands_default = defineTool4({
+var listDemandsTool = defineTool4({
+  name: "list_demands",
+  title: "List demands",
+  description: "Advanced demand listing with filters. Respects RLS.",
+  inputSchema: {
+    board_id: z4.string().uuid().optional(),
+    team_id: z4.string().uuid().optional(),
+    status_id: z4.string().uuid().optional(),
+    assignee_user_id: z4.string().uuid().optional(),
+    service_id: z4.string().uuid().optional(),
+    priority: priority.optional(),
+    is_overdue: z4.boolean().optional(),
+    archived: z4.boolean().default(false),
+    parent_demand_id: z4.string().uuid().optional().describe("Filter subdemands of a parent."),
+    created_after: z4.string().datetime({ offset: true }).optional(),
+    created_before: z4.string().datetime({ offset: true }).optional(),
+    limit: z4.number().int().min(1).max(200).default(50)
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (i, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    let ids = null;
+    if (i.assignee_user_id) {
+      const { data: data2 } = await c.from("demand_assignees").select("demand_id").eq("user_id", i.assignee_user_id);
+      ids = (data2 ?? []).map((r) => r.demand_id);
+      if (!ids.length) return ok({ demands: [] });
+    }
+    let q = c.from("demands").select(demandFields).order("created_at", { ascending: false }).limit(i.limit).eq("archived", i.archived);
+    if (i.board_id) q = q.eq("board_id", i.board_id);
+    if (i.team_id) q = q.eq("team_id", i.team_id);
+    if (i.status_id) q = q.eq("status_id", i.status_id);
+    if (i.service_id) q = q.eq("service_id", i.service_id);
+    if (i.priority) q = q.eq("priority", i.priority);
+    if (i.is_overdue !== void 0) q = q.eq("is_overdue", i.is_overdue);
+    if (i.parent_demand_id) q = q.eq("parent_demand_id", i.parent_demand_id);
+    if (i.created_after) q = q.gte("created_at", i.created_after);
+    if (i.created_before) q = q.lte("created_at", i.created_before);
+    if (ids) q = q.in("id", ids);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    return ok({ demands: data ?? [] });
+  }
+});
+var searchDemandsTool = defineTool4({
   name: "search_demands",
   title: "Search demands",
-  description: "Search SoMA demands the signed-in user can see (via RLS) by title/description substring.",
+  description: "Full-text-ish search on title/description of demands (ilike). Supports #123 board sequence.",
   inputSchema: {
-    query: z3.string().min(1).describe("Text to match in demand title or description."),
-    board_id: z3.string().uuid().optional(),
-    limit: z3.number().int().min(1).max(50).default(20)
+    query: z4.string().min(1),
+    board_id: z4.string().uuid().optional(),
+    limit: z4.number().int().min(1).max(50).default(20)
   },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  annotations: { readOnlyHint: true, idempotentHint: true },
   handler: async ({ query, board_id, limit }, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
-    }
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const seq = query.match(/^#?(\d+)$/);
     const escaped = query.replace(/[%_]/g, (m) => `\\${m}`);
-    let q = sb4(ctx).from("demands").select("id, title, description, status_id, board_id, priority, due_date, created_at").or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`).eq("archived", false).order("created_at", { ascending: false }).limit(limit);
+    let q = sb(ctx).from("demands").select(demandFields).eq("archived", false).order("created_at", { ascending: false }).limit(limit);
+    if (seq) q = q.eq("board_sequence_number", parseInt(seq[1], 10));
+    else q = q.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
     if (board_id) q = q.eq("board_id", board_id);
     const { data, error } = await q;
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    return {
-      content: [{ type: "text", text: JSON.stringify(data ?? []) }],
-      structuredContent: { demands: data ?? [] }
-    };
+    if (error) return fromPgError(error);
+    return ok({ demands: data ?? [] });
   }
 });
-
-// src/lib/mcp/tools/get-demand.ts
-import { createClient as createClient5 } from "npm:@supabase/supabase-js@2.49.8";
-import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z4 } from "npm:zod@^3.25.76";
-function sb5(ctx) {
-  return createClient5(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-      auth: { persistSession: false, autoRefreshToken: false }
-    }
-  );
-}
-var get_demand_default = defineTool5({
-  name: "get_demand",
-  title: "Get demand",
-  description: "Fetch a single SoMA demand by id, including its assignees.",
+var listMyDemandsTool = defineTool4({
+  name: "list_my_demands",
+  title: "List my demands",
+  description: "List demands where the caller is responsible or a follower.",
   inputSchema: {
-    demand_id: z4.string().uuid().describe("Demand UUID.")
+    board_id: z4.string().uuid().optional(),
+    include_archived: z4.boolean().default(false),
+    only_primary: z4.boolean().default(false).describe("Only demands where the user is the primary responsible."),
+    limit: z4.number().int().min(1).max(200).default(100)
   },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ demand_id }, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
-    }
-    const client = sb5(ctx);
-    const { data: demand, error } = await client.from("demands").select(
-      "id, title, description, status_id, board_id, team_id, priority, due_date, created_at, delivered_at, archived"
-    ).eq("id", demand_id).maybeSingle();
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    if (!demand) return { content: [{ type: "text", text: "Demand not found" }], isError: true };
-    const { data: assignees } = await client.from("demand_assignees").select("user_id, is_primary").eq("demand_id", demand_id);
-    const result = { ...demand, assignees: assignees ?? [] };
-    return {
-      content: [{ type: "text", text: JSON.stringify(result) }],
-      structuredContent: { demand: result }
-    };
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ board_id, include_archived, only_primary, limit }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    let aq = c.from("demand_assignees").select("demand_id, is_primary").eq("user_id", ctx.getUserId());
+    if (only_primary) aq = aq.eq("is_primary", true);
+    const { data: a, error: ae } = await aq;
+    if (ae) return fromPgError(ae);
+    const ids = (a ?? []).map((r) => r.demand_id);
+    if (!ids.length) return ok({ demands: [] });
+    let q = c.from("demands").select(demandFields).in("id", ids).order("created_at", { ascending: false }).limit(limit);
+    if (!include_archived) q = q.eq("archived", false);
+    if (board_id) q = q.eq("board_id", board_id);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    return ok({ demands: data ?? [] });
   }
 });
-
-// src/lib/mcp/tools/create-demand.ts
-import { createClient as createClient6 } from "npm:@supabase/supabase-js@2.49.8";
-import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z5 } from "npm:zod@^3.25.76";
-function sb6(ctx) {
-  return createClient6(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-      auth: { persistSession: false, autoRefreshToken: false }
-    }
-  );
-}
-var create_demand_default = defineTool6({
+var getDemandTool = defineTool4({
+  name: "get_demand",
+  title: "Get demand (detailed)",
+  description: "Fetch a demand with assignees, subtasks, dependencies and recent comments.",
+  inputSchema: { demand_id: z4.string().uuid(), comments_limit: z4.number().int().min(0).max(100).default(20) },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ demand_id, comments_limit }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    const { data: demand, error } = await c.from("demands").select(demandFields).eq("id", demand_id).maybeSingle();
+    if (error) return fromPgError(error);
+    if (!demand) return err("Demand not found", "NOT_FOUND");
+    const [{ data: assignees }, { data: subtasks }, { data: deps }, { data: comments }, { data: subdemands }] = await Promise.all([
+      c.from("demand_assignees").select("user_id, is_primary, profiles(id, full_name, avatar_url)").eq("demand_id", demand_id),
+      c.from("demand_subtasks").select("*").eq("demand_id", demand_id).order("position"),
+      c.from("demand_dependencies").select("depends_on_demand_id").eq("demand_id", demand_id),
+      c.from("demand_interactions").select("id, user_id, channel, content, created_at, profiles(full_name, avatar_url)").eq("demand_id", demand_id).order("created_at", { ascending: false }).limit(comments_limit),
+      c.from("demands").select("id, title, status_id, subdemand_sort_order").eq("parent_demand_id", demand_id).order("subdemand_sort_order")
+    ]);
+    return ok({ demand, assignees: assignees ?? [], subtasks: subtasks ?? [], dependencies: deps ?? [], comments: comments ?? [], subdemands: subdemands ?? [] });
+  }
+});
+var createDemandTool = defineTool4({
   name: "create_demand",
   title: "Create demand",
-  description: "Create a new SoMA demand on a board as the signed-in user. Resolves the board's team, uses the first active status of the board when status_id is omitted, and assigns the caller as the responsible when assignee_user_id is omitted. Respects RLS and plan limits.",
+  description: "Create a demand on a board. Defaults: caller as responsible, first active status. Supports followers.",
   inputSchema: {
-    board_id: z5.string().uuid().describe("Board UUID where the demand will be created."),
-    title: z5.string().trim().min(1).max(200).describe("Demand title."),
-    description: z5.string().optional().describe("Optional demand description."),
-    priority: z5.enum(["baixa", "m\xE9dia", "alta", "urgente"]).default("m\xE9dia").describe("Priority: baixa | m\xE9dia | alta | urgente."),
-    due_date: z5.string().datetime({ offset: true }).optional().describe("Optional ISO-8601 due date (with timezone)."),
-    status_id: z5.string().uuid().optional().describe("Optional board status UUID. Defaults to the first active status on the board."),
-    service_id: z5.string().uuid().optional().describe("Optional service UUID."),
-    assignee_user_id: z5.string().uuid().optional().describe("Optional responsible user UUID. Defaults to the signed-in user.")
+    board_id: z4.string().uuid(),
+    title: z4.string().trim().min(1).max(200),
+    description: z4.string().optional(),
+    priority: priority.default("m\xE9dia"),
+    due_date: z4.string().datetime({ offset: true }).optional(),
+    status_id: z4.string().uuid().optional(),
+    service_id: z4.string().uuid().optional(),
+    assignee_user_id: z4.string().uuid().optional().describe("Primary responsible (defaults to caller)."),
+    follower_ids: z4.array(z4.string().uuid()).optional().describe("Additional followers.")
   },
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: false,
-    idempotentHint: false,
-    openWorldHint: false
-  },
-  handler: async (input, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
-    }
-    const client = sb6(ctx);
+  annotations: { readOnlyHint: false, idempotentHint: false },
+  handler: async (i, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
     const userId = ctx.getUserId();
-    const {
-      board_id,
-      title,
-      description,
-      priority,
-      due_date,
-      service_id,
-      assignee_user_id
-    } = input;
-    let { status_id } = input;
-    const { data: board, error: bErr } = await client.from("boards").select("id, team_id").eq("id", board_id).maybeSingle();
-    if (bErr) return { content: [{ type: "text", text: bErr.message }], isError: true };
-    if (!board) {
-      return {
-        content: [{ type: "text", text: "Board not found or not accessible" }],
-        isError: true
-      };
-    }
-    if (!status_id) {
-      const { data: st, error: sErr } = await client.from("board_statuses").select("status_id, position").eq("board_id", board_id).eq("is_active", true).order("position", { ascending: true }).limit(1).maybeSingle();
-      if (sErr) return { content: [{ type: "text", text: sErr.message }], isError: true };
-      if (!st) {
-        return {
-          content: [{ type: "text", text: "No active status found on this board" }],
-          isError: true
-        };
-      }
-      status_id = st.status_id;
-    }
-    const { data: demand, error: dErr } = await client.from("demands").insert({
-      board_id,
+    const { data: board, error: be } = await c.from("boards").select("id, team_id").eq("id", i.board_id).maybeSingle();
+    if (be) return fromPgError(be);
+    if (!board) return err("Board not found", "NOT_FOUND");
+    const status_id = i.status_id ?? await resolveFirstStatus(c, i.board_id);
+    if (!status_id) return err("No active status found on this board", "VALIDATION");
+    const { data: demand, error: de } = await c.from("demands").insert({
+      board_id: i.board_id,
       team_id: board.team_id,
       status_id,
-      title,
-      description: description ?? null,
-      priority,
-      due_date: due_date ?? null,
-      service_id: service_id ?? null,
+      title: i.title,
+      description: i.description ?? null,
+      priority: i.priority,
+      due_date: i.due_date ?? null,
+      service_id: i.service_id ?? null,
       created_by: userId
-    }).select(
-      "id, title, description, board_id, team_id, status_id, priority, due_date, service_id, created_at"
-    ).single();
-    if (dErr) return { content: [{ type: "text", text: dErr.message }], isError: true };
-    const responsibleId = assignee_user_id ?? userId;
-    const { error: aErr } = await client.from("demand_assignees").insert({
-      demand_id: demand.id,
-      user_id: responsibleId,
-      is_primary: true
+    }).select(demandFields).single();
+    if (de) return fromPgError(de);
+    const primary = i.assignee_user_id ?? userId;
+    const rows = [{ demand_id: demand.id, user_id: primary, is_primary: true }, ...(i.follower_ids ?? []).filter((u) => u !== primary).map((u) => ({ demand_id: demand.id, user_id: u, is_primary: false }))];
+    const { error: ae } = await c.from("demand_assignees").insert(rows);
+    if (ae) return ok({ demand, assignee_error: ae.message });
+    return ok({ demand });
+  }
+});
+var createDemandWithSubdemandsTool = defineTool4({
+  name: "create_demand_with_subdemands",
+  title: "Create demand with subdemands",
+  description: "Create a parent demand plus multiple subdemands and dependencies between them (indices are 1-based within subdemands).",
+  inputSchema: {
+    parent: z4.object({
+      board_id: z4.string().uuid(),
+      team_id: z4.string().uuid(),
+      title: z4.string().min(1),
+      description: z4.string().optional(),
+      status_id: z4.string().uuid(),
+      priority: priority.optional(),
+      assigned_to: z4.string().uuid().optional(),
+      due_date: z4.string().datetime({ offset: true }).optional(),
+      service_id: z4.string().uuid().optional()
+    }),
+    subdemands: z4.array(z4.object({
+      title: z4.string().min(1),
+      description: z4.string().optional(),
+      status_id: z4.string().uuid(),
+      priority: priority.optional(),
+      assigned_to: z4.string().uuid().optional(),
+      due_date: z4.string().datetime({ offset: true }).optional(),
+      service_id: z4.string().uuid().optional()
+    })).default([]),
+    dependencies: z4.array(z4.object({ demand_index: z4.number().int().min(1), depends_on_index: z4.number().int().min(1) })).default([])
+  },
+  annotations: { readOnlyHint: false, idempotentHint: false },
+  handler: async (i, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).rpc("create_demand_with_subdemands", {
+      p_parent: i.parent,
+      p_subdemands: i.subdemands,
+      p_dependencies: i.dependencies
     });
-    if (aErr) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Demand ${demand.id} created but failed to assign responsible: ${aErr.message}`
-          }
-        ],
-        structuredContent: { demand, assignee_error: aErr.message },
-        isError: true
-      };
+    if (error) return fromPgError(error);
+    return ok(data);
+  }
+});
+var updateDemandTool = defineTool4({
+  name: "update_demand",
+  title: "Update demand",
+  description: "Update demand fields (title, description, priority, due_date, service_id).",
+  inputSchema: {
+    demand_id: z4.string().uuid(),
+    title: z4.string().min(1).max(200).optional(),
+    description: z4.string().optional(),
+    priority: priority.optional(),
+    due_date: z4.string().datetime({ offset: true }).nullable().optional(),
+    service_id: z4.string().uuid().nullable().optional()
+  },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ demand_id, ...patch }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== void 0));
+    if (!Object.keys(clean).length) return ok({ updated: false });
+    const { data, error } = await sb(ctx).from("demands").update(clean).eq("id", demand_id).select(demandFields).maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ demand: data });
+  }
+});
+var changeDemandStatusTool = defineTool4({
+  name: "change_demand_status",
+  title: "Change demand status",
+  description: "Move a demand to a new status. Optionally propagates to subdemands.",
+  inputSchema: {
+    demand_id: z4.string().uuid(),
+    status_id: z4.string().uuid(),
+    propagate_to_subdemands: z4.boolean().default(false)
+  },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ demand_id, status_id, propagate_to_subdemands }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    const { data, error } = await c.from("demands").update({ status_id, status_changed_by: ctx.getUserId() }).eq("id", demand_id).select(demandFields).maybeSingle();
+    if (error) return fromPgError(error);
+    let propagated = null;
+    if (propagate_to_subdemands) {
+      const { data: p, error: pe } = await c.rpc("propagate_status_to_subdemands", { p_parent_id: demand_id, p_new_status_id: status_id });
+      if (pe) return fromPgError(pe);
+      propagated = p;
     }
-    const result = { ...demand, responsible_user_id: responsibleId };
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Created demand ${demand.id} "${demand.title}" on board ${board_id}.`
-        }
-      ],
-      structuredContent: { demand: result }
-    };
+    return ok({ demand: data, propagated });
+  }
+});
+var archiveDemandTool = defineTool4({
+  name: "archive_demand",
+  title: "Archive demand",
+  description: "Archive (soft-delete) or restore a demand.",
+  inputSchema: { demand_id: z4.string().uuid(), archived: z4.boolean().default(true) },
+  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+  handler: async ({ demand_id, archived }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demands").update({ archived }).eq("id", demand_id).select(demandFields).maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ demand: data });
+  }
+});
+var deleteDemandTool = defineTool4({
+  name: "delete_demand",
+  title: "Delete demand",
+  description: "Permanently delete a demand. Irreversible.",
+  inputSchema: { demand_id: z4.string().uuid(), confirm: z4.literal(true) },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("demands").delete().eq("id", demand_id);
+    if (error) return fromPgError(error);
+    return ok({ deleted: demand_id });
+  }
+});
+var moveDemandToBoardTool = defineTool4({
+  name: "move_demand_to_board",
+  title: "Move demand to another board",
+  description: "Move a demand to a different board. A new board_sequence_number is auto-assigned.",
+  inputSchema: { demand_id: z4.string().uuid(), target_board_id: z4.string().uuid(), status_id: z4.string().uuid().optional() },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ demand_id, target_board_id, status_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    const { data: board, error: be } = await c.from("boards").select("id, team_id").eq("id", target_board_id).maybeSingle();
+    if (be) return fromPgError(be);
+    if (!board) return err("Target board not found", "NOT_FOUND");
+    const sid = status_id ?? await resolveFirstStatus(c, target_board_id);
+    if (!sid) return err("No active status on target board", "VALIDATION");
+    const { data, error } = await c.from("demands").update({ board_id: target_board_id, team_id: board.team_id, status_id: sid }).eq("id", demand_id).select(demandFields).maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ demand: data });
+  }
+});
+var listDemandAssigneesTool = defineTool4({
+  name: "list_demand_assignees",
+  title: "List demand assignees",
+  description: "List the responsible + followers of a demand.",
+  inputSchema: { demand_id: z4.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_assignees").select("user_id, is_primary, profiles(id, full_name, avatar_url)").eq("demand_id", demand_id);
+    if (error) return fromPgError(error);
+    return ok({ assignees: data ?? [] });
+  }
+});
+var addDemandAssigneeTool = defineTool4({
+  name: "add_demand_assignee",
+  title: "Add demand assignee",
+  description: "Add a follower or set a primary responsible on a demand.",
+  inputSchema: { demand_id: z4.string().uuid(), user_id: z4.string().uuid(), is_primary: z4.boolean().default(false) },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ demand_id, user_id, is_primary }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    if (is_primary) {
+      await c.from("demand_assignees").update({ is_primary: false }).eq("demand_id", demand_id).eq("is_primary", true);
+    }
+    const { data, error } = await c.from("demand_assignees").upsert({ demand_id, user_id, is_primary }, { onConflict: "demand_id,user_id" }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ assignee: data });
+  }
+});
+var setPrimaryAssigneeTool = defineTool4({
+  name: "set_primary_assignee",
+  title: "Set primary assignee",
+  description: "Promote a user to primary responsible on a demand (there is always exactly one primary).",
+  inputSchema: { demand_id: z4.string().uuid(), user_id: z4.string().uuid() },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ demand_id, user_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    await c.from("demand_assignees").update({ is_primary: false }).eq("demand_id", demand_id);
+    const { data, error } = await c.from("demand_assignees").upsert({ demand_id, user_id, is_primary: true }, { onConflict: "demand_id,user_id" }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ assignee: data });
+  }
+});
+var removeDemandAssigneeTool = defineTool4({
+  name: "remove_demand_assignee",
+  title: "Remove demand assignee",
+  description: "Remove a follower from a demand (cannot leave the demand with 0 assignees).",
+  inputSchema: { demand_id: z4.string().uuid(), user_id: z4.string().uuid() },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ demand_id, user_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    const { count } = await c.from("demand_assignees").select("*", { count: "exact", head: true }).eq("demand_id", demand_id);
+    if ((count ?? 0) <= 1) return err("A demanda deve ter pelo menos 1 assignee", "VALIDATION");
+    const { error } = await c.from("demand_assignees").delete().eq("demand_id", demand_id).eq("user_id", user_id);
+    if (error) return fromPgError(error);
+    return ok({ removed: user_id });
+  }
+});
+var listDemandDependenciesTool = defineTool4({
+  name: "list_demand_dependencies",
+  title: "List demand dependencies",
+  description: "List demands this demand depends on.",
+  inputSchema: { demand_id: z4.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_dependencies").select("depends_on_demand_id, demands!demand_dependencies_depends_on_demand_id_fkey(id, title, status_id)").eq("demand_id", demand_id);
+    if (error) return fromPgError(error);
+    return ok({ dependencies: data ?? [] });
+  }
+});
+var addDependencyTool = defineTool4({
+  name: "add_dependency",
+  title: "Add demand dependency",
+  description: "Make demand_id depend on depends_on_demand_id (must be delivered before demand_id can start).",
+  inputSchema: { demand_id: z4.string().uuid(), depends_on_demand_id: z4.string().uuid() },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ demand_id, depends_on_demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_dependencies").insert({ demand_id, depends_on_demand_id }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ dependency: data });
+  }
+});
+var removeDependencyTool = defineTool4({
+  name: "remove_dependency",
+  title: "Remove demand dependency",
+  description: "Remove demand dependency.",
+  inputSchema: { demand_id: z4.string().uuid(), depends_on_demand_id: z4.string().uuid() },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ demand_id, depends_on_demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("demand_dependencies").delete().eq("demand_id", demand_id).eq("depends_on_demand_id", depends_on_demand_id);
+    if (error) return fromPgError(error);
+    return ok({ removed: depends_on_demand_id });
+  }
+});
+var reorderSubdemandsTool = defineTool4({
+  name: "reorder_subdemands",
+  title: "Reorder subdemands",
+  description: "Reorder subdemands of a parent by supplying the ordered list of ids.",
+  inputSchema: { parent_demand_id: z4.string().uuid(), ordered_ids: z4.array(z4.string().uuid()).min(1) },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ parent_demand_id, ordered_ids }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).rpc("reorder_subdemands", { p_parent_id: parent_demand_id, p_ordered_ids: ordered_ids });
+    if (error) return fromPgError(error);
+    return ok({ reordered: true });
+  }
+});
+
+// src/lib/mcp/tools/subtasks.ts
+var subtasks_exports = {};
+__export(subtasks_exports, {
+  createSubtaskTool: () => createSubtaskTool,
+  deleteSubtaskTool: () => deleteSubtaskTool,
+  listSubtasksTool: () => listSubtasksTool,
+  toggleSubtaskTool: () => toggleSubtaskTool,
+  updateSubtaskTool: () => updateSubtaskTool
+});
+import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z5 } from "npm:zod@^3.25.76";
+var listSubtasksTool = defineTool5({
+  name: "list_subtasks",
+  title: "List subtasks (checklist)",
+  description: "List checklist subtasks of a demand.",
+  inputSchema: { demand_id: z5.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_subtasks").select("*").eq("demand_id", demand_id).order("position");
+    if (error) return fromPgError(error);
+    return ok({ subtasks: data ?? [] });
+  }
+});
+var createSubtaskTool = defineTool5({
+  name: "create_subtask",
+  title: "Create subtask",
+  description: "Add a checklist item to a demand.",
+  inputSchema: { demand_id: z5.string().uuid(), title: z5.string().trim().min(1).max(300) },
+  annotations: { readOnlyHint: false, idempotentHint: false },
+  handler: async ({ demand_id, title }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    const { data: last } = await c.from("demand_subtasks").select("position").eq("demand_id", demand_id).order("position", { ascending: false }).limit(1).maybeSingle();
+    const position = (last?.position ?? -1) + 1;
+    const { data, error } = await c.from("demand_subtasks").insert({ demand_id, title, position, created_by: ctx.getUserId() }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ subtask: data });
+  }
+});
+var toggleSubtaskTool = defineTool5({
+  name: "toggle_subtask",
+  title: "Toggle subtask done",
+  description: "Toggle subtask done.",
+  inputSchema: { subtask_id: z5.string().uuid(), completed: z5.boolean() },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ subtask_id, completed }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_subtasks").update({ completed }).eq("id", subtask_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ subtask: data });
+  }
+});
+var updateSubtaskTool = defineTool5({
+  name: "update_subtask",
+  title: "Update subtask",
+  description: "Update subtask.",
+  inputSchema: { subtask_id: z5.string().uuid(), title: z5.string().trim().min(1).max(300) },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ subtask_id, title }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_subtasks").update({ title }).eq("id", subtask_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ subtask: data });
+  }
+});
+var deleteSubtaskTool = defineTool5({
+  name: "delete_subtask",
+  title: "Delete subtask",
+  description: "Delete subtask.",
+  inputSchema: { subtask_id: z5.string().uuid() },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ subtask_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("demand_subtasks").delete().eq("id", subtask_id);
+    if (error) return fromPgError(error);
+    return ok({ deleted: subtask_id });
+  }
+});
+
+// src/lib/mcp/tools/comments.ts
+var comments_exports = {};
+__export(comments_exports, {
+  deleteDemandCommentTool: () => deleteDemandCommentTool,
+  listDemandCommentsTool: () => listDemandCommentsTool,
+  postDemandCommentTool: () => postDemandCommentTool
+});
+import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z6 } from "npm:zod@^3.25.76";
+var channel = z6.enum(["general", "internal"]);
+var listDemandCommentsTool = defineTool6({
+  name: "list_demand_comments",
+  title: "List demand comments",
+  description: "List chat/comment messages on a demand. Channel 'general' is visible to everyone with access; 'internal' is limited to admin/moderator/executor.",
+  inputSchema: {
+    demand_id: z6.string().uuid(),
+    channel: channel.default("general"),
+    limit: z6.number().int().min(1).max(200).default(50)
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ demand_id, channel: ch, limit }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_interactions").select("id, user_id, channel, content, created_at, profiles(id, full_name, avatar_url)").eq("demand_id", demand_id).eq("channel", ch).order("created_at", { ascending: false }).limit(limit);
+    if (error) return fromPgError(error);
+    return ok({ comments: data ?? [] });
+  }
+});
+var postDemandCommentTool = defineTool6({
+  name: "post_demand_comment",
+  title: "Post demand comment",
+  description: "Post a message on a demand. Use [[uuid:Name]] to mention a user (they receive an in-app notification).",
+  inputSchema: {
+    demand_id: z6.string().uuid(),
+    content: z6.string().trim().min(1).max(1e4),
+    channel: channel.default("general")
+  },
+  annotations: { readOnlyHint: false, idempotentHint: false },
+  handler: async ({ demand_id, content, channel: ch }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_interactions").insert({ demand_id, content, channel: ch, user_id: ctx.getUserId() }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ comment: data });
+  }
+});
+var deleteDemandCommentTool = defineTool6({
+  name: "delete_demand_comment",
+  title: "Delete demand comment",
+  description: "Delete demand comment.",
+  inputSchema: { comment_id: z6.string().uuid() },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ comment_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("demand_interactions").delete().eq("id", comment_id);
+    if (error) return fromPgError(error);
+    return ok({ deleted: comment_id });
+  }
+});
+
+// src/lib/mcp/tools/attachments.ts
+var attachments_exports = {};
+__export(attachments_exports, {
+  deleteAttachmentTool: () => deleteAttachmentTool,
+  getAttachmentUrlTool: () => getAttachmentUrlTool,
+  listAttachmentsTool: () => listAttachmentsTool
+});
+import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z7 } from "npm:zod@^3.25.76";
+var listAttachmentsTool = defineTool7({
+  name: "list_demand_attachments",
+  title: "List demand attachments",
+  description: "List file attachments metadata of a demand. Use `get_attachment_url` to obtain a signed download URL.",
+  inputSchema: { demand_id: z7.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_attachments").select("*").eq("demand_id", demand_id).order("created_at", { ascending: false });
+    if (error) return fromPgError(error);
+    return ok({ attachments: data ?? [] });
+  }
+});
+var getAttachmentUrlTool = defineTool7({
+  name: "get_attachment_url",
+  title: "Get attachment signed URL",
+  description: "Return a short-lived signed URL to download a demand attachment.",
+  inputSchema: { attachment_id: z7.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: false },
+  handler: async ({ attachment_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).functions.invoke("demand-attachment-url", { body: { attachment_id } });
+    if (error) return fromPgError({ message: error.message });
+    return ok(data);
+  }
+});
+var deleteAttachmentTool = defineTool7({
+  name: "delete_demand_attachment",
+  title: "Delete demand attachment",
+  description: "Delete demand attachment.",
+  inputSchema: { attachment_id: z7.string().uuid() },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ attachment_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("demand_attachments").delete().eq("id", attachment_id);
+    if (error) return fromPgError(error);
+    return ok({ deleted: attachment_id });
+  }
+});
+
+// src/lib/mcp/tools/time.ts
+var time_exports = {};
+__export(time_exports, {
+  getActiveTimerTool: () => getActiveTimerTool,
+  listTimeEntriesTool: () => listTimeEntriesTool,
+  manualTimeEntryTool: () => manualTimeEntryTool,
+  startTimerTool: () => startTimerTool,
+  stopTimerTool: () => stopTimerTool
+});
+import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z8 } from "npm:zod@^3.25.76";
+var startTimerTool = defineTool8({
+  name: "start_demand_timer",
+  title: "Start demand timer",
+  description: "Start a time entry on a demand for the caller. Stops any previously active entry.",
+  inputSchema: { demand_id: z8.string().uuid() },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    await c.from("demand_time_entries").update({ ended_at: now }).eq("user_id", ctx.getUserId()).is("ended_at", null);
+    const { data, error } = await c.from("demand_time_entries").insert({ demand_id, user_id: ctx.getUserId(), started_at: now }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ entry: data });
+  }
+});
+var stopTimerTool = defineTool8({
+  name: "stop_demand_timer",
+  title: "Stop demand timer",
+  description: "Stop the caller's currently active time entry on a demand.",
+  inputSchema: { demand_id: z8.string().uuid().optional() },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    let q = c.from("demand_time_entries").update({ ended_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("user_id", ctx.getUserId()).is("ended_at", null);
+    if (demand_id) q = q.eq("demand_id", demand_id);
+    const { data, error } = await q.select();
+    if (error) return fromPgError(error);
+    return ok({ stopped: data ?? [] });
+  }
+});
+var getActiveTimerTool = defineTool8({
+  name: "get_active_timer",
+  title: "Get active timer",
+  description: "Return the caller's currently-running time entry, if any.",
+  inputSchema: {},
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async (_i, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_time_entries").select("*, demands(id, title, board_id)").eq("user_id", ctx.getUserId()).is("ended_at", null).maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ entry: data });
+  }
+});
+var listTimeEntriesTool = defineTool8({
+  name: "list_demand_time_entries",
+  title: "List time entries",
+  description: "List time entries for a demand.",
+  inputSchema: { demand_id: z8.string().uuid(), limit: z8.number().int().min(1).max(200).default(100) },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ demand_id, limit }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_time_entries").select("*, profiles(id, full_name)").eq("demand_id", demand_id).order("started_at", { ascending: false }).limit(limit);
+    if (error) return fromPgError(error);
+    return ok({ entries: data ?? [] });
+  }
+});
+var manualTimeEntryTool = defineTool8({
+  name: "manual_time_entry",
+  title: "Manual time entry",
+  description: "Create a completed time entry with explicit start/end. Duration is computed by the database.",
+  inputSchema: {
+    demand_id: z8.string().uuid(),
+    started_at: z8.string().datetime({ offset: true }),
+    ended_at: z8.string().datetime({ offset: true }),
+    note: z8.string().max(500).optional()
+  },
+  annotations: { readOnlyHint: false, idempotentHint: false },
+  handler: async ({ demand_id, started_at, ended_at, note }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const duration = Math.max(0, Math.floor((new Date(ended_at).getTime() - new Date(started_at).getTime()) / 1e3));
+    const { data, error } = await sb(ctx).from("demand_time_entries").insert({ demand_id, user_id: ctx.getUserId(), started_at, ended_at, duration_seconds: duration, note: note ?? null }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ entry: data });
+  }
+});
+
+// src/lib/mcp/tools/services.ts
+var services_exports = {};
+__export(services_exports, {
+  createServiceTool: () => createServiceTool,
+  deleteServiceTool: () => deleteServiceTool,
+  getServiceTool: () => getServiceTool,
+  listServicesTool: () => listServicesTool,
+  updateServiceTool: () => updateServiceTool
+});
+import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z9 } from "npm:zod@^3.25.76";
+var listServicesTool = defineTool9({
+  name: "list_services",
+  title: "List services",
+  description: "List services (categories/folders) for a team.",
+  inputSchema: { team_id: z9.string().uuid(), parent_id: z9.string().uuid().nullable().optional() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ team_id, parent_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    let q = sb(ctx).from("services").select("*").eq("team_id", team_id).order("name");
+    if (parent_id !== void 0) q = parent_id === null ? q.is("parent_id", null) : q.eq("parent_id", parent_id);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    return ok({ services: data ?? [] });
+  }
+});
+var getServiceTool = defineTool9({
+  name: "get_service",
+  title: "Get service",
+  description: "Get service.",
+  inputSchema: { service_id: z9.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ service_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("services").select("*").eq("id", service_id).maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ service: data });
+  }
+});
+var createServiceTool = defineTool9({
+  name: "create_service",
+  title: "Create service",
+  description: "Create a service (or folder if parent_id is null and no category).",
+  inputSchema: {
+    team_id: z9.string().uuid(),
+    name: z9.string().trim().min(1).max(120),
+    category: z9.string().max(120).optional(),
+    parent_id: z9.string().uuid().nullable().optional(),
+    color: z9.string().optional(),
+    description: z9.string().optional()
+  },
+  annotations: { readOnlyHint: false, idempotentHint: false },
+  handler: async (input, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("services").insert({ ...input, created_by: ctx.getUserId() }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ service: data });
+  }
+});
+var updateServiceTool = defineTool9({
+  name: "update_service",
+  title: "Update service",
+  description: "Update service.",
+  inputSchema: {
+    service_id: z9.string().uuid(),
+    name: z9.string().trim().min(1).max(120).optional(),
+    category: z9.string().max(120).optional(),
+    color: z9.string().optional(),
+    description: z9.string().optional(),
+    parent_id: z9.string().uuid().nullable().optional()
+  },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ service_id, ...patch }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== void 0));
+    if (!Object.keys(clean).length) return ok({ updated: false });
+    const { data, error } = await sb(ctx).from("services").update(clean).eq("id", service_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ service: data });
+  }
+});
+var deleteServiceTool = defineTool9({
+  name: "delete_service",
+  title: "Delete service",
+  description: "Delete service.",
+  inputSchema: { service_id: z9.string().uuid() },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ service_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("services").delete().eq("id", service_id);
+    if (error) return fromPgError(error);
+    return ok({ deleted: service_id });
+  }
+});
+
+// src/lib/mcp/tools/notes.ts
+var notes_exports = {};
+__export(notes_exports, {
+  archiveNoteTool: () => archiveNoteTool,
+  createNoteTool: () => createNoteTool,
+  deleteNoteTool: () => deleteNoteTool,
+  getNoteTool: () => getNoteTool,
+  listNotesTool: () => listNotesTool,
+  revokeNoteShareTool: () => revokeNoteShareTool,
+  shareNoteTool: () => shareNoteTool,
+  updateNoteTool: () => updateNoteTool
+});
+import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z10 } from "npm:zod@^3.25.76";
+var listNotesTool = defineTool10({
+  name: "list_notes",
+  title: "List notes",
+  description: "List notes of a team the caller can access.",
+  inputSchema: {
+    team_id: z10.string().uuid(),
+    archived: z10.boolean().default(false),
+    query: z10.string().optional().describe("Optional text search on title/content."),
+    limit: z10.number().int().min(1).max(200).default(50)
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ team_id, archived, query, limit }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    let q = sb(ctx).from("notes").select("*").eq("team_id", team_id).eq("archived", archived).order("updated_at", { ascending: false }).limit(limit);
+    if (query) {
+      const esc = query.replace(/[%_]/g, (m) => `\\${m}`);
+      q = q.or(`title.ilike.%${esc}%,content.ilike.%${esc}%`);
+    }
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    return ok({ notes: data ?? [] });
+  }
+});
+var getNoteTool = defineTool10({
+  name: "get_note",
+  title: "Get note",
+  description: "Get note.",
+  inputSchema: { note_id: z10.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ note_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("notes").select("*").eq("id", note_id).maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ note: data });
+  }
+});
+var createNoteTool = defineTool10({
+  name: "create_note",
+  title: "Create note",
+  description: "Create note.",
+  inputSchema: {
+    team_id: z10.string().uuid(),
+    title: z10.string().trim().min(1).max(200),
+    content: z10.string().default(""),
+    is_private: z10.boolean().default(true)
+  },
+  annotations: { readOnlyHint: false, idempotentHint: false },
+  handler: async (input, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("notes").insert({ ...input, created_by: ctx.getUserId() }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ note: data });
+  }
+});
+var updateNoteTool = defineTool10({
+  name: "update_note",
+  title: "Update note",
+  description: "Update note.",
+  inputSchema: {
+    note_id: z10.string().uuid(),
+    title: z10.string().trim().min(1).max(200).optional(),
+    content: z10.string().optional(),
+    is_private: z10.boolean().optional()
+  },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ note_id, ...patch }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== void 0));
+    if (!Object.keys(clean).length) return ok({ updated: false });
+    const { data, error } = await sb(ctx).from("notes").update(clean).eq("id", note_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ note: data });
+  }
+});
+var archiveNoteTool = defineTool10({
+  name: "archive_note",
+  title: "Archive/restore note",
+  description: "Archive/restore note.",
+  inputSchema: { note_id: z10.string().uuid(), archived: z10.boolean().default(true) },
+  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+  handler: async ({ note_id, archived }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("notes").update({ archived }).eq("id", note_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ note: data });
+  }
+});
+var deleteNoteTool = defineTool10({
+  name: "delete_note",
+  title: "Delete note",
+  description: "Delete note.",
+  inputSchema: { note_id: z10.string().uuid(), confirm: z10.literal(true) },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ note_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("notes").delete().eq("id", note_id);
+    if (error) return fromPgError(error);
+    return ok({ deleted: note_id });
+  }
+});
+var shareNoteTool = defineTool10({
+  name: "share_note_with_user",
+  title: "Share note with user",
+  description: "Share note with user.",
+  inputSchema: { note_id: z10.string().uuid(), user_id: z10.string().uuid(), permission: z10.enum(["view", "edit"]).default("view") },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ note_id, user_id, permission }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("note_shares").upsert({ note_id, shared_with_user_id: user_id, permission, shared_by: ctx.getUserId() }, { onConflict: "note_id,shared_with_user_id" }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ share: data });
+  }
+});
+var revokeNoteShareTool = defineTool10({
+  name: "revoke_note_share",
+  title: "Revoke note share",
+  description: "Revoke note share.",
+  inputSchema: { note_id: z10.string().uuid(), user_id: z10.string().uuid() },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ note_id, user_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("note_shares").delete().eq("note_id", note_id).eq("shared_with_user_id", user_id);
+    if (error) return fromPgError(error);
+    return ok({ revoked: user_id });
+  }
+});
+
+// src/lib/mcp/tools/projects.ts
+var projects_exports = {};
+__export(projects_exports, {
+  addDemandToProjectTool: () => addDemandToProjectTool,
+  createProjectTool: () => createProjectTool,
+  deleteProjectTool: () => deleteProjectTool,
+  getProjectTool: () => getProjectTool,
+  listProjectsTool: () => listProjectsTool,
+  removeDemandFromProjectTool: () => removeDemandFromProjectTool,
+  updateProjectTool: () => updateProjectTool
+});
+import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z11 } from "npm:zod@^3.25.76";
+var listProjectsTool = defineTool11({
+  name: "list_projects",
+  title: "List projects (folders)",
+  description: "List demand folders/projects the caller can access.",
+  inputSchema: { team_id: z11.string().uuid().optional() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ team_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    let q = sb(ctx).from("projects").select("*").order("created_at", { ascending: false });
+    if (team_id) q = q.eq("team_id", team_id);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    return ok({ projects: data ?? [] });
+  }
+});
+var getProjectTool = defineTool11({
+  name: "get_project",
+  title: "Get project",
+  description: "Get project.",
+  inputSchema: { project_id: z11.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ project_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    const { data: project, error } = await c.from("projects").select("*").eq("id", project_id).maybeSingle();
+    if (error) return fromPgError(error);
+    const { data: demands } = await c.from("project_demands").select("demand_id, demands(id, title, status_id, board_id)").eq("project_id", project_id);
+    const { data: shares } = await c.from("project_shares").select("user_id, permission").eq("project_id", project_id);
+    return ok({ project, demands: demands ?? [], shares: shares ?? [] });
+  }
+});
+var createProjectTool = defineTool11({
+  name: "create_project",
+  title: "Create project",
+  description: "Create project.",
+  inputSchema: {
+    team_id: z11.string().uuid(),
+    name: z11.string().trim().min(1).max(200),
+    description: z11.string().optional(),
+    color: z11.string().optional()
+  },
+  annotations: { readOnlyHint: false, idempotentHint: false },
+  handler: async (input, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("projects").insert({ ...input, created_by: ctx.getUserId() }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ project: data });
+  }
+});
+var updateProjectTool = defineTool11({
+  name: "update_project",
+  title: "Update project",
+  description: "Update project.",
+  inputSchema: {
+    project_id: z11.string().uuid(),
+    name: z11.string().trim().min(1).max(200).optional(),
+    description: z11.string().optional(),
+    color: z11.string().optional()
+  },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ project_id, ...patch }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== void 0));
+    if (!Object.keys(clean).length) return ok({ updated: false });
+    const { data, error } = await sb(ctx).from("projects").update(clean).eq("id", project_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ project: data });
+  }
+});
+var deleteProjectTool = defineTool11({
+  name: "delete_project",
+  title: "Delete project",
+  description: "Delete project.",
+  inputSchema: { project_id: z11.string().uuid(), confirm: z11.literal(true) },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ project_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("projects").delete().eq("id", project_id);
+    if (error) return fromPgError(error);
+    return ok({ deleted: project_id });
+  }
+});
+var addDemandToProjectTool = defineTool11({
+  name: "add_demand_to_project",
+  title: "Add demand to project",
+  description: "Add demand to project.",
+  inputSchema: { project_id: z11.string().uuid(), demand_id: z11.string().uuid() },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ project_id, demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("project_demands").upsert({ project_id, demand_id }, { onConflict: "project_id,demand_id" }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ link: data });
+  }
+});
+var removeDemandFromProjectTool = defineTool11({
+  name: "remove_demand_from_project",
+  title: "Remove demand from project",
+  description: "Remove demand from project.",
+  inputSchema: { project_id: z11.string().uuid(), demand_id: z11.string().uuid() },
+  annotations: { readOnlyHint: false, destructiveHint: true },
+  handler: async ({ project_id, demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error } = await sb(ctx).from("project_demands").delete().eq("project_id", project_id).eq("demand_id", demand_id);
+    if (error) return fromPgError(error);
+    return ok({ removed: demand_id });
+  }
+});
+
+// src/lib/mcp/tools/requests.ts
+var requests_exports = {};
+__export(requests_exports, {
+  createDemandRequestTool: () => createDemandRequestTool,
+  getDemandRequestTool: () => getDemandRequestTool,
+  listDemandRequestsTool: () => listDemandRequestsTool,
+  postRequestCommentTool: () => postRequestCommentTool,
+  respondDemandRequestTool: () => respondDemandRequestTool
+});
+import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z12 } from "npm:zod@^3.25.76";
+var requestStatus = z12.enum(["pending", "approved", "rejected", "returned"]);
+var listDemandRequestsTool = defineTool12({
+  name: "list_demand_requests",
+  title: "List demand requests",
+  description: "List demand approval requests (submitted by requesters) visible to the caller.",
+  inputSchema: {
+    team_id: z12.string().uuid().optional(),
+    board_id: z12.string().uuid().optional(),
+    status: requestStatus.optional(),
+    limit: z12.number().int().min(1).max(200).default(50)
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ team_id, board_id, status, limit }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    let q = sb(ctx).from("demand_requests").select("*").order("created_at", { ascending: false }).limit(limit);
+    if (team_id) q = q.eq("team_id", team_id);
+    if (board_id) q = q.eq("board_id", board_id);
+    if (status) q = q.eq("status", status);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    return ok({ requests: data ?? [] });
+  }
+});
+var getDemandRequestTool = defineTool12({
+  name: "get_demand_request",
+  title: "Get demand request",
+  description: "Get demand request.",
+  inputSchema: { request_id: z12.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ request_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    const { data, error } = await c.from("demand_requests").select("*").eq("id", request_id).maybeSingle();
+    if (error) return fromPgError(error);
+    const { data: comments } = await c.from("demand_request_comments").select("*, profiles(id, full_name, avatar_url)").eq("request_id", request_id).order("created_at");
+    return ok({ request: data, comments: comments ?? [] });
+  }
+});
+var createDemandRequestTool = defineTool12({
+  name: "create_demand_request",
+  title: "Create demand request",
+  description: "Submit a demand request for approval on a team (optionally targeting a board).",
+  inputSchema: {
+    team_id: z12.string().uuid(),
+    board_id: z12.string().uuid().optional(),
+    title: z12.string().trim().min(1).max(200),
+    description: z12.string().optional(),
+    priority: z12.enum(["baixa", "m\xE9dia", "alta", "urgente"]).default("m\xE9dia"),
+    due_date: z12.string().datetime({ offset: true }).optional(),
+    service_id: z12.string().uuid().optional()
+  },
+  annotations: { readOnlyHint: false, idempotentHint: false },
+  handler: async (input, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_requests").insert({ ...input, created_by: ctx.getUserId(), status: "pending" }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ request: data });
+  }
+});
+var respondDemandRequestTool = defineTool12({
+  name: "respond_demand_request",
+  title: "Approve/reject/return request",
+  description: "Change a demand request status to approved, rejected, or returned. Provide reason for rejected/returned.",
+  inputSchema: {
+    request_id: z12.string().uuid(),
+    action: z12.enum(["approved", "rejected", "returned"]),
+    reason: z12.string().optional()
+  },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ request_id, action, reason }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const patch = { status: action, responded_by: ctx.getUserId(), responded_at: (/* @__PURE__ */ new Date()).toISOString() };
+    if (action !== "approved") patch.rejection_reason = reason ?? null;
+    const { data, error } = await sb(ctx).from("demand_requests").update(patch).eq("id", request_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ request: data });
+  }
+});
+var postRequestCommentTool = defineTool12({
+  name: "post_request_comment",
+  title: "Post request comment",
+  description: "Post request comment.",
+  inputSchema: { request_id: z12.string().uuid(), content: z12.string().trim().min(1).max(5e3) },
+  annotations: { readOnlyHint: false, idempotentHint: false },
+  handler: async ({ request_id, content }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_request_comments").insert({ request_id, content, user_id: ctx.getUserId() }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ comment: data });
+  }
+});
+
+// src/lib/mcp/tools/templates.ts
+var templates_exports = {};
+__export(templates_exports, {
+  getTemplateTool: () => getTemplateTool,
+  listRecurringDemandsTool: () => listRecurringDemandsTool,
+  listTemplatesTool: () => listTemplatesTool,
+  pauseRecurringDemandTool: () => pauseRecurringDemandTool
+});
+import { defineTool as defineTool13 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z13 } from "npm:zod@^3.25.76";
+var listTemplatesTool = defineTool13({
+  name: "list_templates",
+  title: "List demand templates",
+  description: "List demand templates.",
+  inputSchema: { team_id: z13.string().uuid(), board_id: z13.string().uuid().optional() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ team_id, board_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    let q = sb(ctx).from("demand_templates").select("*").eq("team_id", team_id).order("name");
+    if (board_id) q = q.eq("board_id", board_id);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    return ok({ templates: data ?? [] });
+  }
+});
+var getTemplateTool = defineTool13({
+  name: "get_template",
+  title: "Get template",
+  description: "Get template.",
+  inputSchema: { template_id: z13.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ template_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_templates").select("*").eq("id", template_id).maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ template: data });
+  }
+});
+var listRecurringDemandsTool = defineTool13({
+  name: "list_recurring_demands",
+  title: "List recurring demands",
+  description: "List recurring demands.",
+  inputSchema: { team_id: z13.string().uuid().optional(), board_id: z13.string().uuid().optional() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ team_id, board_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    let q = sb(ctx).from("recurring_demands").select("*").order("created_at", { ascending: false });
+    if (team_id) q = q.eq("team_id", team_id);
+    if (board_id) q = q.eq("board_id", board_id);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    return ok({ recurring: data ?? [] });
+  }
+});
+var pauseRecurringDemandTool = defineTool13({
+  name: "pause_recurring_demand",
+  title: "Pause/resume recurring demand",
+  description: "Pause/resume recurring demand.",
+  inputSchema: { recurring_id: z13.string().uuid(), is_active: z13.boolean() },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ recurring_id, is_active }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("recurring_demands").update({ is_active }).eq("id", recurring_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ recurring: data });
+  }
+});
+
+// src/lib/mcp/tools/notifications.ts
+var notifications_exports = {};
+__export(notifications_exports, {
+  listNotificationsTool: () => listNotificationsTool,
+  markAllNotificationsReadTool: () => markAllNotificationsReadTool,
+  markNotificationReadTool: () => markNotificationReadTool
+});
+import { defineTool as defineTool14 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z14 } from "npm:zod@^3.25.76";
+var listNotificationsTool = defineTool14({
+  name: "list_notifications",
+  title: "List notifications",
+  description: "List the caller's in-app notifications.",
+  inputSchema: {
+    unread_only: z14.boolean().default(false),
+    limit: z14.number().int().min(1).max(200).default(50)
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ unread_only, limit }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    let q = sb(ctx).from("notifications").select("*").eq("user_id", ctx.getUserId()).order("created_at", { ascending: false }).limit(limit);
+    if (unread_only) q = q.eq("read", false);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    return ok({ notifications: data ?? [] });
+  }
+});
+var markNotificationReadTool = defineTool14({
+  name: "mark_notification_read",
+  title: "Mark notification read",
+  description: "Mark notification read.",
+  inputSchema: { notification_id: z14.string().uuid(), read: z14.boolean().default(true) },
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async ({ notification_id, read }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("notifications").update({ read }).eq("id", notification_id).eq("user_id", ctx.getUserId()).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ notification: data });
+  }
+});
+var markAllNotificationsReadTool = defineTool14({
+  name: "mark_all_notifications_read",
+  title: "Mark all notifications read",
+  description: "Mark all notifications read.",
+  inputSchema: {},
+  annotations: { readOnlyHint: false, idempotentHint: true },
+  handler: async (_i, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { error, count } = await sb(ctx).from("notifications").update({ read: true }, { count: "exact" }).eq("user_id", ctx.getUserId()).eq("read", false);
+    if (error) return fromPgError(error);
+    return ok({ updated: count ?? 0 });
+  }
+});
+
+// src/lib/mcp/tools/sharing.ts
+var sharing_exports = {};
+__export(sharing_exports, {
+  createDemandShareTokenTool: () => createDemandShareTokenTool,
+  listDemandShareTokensTool: () => listDemandShareTokensTool,
+  revokeDemandShareTokenTool: () => revokeDemandShareTokenTool
+});
+import { defineTool as defineTool15 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z15 } from "npm:zod@^3.25.76";
+function randomToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+var createDemandShareTokenTool = defineTool15({
+  name: "create_demand_share_token",
+  title: "Create demand share link",
+  description: "Create a public share token for a demand (optionally with expiry and auto_join_board).",
+  inputSchema: {
+    demand_id: z15.string().uuid(),
+    expires_at: z15.string().datetime({ offset: true }).nullable().optional(),
+    auto_join_board: z15.boolean().default(false)
+  },
+  annotations: { readOnlyHint: false, idempotentHint: false },
+  handler: async ({ demand_id, expires_at, auto_join_board }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const token = randomToken();
+    const { data, error } = await sb(ctx).from("demand_share_tokens").insert({
+      demand_id,
+      token,
+      expires_at: expires_at ?? null,
+      auto_join_board,
+      is_active: true,
+      created_by: ctx.getUserId()
+    }).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ token: data });
+  }
+});
+var listDemandShareTokensTool = defineTool15({
+  name: "list_demand_share_tokens",
+  title: "List demand share tokens",
+  description: "List demand share tokens.",
+  inputSchema: { demand_id: z15.string().uuid() },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ demand_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_share_tokens").select("*").eq("demand_id", demand_id).order("created_at", { ascending: false });
+    if (error) return fromPgError(error);
+    return ok({ tokens: data ?? [] });
+  }
+});
+var revokeDemandShareTokenTool = defineTool15({
+  name: "revoke_demand_share_token",
+  title: "Revoke demand share token",
+  description: "Revoke demand share token.",
+  inputSchema: { token_id: z15.string().uuid() },
+  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+  handler: async ({ token_id }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const { data, error } = await sb(ctx).from("demand_share_tokens").update({ is_active: false }).eq("id", token_id).select().maybeSingle();
+    if (error) return fromPgError(error);
+    return ok({ token: data });
+  }
+});
+
+// src/lib/mcp/tools/analytics.ts
+var analytics_exports = {};
+__export(analytics_exports, {
+  boardSummaryStatsTool: () => boardSummaryStatsTool,
+  demandsByPeriodTool: () => demandsByPeriodTool,
+  overdueDemandsTool: () => overdueDemandsTool,
+  userProductivityTool: () => userProductivityTool
+});
+import { defineTool as defineTool16 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z16 } from "npm:zod@^3.25.76";
+var boardSummaryStatsTool = defineTool16({
+  name: "board_summary_stats",
+  title: "Board summary stats",
+  description: "Aggregate counters for a board: total, delivered, overdue, in-progress, by status, by assignee.",
+  inputSchema: {
+    board_id: z16.string().uuid(),
+    from: z16.string().datetime({ offset: true }).optional(),
+    to: z16.string().datetime({ offset: true }).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ board_id, from, to }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const c = sb(ctx);
+    let q = c.from("demands").select("id, status_id, is_overdue, delivered_at, created_at, priority").eq("board_id", board_id).eq("archived", false);
+    if (from) q = q.gte("created_at", from);
+    if (to) q = q.lte("created_at", to);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    const list = data ?? [];
+    const byStatus = {};
+    for (const d of list) byStatus[d.status_id] = (byStatus[d.status_id] ?? 0) + 1;
+    return ok({
+      total: list.length,
+      delivered: list.filter((d) => d.delivered_at).length,
+      overdue: list.filter((d) => d.is_overdue).length,
+      by_status: byStatus,
+      by_priority: list.reduce((acc, d) => {
+        acc[d.priority] = (acc[d.priority] ?? 0) + 1;
+        return acc;
+      }, {})
+    });
+  }
+});
+var demandsByPeriodTool = defineTool16({
+  name: "demands_by_period",
+  title: "Demands by period",
+  description: "Count demands created per day between two dates (bounded to 90 days).",
+  inputSchema: {
+    board_id: z16.string().uuid().optional(),
+    team_id: z16.string().uuid().optional(),
+    from: z16.string().datetime({ offset: true }),
+    to: z16.string().datetime({ offset: true })
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ board_id, team_id, from, to }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    let q = sb(ctx).from("demands").select("created_at, delivered_at").gte("created_at", from).lte("created_at", to).eq("archived", false);
+    if (board_id) q = q.eq("board_id", board_id);
+    if (team_id) q = q.eq("team_id", team_id);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    const created = {};
+    const delivered = {};
+    for (const d of data ?? []) {
+      const c = d.created_at.substring(0, 10);
+      created[c] = (created[c] ?? 0) + 1;
+      if (d.delivered_at) {
+        const dd = d.delivered_at.substring(0, 10);
+        delivered[dd] = (delivered[dd] ?? 0) + 1;
+      }
+    }
+    return ok({ created_by_day: created, delivered_by_day: delivered });
+  }
+});
+var overdueDemandsTool = defineTool16({
+  name: "overdue_demands",
+  title: "List overdue demands",
+  description: "List overdue demands.",
+  inputSchema: {
+    board_id: z16.string().uuid().optional(),
+    team_id: z16.string().uuid().optional(),
+    limit: z16.number().int().min(1).max(200).default(100)
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ board_id, team_id, limit }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    let q = sb(ctx).from("demands").select("id, title, due_date, priority, board_id, status_id").eq("is_overdue", true).eq("archived", false).order("due_date").limit(limit);
+    if (board_id) q = q.eq("board_id", board_id);
+    if (team_id) q = q.eq("team_id", team_id);
+    const { data, error } = await q;
+    if (error) return fromPgError(error);
+    return ok({ demands: data ?? [] });
+  }
+});
+var userProductivityTool = defineTool16({
+  name: "user_productivity_stats",
+  title: "User productivity stats",
+  description: "Aggregate time worked and deliveries for the caller (or a target user) over a period.",
+  inputSchema: {
+    user_id: z16.string().uuid().optional().describe("Defaults to the caller."),
+    from: z16.string().datetime({ offset: true }),
+    to: z16.string().datetime({ offset: true })
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  handler: async ({ user_id, from, to }, ctx) => {
+    const auth2 = requireAuth(ctx);
+    if (auth2) return auth2;
+    const uid = user_id ?? ctx.getUserId();
+    const c = sb(ctx);
+    const [{ data: entries }, { data: assignments }] = await Promise.all([
+      c.from("demand_time_entries").select("duration_seconds, demand_id").eq("user_id", uid).gte("started_at", from).lte("started_at", to),
+      c.from("demand_assignees").select("demand_id, is_primary, demands(delivered_at)").eq("user_id", uid)
+    ]);
+    const total_seconds = (entries ?? []).reduce((a, e) => a + (e.duration_seconds ?? 0), 0);
+    const delivered = (assignments ?? []).filter((a) => {
+      const dd = a.demands?.delivered_at;
+      return dd && dd >= from && dd <= to;
+    }).length;
+    return ok({ user_id: uid, total_seconds, entries_count: entries?.length ?? 0, delivered_count: delivered });
   }
 });
 
 // src/lib/mcp/index.ts
 var projectRef = "erxhxmetrvkigjwxchbj";
+var allTools = [
+  ...Object.values(session_exports),
+  ...Object.values(teams_exports),
+  ...Object.values(boards_exports),
+  ...Object.values(demands_exports),
+  ...Object.values(subtasks_exports),
+  ...Object.values(comments_exports),
+  ...Object.values(attachments_exports),
+  ...Object.values(time_exports),
+  ...Object.values(services_exports),
+  ...Object.values(notes_exports),
+  ...Object.values(projects_exports),
+  ...Object.values(requests_exports),
+  ...Object.values(templates_exports),
+  ...Object.values(notifications_exports),
+  ...Object.values(sharing_exports),
+  ...Object.values(analytics_exports)
+];
 var mcp_default = defineMcp({
   name: "soma-mcp",
-  title: "SoMA \u2014 Gest\xE3o de Demandas",
-  version: "0.1.0",
-  instructions: "Ferramentas para a plataforma SoMA (quadros e demandas). Todas as chamadas respeitam as permiss\xF5es (RLS) do usu\xE1rio autenticado. Leitura: `whoami` (sess\xE3o), `list_boards` (quadros), `list_my_demands` (demandas do usu\xE1rio), `search_demands` (busca por texto) e `get_demand` (detalhes). Escrita: `create_demand` cria uma nova demanda em um quadro, assumindo o usu\xE1rio autenticado como respons\xE1vel quando `assignee_user_id` n\xE3o \xE9 informado.",
+  title: "SoMA \u2014 API completa (demandas, quadros, times, tempo)",
+  version: "1.0.0",
+  instructions: [
+    "API MCP completa da plataforma SoMA. Todas as chamadas respeitam a autentica\xE7\xE3o e as regras de acesso (RLS) do usu\xE1rio conectado \u2014 cada ferramenta atua como se o pr\xF3prio usu\xE1rio estivesse operando o app.",
+    "",
+    "Dom\xEDnios cobertos:",
+    "\u2022 Sess\xE3o/Perfil: whoami, get_user_profile, update_my_profile",
+    "\u2022 Times: list_my_teams, get_team, list_team_members, join_team_with_code, get_plan_limits",
+    "\u2022 Quadros: CRUD completo, membros, status e servi\xE7os",
+    "\u2022 Demandas: listagem/busca/cria\xE7\xE3o/edi\xE7\xE3o/status/atribui\xE7\xF5es/depend\xEAncias/subdemandas",
+    "\u2022 Subtarefas (checklist), Coment\xE1rios (canal general/internal), Anexos",
+    "\u2022 Tempo: start/stop timer, entradas manuais, relat\xF3rios",
+    "\u2022 Servi\xE7os, Notas (+compartilhamento), Projetos/Pastas",
+    "\u2022 Solicita\xE7\xF5es (aprovar/rejeitar/devolver)",
+    "\u2022 Templates e Recorrentes",
+    "\u2022 Notifica\xE7\xF5es, Compartilhamento por link",
+    "\u2022 Analytics: sum\xE1rios, atrasadas, produtividade",
+    "",
+    "Conven\xE7\xF5es de erro: PERMISSION_DENIED, NOT_FOUND, VALIDATION, PLAN_LIMIT_*, DB_ERROR.",
+    "Ferramentas destrutivas s\xE3o marcadas com destructiveHint=true."
+  ].join("\n"),
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
-  tools: [
-    whoami_default,
-    list_boards_default,
-    list_my_demands_default,
-    search_demands_default,
-    get_demand_default,
-    create_demand_default
-  ]
+  tools: allTools
 });
 
 // lovable-mcp-supabase-entry.ts

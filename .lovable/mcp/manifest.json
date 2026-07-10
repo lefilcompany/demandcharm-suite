@@ -12,14 +12,14 @@
   "mcp": {
     "server": {
       "name": "soma-mcp",
-      "version": "0.1.0",
-      "title": "SoMA — Gestão de Demandas"
+      "version": "1.0.0",
+      "title": "SoMA — API completa (demandas, quadros, times, tempo)"
     },
     "tools": [
       {
         "name": "whoami",
         "title": "Who am I",
-        "description": "Return the signed-in SoMA user's profile (id, name, email).",
+        "description": "Return the signed-in SoMA user's profile (id, name, email, avatar).",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -33,9 +33,9 @@
         "outputSchema": null
       },
       {
-        "name": "list_boards",
-        "title": "List boards",
-        "description": "List SoMA boards the signed-in user has access to (via RLS).",
+        "name": "get_user_profile",
+        "title": "Get user profile",
+        "description": "Fetch a specific user's public profile by id. Respects RLS.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -44,12 +44,49 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "limit": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 50,
-              "description": "Max boards to return."
+            "user_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the user."
+            }
+          },
+          "required": [
+            "user_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_my_profile",
+        "title": "Update my profile",
+        "description": "Update the signed-in user's profile (full_name, job_title, bio, avatar_url).",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "full_name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "job_title": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "bio": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "avatar_url": {
+              "type": "string",
+              "format": "uri"
             }
           },
           "additionalProperties": false,
@@ -58,9 +95,181 @@
         "outputSchema": null
       },
       {
-        "name": "list_my_demands",
-        "title": "List my demands",
-        "description": "List demands where the signed-in user is a responsible or follower assignee. Optionally filter by board.",
+        "name": "list_my_teams",
+        "title": "List my teams",
+        "description": "List teams the signed-in user belongs to, with their role.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_team",
+        "title": "Get team",
+        "description": "Fetch a team's details including the active plan.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "team_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_team_members",
+        "title": "List team members",
+        "description": "List members of a team with profile and role.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "team_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_team_positions",
+        "title": "List team positions",
+        "description": "List job positions (cargos) configured for a team.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "team_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "join_team_with_code",
+        "title": "Join team with access code",
+        "description": "Join a team using its 20-character access code. The caller is added as a 'requester' (member).",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 40
+            }
+          },
+          "required": [
+            "code"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_plan_limits",
+        "title": "Get plan limits and usage",
+        "description": "Return current usage vs plan limits for a team (boards, members, demands, services, notes).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "team_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_boards",
+        "title": "List boards",
+        "description": "List boards the signed-in user has access to (via RLS).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Optional team filter."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_board",
+        "title": "Get board",
+        "description": "Fetch a board with its statuses, services and members.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -71,18 +280,526 @@
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid",
-              "description": "Optional board UUID to filter by."
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "board_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_board",
+        "title": "Create board",
+        "description": "Create a new board with default stages (or custom stages) and optional services and members. Requires team admin or moderator.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
             },
-            "include_archived": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": {
+              "type": "string"
+            },
+            "services": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "service_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "monthly_limit": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "service_id"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "stages": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "adjustment_type": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "internal",
+                      "external"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "members": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "moderator",
+                      "executor",
+                      "requester"
+                    ]
+                  }
+                },
+                "required": [
+                  "user_id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "team_id",
+            "name"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_board",
+        "title": "Update board",
+        "description": "Update board name, description or monthly_demand_limit. Requires board admin/moderator.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": {
+              "type": "string"
+            },
+            "monthly_demand_limit": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "board_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "archive_board",
+        "title": "Archive board",
+        "description": "Archive a board (soft-delete). Requires board admin.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "archived": {
               "type": "boolean",
-              "default": false,
-              "description": "Include archived demands."
+              "default": true
+            }
+          },
+          "required": [
+            "board_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_board",
+        "title": "Delete board",
+        "description": "Permanently delete a board and its cascading data. Requires board admin. Irreversible.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "confirm": {
+              "type": "boolean",
+              "const": true,
+              "description": "Must be true to confirm irreversible delete."
+            }
+          },
+          "required": [
+            "board_id",
+            "confirm"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_board_members",
+        "title": "List board members",
+        "description": "List all members of a board with their board role.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "board_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_board_member",
+        "title": "Add board member",
+        "description": "Add a team member to a board with a given role (admin/moderator/executor/requester). Requires board admin.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "user_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "admin",
+                "moderator",
+                "executor",
+                "requester"
+              ],
+              "default": "executor"
+            }
+          },
+          "required": [
+            "board_id",
+            "user_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_board_member_role",
+        "title": "Update board member role",
+        "description": "Change a board member's role. Requires board admin.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "user_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "admin",
+                "moderator",
+                "executor",
+                "requester"
+              ]
+            }
+          },
+          "required": [
+            "board_id",
+            "user_id",
+            "role"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "remove_board_member",
+        "title": "Remove board member",
+        "description": "Remove a user from a board. Requires board admin.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "user_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "board_id",
+            "user_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_board_statuses",
+        "title": "List board statuses",
+        "description": "List active statuses (columns/stages) of a board in order.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "board_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_board_services",
+        "title": "List board services",
+        "description": "List services attached to a board with their monthly limits.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "board_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "attach_service_to_board",
+        "title": "Attach service to board",
+        "description": "Attach a team service to a board with optional monthly_limit (0 = unlimited).",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "service_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "monthly_limit": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          "required": [
+            "board_id",
+            "service_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "detach_service_from_board",
+        "title": "Detach service from board",
+        "description": "Remove a service from a board.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "service_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "board_id",
+            "service_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_demands",
+        "title": "List demands",
+        "description": "Advanced demand listing with filters. Respects RLS.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "assignee_user_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "service_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "baixa",
+                "média",
+                "alta",
+                "urgente"
+              ]
+            },
+            "is_overdue": {
+              "type": "boolean"
+            },
+            "archived": {
+              "type": "boolean",
+              "default": false
+            },
+            "parent_demand_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Filter subdemands of a parent."
+            },
+            "created_after": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "created_before": {
+              "type": "string",
+              "format": "date-time"
             },
             "limit": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100,
+              "maximum": 200,
               "default": 50
             }
           },
@@ -94,19 +811,17 @@
       {
         "name": "search_demands",
         "title": "Search demands",
-        "description": "Search SoMA demands the signed-in user can see (via RLS) by title/description substring.",
+        "description": "Full-text-ish search on title/description of demands (ilike). Supports #123 board sequence.",
         "annotations": {
           "readOnlyHint": true,
-          "idempotentHint": true,
-          "openWorldHint": false
+          "idempotentHint": true
         },
         "inputSchema": {
           "type": "object",
           "properties": {
             "query": {
               "type": "string",
-              "minLength": 1,
-              "description": "Text to match in demand title or description."
+              "minLength": 1
             },
             "board_id": {
               "type": "string",
@@ -128,21 +843,61 @@
         "outputSchema": null
       },
       {
-        "name": "get_demand",
-        "title": "Get demand",
-        "description": "Fetch a single SoMA demand by id, including its assignees.",
+        "name": "list_my_demands",
+        "title": "List my demands",
+        "description": "List demands where the caller is responsible or a follower.",
         "annotations": {
           "readOnlyHint": true,
-          "idempotentHint": true,
-          "openWorldHint": false
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "include_archived": {
+              "type": "boolean",
+              "default": false
+            },
+            "only_primary": {
+              "type": "boolean",
+              "default": false,
+              "description": "Only demands where the user is the primary responsible."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_demand",
+        "title": "Get demand (detailed)",
+        "description": "Fetch a demand with assignees, subtasks, dependencies and recent comments.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
         },
         "inputSchema": {
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid",
-              "description": "Demand UUID."
+              "format": "uuid"
+            },
+            "comments_limit": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "default": 20
             }
           },
           "required": [
@@ -156,30 +911,25 @@
       {
         "name": "create_demand",
         "title": "Create demand",
-        "description": "Create a new SoMA demand on a board as the signed-in user. Resolves the board's team, uses the first active status of the board when status_id is omitted, and assigns the caller as the responsible when assignee_user_id is omitted. Respects RLS and plan limits.",
+        "description": "Create a demand on a board. Defaults: caller as responsible, first active status. Supports followers.",
         "annotations": {
           "readOnlyHint": false,
-          "destructiveHint": false,
-          "idempotentHint": false,
-          "openWorldHint": false
+          "idempotentHint": false
         },
         "inputSchema": {
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid",
-              "description": "Board UUID where the demand will be created."
+              "format": "uuid"
             },
             "title": {
               "type": "string",
               "minLength": 1,
-              "maxLength": 200,
-              "description": "Demand title."
+              "maxLength": 200
             },
             "description": {
-              "type": "string",
-              "description": "Optional demand description."
+              "type": "string"
             },
             "priority": {
               "type": "string",
@@ -189,33 +939,2252 @@
                 "alta",
                 "urgente"
               ],
-              "default": "média",
-              "description": "Priority: baixa | média | alta | urgente."
+              "default": "média"
             },
             "due_date": {
               "type": "string",
-              "format": "date-time",
-              "description": "Optional ISO-8601 due date (with timezone)."
+              "format": "date-time"
             },
             "status_id": {
               "type": "string",
-              "format": "uuid",
-              "description": "Optional board status UUID. Defaults to the first active status on the board."
+              "format": "uuid"
             },
             "service_id": {
               "type": "string",
-              "format": "uuid",
-              "description": "Optional service UUID."
+              "format": "uuid"
             },
             "assignee_user_id": {
               "type": "string",
               "format": "uuid",
-              "description": "Optional responsible user UUID. Defaults to the signed-in user."
+              "description": "Primary responsible (defaults to caller)."
+            },
+            "follower_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "description": "Additional followers."
             }
           },
           "required": [
             "board_id",
             "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_demand_with_subdemands",
+        "title": "Create demand with subdemands",
+        "description": "Create a parent demand plus multiple subdemands and dependencies between them (indices are 1-based within subdemands).",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "parent": {
+              "type": "object",
+              "properties": {
+                "board_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "team_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": {
+                  "type": "string"
+                },
+                "status_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "baixa",
+                    "média",
+                    "alta",
+                    "urgente"
+                  ]
+                },
+                "assigned_to": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "due_date": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "service_id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "required": [
+                "board_id",
+                "team_id",
+                "title",
+                "status_id"
+              ],
+              "additionalProperties": false
+            },
+            "subdemands": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "status_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "priority": {
+                    "$ref": "#/properties/parent/properties/priority"
+                  },
+                  "assigned_to": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "due_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "service_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "title",
+                  "status_id"
+                ],
+                "additionalProperties": false
+              },
+              "default": []
+            },
+            "dependencies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "demand_index": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "depends_on_index": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "demand_index",
+                  "depends_on_index"
+                ],
+                "additionalProperties": false
+              },
+              "default": []
+            }
+          },
+          "required": [
+            "parent"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_demand",
+        "title": "Update demand",
+        "description": "Update demand fields (title, description, priority, due_date, service_id).",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "baixa",
+                "média",
+                "alta",
+                "urgente"
+              ]
+            },
+            "due_date": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "service_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "change_demand_status",
+        "title": "Change demand status",
+        "description": "Move a demand to a new status. Optionally propagates to subdemands.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "propagate_to_subdemands": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "required": [
+            "demand_id",
+            "status_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "archive_demand",
+        "title": "Archive demand",
+        "description": "Archive (soft-delete) or restore a demand.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "archived": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "required": [
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_demand",
+        "title": "Delete demand",
+        "description": "Permanently delete a demand. Irreversible.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "confirm": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "demand_id",
+            "confirm"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "move_demand_to_board",
+        "title": "Move demand to another board",
+        "description": "Move a demand to a different board. A new board_sequence_number is auto-assigned.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "target_board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "demand_id",
+            "target_board_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_demand_assignees",
+        "title": "List demand assignees",
+        "description": "List the responsible + followers of a demand.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_demand_assignee",
+        "title": "Add demand assignee",
+        "description": "Add a follower or set a primary responsible on a demand.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "user_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "is_primary": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "required": [
+            "demand_id",
+            "user_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "set_primary_assignee",
+        "title": "Set primary assignee",
+        "description": "Promote a user to primary responsible on a demand (there is always exactly one primary).",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "user_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "demand_id",
+            "user_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "remove_demand_assignee",
+        "title": "Remove demand assignee",
+        "description": "Remove a follower from a demand (cannot leave the demand with 0 assignees).",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "user_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "demand_id",
+            "user_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_demand_dependencies",
+        "title": "List demand dependencies",
+        "description": "List demands this demand depends on.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_dependency",
+        "title": "Add demand dependency",
+        "description": "Make demand_id depend on depends_on_demand_id (must be delivered before demand_id can start).",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "depends_on_demand_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "demand_id",
+            "depends_on_demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "remove_dependency",
+        "title": "Remove demand dependency",
+        "description": "Remove demand dependency.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "depends_on_demand_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "demand_id",
+            "depends_on_demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "reorder_subdemands",
+        "title": "Reorder subdemands",
+        "description": "Reorder subdemands of a parent by supplying the ordered list of ids.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "parent_demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "ordered_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "parent_demand_id",
+            "ordered_ids"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_subtasks",
+        "title": "List subtasks (checklist)",
+        "description": "List checklist subtasks of a demand.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_subtask",
+        "title": "Create subtask",
+        "description": "Add a checklist item to a demand.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "required": [
+            "demand_id",
+            "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "toggle_subtask",
+        "title": "Toggle subtask done",
+        "description": "Toggle subtask done.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "subtask_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "completed": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "subtask_id",
+            "completed"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_subtask",
+        "title": "Update subtask",
+        "description": "Update subtask.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "subtask_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "required": [
+            "subtask_id",
+            "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_subtask",
+        "title": "Delete subtask",
+        "description": "Delete subtask.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "subtask_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "subtask_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_demand_comments",
+        "title": "List demand comments",
+        "description": "List chat/comment messages on a demand. Channel 'general' is visible to everyone with access; 'internal' is limited to admin/moderator/executor.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "channel": {
+              "type": "string",
+              "enum": [
+                "general",
+                "internal"
+              ],
+              "default": "general"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          "required": [
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "post_demand_comment",
+        "title": "Post demand comment",
+        "description": "Post a message on a demand. Use [[uuid:Name]] to mention a user (they receive an in-app notification).",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "content": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 10000
+            },
+            "channel": {
+              "type": "string",
+              "enum": [
+                "general",
+                "internal"
+              ],
+              "default": "general"
+            }
+          },
+          "required": [
+            "demand_id",
+            "content"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_demand_comment",
+        "title": "Delete demand comment",
+        "description": "Delete demand comment.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "comment_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "comment_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_demand_attachments",
+        "title": "List demand attachments",
+        "description": "List file attachments metadata of a demand. Use `get_attachment_url` to obtain a signed download URL.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_attachment_url",
+        "title": "Get attachment signed URL",
+        "description": "Return a short-lived signed URL to download a demand attachment.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "attachment_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "attachment_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_demand_attachment",
+        "title": "Delete demand attachment",
+        "description": "Delete demand attachment.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "attachment_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "attachment_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "start_demand_timer",
+        "title": "Start demand timer",
+        "description": "Start a time entry on a demand for the caller. Stops any previously active entry.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "stop_demand_timer",
+        "title": "Stop demand timer",
+        "description": "Stop the caller's currently active time entry on a demand.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_active_timer",
+        "title": "Get active timer",
+        "description": "Return the caller's currently-running time entry, if any.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_demand_time_entries",
+        "title": "List time entries",
+        "description": "List time entries for a demand.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          },
+          "required": [
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "manual_time_entry",
+        "title": "Manual time entry",
+        "description": "Create a completed time entry with explicit start/end. Duration is computed by the database.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "started_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "ended_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "note": {
+              "type": "string",
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "demand_id",
+            "started_at",
+            "ended_at"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_services",
+        "title": "List services",
+        "description": "List services (categories/folders) for a team.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "parent_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "team_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_service",
+        "title": "Get service",
+        "description": "Get service.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "service_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "service_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_service",
+        "title": "Create service",
+        "description": "Create a service (or folder if parent_id is null and no category).",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "category": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "parent_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "color": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "team_id",
+            "name"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_service",
+        "title": "Update service",
+        "description": "Update service.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "service_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "category": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "color": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "parent_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "service_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_service",
+        "title": "Delete service",
+        "description": "Delete service.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "service_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "service_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_notes",
+        "title": "List notes",
+        "description": "List notes of a team the caller can access.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "archived": {
+              "type": "boolean",
+              "default": false
+            },
+            "query": {
+              "type": "string",
+              "description": "Optional text search on title/content."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          "required": [
+            "team_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_note",
+        "title": "Get note",
+        "description": "Get note.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "note_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "note_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_note",
+        "title": "Create note",
+        "description": "Create note.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "content": {
+              "type": "string",
+              "default": ""
+            },
+            "is_private": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "required": [
+            "team_id",
+            "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_note",
+        "title": "Update note",
+        "description": "Update note.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "note_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "content": {
+              "type": "string"
+            },
+            "is_private": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "note_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "archive_note",
+        "title": "Archive/restore note",
+        "description": "Archive/restore note.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "note_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "archived": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "required": [
+            "note_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_note",
+        "title": "Delete note",
+        "description": "Delete note.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "note_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "confirm": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "note_id",
+            "confirm"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "share_note_with_user",
+        "title": "Share note with user",
+        "description": "Share note with user.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "note_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "user_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "permission": {
+              "type": "string",
+              "enum": [
+                "view",
+                "edit"
+              ],
+              "default": "view"
+            }
+          },
+          "required": [
+            "note_id",
+            "user_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "revoke_note_share",
+        "title": "Revoke note share",
+        "description": "Revoke note share.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "note_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "user_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "note_id",
+            "user_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_projects",
+        "title": "List projects (folders)",
+        "description": "List demand folders/projects the caller can access.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_project",
+        "title": "Get project",
+        "description": "Get project.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_project",
+        "title": "Create project",
+        "description": "Create project.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": {
+              "type": "string"
+            },
+            "color": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "team_id",
+            "name"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_project",
+        "title": "Update project",
+        "description": "Update project.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": {
+              "type": "string"
+            },
+            "color": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_project",
+        "title": "Delete project",
+        "description": "Delete project.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "confirm": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "project_id",
+            "confirm"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_demand_to_project",
+        "title": "Add demand to project",
+        "description": "Add demand to project.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "project_id",
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "remove_demand_from_project",
+        "title": "Remove demand from project",
+        "description": "Remove demand from project.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "project_id",
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_demand_requests",
+        "title": "List demand requests",
+        "description": "List demand approval requests (submitted by requesters) visible to the caller.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected",
+                "returned"
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_demand_request",
+        "title": "Get demand request",
+        "description": "Get demand request.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "request_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "request_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_demand_request",
+        "title": "Create demand request",
+        "description": "Submit a demand request for approval on a team (optionally targeting a board).",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "baixa",
+                "média",
+                "alta",
+                "urgente"
+              ],
+              "default": "média"
+            },
+            "due_date": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "service_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "team_id",
+            "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "respond_demand_request",
+        "title": "Approve/reject/return request",
+        "description": "Change a demand request status to approved, rejected, or returned. Provide reason for rejected/returned.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "request_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "approved",
+                "rejected",
+                "returned"
+              ]
+            },
+            "reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "request_id",
+            "action"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "post_request_comment",
+        "title": "Post request comment",
+        "description": "Post request comment.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "request_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "content": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 5000
+            }
+          },
+          "required": [
+            "request_id",
+            "content"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_templates",
+        "title": "List demand templates",
+        "description": "List demand templates.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "team_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_template",
+        "title": "Get template",
+        "description": "Get template.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "template_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "template_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_recurring_demands",
+        "title": "List recurring demands",
+        "description": "List recurring demands.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "pause_recurring_demand",
+        "title": "Pause/resume recurring demand",
+        "description": "Pause/resume recurring demand.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "recurring_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "is_active": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "recurring_id",
+            "is_active"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_notifications",
+        "title": "List notifications",
+        "description": "List the caller's in-app notifications.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "unread_only": {
+              "type": "boolean",
+              "default": false
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "mark_notification_read",
+        "title": "Mark notification read",
+        "description": "Mark notification read.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "notification_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "read": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "required": [
+            "notification_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "mark_all_notifications_read",
+        "title": "Mark all notifications read",
+        "description": "Mark all notifications read.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_demand_share_token",
+        "title": "Create demand share link",
+        "description": "Create a public share token for a demand (optionally with expiry and auto_join_board).",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "expires_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "auto_join_board": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "required": [
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_demand_share_tokens",
+        "title": "List demand share tokens",
+        "description": "List demand share tokens.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "demand_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "revoke_demand_share_token",
+        "title": "Revoke demand share token",
+        "description": "Revoke demand share token.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "token_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "token_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "board_summary_stats",
+        "title": "Board summary stats",
+        "description": "Aggregate counters for a board: total, delivered, overdue, in-progress, by status, by assignee.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "from": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "to": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "board_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "demands_by_period",
+        "title": "Demands by period",
+        "description": "Count demands created per day between two dates (bounded to 90 days).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "from": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "to": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "from",
+            "to"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "overdue_demands",
+        "title": "List overdue demands",
+        "description": "List overdue demands.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "team_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "user_productivity_stats",
+        "title": "User productivity stats",
+        "description": "Aggregate time worked and deliveries for the caller (or a target user) over a period.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "user_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Defaults to the caller."
+            },
+            "from": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "to": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "from",
+            "to"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
