@@ -152,6 +152,75 @@
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "outputSchema": null
+      },
+      {
+        "name": "create_demand",
+        "title": "Create demand",
+        "description": "Create a new SoMA demand on a board as the signed-in user. Resolves the board's team, uses the first active status of the board when status_id is omitted, and assigns the caller as the responsible when assignee_user_id is omitted. Respects RLS and plan limits.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Board UUID where the demand will be created."
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "description": "Demand title."
+            },
+            "description": {
+              "type": "string",
+              "description": "Optional demand description."
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "baixa",
+                "média",
+                "alta",
+                "urgente"
+              ],
+              "default": "média",
+              "description": "Priority: baixa | média | alta | urgente."
+            },
+            "due_date": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Optional ISO-8601 due date (with timezone)."
+            },
+            "status_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Optional board status UUID. Defaults to the first active status on the board."
+            },
+            "service_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Optional service UUID."
+            },
+            "assignee_user_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Optional responsible user UUID. Defaults to the signed-in user."
+            }
+          },
+          "required": [
+            "board_id",
+            "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
       }
     ]
   }
