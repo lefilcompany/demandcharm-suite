@@ -374,6 +374,11 @@ export function AttachmentUploader({ demandId, readOnly = false, demandTitle, de
   const handleDelete = async (id: string, filePath: string) => {
     try {
       await deleteAttachment.mutateAsync({ id, filePath, demandId });
+      setAvailableIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       toast.success("Anexo removido");
     } catch {
       toast.error("Erro ao remover anexo");
