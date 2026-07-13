@@ -37,21 +37,27 @@ export function useAttachments(demandId: string | null) {
 
 export function useUploadAttachment() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ demandId, file, interactionId }: { demandId: string; file: File; interactionId?: string }) => {
-      if (!user) throw new Error("User not authenticated");
-      
-      const fileExt = file.name.split(".").pop();
+      // Use current session user (not stale closure) to guarantee auth alignment with RLS
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error("Sessão expirada. Faça login novamente para enviar anexos.");
+      }
+
+      const fileExt = file.name.split(".").pop() || "bin";
       const filePath = `${user.id}/${demandId}/${Date.now()}.${fileExt}`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from("demand-attachments")
-        .upload(filePath, file);
-      
-      if (uploadError) throw uploadError;
-      
+        .upload(filePath, file, { cacheControl: "3600", upsert: false });
+
+      if (uploadError) {
+        console.error("[attachments] storage upload failed", { filePath, uploadError });
+        throw uploadError;
+      }
+
       const insertData: {
         demand_id: string;
         file_name: string;
@@ -64,22 +70,29 @@ export function useUploadAttachment() {
         demand_id: demandId,
         file_name: file.name,
         file_path: filePath,
-        file_type: file.type,
+        file_type: file.type || "application/octet-stream",
         file_size: file.size,
         uploaded_by: user.id,
       };
-      
+
       if (interactionId) {
         insertData.interaction_id = interactionId;
       }
-      
+
       const { data, error } = await supabase
         .from("demand_attachments")
         .insert(insertData)
         .select()
         .single();
-      
-      if (error) throw error;
+
+      if (error) {
+        // Rollback: remove orphan file from storage since the DB insert failed
+        console.error("[attachments] DB insert failed, removing orphan storage object", { filePath, error });
+        await supabase.storage.from("demand-attachments").remove([filePath]).catch((e) => {
+          console.error("[attachments] failed to clean up orphan storage object", e);
+        });
+        throw error;
+      }
       return data;
     },
     onSuccess: (_, variables) => {

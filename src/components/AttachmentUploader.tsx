@@ -88,17 +88,28 @@ function AttachmentItem({ attachment, readOnly, onDelete, onAvailabilityChange }
 
   useEffect(() => {
     let mounted = true;
-    
-    getAttachmentUrl(attachment.file_path).then((signedUrl) => {
-      if (mounted) {
-        setUrl(signedUrl);
-        setLoading(false);
-        onAvailabilityChange?.(attachment.id, !!signedUrl);
+
+    getAttachmentUrl(attachment.file_path).then(async (signedUrl) => {
+      if (!mounted) return;
+      setUrl(signedUrl);
+      setLoading(false);
+      onAvailabilityChange?.(attachment.id, !!signedUrl);
+
+      // Auto-cleanup orphan DB record: file no longer exists in storage.
+      // Owner (uploader) is allowed to delete via RLS. If not owner, this is a no-op silently.
+      if (!signedUrl) {
+        supabase
+          .from("demand_attachments")
+          .delete()
+          .eq("id", attachment.id)
+          .then(({ error }) => {
+            if (error) console.debug("[attachments] orphan cleanup skipped:", error.message);
+          });
       }
     });
-    
+
     return () => { mounted = false; };
-  }, [attachment.file_path]);
+  }, [attachment.file_path, attachment.id]);
 
   // Hide attachment if file doesn't exist in storage
   if (!loading && !url) {
@@ -346,8 +357,10 @@ export function AttachmentUploader({ demandId, readOnly = false, demandTitle, de
         
         // Notify demand creator
         await notifyCreator(file.name);
-      } catch {
-        toast.error(`Erro ao enviar ${file.name}`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[attachments] failed to upload ${file.name}:`, err);
+        toast.error(`Erro ao enviar ${file.name}: ${msg}`);
       }
     }
   }, [demandId, uploadAttachment, notifyCreator]);
