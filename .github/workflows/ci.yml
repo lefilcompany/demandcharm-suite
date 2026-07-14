@@ -59,6 +59,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v1
         with: { deno-version: v1.x }
+      - name: Check Edge Function entrypoints
+        run: |
+          set -o pipefail
+          deno check \
+            supabase/functions/check-deadlines/index.ts \
+            supabase/functions/send-push-notification/index.ts 2>&1 | tee deno-check.log
       - name: Run Deno tests
         run: |
           set +e
@@ -68,12 +74,14 @@ jobs:
           status=$?
           cat deno-test.log
           exit $status
-      - name: Upload Deno test log
+      - name: Upload Deno validation logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: deno-test-log
-          path: deno-test.log
+          name: deno-validation-logs
+          path: |
+            deno-check.log
+            deno-test.log
           retention-days: 7
 
   e2e:
