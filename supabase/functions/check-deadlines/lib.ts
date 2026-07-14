@@ -3,6 +3,8 @@ export const DEFAULT_APP_URL = "https://pla.soma.lefil.com.br";
 
 export type DeliveryChannel = "in_app" | "email" | "push";
 export type DeliveryStatus = "sent" | "skipped" | "failed";
+export type ReminderKind = "day_before" | "overdue";
+export type NotificationSeverity = "warning" | "error";
 
 export interface NotificationPreferences {
   emailNotifications?: boolean;
@@ -31,6 +33,9 @@ export interface UserProfile {
 
 export interface DeadlineReminder {
   eventKey: string;
+  eventType: "deadline_day_before" | "deadline_overdue";
+  kind: ReminderKind;
+  severity: NotificationSeverity;
   demandId: string;
   userId: string;
   title: string;
@@ -161,6 +166,7 @@ export function getDemandRecipientIds(
 
 export function getEnabledDeliveryChannels(
   preferences: NotificationPreferences | null | undefined,
+  kind: ReminderKind = "day_before",
 ): DeliveryChannel[] {
   if (preferences?.deadlineReminders === false) return [];
 
@@ -168,7 +174,9 @@ export function getEnabledDeliveryChannels(
   if (preferences?.pushNotifications !== false) {
     channels.push("in_app", "push");
   }
-  if (preferences?.emailNotifications !== false) {
+  // Preserve the existing overdue behavior (in-app + FCM) and avoid a daily
+  // overdue email. Email is part of the new day-before reminder only.
+  if (kind === "day_before" && preferences?.emailNotifications !== false) {
     channels.push("email");
   }
   return channels;
@@ -195,28 +203,77 @@ function truncate(value: string, maxLength: number): string {
   return `${value.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
 }
 
-export function buildDeadlineReminder(
+function reminderBase(
+  demand: DeadlineDemand,
+  userId: string,
+  dueDateKey: string,
+  appUrl?: string,
+  userName?: string | null,
+) {
+  const safeTitle = truncate(demand.title.trim() || "Demanda sem título", 90);
+  const link = `/demands/${demand.id}`;
+  return {
+    safeTitle,
+    formattedDate: formatDateForPtBr(dueDateKey),
+    link,
+    actionUrl: `${normalizeAppUrl(appUrl)}${link}`,
+    demandId: demand.id,
+    userId,
+    userName: userName?.trim() || undefined,
+    dueDateKey,
+  };
+}
+
+export function buildDayBeforeReminder(
   demand: DeadlineDemand,
   userId: string,
   dueDateKey: string,
   appUrl?: string,
   userName?: string | null,
 ): DeadlineReminder {
-  const safeTitle = truncate(demand.title.trim() || "Demanda sem título", 90);
-  const formattedDate = formatDateForPtBr(dueDateKey);
-  const link = `/demands/${demand.id}`;
-  const actionUrl = `${normalizeAppUrl(appUrl)}${link}`;
-
+  const base = reminderBase(demand, userId, dueDateKey, appUrl, userName);
   return {
     eventKey: `deadline_day_before:${demand.id}:${dueDateKey}`,
-    demandId: demand.id,
-    userId,
+    eventType: "deadline_day_before",
+    kind: "day_before",
+    severity: "warning",
+    demandId: base.demandId,
+    userId: base.userId,
     title: "⏰ Demanda vence amanhã",
-    message: `A demanda “${safeTitle}” vence amanhã (${formattedDate}) e ainda não foi entregue.`,
-    emailSubject: `Lembrete: “${safeTitle}” vence amanhã`,
-    link,
-    actionUrl,
-    userName: userName?.trim() || undefined,
-    dueDateKey,
+    message: `A demanda “${base.safeTitle}” vence amanhã (${base.formattedDate}) e ainda não foi entregue.`,
+    emailSubject: `Lembrete: “${base.safeTitle}” vence amanhã`,
+    link: base.link,
+    actionUrl: base.actionUrl,
+    userName: base.userName,
+    dueDateKey: base.dueDateKey,
   };
 }
+
+export function buildOverdueReminder(
+  demand: DeadlineDemand,
+  userId: string,
+  dueDateKey: string,
+  notificationDateKey: string,
+  appUrl?: string,
+  userName?: string | null,
+): DeadlineReminder {
+  const base = reminderBase(demand, userId, dueDateKey, appUrl, userName);
+  return {
+    eventKey: `deadline_overdue:${demand.id}:${notificationDateKey}`,
+    eventType: "deadline_overdue",
+    kind: "overdue",
+    severity: "error",
+    demandId: base.demandId,
+    userId: base.userId,
+    title: "🚨 Demanda com prazo vencido",
+    message: `A demanda “${base.safeTitle}” venceu em ${base.formattedDate} e ainda não foi entregue.`,
+    emailSubject: `Prazo vencido: “${base.safeTitle}”`,
+    link: base.link,
+    actionUrl: base.actionUrl,
+    userName: base.userName,
+    dueDateKey: base.dueDateKey,
+  };
+}
+
+// Backwards-compatible alias used by existing tests/imports.
+export const buildDeadlineReminder = buildDayBeforeReminder;
