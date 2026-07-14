@@ -1,15 +1,18 @@
 import {
   buildAssigneeMap,
-  buildDeadlineReminder,
+  buildDayBeforeReminder,
+  buildOverdueReminder,
   type DeadlineDemand,
   type DeadlineReminder,
   type DeliveryChannel,
   type DeliveryStatus,
   type DemandAssignee,
+  formatDateKeyInTimeZone,
   getDemandRecipientIds,
   getEnabledDeliveryChannels,
   getTomorrowUtcWindow,
   type NotificationPreferences,
+  type ReminderKind,
   type UserProfile,
 } from "./lib.ts";
 
@@ -20,11 +23,13 @@ export interface ChannelResult {
 
 export interface DeadlineReminderJobDependencies {
   listDemandsDueBetween(start: Date, end: Date): Promise<DeadlineDemand[]>;
+  listOverdueDemands(before: Date): Promise<DeadlineDemand[]>;
   listAssignees(demandIds: string[]): Promise<DemandAssignee[]>;
   listPreferences(userIds: string[]): Promise<Map<string, NotificationPreferences>>;
   listProfiles(userIds: string[]): Promise<Map<string, UserProfile>>;
   claimDelivery(
     eventKey: string,
+    eventType: DeadlineReminder["eventType"],
     demandId: string,
     userId: string,
     channel: DeliveryChannel,
@@ -48,13 +53,22 @@ export interface DeadlineReminderJobOptions {
 }
 
 export interface DeadlineReminderJobResult {
+  notificationDateKey: string;
   dueDateKey: string;
   demandsChecked: number;
+  dayBeforeDemandsChecked: number;
+  overdueDemandsChecked: number;
   recipientsChecked: number;
   sent: Record<DeliveryChannel, number>;
   skipped: Record<DeliveryChannel, number>;
   failed: Record<DeliveryChannel, number>;
   duplicateClaims: number;
+}
+
+interface ReminderCandidate {
+  demand: DeadlineDemand;
+  kind: ReminderKind;
+  dueDateKey: string;
 }
 
 const ALL_CHANNELS: DeliveryChannel[] = ["in_app", "email", "push"];
@@ -72,12 +86,32 @@ export async function runDeadlineReminderJob(
   options: DeadlineReminderJobOptions,
 ): Promise<DeadlineReminderJobResult> {
   const now = options.now ?? new Date();
-  const window = getTomorrowUtcWindow(now, options.timeZone);
-  const demands = await dependencies.listDemandsDueBetween(window.start, window.end);
+  const tomorrowWindow = getTomorrowUtcWindow(now, options.timeZone);
+  const notificationDateKey = formatDateKeyInTimeZone(now, options.timeZone);
+  const [dayBeforeDemands, overdueDemands] = await Promise.all([
+    dependencies.listDemandsDueBetween(tomorrowWindow.start, tomorrowWindow.end),
+    dependencies.listOverdueDemands(now),
+  ]);
+
+  const candidates: ReminderCandidate[] = [
+    ...dayBeforeDemands.map((demand) => ({
+      demand,
+      kind: "day_before" as const,
+      dueDateKey: tomorrowWindow.dateKey,
+    })),
+    ...overdueDemands.map((demand) => ({
+      demand,
+      kind: "overdue" as const,
+      dueDateKey: formatDateKeyInTimeZone(new Date(demand.due_date), options.timeZone),
+    })),
+  ];
 
   const result: DeadlineReminderJobResult = {
-    dueDateKey: window.dateKey,
-    demandsChecked: demands.length,
+    notificationDateKey,
+    dueDateKey: tomorrowWindow.dateKey,
+    demandsChecked: candidates.length,
+    dayBeforeDemandsChecked: dayBeforeDemands.length,
+    overdueDemandsChecked: overdueDemands.length,
     recipientsChecked: 0,
     sent: emptyChannelCounts(),
     skipped: emptyChannelCounts(),
@@ -85,14 +119,15 @@ export async function runDeadlineReminderJob(
     duplicateClaims: 0,
   };
 
-  if (demands.length === 0) return result;
+  if (candidates.length === 0) return result;
 
-  const assignees = await dependencies.listAssignees(demands.map((demand) => demand.id));
+  const uniqueDemandIds = [...new Set(candidates.map(({ demand }) => demand.id))];
+  const assignees = await dependencies.listAssignees(uniqueDemandIds);
   const assigneeMap = buildAssigneeMap(assignees);
 
   const recipientsByDemand = new Map<string, string[]>();
   const uniqueUserIds = new Set<string>();
-  for (const demand of demands) {
+  for (const { demand } of candidates) {
     const recipients = getDemandRecipientIds(demand, assigneeMap);
     recipientsByDemand.set(demand.id, recipients);
     recipients.forEach((userId) => uniqueUserIds.add(userId));
@@ -106,24 +141,31 @@ export async function runDeadlineReminderJob(
     dependencies.listProfiles(userIds),
   ]);
 
-  for (const demand of demands) {
+  for (const candidate of candidates) {
+    const { demand, kind, dueDateKey } = candidate;
     const recipients = recipientsByDemand.get(demand.id) ?? [];
 
     for (const userId of recipients) {
       result.recipientsChecked += 1;
       const profile = profilesByUser.get(userId);
-      const reminder = buildDeadlineReminder(
-        demand,
-        userId,
-        window.dateKey,
-        options.appUrl,
-        profile?.full_name,
+      const reminder = kind === "day_before"
+        ? buildDayBeforeReminder(demand, userId, dueDateKey, options.appUrl, profile?.full_name)
+        : buildOverdueReminder(
+          demand,
+          userId,
+          dueDateKey,
+          notificationDateKey,
+          options.appUrl,
+          profile?.full_name,
+        );
+      const enabledChannels = new Set(
+        getEnabledDeliveryChannels(preferencesByUser.get(userId), reminder.kind),
       );
-      const enabledChannels = new Set(getEnabledDeliveryChannels(preferencesByUser.get(userId)));
 
       for (const channel of ALL_CHANNELS) {
         const claimed = await dependencies.claimDelivery(
           reminder.eventKey,
+          reminder.eventType,
           reminder.demandId,
           reminder.userId,
           channel,
@@ -140,7 +182,9 @@ export async function runDeadlineReminderJob(
             reminder.userId,
             channel,
             "skipped",
-            "Disabled by notification preferences",
+            reminder.kind === "overdue" && channel === "email"
+              ? "Overdue emails are intentionally disabled"
+              : "Disabled by notification preferences",
           );
           result.skipped[channel] += 1;
           continue;
