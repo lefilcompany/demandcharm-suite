@@ -33,6 +33,7 @@ function buildDependencies(overrides: Partial<DeadlineReminderJobDependencies> =
         assigned_to: "legacy-user",
       },
     ],
+    listOverdueDemands: async () => [],
     listAssignees: async () => [
       { demand_id: "demand-1", user_id: "responsible", is_primary: true },
       { demand_id: "demand-1", user_id: "companion", is_primary: false },
@@ -42,7 +43,7 @@ function buildDependencies(overrides: Partial<DeadlineReminderJobDependencies> =
       ["responsible", { id: "responsible", full_name: "Responsável", email: "r@example.com" }],
       ["companion", { id: "companion", full_name: "Acompanhante", email: "a@example.com" }],
     ]),
-    claimDelivery: async (eventKey, _demandId, userId, channel) => {
+    claimDelivery: async (eventKey, _eventType, _demandId, userId, channel) => {
       const key = `${eventKey}:${userId}:${channel}`;
       if (claimed.has(key)) return false;
       claimed.add(key);
@@ -61,16 +62,18 @@ function buildDependencies(overrides: Partial<DeadlineReminderJobDependencies> =
   return { dependencies, calls, marked };
 }
 
+const options = {
+  now: new Date("2026-07-14T12:00:00.000Z"),
+  timeZone: "America/Recife",
+  appUrl: "https://pla.soma.lefil.com.br",
+};
+
 Deno.test("job sends in-app, email and FCM to responsible and companion only", async () => {
   const { dependencies, calls, marked } = buildDependencies();
+  const result = await runDeadlineReminderJob(dependencies, options);
 
-  const result = await runDeadlineReminderJob(dependencies, {
-    now: new Date("2026-07-14T12:00:00.000Z"),
-    timeZone: "America/Recife",
-    appUrl: "https://pla.soma.lefil.com.br",
-  });
-
-  assertEquals(result.demandsChecked, 1);
+  assertEquals(result.dayBeforeDemandsChecked, 1);
+  assertEquals(result.overdueDemandsChecked, 0);
   assertEquals(result.recipientsChecked, 2);
   assertEquals(result.sent, { in_app: 2, email: 2, push: 2 });
   assertEquals(calls.length, 6);
@@ -81,12 +84,6 @@ Deno.test("job sends in-app, email and FCM to responsible and companion only", a
 
 Deno.test("job is idempotent when delivery claims already exist", async () => {
   const { dependencies, calls } = buildDependencies();
-  const options = {
-    now: new Date("2026-07-14T12:00:00.000Z"),
-    timeZone: "America/Recife",
-    appUrl: "https://pla.soma.lefil.com.br",
-  };
-
   const first = await runDeadlineReminderJob(dependencies, options);
   const second = await runDeadlineReminderJob(dependencies, options);
 
@@ -101,15 +98,8 @@ Deno.test("job records disabled channels as skipped", async () => {
     ["responsible", { emailNotifications: true, pushNotifications: false, deadlineReminders: true }],
     ["companion", { deadlineReminders: false }],
   ]);
-  const { dependencies, marked } = buildDependencies({
-    listPreferences: async () => preferences,
-  });
-
-  const result = await runDeadlineReminderJob(dependencies, {
-    now: new Date("2026-07-14T12:00:00.000Z"),
-    timeZone: "America/Recife",
-    appUrl: "https://pla.soma.lefil.com.br",
-  });
+  const { dependencies, marked } = buildDependencies({ listPreferences: async () => preferences });
+  const result = await runDeadlineReminderJob(dependencies, options);
 
   assertEquals(result.sent, { in_app: 0, email: 1, push: 0 });
   assertEquals(result.skipped, { in_app: 2, email: 1, push: 2 });
@@ -123,12 +113,7 @@ Deno.test("job marks a channel failed without blocking the other channels", asyn
       return { status: "sent" };
     },
   });
-
-  const result = await runDeadlineReminderJob(dependencies, {
-    now: new Date("2026-07-14T12:00:00.000Z"),
-    timeZone: "America/Recife",
-    appUrl: "https://pla.soma.lefil.com.br",
-  });
+  const result = await runDeadlineReminderJob(dependencies, options);
 
   assertEquals(result.failed.email, 1);
   assertEquals(result.sent.in_app, 2);
@@ -137,4 +122,24 @@ Deno.test("job marks a channel failed without blocking the other channels", asyn
     marked.some((entry) => entry.status === "failed" && entry.error === "Resend unavailable"),
     true,
   );
+});
+
+Deno.test("job preserves daily overdue in-app and FCM alerts without overdue email", async () => {
+  const { dependencies, calls } = buildDependencies({
+    listDemandsDueBetween: async () => [],
+    listOverdueDemands: async () => [
+      {
+        id: "demand-1",
+        title: "Preparar apresentação",
+        due_date: "2026-07-10T18:00:00.000Z",
+      },
+    ],
+  });
+  const result = await runDeadlineReminderJob(dependencies, options);
+
+  assertEquals(result.dayBeforeDemandsChecked, 0);
+  assertEquals(result.overdueDemandsChecked, 1);
+  assertEquals(result.sent, { in_app: 2, email: 0, push: 2 });
+  assertEquals(result.skipped.email, 2);
+  assertEquals(calls.filter((call) => call.eventKey.startsWith("deadline_overdue:")).length, 6);
 });
