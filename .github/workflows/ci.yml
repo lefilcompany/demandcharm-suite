@@ -61,9 +61,20 @@ jobs:
         with: { deno-version: v1.x }
       - name: Run Deno tests
         run: |
+          set +e
           deno test --allow-net --allow-env --allow-read \
             supabase/functions/process-recurring-demands/ \
-            supabase/functions/check-deadlines/
+            supabase/functions/check-deadlines/ > deno-test.log 2>&1
+          status=$?
+          cat deno-test.log
+          exit $status
+      - name: Upload Deno test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deno-test-log
+          path: deno-test.log
+          retention-days: 7
 
   e2e:
     name: E2E ${{ matrix.spec }}
