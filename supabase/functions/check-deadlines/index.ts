@@ -19,7 +19,6 @@ const corsHeaders = {
 };
 
 const DEFAULT_FROM = "SoMA+ <noreply@pla.soma.lefil.com.br>";
-const EVENT_TYPE = "deadline_day_before";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -147,6 +146,33 @@ export async function handler(req: Request): Promise<Response> {
             }));
         },
 
+        listOverdueDemands: async (before) => {
+          const { data, error } = await supabase
+            .from("demands")
+            .select(`
+              id,
+              title,
+              due_date,
+              assigned_to,
+              delivered_at,
+              demand_statuses!inner(name)
+            `)
+            .lt("due_date", before.toISOString())
+            .eq("archived", false)
+            .is("delivered_at", null)
+            .neq("demand_statuses.name", "Entregue");
+
+          if (error) throw error;
+          return (data || [])
+            .filter((demand) => Boolean(demand.due_date))
+            .map((demand) => ({
+              id: demand.id,
+              title: demand.title,
+              due_date: demand.due_date as string,
+              assigned_to: demand.assigned_to,
+            }));
+        },
+
         listAssignees: async (demandIds) => {
           if (demandIds.length === 0) return [];
           const { data, error } = await supabase
@@ -188,10 +214,10 @@ export async function handler(req: Request): Promise<Response> {
           return map;
         },
 
-        claimDelivery: async (eventKey, demandId, userId, channel) => {
+        claimDelivery: async (eventKey, eventType, demandId, userId, channel) => {
           const { data, error } = await supabase.rpc("claim_notification_delivery", {
             p_event_key: eventKey,
-            p_event_type: EVENT_TYPE,
+            p_event_type: eventType,
             p_demand_id: demandId,
             p_user_id: userId,
             p_channel: channel,
@@ -227,7 +253,7 @@ export async function handler(req: Request): Promise<Response> {
             user_id: reminder.userId,
             title: reminder.title,
             message: reminder.message,
-            type: "warning",
+            type: reminder.severity,
             link: reminder.link,
           });
           if (error) throw error;
@@ -253,7 +279,7 @@ export async function handler(req: Request): Promise<Response> {
               actionUrl: reminder.actionUrl,
               actionText: "Ver demanda",
               userName: reminder.userName,
-              type: "warning",
+              type: reminder.severity,
             }),
           );
 
@@ -284,7 +310,7 @@ export async function handler(req: Request): Promise<Response> {
               link: reminder.actionUrl,
               data: {
                 notificationType: "deadlineReminders",
-                type: EVENT_TYPE,
+                type: reminder.eventType,
                 demandId: reminder.demandId,
                 dueDate: reminder.dueDateKey,
               },
