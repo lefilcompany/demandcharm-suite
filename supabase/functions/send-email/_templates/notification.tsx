@@ -54,23 +54,17 @@ export const NotificationEmail = ({
         <Container style={container}>
           {/* Header with logo */}
           <Section style={headerSection}>
-            <table width="100%" cellPadding="0" cellSpacing="0">
-              <tr>
-                <td align="center">
-                  <Img
-                    src="https://pla.soma.lefil.com.br/lovable-uploads/8967ad53-156a-4e31-a5bd-b472b7cde839.png"
-                    alt="SoMA+"
-                    width="150"
-                    height="50"
-                    style={{ margin: '0 auto' }}
-                  />
-                </td>
-              </tr>
-            </table>
+            <Img
+              src="https://pla.soma.lefil.com.br/lovable-uploads/8967ad53-156a-4e31-a5bd-b472b7cde839.png"
+              alt="SoMA+"
+              width="150"
+              height="50"
+              style={{ margin: '0 auto' }}
+            />
           </Section>
 
           {/* Accent bar */}
-          <div style={{ ...accentBar, backgroundColor: accentColor }} />
+          <Section style={{ ...accentBar, backgroundColor: accentColor }} />
 
           {/* Main content */}
           <Section style={contentSection}>
@@ -138,11 +132,13 @@ const headerSection = {
   backgroundColor: '#FFFFFF',
   borderRadius: '12px 12px 0 0',
   padding: '32px 40px 24px',
+  textAlign: 'center' as const,
 }
 
 const accentBar = {
   height: '4px',
   width: '100%',
+  padding: '0',
 }
 
 const contentSection = {
