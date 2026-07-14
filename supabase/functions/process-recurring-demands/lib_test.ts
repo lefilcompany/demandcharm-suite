@@ -31,11 +31,11 @@ Deno.test("isAuthorized: accepts exact Bearer match", () => {
 });
 
 // ---------- isValidFrequency ----------
-Deno.test("isValidFrequency accepts the 4 known values", () => {
-  for (const f of ["daily", "weekly", "biweekly", "monthly"]) {
+Deno.test("isValidFrequency accepts the 5 known values", () => {
+  for (const f of ["daily", "weekly", "biweekly", "monthly", "yearly"]) {
     assertEquals(isValidFrequency(f), true);
   }
-  assertEquals(isValidFrequency("yearly"), false);
+  assertEquals(isValidFrequency("quarterly"), false);
   assertEquals(isValidFrequency(""), false);
   assertEquals(isValidFrequency(null), false);
 });
@@ -130,4 +130,9 @@ Deno.test("monthly: day_of_month=31 on a long month keeps the 31st", () => {
 Deno.test("biweekly without weekdays: +14", () => {
   // 2026-06-10 (Wed) + 14 = 2026-06-24 (Wed)
   assertEquals(calculateNextRunDate("biweekly", "2026-06-10", null, null), "2026-06-24");
+});
+
+// ---------- calculateNextRunDate: yearly ----------
+Deno.test("yearly: advances one year and keeps a business day", () => {
+  assertEquals(calculateNextRunDate("yearly", "2026-06-10", null, null), "2027-06-10");
 });
