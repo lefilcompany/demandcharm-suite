@@ -9,6 +9,7 @@ import {
   getEnabledDeliveryChannels,
   getTomorrowUtcWindow,
   isAuthorized,
+  isDeadlineCronAuthorized,
   normalizeAppUrl,
   zonedStartOfDayToUtc,
 } from "./lib.ts";
@@ -18,6 +19,30 @@ Deno.test("isAuthorized only accepts the exact CRON_SECRET bearer token", () => 
   assertEquals(isAuthorized("Bearer wrong", "secret"), false);
   assertEquals(isAuthorized(null, "secret"), false);
   assertEquals(isAuthorized("Bearer secret", undefined), false);
+});
+
+Deno.test("scheduled auth accepts the legacy env secret and the Vault-backed secret", async () => {
+  let verifierCalls = 0;
+  const verifyStoredSecret = async (token: string) => {
+    verifierCalls += 1;
+    return token === "vault-secret";
+  };
+
+  assertEquals(
+    await isDeadlineCronAuthorized("Bearer env-secret", "env-secret", verifyStoredSecret),
+    true,
+  );
+  assertEquals(verifierCalls, 0);
+  assertEquals(
+    await isDeadlineCronAuthorized("Bearer vault-secret", "env-secret", verifyStoredSecret),
+    true,
+  );
+  assertEquals(verifierCalls, 1);
+  assertEquals(
+    await isDeadlineCronAuthorized("Bearer invalid", "env-secret", verifyStoredSecret),
+    false,
+  );
+  assertEquals(await isDeadlineCronAuthorized(null, "env-secret", verifyStoredSecret), false);
 });
 
 Deno.test("calendar helpers calculate tomorrow in America/Recife", () => {
@@ -96,6 +121,7 @@ Deno.test("buildDeadlineReminder produces deterministic copy and event key", () 
   assertEquals(reminder.link, "/demands/demand-1");
   assertEquals(reminder.actionUrl, "https://pla.soma.lefil.com.br/demands/demand-1");
   assertEquals(reminder.userName, "Maria");
+  assertEquals(reminder.title, "Demanda vence amanhã");
   assertEquals(reminder.message.includes("vence amanhã (15/07/2026)"), true);
 });
 
@@ -116,5 +142,6 @@ Deno.test("buildOverdueReminder preserves daily overdue alerts without email", (
   assertEquals(reminder.eventKey, "deadline_overdue:demand-2:2026-07-14");
   assertEquals(reminder.eventType, "deadline_overdue");
   assertEquals(reminder.severity, "error");
+  assertEquals(reminder.title, "Demanda com prazo vencido");
   assertEquals(reminder.message.includes("venceu em 10/07/2026"), true);
 });
