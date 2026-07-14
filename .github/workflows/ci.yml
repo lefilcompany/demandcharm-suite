@@ -60,7 +60,10 @@ jobs:
       - uses: denoland/setup-deno@v1
         with: { deno-version: v1.x }
       - name: Run Deno tests
-        run: deno test --allow-net --allow-env --allow-read supabase/functions/process-recurring-demands/
+        run: |
+          deno test --allow-net --allow-env --allow-read \
+            supabase/functions/process-recurring-demands/ \
+            supabase/functions/check-deadlines/
 
   e2e:
     name: E2E ${{ matrix.spec }}
