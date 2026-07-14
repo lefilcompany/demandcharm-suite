@@ -54,6 +54,29 @@ export function isAuthorized(
   return Boolean(cronSecret) && authHeader === `Bearer ${cronSecret}`;
 }
 
+/**
+ * Accepts the legacy Edge Function CRON_SECRET and the database-managed secret
+ * generated for pg_cron. The database verifier is only called for a valid
+ * Bearer token, and errors are treated as an unauthorized request.
+ */
+export async function isDeadlineCronAuthorized(
+  authHeader: string | null | undefined,
+  cronSecret: string | null | undefined,
+  verifyStoredSecret: (token: string) => Promise<boolean>,
+): Promise<boolean> {
+  if (isAuthorized(authHeader, cronSecret)) return true;
+  if (!authHeader?.startsWith("Bearer ")) return false;
+
+  const token = authHeader.slice("Bearer ".length).trim();
+  if (!token) return false;
+
+  try {
+    return await verifyStoredSecret(token);
+  } catch {
+    return false;
+  }
+}
+
 function getDatePartsInTimeZone(date: Date, timeZone: string): {
   year: number;
   month: number;
@@ -72,7 +95,6 @@ function getDatePartsInTimeZone(date: Date, timeZone: string): {
     second: "2-digit",
     hourCycle: "h23",
   });
-
   const parts = formatter.formatToParts(date);
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
 
@@ -239,7 +261,7 @@ export function buildDayBeforeReminder(
     severity: "warning",
     demandId: base.demandId,
     userId: base.userId,
-    title: "⏰ Demanda vence amanhã",
+    title: "Demanda vence amanhã",
     message: `A demanda “${base.safeTitle}” vence amanhã (${base.formattedDate}) e ainda não foi entregue.`,
     emailSubject: `Lembrete: “${base.safeTitle}” vence amanhã`,
     link: base.link,
@@ -265,7 +287,7 @@ export function buildOverdueReminder(
     severity: "error",
     demandId: base.demandId,
     userId: base.userId,
-    title: "🚨 Demanda com prazo vencido",
+    title: "Demanda com prazo vencido",
     message: `A demanda “${base.safeTitle}” venceu em ${base.formattedDate} e ainda não foi entregue.`,
     emailSubject: `Prazo vencido: “${base.safeTitle}”`,
     link: base.link,
