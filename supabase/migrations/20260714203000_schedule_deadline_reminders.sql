@@ -39,7 +39,7 @@ AS $$
       SELECT 1
       FROM vault.decrypted_secrets
       WHERE name = 'deadline_cron_secret'
-        AND secret = p_secret
+        AND decrypted_secret = p_secret
     );
 $$;
 
@@ -58,7 +58,7 @@ DECLARE
   deadline_secret text;
   request_id bigint;
 BEGIN
-  SELECT secret
+  SELECT decrypted_secret
   INTO deadline_secret
   FROM vault.decrypted_secrets
   WHERE name = 'deadline_cron_secret'
