@@ -1,360 +1,351 @@
+import React from "npm:react@18.3.1";
+import { render } from "npm:@react-email/render@0.0.12";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { NotificationEmail } from "../send-email/_templates/notification.tsx";
+import { runDeadlineReminderJob } from "./job.ts";
+import {
+  DEFAULT_APP_URL,
+  DEFAULT_NOTIFICATION_TIME_ZONE,
+  isAuthorized,
+  type DeadlineReminder,
+  type DeliveryStatus,
+  type NotificationPreferences,
+  type UserProfile,
+} from "./lib.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface UserPreferences {
-  deadlineReminders?: boolean;
-  pushNotifications?: boolean;
+const DEFAULT_FROM = "SoMA+ <noreply@pla.soma.lefil.com.br>";
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
-Deno.serve(async (req: Request) => {
+function requireEnv(name: string): string {
+  const value = Deno.env.get(name);
+  if (!value) throw new Error(`${name} not configured`);
+  return value;
+}
+
+async function parseJsonResponse(response: Response): Promise<Record<string, unknown>> {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return { raw: text };
+  }
+}
+
+async function sendResendEmail({
+  apiKey,
+  to,
+  subject,
+  html,
+  maxRetries = 3,
+}: {
+  apiKey: string;
+  to: string;
+  subject: string;
+  html: string;
+  maxRetries?: number;
+}): Promise<void> {
+  for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: DEFAULT_FROM,
+        to: [to],
+        subject,
+        html,
+      }),
+    });
+
+    const payload = await parseJsonResponse(response);
+    if (response.ok) return;
+
+    if (response.status === 429 && attempt < maxRetries) {
+      await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
+      continue;
+    }
+
+    throw new Error(`Resend failed (${response.status}): ${JSON.stringify(payload).slice(0, 1000)}`);
+  }
+}
+
+export async function handler(req: Request): Promise<Response> {
   const requestId = crypto.randomUUID();
-  const requestTimestamp = new Date().toISOString();
-  
-  // Handle CORS preflight requests
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  if (req.method !== "POST") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
   try {
-    // Validate CRON_SECRET for authentication
-    const authHeader = req.headers.get("authorization");
-    const cronSecret = Deno.env.get("CRON_SECRET");
-    
-    if (!cronSecret) {
-      console.error(`[${requestId}] [${requestTimestamp}] CRON_SECRET not configured - server misconfiguration`);
-      return new Response(
-        JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Check if request has valid authorization
-    const expectedAuth = `Bearer ${cronSecret}`;
-    if (authHeader !== expectedAuth) {
-      // Enhanced security logging for failed auth attempts
-      const clientIP = req.headers.get("x-forwarded-for") || 
-                       req.headers.get("cf-connecting-ip") || 
-                       req.headers.get("x-real-ip") || 
-                       "unknown";
-      const userAgent = req.headers.get("user-agent") || "unknown";
-      
-      console.warn(`[${requestId}] [${requestTimestamp}] SECURITY: Unauthorized access attempt to check-deadlines | IP: ${clientIP} | User-Agent: ${userAgent}`);
-      
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const cronSecret = requireEnv("CRON_SECRET");
+    if (!isAuthorized(req.headers.get("authorization"), cronSecret)) {
+      const clientIp = req.headers.get("x-forwarded-for") ||
+        req.headers.get("cf-connecting-ip") ||
+        req.headers.get("x-real-ip") ||
+        "unknown";
+      console.warn(`[${requestId}] Unauthorized check-deadlines request from ${clientIp}`);
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
-    console.log(`[${requestId}] [${requestTimestamp}] Starting authorized deadline check...`);
-    
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseUrl = requireEnv("SUPABASE_URL");
+    const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const timeZone = Deno.env.get("NOTIFICATION_TIME_ZONE") || DEFAULT_NOTIFICATION_TIME_ZONE;
+    const appUrl = Deno.env.get("APP_URL") || DEFAULT_APP_URL;
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
-    // Get current time and 24 hours from now
-    const now = new Date();
-    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    console.log(`[${requestId}] Starting deadline reminder job in ${timeZone}`);
 
-    console.log(`Checking deadlines. Current time: ${now.toISOString()}`);
+    const result = await runDeadlineReminderJob(
+      {
+        listDemandsDueBetween: async (start, end) => {
+          const { data, error } = await supabase
+            .from("demands")
+            .select(`
+              id,
+              title,
+              due_date,
+              assigned_to,
+              delivered_at,
+              demand_statuses!inner(name)
+            `)
+            .gte("due_date", start.toISOString())
+            .lt("due_date", end.toISOString())
+            .eq("archived", false)
+            .is("delivered_at", null)
+            .neq("demand_statuses.name", "Entregue");
 
-    // === PART 1: Find demands with APPROACHING deadlines (within 24 hours) ===
-    const { data: approachingDemands, error: approachingError } = await supabase
-      .from("demands")
-      .select(`
-        id,
-        title,
-        due_date,
-        created_by,
-        assigned_to,
-        team_id,
-        demand_statuses!inner(name)
-      `)
-      .gte("due_date", now.toISOString())
-      .lte("due_date", tomorrow.toISOString())
-      .eq("archived", false)
-      .neq("demand_statuses.name", "Entregue");
+          if (error) throw error;
+          return (data || [])
+            .filter((demand) => Boolean(demand.due_date))
+            .map((demand) => ({
+              id: demand.id,
+              title: demand.title,
+              due_date: demand.due_date as string,
+              assigned_to: demand.assigned_to,
+            }));
+        },
 
-    if (approachingError) {
-      console.error("Error fetching approaching demands:", approachingError);
-      throw approachingError;
-    }
+        listOverdueDemands: async (before) => {
+          const { data, error } = await supabase
+            .from("demands")
+            .select(`
+              id,
+              title,
+              due_date,
+              assigned_to,
+              delivered_at,
+              demand_statuses!inner(name)
+            `)
+            .lt("due_date", before.toISOString())
+            .eq("archived", false)
+            .is("delivered_at", null)
+            .neq("demand_statuses.name", "Entregue");
 
-    console.log(`Found ${approachingDemands?.length || 0} demands with approaching deadlines`);
+          if (error) throw error;
+          return (data || [])
+            .filter((demand) => Boolean(demand.due_date))
+            .map((demand) => ({
+              id: demand.id,
+              title: demand.title,
+              due_date: demand.due_date as string,
+              assigned_to: demand.assigned_to,
+            }));
+        },
 
-    // === PART 2: Find demands with OVERDUE deadlines (past due) ===
-    const { data: overdueDemands, error: overdueError } = await supabase
-      .from("demands")
-      .select(`
-        id,
-        title,
-        due_date,
-        created_by,
-        assigned_to,
-        team_id,
-        demand_statuses!inner(name)
-      `)
-      .lt("due_date", now.toISOString())
-      .eq("archived", false)
-      .neq("demand_statuses.name", "Entregue");
+        listAssignees: async (demandIds) => {
+          if (demandIds.length === 0) return [];
+          const { data, error } = await supabase
+            .from("demand_assignees")
+            .select("demand_id, user_id, is_primary")
+            .in("demand_id", demandIds);
+          if (error) throw error;
+          return data || [];
+        },
 
-    if (overdueError) {
-      console.error("Error fetching overdue demands:", overdueError);
-      throw overdueError;
-    }
+        listPreferences: async (userIds) => {
+          const map = new Map<string, NotificationPreferences>();
+          if (userIds.length === 0) return map;
 
-    console.log(`Found ${overdueDemands?.length || 0} overdue demands`);
+          const { data, error } = await supabase
+            .from("user_preferences")
+            .select("user_id, preference_value")
+            .eq("preference_key", "notification_preferences")
+            .in("user_id", userIds);
+          if (error) throw error;
 
-    // Check existing notifications to avoid duplicates (sent in last 12 hours for approaching, 24 hours for overdue)
-    const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    
-    const notificationsToCreate: Array<{
-      user_id: string;
-      title: string;
-      message: string;
-      type: string;
-      link: string;
-    }> = [];
+          for (const row of data || []) {
+            map.set(row.user_id, (row.preference_value || {}) as NotificationPreferences);
+          }
+          return map;
+        },
 
-    const pushNotificationsToSend: Array<{
-      user_id: string;
-      title: string;
-      body: string;
-      link: string;
-      hoursRemaining: number;
-      isOverdue: boolean;
-      demandId: string;
-    }> = [];
+        listProfiles: async (userIds) => {
+          const map = new Map<string, UserProfile>();
+          if (userIds.length === 0) return map;
 
-    // Get all assignees for all demands
-    const allDemandIds = [
-      ...(approachingDemands || []).map(d => d.id),
-      ...(overdueDemands || []).map(d => d.id)
-    ];
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("id, full_name, email")
+            .in("id", userIds);
+          if (error) throw error;
 
-    const { data: allAssignees } = await supabase
-      .from("demand_assignees")
-      .select("demand_id, user_id")
-      .in("demand_id", allDemandIds);
+          for (const profile of data || []) map.set(profile.id, profile);
+          return map;
+        },
 
-    const assigneeMap = new Map<string, string[]>();
-    for (const assignee of allAssignees || []) {
-      const existing = assigneeMap.get(assignee.demand_id) || [];
-      existing.push(assignee.user_id);
-      assigneeMap.set(assignee.demand_id, existing);
-    }
-
-    // Process APPROACHING demands
-    for (const demand of approachingDemands || []) {
-      const dueDate = new Date(demand.due_date);
-      const hoursUntilDeadline = Math.round((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60));
-      
-      // Get users to notify (creator, assigned_to, and all assignees)
-      const usersToNotify = new Set<string>();
-      if (demand.created_by) usersToNotify.add(demand.created_by);
-      if (demand.assigned_to) usersToNotify.add(demand.assigned_to);
-      const demandAssignees = assigneeMap.get(demand.id) || [];
-      for (const assigneeId of demandAssignees) {
-        usersToNotify.add(assigneeId);
-      }
-
-      for (const userId of usersToNotify) {
-        // Check if we already sent a deadline notification for this demand recently
-        const { data: existingNotification } = await supabase
-          .from("notifications")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("link", `/demands/${demand.id}`)
-          .like("title", "%Prazo%")
-          .gte("created_at", twelveHoursAgo.toISOString())
-          .maybeSingle();
-
-        if (!existingNotification) {
-          const notifTitle = hoursUntilDeadline <= 2 ? "⚠️ Prazo urgente!" : "⏰ Prazo se aproximando";
-          const notifMessage = `A demanda "${demand.title}" vence em ${hoursUntilDeadline} hora${hoursUntilDeadline !== 1 ? "s" : ""}`;
-          
-          notificationsToCreate.push({
-            user_id: userId,
-            title: notifTitle,
-            message: notifMessage,
-            type: hoursUntilDeadline <= 2 ? "warning" : "info",
-            link: `/demands/${demand.id}`,
+        claimDelivery: async (eventKey, eventType, demandId, userId, channel) => {
+          const { data, error } = await supabase.rpc("claim_notification_delivery", {
+            p_event_key: eventKey,
+            p_event_type: eventType,
+            p_demand_id: demandId,
+            p_user_id: userId,
+            p_channel: channel,
           });
+          if (error) throw error;
+          return data === true;
+        },
 
-          pushNotificationsToSend.push({
-            user_id: userId,
-            title: notifTitle,
-            body: notifMessage,
-            link: `/demands/${demand.id}`,
-            hoursRemaining: hoursUntilDeadline,
-            isOverdue: false,
-            demandId: demand.id,
+        markDelivery: async (eventKey, userId, channel, status, errorMessage) => {
+          const update: {
+            status: DeliveryStatus;
+            last_error: string | null;
+            delivered_at: string | null;
+            updated_at: string;
+          } = {
+            status,
+            last_error: errorMessage || null,
+            delivered_at: status === "sent" ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString(),
+          };
+
+          const { error } = await supabase
+            .from("notification_deliveries")
+            .update(update)
+            .eq("event_key", eventKey)
+            .eq("user_id", userId)
+            .eq("channel", channel);
+          if (error) throw error;
+        },
+
+        createInAppNotification: async (reminder) => {
+          const { error } = await supabase.from("notifications").insert({
+            user_id: reminder.userId,
+            title: reminder.title,
+            message: reminder.message,
+            type: reminder.severity,
+            link: reminder.link,
           });
-        }
-      }
-    }
+          if (error) throw error;
+          return { status: "sent" };
+        },
 
-    // Process OVERDUE demands
-    for (const demand of overdueDemands || []) {
-      const dueDate = new Date(demand.due_date);
-      const hoursOverdue = Math.round((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60));
-      
-      // Get users to notify
-      const usersToNotify = new Set<string>();
-      if (demand.created_by) usersToNotify.add(demand.created_by);
-      if (demand.assigned_to) usersToNotify.add(demand.assigned_to);
-      const demandAssignees = assigneeMap.get(demand.id) || [];
-      for (const assigneeId of demandAssignees) {
-        usersToNotify.add(assigneeId);
-      }
+        sendEmail: async (reminder: DeadlineReminder, profile?: UserProfile) => {
+          let email = profile?.email || null;
+          if (!email) {
+            const { data, error } = await supabase.auth.admin.getUserById(reminder.userId);
+            if (error) throw error;
+            email = data.user?.email || null;
+          }
 
-      for (const userId of usersToNotify) {
-        // Check if we already sent an overdue notification for this demand recently (24h window)
-        const { data: existingNotification } = await supabase
-          .from("notifications")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("link", `/demands/${demand.id}`)
-          .like("title", "%vencido%")
-          .gte("created_at", twentyFourHoursAgo.toISOString())
-          .maybeSingle();
+          if (!email) {
+            return { status: "skipped", reason: "User has no email address" };
+          }
 
-        if (!existingNotification) {
-          const notifTitle = "🚨 Prazo vencido!";
-          const notifMessage = `A demanda "${demand.title}" está com prazo vencido há ${hoursOverdue} hora${hoursOverdue !== 1 ? "s" : ""}`;
-          
-          notificationsToCreate.push({
-            user_id: userId,
-            title: notifTitle,
-            message: notifMessage,
-            type: "error",
-            link: `/demands/${demand.id}`,
+          const html = await render(
+            React.createElement(NotificationEmail, {
+              title: reminder.title,
+              message: reminder.message,
+              actionUrl: reminder.actionUrl,
+              actionText: "Ver demanda",
+              userName: reminder.userName,
+              type: reminder.severity,
+            }),
+          );
+
+          if (!resendApiKey) {
+            throw new Error("RESEND_API_KEY not configured");
+          }
+
+          await sendResendEmail({
+            apiKey: resendApiKey,
+            to: email,
+            subject: reminder.emailSubject,
+            html,
           });
+          return { status: "sent" };
+        },
 
-          pushNotificationsToSend.push({
-            user_id: userId,
-            title: notifTitle,
-            body: notifMessage,
-            link: `/demands/${demand.id}`,
-            hoursRemaining: -hoursOverdue,
-            isOverdue: true,
-            demandId: demand.id,
-          });
-        }
-      }
-    }
-
-    console.log(`Creating ${notificationsToCreate.length} in-app notifications`);
-    console.log(`Sending ${pushNotificationsToSend.length} push notifications`);
-
-    // Insert in-app notifications
-    if (notificationsToCreate.length > 0) {
-      const { error: insertError } = await supabase
-        .from("notifications")
-        .insert(notificationsToCreate);
-
-      if (insertError) {
-        console.error("Error inserting notifications:", insertError);
-        throw insertError;
-      }
-    }
-
-    // Get user preferences for push notifications
-    const uniqueUserIds = [...new Set(pushNotificationsToSend.map(p => p.user_id))];
-    
-    const { data: notifPreferences } = await supabase
-      .from("user_preferences")
-      .select("user_id, preference_value")
-      .eq("preference_key", "notification_preferences")
-      .in("user_id", uniqueUserIds);
-
-    const userPrefsMap = new Map<string, UserPreferences>();
-    for (const pref of notifPreferences || []) {
-      userPrefsMap.set(pref.user_id, pref.preference_value as UserPreferences);
-    }
-
-    // Group push notifications by user
-    const pushByUser = new Map<string, typeof pushNotificationsToSend>();
-    for (const push of pushNotificationsToSend) {
-      const existing = pushByUser.get(push.user_id) || [];
-      existing.push(push);
-      pushByUser.set(push.user_id, existing);
-    }
-
-    // Send push notifications respecting user preferences
-    let pushSentCount = 0;
-    let pushSkippedCount = 0;
-
-    for (const [userId, pushes] of pushByUser) {
-      const userPrefs = userPrefsMap.get(userId);
-      
-      // Check if user has deadline reminders enabled
-      if (userPrefs?.deadlineReminders === false || userPrefs?.pushNotifications === false) {
-        console.log(`User ${userId} has deadline reminders or push disabled, skipping ${pushes.length} notifications`);
-        pushSkippedCount += pushes.length;
-        continue;
-      }
-
-      // Send via send-push-notification function
-      for (const push of pushes) {
-        try {
+        sendPush: async (reminder) => {
           const response = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${supabaseServiceKey}`,
+              Authorization: `Bearer ${cronSecret}`,
             },
             body: JSON.stringify({
-              userIds: [push.user_id],
-              title: push.title,
-              body: push.body,
-              link: push.link,
+              userIds: [reminder.userId],
+              title: reminder.title,
+              body: reminder.message,
+              link: reminder.actionUrl,
               data: {
                 notificationType: "deadlineReminders",
-                type: push.isOverdue ? "deadline_overdue" : "deadline_approaching",
-                demandId: push.demandId,
+                type: reminder.eventType,
+                demandId: reminder.demandId,
+                dueDate: reminder.dueDateKey,
               },
             }),
           });
 
-          if (response.ok) {
-            pushSentCount++;
-          } else {
-            console.error(`Failed to send push to user ${userId}:`, await response.text());
+          const payload = await parseJsonResponse(response);
+          if (!response.ok) {
+            throw new Error(
+              `Push function failed (${response.status}): ${JSON.stringify(payload).slice(0, 1000)}`,
+            );
           }
-        } catch (pushError) {
-          console.error(`Error sending push to user ${userId}:`, pushError);
-        }
-      }
-    }
 
-    console.log(`Deadline check completed. Push sent: ${pushSentCount}, skipped: ${pushSkippedCount}`);
+          const sent = Number(payload.sent || 0);
+          const failed = Number(payload.failed || 0);
+          const skipped = Number(payload.skipped || 0);
+          if (failed > 0 && sent === 0) {
+            throw new Error(`FCM failed for all tokens: ${JSON.stringify(payload).slice(0, 1000)}`);
+          }
+          if (sent > 0) return { status: "sent" };
+          return {
+            status: "skipped",
+            reason: skipped > 0 ? "Disabled by push preferences" : "No active FCM token",
+          };
+        },
+      },
+      { timeZone, appUrl },
+    );
 
-    return new Response(
-      JSON.stringify({ 
-        message: "Deadline check completed", 
-        approachingDemandsChecked: approachingDemands?.length || 0,
-        overdueDemandsChecked: overdueDemands?.length || 0,
-        notificationsSent: notificationsToCreate.length,
-        pushNotificationsSent: pushSentCount,
-        pushNotificationsSkipped: pushSkippedCount,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (error: any) {
-    console.error("Error in check-deadlines function:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
+    console.log(`[${requestId}] Deadline reminder job completed`, result);
+    return jsonResponse({ message: "Deadline reminder job completed", ...result });
+  } catch (error) {
+    console.error(`[${requestId}] check-deadlines failed:`, error);
+    return jsonResponse({ error: "Internal server error", requestId }, 500);
   }
-});
+}
+
+Deno.serve(handler);
