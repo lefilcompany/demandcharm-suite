@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { isDeadlineCronAuthorized } from "../check-deadlines/lib.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -204,10 +205,30 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Require authentication: either a valid user JWT or the CRON_SECRET for server-to-server calls
+    // Require authentication: a valid user JWT, the legacy CRON_SECRET, or the
+    // database-managed secret used by pg_cron for server-to-server calls.
     const authHeader = req.headers.get("authorization") || "";
     const cronSecret = Deno.env.get("CRON_SECRET");
-    const isCronCall = !!cronSecret && authHeader === `Bearer ${cronSecret}`;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const isCronCall = await isDeadlineCronAuthorized(
+      authHeader,
+      cronSecret,
+      async (token) => {
+        const { data, error } = await supabase.rpc("verify_deadline_cron_secret", {
+          p_secret: token,
+        });
+        if (error) {
+          console.error("Failed to verify database cron secret:", error);
+          return false;
+        }
+        return data === true;
+      },
+    );
 
     let callerUserId: string | null = null;
     if (!isCronCall) {
@@ -218,7 +239,6 @@ Deno.serve(async (req: Request) => {
         });
       }
       const token = authHeader.replace("Bearer ", "");
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
       const authClient = createClient(supabaseUrl, supabaseAnonKey, {
         auth: { autoRefreshToken: false, persistSession: false },
@@ -270,11 +290,6 @@ Deno.serve(async (req: Request) => {
 
     console.log(`Target users: ${uniqueUserIds.length}`);
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     // Authorization: when called by a real user, only allow targets that share a team with the caller
     let allowedUserIds = uniqueUserIds;
     if (!isCronCall && callerUserId) {
@@ -282,7 +297,7 @@ Deno.serve(async (req: Request) => {
         .from("team_members")
         .select("team_id")
         .eq("user_id", callerUserId);
-      const callerTeamIds = (callerTeams || []).map((r: { team_id: string }) => r.team_id);
+      const callerTeamIds = (callerTeams || []).map((r: { user_id?: string; team_id: string }) => r.team_id);
 
       if (callerTeamIds.length === 0) {
         allowedUserIds = uniqueUserIds.filter((id) => id === callerUserId);
