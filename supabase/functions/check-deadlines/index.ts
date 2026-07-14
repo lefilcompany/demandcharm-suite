@@ -6,7 +6,7 @@ import { runDeadlineReminderJob } from "./job.ts";
 import {
   DEFAULT_APP_URL,
   DEFAULT_NOTIFICATION_TIME_ZONE,
-  isAuthorized,
+  isDeadlineCronAuthorized,
   type DeadlineReminder,
   type DeliveryStatus,
   type NotificationPreferences,
@@ -95,8 +95,30 @@ export async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const cronSecret = requireEnv("CRON_SECRET");
-    if (!isAuthorized(req.headers.get("authorization"), cronSecret)) {
+    const supabaseUrl = requireEnv("SUPABASE_URL");
+    const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const authHeader = req.headers.get("authorization");
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const authorized = await isDeadlineCronAuthorized(
+      authHeader,
+      cronSecret,
+      async (token) => {
+        const { data, error } = await supabase.rpc("verify_deadline_cron_secret", {
+          p_secret: token,
+        });
+        if (error) {
+          console.error(`[${requestId}] Failed to verify database cron secret`, error);
+          return false;
+        }
+        return data === true;
+      },
+    );
+
+    if (!authorized) {
       const clientIp = req.headers.get("x-forwarded-for") ||
         req.headers.get("cf-connecting-ip") ||
         req.headers.get("x-real-ip") ||
@@ -105,14 +127,9 @@ export async function handler(req: Request): Promise<Response> {
       return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
-    const supabaseUrl = requireEnv("SUPABASE_URL");
-    const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const timeZone = Deno.env.get("NOTIFICATION_TIME_ZONE") || DEFAULT_NOTIFICATION_TIME_ZONE;
     const appUrl = Deno.env.get("APP_URL") || DEFAULT_APP_URL;
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
 
     console.log(`[${requestId}] Starting deadline reminder job in ${timeZone}`);
 
@@ -301,7 +318,7 @@ export async function handler(req: Request): Promise<Response> {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${cronSecret}`,
+              Authorization: authHeader || "",
             },
             body: JSON.stringify({
               userIds: [reminder.userId],
