@@ -1,0 +1,1 @@
+UPDATE public.profiles SET needs_password_reset = false WHERE lower(email) = 'systemsoma@lefil.com.br';
