@@ -1,31 +1,34 @@
-## Problema
+## Diagnóstico
 
-Ao tentar conectar o MCP do SoMA em outra plataforma (ChatGPT/Claude/etc.), o usuário é redirecionado para `/.lovable/oauth/consent?authorization_id=...` e vê:
+O bundle publicado em `pla.soma.lefil.com.br` (`assets/index-gl4rGBKu.js`) **já contém** `@supabase/supabase-js@2.110.7` com o namespace `auth.oauth` inicializado (`getAuthorizationDetails`, `approveAuthorization`, `denyAuthorization` presentes). Verifiquei baixando o JS servido pelo domínio.
 
-> Cannot read properties of undefined (reading 'getAuthorizationDetails')
-
-Causa: `src/pages/OAuthConsent.tsx` chama `supabase.auth.oauth.getAuthorizationDetails(...)`, mas o projeto está travado em `@supabase/supabase-js` **2.49.8**, versão que **não** expõe o namespace beta `auth.oauth`. Em runtime, `supabase.auth.oauth` é `undefined`. O cast TypeScript no arquivo mascara isso em build-time mas não cria o método. A versão atual do pacote é `2.110.7`, que já inclui o namespace `auth.oauth`.
+Ou seja, o código em produção está correto. O erro `Cannot read properties of undefined (reading 'getAuthorizationDetails')` da nova tentativa vem do **navegador servindo um bundle antigo em cache** (JS/Service Worker) — a URL do bundle anterior à correção ficou memorizada e o `supabase.auth.oauth` ainda é `undefined` naquele arquivo cacheado. Reforça isso o erro no console: `Failed to update a ServiceWorker ... /sw.js 404`, indicando SW registrado antes que hoje aponta para script inexistente e pode estar servindo assets antigos.
 
 ## Correção
 
-Atualizar `@supabase/supabase-js` para `^2.110.7` (menor major, sem breaking changes previstos para o cliente já em uso). Isso ativa `supabase.auth.oauth.getAuthorizationDetails / approveAuthorization / denyAuthorization` em runtime e a tela de consent passa a carregar os detalhes do cliente OAuth e a renderizar Autorizar/Cancelar corretamente.
+Duas mudanças pequenas e complementares:
 
-Nenhuma outra mudança de código é necessária — o `OAuthConsent.tsx` já implementa o fluxo correto (session check → `getAuthorizationDetails` → approve/deny → redirect). O wrapper tipado local (`SupabaseOAuth`) continua válido.
+### 1. Invalidar Service Worker antigo em `index.html`
 
-## Passos
+Adicionar um pequeno script inline que desregistra qualquer `ServiceWorker` previamente instalado e limpa `caches` na primeira carga. Isso libera navegadores presos ao bundle antigo em uma única visita. O snippet é idempotente (após limpar, não faz nada nas próximas cargas).
 
-1. `package.json`: bump `@supabase/supabase-js` de `2.49.8` para `^2.110.7`.
-2. Reinstalar dependências (auto).
-3. Validar em runtime abrindo `/.lovable/oauth/consent?authorization_id=<id>` com um authorization_id real, ou refazendo a conexão do MCP a partir da plataforma externa.
+### 2. Fallback defensivo em `src/pages/OAuthConsent.tsx`
 
-## Detalhes técnicos
+Se `supabase.auth.oauth` for `undefined` em runtime, em vez do `TypeError` cru, mostrar mensagem clara pedindo recarregar (Ctrl+Shift+R). Isso protege usuários que ainda estejam com bundle antigo antes do SW desregistrar.
 
-- O arquivo auto-gerado `src/integrations/supabase/client.ts` não muda — apenas a versão do pacote.
-- `src/integrations/lovable/index.ts` usa `supabase.auth.setSession` (API estável), sem impacto.
-- Os tipos gerados em `src/integrations/supabase/types.ts` são compatíveis entre `2.49` e `2.110`.
-- Alternativa descartada: chamar direto `/auth/v1/oauth/authorizations/:id` via fetch — mais frágil e contraria a orientação da knowledge (`cloud-auth-oauth-server`), que exige uso dos helpers `supabase.auth.oauth`.
+```ts
+const oauth = (supabase.auth as any).oauth;
+if (!oauth) {
+  setError("Sessão do navegador desatualizada. Recarregue a página com Ctrl+Shift+R (ou Cmd+Shift+R no Mac) e tente novamente.");
+  return;
+}
+```
+
+### 3. Republicar
+
+Após as duas mudanças, republicar o app para gerar um novo hash de bundle (`index-<novoHash>.js`), forçando todos os navegadores a baixar o JS novo — o que já resolve por si só na maioria dos casos.
 
 ## Fora de escopo
 
-- Nenhuma mudança no MCP server, tools, ou edge function `mcp`.
-- Nenhuma alteração de RLS, migrations ou auth config.
+- Nenhuma mudança no MCP server, tools, RLS, migrations, edge function `mcp`, ou config OAuth Supabase — o servidor de autorização e o resource server estão corretos; o problema é 100% cache de bundle no cliente.
+- Nenhuma alteração no fluxo de consent em si (o código já está correto).
