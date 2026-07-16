@@ -1118,349 +1118,6 @@ var deleteAttachmentTool = defineTool7({
   }
 });
 
-// src/lib/mcp/tools/time.ts
-var time_exports = {};
-__export(time_exports, {
-  getActiveTimerTool: () => getActiveTimerTool,
-  listTimeEntriesTool: () => listTimeEntriesTool,
-  manualTimeEntryTool: () => manualTimeEntryTool,
-  startTimerTool: () => startTimerTool,
-  stopTimerTool: () => stopTimerTool
-});
-import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z8 } from "npm:zod@^3.25.76";
-var startTimerTool = defineTool8({
-  name: "start_demand_timer",
-  title: "Start demand timer",
-  description: "Start a time entry on a demand for the caller. Stops any previously active entry.",
-  inputSchema: { demand_id: z8.string().uuid() },
-  annotations: { readOnlyHint: false, idempotentHint: true },
-  handler: async ({ demand_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const c = sb(ctx);
-    const now = (/* @__PURE__ */ new Date()).toISOString();
-    await c.from("demand_time_entries").update({ ended_at: now }).eq("user_id", ctx.getUserId()).is("ended_at", null);
-    const { data, error } = await c.from("demand_time_entries").insert({ demand_id, user_id: ctx.getUserId(), started_at: now }).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ entry: data });
-  }
-});
-var stopTimerTool = defineTool8({
-  name: "stop_demand_timer",
-  title: "Stop demand timer",
-  description: "Stop the caller's currently active time entry on a demand.",
-  inputSchema: { demand_id: z8.string().uuid().optional() },
-  annotations: { readOnlyHint: false, idempotentHint: true },
-  handler: async ({ demand_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const c = sb(ctx);
-    let q = c.from("demand_time_entries").update({ ended_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("user_id", ctx.getUserId()).is("ended_at", null);
-    if (demand_id) q = q.eq("demand_id", demand_id);
-    const { data, error } = await q.select();
-    if (error) return fromPgError(error);
-    return ok({ stopped: data ?? [] });
-  }
-});
-var getActiveTimerTool = defineTool8({
-  name: "get_active_timer",
-  title: "Get active timer",
-  description: "Return the caller's currently-running time entry, if any.",
-  inputSchema: {},
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async (_i, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("demand_time_entries").select("*, demands(id, title, board_id)").eq("user_id", ctx.getUserId()).is("ended_at", null).maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ entry: data });
-  }
-});
-var listTimeEntriesTool = defineTool8({
-  name: "list_demand_time_entries",
-  title: "List time entries",
-  description: "List time entries for a demand.",
-  inputSchema: { demand_id: z8.string().uuid(), limit: z8.number().int().min(1).max(200).default(100) },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ demand_id, limit }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("demand_time_entries").select("*, profiles(id, full_name)").eq("demand_id", demand_id).order("started_at", { ascending: false }).limit(limit);
-    if (error) return fromPgError(error);
-    return ok({ entries: data ?? [] });
-  }
-});
-var manualTimeEntryTool = defineTool8({
-  name: "manual_time_entry",
-  title: "Manual time entry",
-  description: "Create a completed time entry with explicit start/end. Duration is computed by the database.",
-  inputSchema: {
-    demand_id: z8.string().uuid(),
-    started_at: z8.string().datetime({ offset: true }),
-    ended_at: z8.string().datetime({ offset: true }),
-    note: z8.string().max(500).optional()
-  },
-  annotations: { readOnlyHint: false, idempotentHint: false },
-  handler: async ({ demand_id, started_at, ended_at, note }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const duration = Math.max(0, Math.floor((new Date(ended_at).getTime() - new Date(started_at).getTime()) / 1e3));
-    const { data, error } = await sb(ctx).from("demand_time_entries").insert({ demand_id, user_id: ctx.getUserId(), started_at, ended_at, duration_seconds: duration, note: note ?? null }).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ entry: data });
-  }
-});
-
-// src/lib/mcp/tools/services.ts
-var services_exports = {};
-__export(services_exports, {
-  createServiceTool: () => createServiceTool,
-  deleteServiceTool: () => deleteServiceTool,
-  getServiceTool: () => getServiceTool,
-  listServicesTool: () => listServicesTool,
-  updateServiceTool: () => updateServiceTool
-});
-import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z9 } from "npm:zod@^3.25.76";
-var listServicesTool = defineTool9({
-  name: "list_services",
-  title: "List services",
-  description: "List services (categories/folders) for a team.",
-  inputSchema: { team_id: z9.string().uuid(), parent_id: z9.string().uuid().nullable().optional() },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ team_id, parent_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    let q = sb(ctx).from("services").select("*").eq("team_id", team_id).order("name");
-    if (parent_id !== void 0) q = parent_id === null ? q.is("parent_id", null) : q.eq("parent_id", parent_id);
-    const { data, error } = await q;
-    if (error) return fromPgError(error);
-    return ok({ services: data ?? [] });
-  }
-});
-var getServiceTool = defineTool9({
-  name: "get_service",
-  title: "Get service",
-  description: "Get service.",
-  inputSchema: { service_id: z9.string().uuid() },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ service_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("services").select("*").eq("id", service_id).maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ service: data });
-  }
-});
-var createServiceTool = defineTool9({
-  name: "create_service",
-  title: "Create service",
-  description: "Create a service (or folder if parent_id is null and no category).",
-  inputSchema: {
-    team_id: z9.string().uuid(),
-    name: z9.string().trim().min(1).max(120),
-    category: z9.string().max(120).optional(),
-    parent_id: z9.string().uuid().nullable().optional(),
-    color: z9.string().optional(),
-    description: z9.string().optional()
-  },
-  annotations: { readOnlyHint: false, idempotentHint: false },
-  handler: async (input, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("services").insert({ ...input, created_by: ctx.getUserId() }).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ service: data });
-  }
-});
-var updateServiceTool = defineTool9({
-  name: "update_service",
-  title: "Update service",
-  description: "Update service.",
-  inputSchema: {
-    service_id: z9.string().uuid(),
-    name: z9.string().trim().min(1).max(120).optional(),
-    category: z9.string().max(120).optional(),
-    color: z9.string().optional(),
-    description: z9.string().optional(),
-    parent_id: z9.string().uuid().nullable().optional()
-  },
-  annotations: { readOnlyHint: false, idempotentHint: true },
-  handler: async ({ service_id, ...patch }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== void 0));
-    if (!Object.keys(clean).length) return ok({ updated: false });
-    const { data, error } = await sb(ctx).from("services").update(clean).eq("id", service_id).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ service: data });
-  }
-});
-var deleteServiceTool = defineTool9({
-  name: "delete_service",
-  title: "Delete service",
-  description: "Delete service.",
-  inputSchema: { service_id: z9.string().uuid() },
-  annotations: { readOnlyHint: false, destructiveHint: true },
-  handler: async ({ service_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { error } = await sb(ctx).from("services").delete().eq("id", service_id);
-    if (error) return fromPgError(error);
-    return ok({ deleted: service_id });
-  }
-});
-
-// src/lib/mcp/tools/notes.ts
-var notes_exports = {};
-__export(notes_exports, {
-  archiveNoteTool: () => archiveNoteTool,
-  createNoteTool: () => createNoteTool,
-  deleteNoteTool: () => deleteNoteTool,
-  getNoteTool: () => getNoteTool,
-  listNotesTool: () => listNotesTool,
-  revokeNoteShareTool: () => revokeNoteShareTool,
-  shareNoteTool: () => shareNoteTool,
-  updateNoteTool: () => updateNoteTool
-});
-import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z10 } from "npm:zod@^3.25.76";
-var listNotesTool = defineTool10({
-  name: "list_notes",
-  title: "List notes",
-  description: "List notes of a team the caller can access.",
-  inputSchema: {
-    team_id: z10.string().uuid(),
-    archived: z10.boolean().default(false),
-    query: z10.string().optional().describe("Optional text search on title/content."),
-    limit: z10.number().int().min(1).max(200).default(50)
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ team_id, archived, query, limit }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    let q = sb(ctx).from("notes").select("*").eq("team_id", team_id).eq("archived", archived).order("updated_at", { ascending: false }).limit(limit);
-    if (query) {
-      const esc = query.replace(/[%_]/g, (m) => `\\${m}`);
-      q = q.or(`title.ilike.%${esc}%,content.ilike.%${esc}%`);
-    }
-    const { data, error } = await q;
-    if (error) return fromPgError(error);
-    return ok({ notes: data ?? [] });
-  }
-});
-var getNoteTool = defineTool10({
-  name: "get_note",
-  title: "Get note",
-  description: "Get note.",
-  inputSchema: { note_id: z10.string().uuid() },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ note_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("notes").select("*").eq("id", note_id).maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ note: data });
-  }
-});
-var createNoteTool = defineTool10({
-  name: "create_note",
-  title: "Create note",
-  description: "Create note.",
-  inputSchema: {
-    team_id: z10.string().uuid(),
-    title: z10.string().trim().min(1).max(200),
-    content: z10.string().default(""),
-    is_private: z10.boolean().default(true)
-  },
-  annotations: { readOnlyHint: false, idempotentHint: false },
-  handler: async (input, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("notes").insert({ ...input, created_by: ctx.getUserId() }).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ note: data });
-  }
-});
-var updateNoteTool = defineTool10({
-  name: "update_note",
-  title: "Update note",
-  description: "Update note.",
-  inputSchema: {
-    note_id: z10.string().uuid(),
-    title: z10.string().trim().min(1).max(200).optional(),
-    content: z10.string().optional(),
-    is_private: z10.boolean().optional()
-  },
-  annotations: { readOnlyHint: false, idempotentHint: true },
-  handler: async ({ note_id, ...patch }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== void 0));
-    if (!Object.keys(clean).length) return ok({ updated: false });
-    const { data, error } = await sb(ctx).from("notes").update(clean).eq("id", note_id).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ note: data });
-  }
-});
-var archiveNoteTool = defineTool10({
-  name: "archive_note",
-  title: "Archive/restore note",
-  description: "Archive/restore note.",
-  inputSchema: { note_id: z10.string().uuid(), archived: z10.boolean().default(true) },
-  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
-  handler: async ({ note_id, archived }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("notes").update({ archived }).eq("id", note_id).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ note: data });
-  }
-});
-var deleteNoteTool = defineTool10({
-  name: "delete_note",
-  title: "Delete note",
-  description: "Delete note.",
-  inputSchema: { note_id: z10.string().uuid(), confirm: z10.literal(true) },
-  annotations: { readOnlyHint: false, destructiveHint: true },
-  handler: async ({ note_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { error } = await sb(ctx).from("notes").delete().eq("id", note_id);
-    if (error) return fromPgError(error);
-    return ok({ deleted: note_id });
-  }
-});
-var shareNoteTool = defineTool10({
-  name: "share_note_with_user",
-  title: "Share note with user",
-  description: "Share note with user.",
-  inputSchema: { note_id: z10.string().uuid(), user_id: z10.string().uuid(), permission: z10.enum(["view", "edit"]).default("view") },
-  annotations: { readOnlyHint: false, idempotentHint: true },
-  handler: async ({ note_id, user_id, permission }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("note_shares").upsert({ note_id, shared_with_user_id: user_id, permission, shared_by: ctx.getUserId() }, { onConflict: "note_id,shared_with_user_id" }).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ share: data });
-  }
-});
-var revokeNoteShareTool = defineTool10({
-  name: "revoke_note_share",
-  title: "Revoke note share",
-  description: "Revoke note share.",
-  inputSchema: { note_id: z10.string().uuid(), user_id: z10.string().uuid() },
-  annotations: { readOnlyHint: false, destructiveHint: true },
-  handler: async ({ note_id, user_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { error } = await sb(ctx).from("note_shares").delete().eq("note_id", note_id).eq("shared_with_user_id", user_id);
-    if (error) return fromPgError(error);
-    return ok({ revoked: user_id });
-  }
-});
-
 // src/lib/mcp/tools/projects.ts
 var projects_exports = {};
 __export(projects_exports, {
@@ -1472,13 +1129,13 @@ __export(projects_exports, {
   removeDemandFromProjectTool: () => removeDemandFromProjectTool,
   updateProjectTool: () => updateProjectTool
 });
-import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z11 } from "npm:zod@^3.25.76";
-var listProjectsTool = defineTool11({
+import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z8 } from "npm:zod@^3.25.76";
+var listProjectsTool = defineTool8({
   name: "list_projects",
   title: "List projects (folders)",
   description: "List demand folders/projects the caller can access.",
-  inputSchema: { team_id: z11.string().uuid().optional() },
+  inputSchema: { team_id: z8.string().uuid().optional() },
   annotations: { readOnlyHint: true, idempotentHint: true },
   handler: async ({ team_id }, ctx) => {
     const auth2 = requireAuth(ctx);
@@ -1490,11 +1147,11 @@ var listProjectsTool = defineTool11({
     return ok({ projects: data ?? [] });
   }
 });
-var getProjectTool = defineTool11({
+var getProjectTool = defineTool8({
   name: "get_project",
   title: "Get project",
   description: "Get project.",
-  inputSchema: { project_id: z11.string().uuid() },
+  inputSchema: { project_id: z8.string().uuid() },
   annotations: { readOnlyHint: true, idempotentHint: true },
   handler: async ({ project_id }, ctx) => {
     const auth2 = requireAuth(ctx);
@@ -1507,15 +1164,15 @@ var getProjectTool = defineTool11({
     return ok({ project, demands: demands ?? [], shares: shares ?? [] });
   }
 });
-var createProjectTool = defineTool11({
+var createProjectTool = defineTool8({
   name: "create_project",
   title: "Create project",
   description: "Create project.",
   inputSchema: {
-    team_id: z11.string().uuid(),
-    name: z11.string().trim().min(1).max(200),
-    description: z11.string().optional(),
-    color: z11.string().optional()
+    team_id: z8.string().uuid(),
+    name: z8.string().trim().min(1).max(200),
+    description: z8.string().optional(),
+    color: z8.string().optional()
   },
   annotations: { readOnlyHint: false, idempotentHint: false },
   handler: async (input, ctx) => {
@@ -1526,15 +1183,15 @@ var createProjectTool = defineTool11({
     return ok({ project: data });
   }
 });
-var updateProjectTool = defineTool11({
+var updateProjectTool = defineTool8({
   name: "update_project",
   title: "Update project",
   description: "Update project.",
   inputSchema: {
-    project_id: z11.string().uuid(),
-    name: z11.string().trim().min(1).max(200).optional(),
-    description: z11.string().optional(),
-    color: z11.string().optional()
+    project_id: z8.string().uuid(),
+    name: z8.string().trim().min(1).max(200).optional(),
+    description: z8.string().optional(),
+    color: z8.string().optional()
   },
   annotations: { readOnlyHint: false, idempotentHint: true },
   handler: async ({ project_id, ...patch }, ctx) => {
@@ -1547,11 +1204,11 @@ var updateProjectTool = defineTool11({
     return ok({ project: data });
   }
 });
-var deleteProjectTool = defineTool11({
+var deleteProjectTool = defineTool8({
   name: "delete_project",
   title: "Delete project",
   description: "Delete project.",
-  inputSchema: { project_id: z11.string().uuid(), confirm: z11.literal(true) },
+  inputSchema: { project_id: z8.string().uuid(), confirm: z8.literal(true) },
   annotations: { readOnlyHint: false, destructiveHint: true },
   handler: async ({ project_id }, ctx) => {
     const auth2 = requireAuth(ctx);
@@ -1561,11 +1218,11 @@ var deleteProjectTool = defineTool11({
     return ok({ deleted: project_id });
   }
 });
-var addDemandToProjectTool = defineTool11({
+var addDemandToProjectTool = defineTool8({
   name: "add_demand_to_project",
   title: "Add demand to project",
   description: "Add demand to project.",
-  inputSchema: { project_id: z11.string().uuid(), demand_id: z11.string().uuid() },
+  inputSchema: { project_id: z8.string().uuid(), demand_id: z8.string().uuid() },
   annotations: { readOnlyHint: false, idempotentHint: true },
   handler: async ({ project_id, demand_id }, ctx) => {
     const auth2 = requireAuth(ctx);
@@ -1575,11 +1232,11 @@ var addDemandToProjectTool = defineTool11({
     return ok({ link: data });
   }
 });
-var removeDemandFromProjectTool = defineTool11({
+var removeDemandFromProjectTool = defineTool8({
   name: "remove_demand_from_project",
   title: "Remove demand from project",
   description: "Remove demand from project.",
-  inputSchema: { project_id: z11.string().uuid(), demand_id: z11.string().uuid() },
+  inputSchema: { project_id: z8.string().uuid(), demand_id: z8.string().uuid() },
   annotations: { readOnlyHint: false, destructiveHint: true },
   handler: async ({ project_id, demand_id }, ctx) => {
     const auth2 = requireAuth(ctx);
@@ -1599,18 +1256,18 @@ __export(requests_exports, {
   postRequestCommentTool: () => postRequestCommentTool,
   respondDemandRequestTool: () => respondDemandRequestTool
 });
-import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z12 } from "npm:zod@^3.25.76";
-var requestStatus = z12.enum(["pending", "approved", "rejected", "returned"]);
-var listDemandRequestsTool = defineTool12({
+import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z9 } from "npm:zod@^3.25.76";
+var requestStatus = z9.enum(["pending", "approved", "rejected", "returned"]);
+var listDemandRequestsTool = defineTool9({
   name: "list_demand_requests",
   title: "List demand requests",
   description: "List demand approval requests (submitted by requesters) visible to the caller.",
   inputSchema: {
-    team_id: z12.string().uuid().optional(),
-    board_id: z12.string().uuid().optional(),
+    team_id: z9.string().uuid().optional(),
+    board_id: z9.string().uuid().optional(),
     status: requestStatus.optional(),
-    limit: z12.number().int().min(1).max(200).default(50)
+    limit: z9.number().int().min(1).max(200).default(50)
   },
   annotations: { readOnlyHint: true, idempotentHint: true },
   handler: async ({ team_id, board_id, status, limit }, ctx) => {
@@ -1625,11 +1282,11 @@ var listDemandRequestsTool = defineTool12({
     return ok({ requests: data ?? [] });
   }
 });
-var getDemandRequestTool = defineTool12({
+var getDemandRequestTool = defineTool9({
   name: "get_demand_request",
   title: "Get demand request",
   description: "Get demand request.",
-  inputSchema: { request_id: z12.string().uuid() },
+  inputSchema: { request_id: z9.string().uuid() },
   annotations: { readOnlyHint: true, idempotentHint: true },
   handler: async ({ request_id }, ctx) => {
     const auth2 = requireAuth(ctx);
@@ -1641,18 +1298,18 @@ var getDemandRequestTool = defineTool12({
     return ok({ request: data, comments: comments ?? [] });
   }
 });
-var createDemandRequestTool = defineTool12({
+var createDemandRequestTool = defineTool9({
   name: "create_demand_request",
   title: "Create demand request",
   description: "Submit a demand request for approval on a team (optionally targeting a board).",
   inputSchema: {
-    team_id: z12.string().uuid(),
-    board_id: z12.string().uuid().optional(),
-    title: z12.string().trim().min(1).max(200),
-    description: z12.string().optional(),
-    priority: z12.enum(["baixa", "m\xE9dia", "alta", "urgente"]).default("m\xE9dia"),
-    due_date: z12.string().datetime({ offset: true }).optional(),
-    service_id: z12.string().uuid().optional()
+    team_id: z9.string().uuid(),
+    board_id: z9.string().uuid().optional(),
+    title: z9.string().trim().min(1).max(200),
+    description: z9.string().optional(),
+    priority: z9.enum(["baixa", "m\xE9dia", "alta", "urgente"]).default("m\xE9dia"),
+    due_date: z9.string().datetime({ offset: true }).optional(),
+    service_id: z9.string().uuid().optional()
   },
   annotations: { readOnlyHint: false, idempotentHint: false },
   handler: async (input, ctx) => {
@@ -1663,14 +1320,14 @@ var createDemandRequestTool = defineTool12({
     return ok({ request: data });
   }
 });
-var respondDemandRequestTool = defineTool12({
+var respondDemandRequestTool = defineTool9({
   name: "respond_demand_request",
   title: "Approve/reject/return request",
   description: "Change a demand request status to approved, rejected, or returned. Provide reason for rejected/returned.",
   inputSchema: {
-    request_id: z12.string().uuid(),
-    action: z12.enum(["approved", "rejected", "returned"]),
-    reason: z12.string().optional()
+    request_id: z9.string().uuid(),
+    action: z9.enum(["approved", "rejected", "returned"]),
+    reason: z9.string().optional()
   },
   annotations: { readOnlyHint: false, idempotentHint: true },
   handler: async ({ request_id, action, reason }, ctx) => {
@@ -1683,11 +1340,11 @@ var respondDemandRequestTool = defineTool12({
     return ok({ request: data });
   }
 });
-var postRequestCommentTool = defineTool12({
+var postRequestCommentTool = defineTool9({
   name: "post_request_comment",
   title: "Post request comment",
   description: "Post request comment.",
-  inputSchema: { request_id: z12.string().uuid(), content: z12.string().trim().min(1).max(5e3) },
+  inputSchema: { request_id: z9.string().uuid(), content: z9.string().trim().min(1).max(5e3) },
   annotations: { readOnlyHint: false, idempotentHint: false },
   handler: async ({ request_id, content }, ctx) => {
     const auth2 = requireAuth(ctx);
@@ -1698,78 +1355,6 @@ var postRequestCommentTool = defineTool12({
   }
 });
 
-// src/lib/mcp/tools/templates.ts
-var templates_exports = {};
-__export(templates_exports, {
-  getTemplateTool: () => getTemplateTool,
-  listRecurringDemandsTool: () => listRecurringDemandsTool,
-  listTemplatesTool: () => listTemplatesTool,
-  pauseRecurringDemandTool: () => pauseRecurringDemandTool
-});
-import { defineTool as defineTool13 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z13 } from "npm:zod@^3.25.76";
-var listTemplatesTool = defineTool13({
-  name: "list_templates",
-  title: "List demand templates",
-  description: "List demand templates.",
-  inputSchema: { team_id: z13.string().uuid(), board_id: z13.string().uuid().optional() },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ team_id, board_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    let q = sb(ctx).from("demand_templates").select("*").eq("team_id", team_id).order("name");
-    if (board_id) q = q.eq("board_id", board_id);
-    const { data, error } = await q;
-    if (error) return fromPgError(error);
-    return ok({ templates: data ?? [] });
-  }
-});
-var getTemplateTool = defineTool13({
-  name: "get_template",
-  title: "Get template",
-  description: "Get template.",
-  inputSchema: { template_id: z13.string().uuid() },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ template_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("demand_templates").select("*").eq("id", template_id).maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ template: data });
-  }
-});
-var listRecurringDemandsTool = defineTool13({
-  name: "list_recurring_demands",
-  title: "List recurring demands",
-  description: "List recurring demands.",
-  inputSchema: { team_id: z13.string().uuid().optional(), board_id: z13.string().uuid().optional() },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ team_id, board_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    let q = sb(ctx).from("recurring_demands").select("*").order("created_at", { ascending: false });
-    if (team_id) q = q.eq("team_id", team_id);
-    if (board_id) q = q.eq("board_id", board_id);
-    const { data, error } = await q;
-    if (error) return fromPgError(error);
-    return ok({ recurring: data ?? [] });
-  }
-});
-var pauseRecurringDemandTool = defineTool13({
-  name: "pause_recurring_demand",
-  title: "Pause/resume recurring demand",
-  description: "Pause/resume recurring demand.",
-  inputSchema: { recurring_id: z13.string().uuid(), is_active: z13.boolean() },
-  annotations: { readOnlyHint: false, idempotentHint: true },
-  handler: async ({ recurring_id, is_active }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("recurring_demands").update({ is_active }).eq("id", recurring_id).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ recurring: data });
-  }
-});
-
 // src/lib/mcp/tools/notifications.ts
 var notifications_exports = {};
 __export(notifications_exports, {
@@ -1777,15 +1362,15 @@ __export(notifications_exports, {
   markAllNotificationsReadTool: () => markAllNotificationsReadTool,
   markNotificationReadTool: () => markNotificationReadTool
 });
-import { defineTool as defineTool14 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z14 } from "npm:zod@^3.25.76";
-var listNotificationsTool = defineTool14({
+import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z10 } from "npm:zod@^3.25.76";
+var listNotificationsTool = defineTool10({
   name: "list_notifications",
   title: "List notifications",
   description: "List the caller's in-app notifications.",
   inputSchema: {
-    unread_only: z14.boolean().default(false),
-    limit: z14.number().int().min(1).max(200).default(50)
+    unread_only: z10.boolean().default(false),
+    limit: z10.number().int().min(1).max(200).default(50)
   },
   annotations: { readOnlyHint: true, idempotentHint: true },
   handler: async ({ unread_only, limit }, ctx) => {
@@ -1798,11 +1383,11 @@ var listNotificationsTool = defineTool14({
     return ok({ notifications: data ?? [] });
   }
 });
-var markNotificationReadTool = defineTool14({
+var markNotificationReadTool = defineTool10({
   name: "mark_notification_read",
   title: "Mark notification read",
   description: "Mark notification read.",
-  inputSchema: { notification_id: z14.string().uuid(), read: z14.boolean().default(true) },
+  inputSchema: { notification_id: z10.string().uuid(), read: z10.boolean().default(true) },
   annotations: { readOnlyHint: false, idempotentHint: true },
   handler: async ({ notification_id, read }, ctx) => {
     const auth2 = requireAuth(ctx);
@@ -1812,7 +1397,7 @@ var markNotificationReadTool = defineTool14({
     return ok({ notification: data });
   }
 });
-var markAllNotificationsReadTool = defineTool14({
+var markAllNotificationsReadTool = defineTool10({
   name: "mark_all_notifications_read",
   title: "Mark all notifications read",
   description: "Mark all notifications read.",
@@ -1827,200 +1412,6 @@ var markAllNotificationsReadTool = defineTool14({
   }
 });
 
-// src/lib/mcp/tools/sharing.ts
-var sharing_exports = {};
-__export(sharing_exports, {
-  createDemandShareTokenTool: () => createDemandShareTokenTool,
-  listDemandShareTokensTool: () => listDemandShareTokensTool,
-  revokeDemandShareTokenTool: () => revokeDemandShareTokenTool
-});
-import { defineTool as defineTool15 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z15 } from "npm:zod@^3.25.76";
-function randomToken() {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-var createDemandShareTokenTool = defineTool15({
-  name: "create_demand_share_token",
-  title: "Create demand share link",
-  description: "Create a public share token for a demand (optionally with expiry and auto_join_board).",
-  inputSchema: {
-    demand_id: z15.string().uuid(),
-    expires_at: z15.string().datetime({ offset: true }).nullable().optional(),
-    auto_join_board: z15.boolean().default(false)
-  },
-  annotations: { readOnlyHint: false, idempotentHint: false },
-  handler: async ({ demand_id, expires_at, auto_join_board }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const token = randomToken();
-    const { data, error } = await sb(ctx).from("demand_share_tokens").insert({
-      demand_id,
-      token,
-      expires_at: expires_at ?? null,
-      auto_join_board,
-      is_active: true,
-      created_by: ctx.getUserId()
-    }).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ token: data });
-  }
-});
-var listDemandShareTokensTool = defineTool15({
-  name: "list_demand_share_tokens",
-  title: "List demand share tokens",
-  description: "List demand share tokens.",
-  inputSchema: { demand_id: z15.string().uuid() },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ demand_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("demand_share_tokens").select("*").eq("demand_id", demand_id).order("created_at", { ascending: false });
-    if (error) return fromPgError(error);
-    return ok({ tokens: data ?? [] });
-  }
-});
-var revokeDemandShareTokenTool = defineTool15({
-  name: "revoke_demand_share_token",
-  title: "Revoke demand share token",
-  description: "Revoke demand share token.",
-  inputSchema: { token_id: z15.string().uuid() },
-  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
-  handler: async ({ token_id }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const { data, error } = await sb(ctx).from("demand_share_tokens").update({ is_active: false }).eq("id", token_id).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return ok({ token: data });
-  }
-});
-
-// src/lib/mcp/tools/analytics.ts
-var analytics_exports = {};
-__export(analytics_exports, {
-  boardSummaryStatsTool: () => boardSummaryStatsTool,
-  demandsByPeriodTool: () => demandsByPeriodTool,
-  overdueDemandsTool: () => overdueDemandsTool,
-  userProductivityTool: () => userProductivityTool
-});
-import { defineTool as defineTool16 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z16 } from "npm:zod@^3.25.76";
-var boardSummaryStatsTool = defineTool16({
-  name: "board_summary_stats",
-  title: "Board summary stats",
-  description: "Aggregate counters for a board: total, delivered, overdue, in-progress, by status, by assignee.",
-  inputSchema: {
-    board_id: z16.string().uuid(),
-    from: z16.string().datetime({ offset: true }).optional(),
-    to: z16.string().datetime({ offset: true }).optional()
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ board_id, from, to }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const c = sb(ctx);
-    let q = c.from("demands").select("id, status_id, is_overdue, delivered_at, created_at, priority").eq("board_id", board_id).eq("archived", false);
-    if (from) q = q.gte("created_at", from);
-    if (to) q = q.lte("created_at", to);
-    const { data, error } = await q;
-    if (error) return fromPgError(error);
-    const list = data ?? [];
-    const byStatus = {};
-    for (const d of list) byStatus[d.status_id] = (byStatus[d.status_id] ?? 0) + 1;
-    return ok({
-      total: list.length,
-      delivered: list.filter((d) => d.delivered_at).length,
-      overdue: list.filter((d) => d.is_overdue).length,
-      by_status: byStatus,
-      by_priority: list.reduce((acc, d) => {
-        acc[d.priority] = (acc[d.priority] ?? 0) + 1;
-        return acc;
-      }, {})
-    });
-  }
-});
-var demandsByPeriodTool = defineTool16({
-  name: "demands_by_period",
-  title: "Demands by period",
-  description: "Count demands created per day between two dates (bounded to 90 days).",
-  inputSchema: {
-    board_id: z16.string().uuid().optional(),
-    team_id: z16.string().uuid().optional(),
-    from: z16.string().datetime({ offset: true }),
-    to: z16.string().datetime({ offset: true })
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ board_id, team_id, from, to }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    let q = sb(ctx).from("demands").select("created_at, delivered_at").gte("created_at", from).lte("created_at", to).eq("archived", false);
-    if (board_id) q = q.eq("board_id", board_id);
-    if (team_id) q = q.eq("team_id", team_id);
-    const { data, error } = await q;
-    if (error) return fromPgError(error);
-    const created = {};
-    const delivered = {};
-    for (const d of data ?? []) {
-      const c = d.created_at.substring(0, 10);
-      created[c] = (created[c] ?? 0) + 1;
-      if (d.delivered_at) {
-        const dd = d.delivered_at.substring(0, 10);
-        delivered[dd] = (delivered[dd] ?? 0) + 1;
-      }
-    }
-    return ok({ created_by_day: created, delivered_by_day: delivered });
-  }
-});
-var overdueDemandsTool = defineTool16({
-  name: "overdue_demands",
-  title: "List overdue demands",
-  description: "List overdue demands.",
-  inputSchema: {
-    board_id: z16.string().uuid().optional(),
-    team_id: z16.string().uuid().optional(),
-    limit: z16.number().int().min(1).max(200).default(100)
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ board_id, team_id, limit }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    let q = sb(ctx).from("demands").select("id, title, due_date, priority, board_id, status_id").eq("is_overdue", true).eq("archived", false).order("due_date").limit(limit);
-    if (board_id) q = q.eq("board_id", board_id);
-    if (team_id) q = q.eq("team_id", team_id);
-    const { data, error } = await q;
-    if (error) return fromPgError(error);
-    return ok({ demands: data ?? [] });
-  }
-});
-var userProductivityTool = defineTool16({
-  name: "user_productivity_stats",
-  title: "User productivity stats",
-  description: "Aggregate time worked and deliveries for the caller (or a target user) over a period.",
-  inputSchema: {
-    user_id: z16.string().uuid().optional().describe("Defaults to the caller."),
-    from: z16.string().datetime({ offset: true }),
-    to: z16.string().datetime({ offset: true })
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  handler: async ({ user_id, from, to }, ctx) => {
-    const auth2 = requireAuth(ctx);
-    if (auth2) return auth2;
-    const uid = user_id ?? ctx.getUserId();
-    const c = sb(ctx);
-    const [{ data: entries }, { data: assignments }] = await Promise.all([
-      c.from("demand_time_entries").select("duration_seconds, demand_id").eq("user_id", uid).gte("started_at", from).lte("started_at", to),
-      c.from("demand_assignees").select("demand_id, is_primary, demands(delivered_at)").eq("user_id", uid)
-    ]);
-    const total_seconds = (entries ?? []).reduce((a, e) => a + (e.duration_seconds ?? 0), 0);
-    const delivered = (assignments ?? []).filter((a) => {
-      const dd = a.demands?.delivered_at;
-      return dd && dd >= from && dd <= to;
-    }).length;
-    return ok({ user_id: uid, total_seconds, entries_count: entries?.length ?? 0, delivered_count: delivered });
-  }
-});
-
 // src/lib/mcp/index.ts
 var projectRef = "erxhxmetrvkigjwxchbj";
 var allTools = [
@@ -2031,38 +1422,36 @@ var allTools = [
   ...Object.values(subtasks_exports),
   ...Object.values(comments_exports),
   ...Object.values(attachments_exports),
-  ...Object.values(time_exports),
-  ...Object.values(services_exports),
-  ...Object.values(notes_exports),
   ...Object.values(projects_exports),
   ...Object.values(requests_exports),
-  ...Object.values(templates_exports),
-  ...Object.values(notifications_exports),
-  ...Object.values(sharing_exports),
-  ...Object.values(analytics_exports)
+  ...Object.values(notifications_exports)
 ];
 var mcp_default = defineMcp({
   name: "soma-mcp",
-  title: "SoMA \u2014 API completa (demandas, quadros, times, tempo)",
-  version: "1.0.0",
+  title: "SoMA \u2014 Opera\xE7\xF5es (Marketing OS)",
+  version: "1.1.0",
   instructions: [
-    "API MCP completa da plataforma SoMA. Todas as chamadas respeitam a autentica\xE7\xE3o e as regras de acesso (RLS) do usu\xE1rio conectado \u2014 cada ferramenta atua como se o pr\xF3prio usu\xE1rio estivesse operando o app.",
+    "Servidor MCP do SoMA, o app de Opera\xE7\xF5es da su\xEDte Marketing OS (pilar O do m\xE9todo AEIOU).",
+    "Exp\xF5e projetos, tarefas (demandas), respons\xE1veis, datas, status, depend\xEAncias, subtarefas, anexos, coment\xE1rios e aprova\xE7\xF5es. Todas as chamadas respeitam a autentica\xE7\xE3o e o RLS do usu\xE1rio conectado \u2014 cada tool atua como se o pr\xF3prio usu\xE1rio estivesse operando o app.",
+    "",
+    "Fluxo recomendado ap\xF3s autentica\xE7\xE3o:",
+    "1. `whoami` \u2014 confirma identidade do usu\xE1rio conectado.",
+    "2. `list_my_teams` \u2014 lista as equipes que o usu\xE1rio participa; pe\xE7a ao usu\xE1rio para escolher qual equipe usar e memorize `team_id`.",
+    "3. `list_boards` com o `team_id` escolhido \u2014 lista os quadros; pe\xE7a ao usu\xE1rio para escolher o quadro ativo e memorize `board_id`.",
+    "4. A partir da\xED, use `board_id` (e opcionalmente `team_id`) nas chamadas de demandas, projetos, solicita\xE7\xF5es e afins.",
     "",
     "Dom\xEDnios cobertos:",
     "\u2022 Sess\xE3o/Perfil: whoami, get_user_profile, update_my_profile",
-    "\u2022 Times: list_my_teams, get_team, list_team_members, join_team_with_code, get_plan_limits",
-    "\u2022 Quadros: CRUD completo, membros, status e servi\xE7os",
-    "\u2022 Demandas: listagem/busca/cria\xE7\xE3o/edi\xE7\xE3o/status/atribui\xE7\xF5es/depend\xEAncias/subdemandas",
+    "\u2022 Times: list_my_teams, get_team, list_team_members, list_team_positions, join_team_with_code, get_plan_limits",
+    "\u2022 Quadros: listar/criar/editar/arquivar/excluir, membros, status",
+    "\u2022 Demandas: listar/buscar/criar/editar/mudar status/mover/atribuir/depend\xEAncias/subdemandas",
     "\u2022 Subtarefas (checklist), Coment\xE1rios (canal general/internal), Anexos",
-    "\u2022 Tempo: start/stop timer, entradas manuais, relat\xF3rios",
-    "\u2022 Servi\xE7os, Notas (+compartilhamento), Projetos/Pastas",
-    "\u2022 Solicita\xE7\xF5es (aprovar/rejeitar/devolver)",
-    "\u2022 Templates e Recorrentes",
-    "\u2022 Notifica\xE7\xF5es, Compartilhamento por link",
-    "\u2022 Analytics: sum\xE1rios, atrasadas, produtividade",
+    "\u2022 Projetos (pastas) e v\xEDnculo demanda\u2194projeto",
+    "\u2022 Solicita\xE7\xF5es (aprovar/rejeitar/devolver/comentar)",
+    "\u2022 Notifica\xE7\xF5es",
     "",
     "Conven\xE7\xF5es de erro: PERMISSION_DENIED, NOT_FOUND, VALIDATION, PLAN_LIMIT_*, DB_ERROR.",
-    "Ferramentas destrutivas s\xE3o marcadas com destructiveHint=true."
+    "Ferramentas destrutivas s\xE3o marcadas com destructiveHint=true e devem ser confirmadas com o usu\xE1rio antes da execu\xE7\xE3o."
   ].join("\n"),
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
