@@ -191,7 +191,7 @@ export const ProfileUpdateSchema = z.object({
 export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): T {
   const result = schema.safeParse(data);
   if (!result.success) {
-    const firstError = result.error.errors[0];
+    const firstError = result.error.issues[0];
     throw new Error(firstError?.message || "Dados inválidos");
   }
   return result.data;
