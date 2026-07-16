@@ -11,9 +11,10 @@ type SupabaseOAuth = {
   denyAuthorization: (id: string) => Promise<{ data: any; error: any }>;
 };
 
-function oauthApi(): SupabaseOAuth {
+function oauthApi(): SupabaseOAuth | null {
   // The @supabase/supabase-js beta oauth namespace isn't in the generated types yet.
-  return (supabase.auth as unknown as { oauth: SupabaseOAuth }).oauth;
+  const api = (supabase.auth as unknown as { oauth?: SupabaseOAuth }).oauth;
+  return api ?? null;
 }
 
 export default function OAuthConsent() {
