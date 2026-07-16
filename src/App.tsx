@@ -73,8 +73,6 @@ const AdminTeams = lazy(() => import("./pages/admin/AdminTeams"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminPlans = lazy(() => import("./pages/admin/AdminPlans"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
-const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
-const McpDocs = lazy(() => import("./pages/McpDocs"));
 
 function CreateDemandGlobal() {
   return <CreateDemand />;
@@ -132,7 +130,7 @@ const App = () => {
                             <Suspense fallback={<div className="flex min-h-0 flex-1 items-center justify-center p-6"><PageSkeleton /></div>}>
                             <Routes>
                               <Route path="/auth" element={<Auth />} />
-                              <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+                              
                               <Route path="/get-started" element={<GetStarted />} />
                               <Route path="/shared/:token" element={<SharedDemand />} />
                               <Route path="/shared/note/:token" element={<SharedNote />} />
@@ -140,7 +138,7 @@ const App = () => {
                               <Route path="/reset-password" element={<ResetPassword />} />
                               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                              <Route path="/terms-of-service" element={<TermsOfService />} />
-                             <Route path="/mcp-docs" element={<McpDocs />} />
+                             
 
                               <Route path="/admin" element={<RequireAuth><AdminLayout /></RequireAuth>}>
                                 <Route index element={<AdminDashboard />} />
