@@ -40,7 +40,14 @@ export default function OAuthConsent() {
           return;
         }
         setEmail(sess.session.user.email ?? null);
-        const { data, error } = await oauthApi().getAuthorizationDetails(authorizationId);
+        const api = oauthApi();
+        if (!api) {
+          setError(
+            "Seu navegador está com uma versão antiga do app em cache. Recarregue esta página com Ctrl+Shift+R (Windows/Linux) ou Cmd+Shift+R (Mac) e tente novamente."
+          );
+          return;
+        }
+        const { data, error } = await api.getAuthorizationDetails(authorizationId);
         if (!active) return;
         if (error) {
           setError(error.message || "Não foi possível carregar a autorização.");
