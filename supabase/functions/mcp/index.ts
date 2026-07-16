@@ -22,7 +22,7 @@ import { defineTool } from "npm:@lovable.dev/mcp-js@0.20.0";
 import { z } from "npm:zod@^3.25.76";
 
 // src/lib/mcp/_shared/supabase.ts
-import { createClient } from "npm:@supabase/supabase-js@2.49.8";
+import { createClient } from "npm:@supabase/supabase-js@^2.110.7";
 function sb(ctx) {
   return createClient(
     process.env.SUPABASE_URL,
