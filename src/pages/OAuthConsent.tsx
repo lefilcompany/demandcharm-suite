@@ -2,190 +2,110 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShieldCheck } from "lucide-react";
-import logoSomaDark from "@/assets/logo-soma-dark.png";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-type SupabaseOAuth = {
-  getAuthorizationDetails: (id: string) => Promise<{ data: any; error: any }>;
-  approveAuthorization: (id: string) => Promise<{ data: any; error: any }>;
-  denyAuthorization: (id: string) => Promise<{ data: any; error: any }>;
+type AuthorizationDetails = {
+  client?: { name?: string; redirect_uri?: string };
+  scope?: string;
+  redirect_url?: string;
+  redirect_to?: string;
 };
 
-function oauthApi(): SupabaseOAuth | null {
-  // The @supabase/supabase-js beta oauth namespace isn't in the generated types yet.
-  const api = (supabase.auth as unknown as { oauth?: SupabaseOAuth }).oauth;
+// Local typed wrapper for the beta `supabase.auth.oauth` namespace.
+type OAuthApi = {
+  getAuthorizationDetails: (id: string) => Promise<{ data: AuthorizationDetails | null; error: { message: string } | null }>;
+  approveAuthorization: (id: string) => Promise<{ data: { redirect_url?: string; redirect_to?: string } | null; error: { message: string } | null }>;
+  denyAuthorization: (id: string) => Promise<{ data: { redirect_url?: string; redirect_to?: string } | null; error: { message: string } | null }>;
+};
+function oauthApi(): OAuthApi | null {
+  const api = (supabase.auth as unknown as { oauth?: OAuthApi }).oauth;
   return api ?? null;
 }
 
 export default function OAuthConsent() {
   const [params] = useSearchParams();
   const authorizationId = params.get("authorization_id") ?? "";
-  const [details, setDetails] = useState<any>(null);
+  const [details, setDetails] = useState<AuthorizationDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     (async () => {
-      try {
-        if (!authorizationId) {
-          setError("Solicitação de autorização inválida (authorization_id ausente).");
-          return;
-        }
-        const { data: sess } = await supabase.auth.getSession();
-        if (!sess.session) {
-          const next = window.location.pathname + window.location.search;
-          window.location.href = "/auth?next=" + encodeURIComponent(next);
-          return;
-        }
-        setEmail(sess.session.user.email ?? null);
-        const api = oauthApi();
-        if (!api) {
-          setError(
-            "Seu navegador está com uma versão antiga do app em cache. Recarregue esta página com Ctrl+Shift+R (Windows/Linux) ou Cmd+Shift+R (Mac) e tente novamente."
-          );
-          return;
-        }
-        const { data, error } = await api.getAuthorizationDetails(authorizationId);
-        if (!active) return;
-        if (error) {
-          setError(error.message || "Não foi possível carregar a autorização.");
-          return;
-        }
-        const immediate = data?.redirect_url ?? data?.redirect_to;
-        if (immediate && !data?.client) {
-          window.location.href = immediate;
-          return;
-        }
-        setDetails(data);
-      } catch (e: any) {
-        setError(e?.message || "Erro ao carregar a autorização.");
+      if (!authorizationId) { setError("Missing authorization_id"); return; }
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) {
+        const next = window.location.pathname + window.location.search;
+        window.location.href = "/auth?next=" + encodeURIComponent(next);
+        return;
       }
+      const api = oauthApi();
+      if (!api) { setError("OAuth API indisponível. Faça um hard-reload (Ctrl/Cmd+Shift+R) e tente novamente."); return; }
+      const { data, error } = await api.getAuthorizationDetails(authorizationId);
+      if (!active) return;
+      if (error) { setError(error.message); return; }
+      const immediate = data?.redirect_url ?? data?.redirect_to;
+      if (immediate && !data?.client) { window.location.href = immediate; return; }
+      setDetails(data);
     })();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [authorizationId]);
 
   async function decide(approve: boolean) {
     setBusy(true);
-    setError(null);
-    try {
-      const api = oauthApi();
-      if (!api) {
-        setError(
-          "Seu navegador está com uma versão antiga do app em cache. Recarregue esta página com Ctrl+Shift+R (Windows/Linux) ou Cmd+Shift+R (Mac) e tente novamente."
-        );
-        setBusy(false);
-        return;
-      }
-      const { data, error } = approve
-        ? await api.approveAuthorization(authorizationId)
-        : await api.denyAuthorization(authorizationId);
-      if (error) {
-        setError(error.message || "Não foi possível concluir a autorização.");
-        setBusy(false);
-        return;
-      }
-      const target = data?.redirect_url ?? data?.redirect_to;
-      if (!target) {
-        setError("O servidor de autorização não retornou uma URL de retorno.");
-        setBusy(false);
-        return;
-      }
-      window.location.href = target;
-    } catch (e: any) {
-      setError(e?.message || "Erro inesperado.");
-      setBusy(false);
-    }
+    const api = oauthApi();
+    if (!api) { setBusy(false); setError("OAuth API indisponível. Recarregue com Ctrl/Cmd+Shift+R."); return; }
+    const { data, error } = approve
+      ? await api.approveAuthorization(authorizationId)
+      : await api.denyAuthorization(authorizationId);
+    if (error) { setBusy(false); setError(error.message); return; }
+    const target = data?.redirect_url ?? data?.redirect_to;
+    if (!target) { setBusy(false); setError("O servidor de autorização não retornou uma URL de redirecionamento."); return; }
+    window.location.href = target;
   }
 
-  const clientName = details?.client?.client_name || details?.client?.name || "Aplicativo externo";
-  const redirectUri =
-    details?.client?.redirect_uris?.[0] || details?.redirect_uri || null;
-  const scopes: string[] = Array.isArray(details?.scopes)
-    ? details.scopes
-    : typeof details?.scope === "string"
-    ? details.scope.split(/\s+/).filter(Boolean)
-    : [];
+  if (error) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6 bg-background">
+        <Card className="max-w-md w-full">
+          <CardHeader><CardTitle>Não foi possível carregar</CardTitle></CardHeader>
+          <CardContent><p className="text-sm text-muted-foreground">{error}</p></CardContent>
+        </Card>
+      </main>
+    );
+  }
+  if (!details) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6 bg-background">
+        <p className="text-sm text-muted-foreground">Carregando…</p>
+      </main>
+    );
+  }
 
+  const clientName = details.client?.name ?? "um aplicativo externo";
   return (
-    <main className="min-h-[100dvh] flex items-center justify-center bg-sidebar p-4">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-background shadow-xl p-6 space-y-5">
-        <div className="flex items-center gap-3">
-          <img src={logoSomaDark} alt="SoMA" className="h-8 w-auto" />
-          <div className="h-6 w-px bg-border" />
-          <ShieldCheck className="h-5 w-5 text-primary" />
-          <span className="text-sm text-muted-foreground">Autorização de acesso</span>
-        </div>
-
-        {error && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
+    <main className="min-h-screen flex items-center justify-center p-6 bg-background">
+      <Card className="max-w-md w-full">
+        <CardHeader>
+          <CardTitle>Conectar {clientName} ao SoMA</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm">
+            Ao aprovar, <strong>{clientName}</strong> poderá usar as ferramentas do SoMA como você — respeitando suas permissões de time e quadro.
+          </p>
+          {details.client?.redirect_uri && (
+            <p className="text-xs text-muted-foreground break-all">Redirect: {details.client.redirect_uri}</p>
+          )}
+          <div className="flex gap-2 pt-2">
+            <Button className="flex-1 bg-[#F28705] hover:bg-[#F28705]/90 text-white" disabled={busy} onClick={() => decide(true)}>
+              Aprovar
+            </Button>
+            <Button variant="outline" className="flex-1" disabled={busy} onClick={() => decide(false)}>
+              Negar
+            </Button>
           </div>
-        )}
-
-        {!details && !error && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Carregando…
-          </div>
-        )}
-
-        {details && (
-          <>
-            <div className="space-y-1">
-              <h1 className="text-xl font-semibold">
-                Conectar <span className="text-primary">{clientName}</span> à sua conta SoMA
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Este aplicativo poderá chamar as ferramentas do SoMA em seu nome enquanto você
-                estiver conectado. Suas permissões e políticas de acesso continuam válidas.
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm space-y-2">
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground">Conta</span>
-                <span className="font-medium truncate">{email ?? "—"}</span>
-              </div>
-              {redirectUri && (
-                <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground">Redirecionamento</span>
-                  <span className="font-mono text-xs truncate max-w-[220px]">{redirectUri}</span>
-                </div>
-              )}
-              {scopes.length > 0 && (
-                <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground">Escopos</span>
-                  <span className="text-xs">{scopes.join(", ")}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                disabled={busy}
-                onClick={() => decide(false)}
-              >
-                Cancelar
-              </Button>
-              <Button className="flex-1" disabled={busy} onClick={() => decide(true)}>
-                {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Autorizar
-              </Button>
-            </div>
-
-            <p className="text-[11px] text-muted-foreground text-center">
-              Isto não altera suas permissões dentro do SoMA — apenas concede acesso ao
-              aplicativo autenticado.
-            </p>
-          </>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </main>
   );
 }

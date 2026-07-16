@@ -173,22 +173,6 @@
 
   <body>
     <div id="root"></div>
-    <script>
-      // Unregister stale app-shell service workers (e.g. old /sw.js) so
-      // returning browsers stop serving cached bundles from before the
-      // supabase-js OAuth fix. Keeps the FCM messaging worker
-      // (firebase-messaging-sw.js) untouched.
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((regs) => {
-          regs.forEach((reg) => {
-            const url = reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
-            if (url && !url.includes('firebase-messaging-sw')) {
-              reg.unregister().catch(() => {});
-            }
-          });
-        }).catch(() => {});
-      }
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
