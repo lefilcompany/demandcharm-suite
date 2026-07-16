@@ -1,34 +1,54 @@
-## Diagnóstico
 
-O bundle publicado em `pla.soma.lefil.com.br` (`assets/index-gl4rGBKu.js`) **já contém** `@supabase/supabase-js@2.110.7` com o namespace `auth.oauth` inicializado (`getAuthorizationDetails`, `approveAuthorization`, `denyAuthorization` presentes). Verifiquei baixando o JS servido pelo domínio.
+# Reset total do MCP
 
-Ou seja, o código em produção está correto. O erro `Cannot read properties of undefined (reading 'getAuthorizationDetails')` da nova tentativa vem do **navegador servindo um bundle antigo em cache** (JS/Service Worker) — a URL do bundle anterior à correção ficou memorizada e o `supabase.auth.oauth` ainda é `undefined` naquele arquivo cacheado. Reforça isso o erro no console: `Failed to update a ServiceWorker ... /sw.js 404`, indicando SW registrado antes que hoje aponta para script inexistente e pode estar servindo assets antigos.
+Vou apagar tudo relacionado ao MCP do SoMA e recriar do zero um servidor mínimo, apenas com a tool `whoami`, para validar a conexão OAuth end-to-end. Depois disso, as demais 96 tools voltam de forma incremental (ou de uma vez, se você preferir) — mas isolando primeiro o problema de conexão.
 
-## Correção
+## O que será removido
 
-Duas mudanças pequenas e complementares:
+1. **Código do servidor MCP**
+   - `src/lib/mcp/` (index.ts, _shared/, tools/*) — todo o diretório
+   - `supabase/functions/mcp/index.ts` — a edge function gerada
+   - `.lovable/mcp/manifest.json` — o manifest antigo
 
-### 1. Invalidar Service Worker antigo em `index.html`
+2. **Consent page e limpeza de service worker**
+   - `src/pages/OAuthConsent.tsx` — apagada e reescrita do zero
+   - Rota `/.lovable/oauth/consent` em `App.tsx` — reregistrada
+   - Script de limpeza de SW em `index.html` — removido (não é mais necessário depois do reset)
 
-Adicionar um pequeno script inline que desregistra qualquer `ServiceWorker` previamente instalado e limpa `caches` na primeira carga. Isso libera navegadores presos ao bundle antigo em uma única visita. O snippet é idempotente (após limpar, não faz nada nas próximas cargas).
+3. **Documentação / plugin**
+   - `src/pages/McpDocs.tsx` (referências ao manifest)
+   - `docs/mcp/README.md`
+   - Entrada `mcpPlugin()` em `vite.config.ts` — mantida (é o gerador)
+   - Dependência `@lovable.dev/mcp-js` em `package.json` — mantida
 
-### 2. Fallback defensivo em `src/pages/OAuthConsent.tsx`
+4. **Backend**
+   - Deletar a edge function `mcp` publicada (`supabase--delete_edge_functions`)
+   - Reconfigurar o OAuth server (`supabase--configure_oauth_server`)
 
-Se `supabase.auth.oauth` for `undefined` em runtime, em vez do `TypeError` cru, mostrar mensagem clara pedindo recarregar (Ctrl+Shift+R). Isso protege usuários que ainda estejam com bundle antigo antes do SW desregistrar.
+## O que será recriado (mínimo)
 
-```ts
-const oauth = (supabase.auth as any).oauth;
-if (!oauth) {
-  setError("Sessão do navegador desatualizada. Recarregue a página com Ctrl+Shift+R (ou Cmd+Shift+R no Mac) e tente novamente.");
-  return;
-}
-```
+1. **`src/lib/mcp/index.ts`** — `defineMcp` com nome `soma-mcp`, versão `2.0.0`, auth OAuth apontando para `https://<project-ref>.supabase.co/auth/v1`, e apenas a tool `whoami`.
 
-### 3. Republicar
+2. **`src/lib/mcp/tools/whoami.ts`** — retorna `{ user_id, email }` do token verificado. Sem query no DB, para eliminar RLS como variável no primeiro teste.
 
-Após as duas mudanças, republicar o app para gerar um novo hash de bundle (`index-<novoHash>.js`), forçando todos os navegadores a baixar o JS novo — o que já resolve por si só na maioria dos casos.
+3. **`src/pages/OAuthConsent.tsx`** — versão limpa seguindo o padrão canônico da documentação (getAuthorizationDetails → approve/deny → redirect). Preserva `authorization_id` no fluxo de login.
 
-## Fora de escopo
+4. **`McpDocs.tsx`** — simplificada para listar apenas a(s) tool(s) presentes no manifest regenerado.
 
-- Nenhuma mudança no MCP server, tools, RLS, migrations, edge function `mcp`, ou config OAuth Supabase — o servidor de autorização e o resource server estão corretos; o problema é 100% cache de bundle no cliente.
-- Nenhuma alteração no fluxo de consent em si (o código já está correto).
+5. **Deploy + validação**
+   - `app_mcp_server--extract_mcp_manifest` para regenerar o manifest
+   - `supabase--deploy_edge_functions(["mcp"])` para publicar
+   - `supabase--configure_oauth_server` para reativar OAuth
+   - `supabase--debug_oauth_server` para confirmar issuer, consent path e allow-list
+
+## Depois do reset
+
+Assim que a conexão do `whoami` funcionar num cliente MCP externo (Claude/ChatGPT/Codex), eu restauro as demais tools (teams, boards, demands, subtasks, comments, attachments, projects, requests, notifications, analytics, time, services, notes, sharing, templates) em um único commit — o código delas já existe e será recolocado, não reescrito do zero.
+
+## Ação sua depois de eu terminar
+
+1. No cliente MCP externo, **remover a conexão antiga** do SoMA (isso descarta o client_id/refresh_token cacheados).
+2. Reconectar usando a mesma URL: `https://<project-ref>.supabase.co/functions/v1/mcp`.
+3. Aprovar o consent — deve chamar `whoami` com sucesso.
+
+Confirma que posso executar esse reset?
