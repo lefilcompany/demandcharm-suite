@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-    mcpPlugin(),
+    
     VitePWA({
       registerType: "prompt",
       includeAssets: ["favicon.png", "icons/**/*", "splash/**/*", "lovable-uploads/8967ad53-156a-4e31-a5bd-b472b7cde839.png"],
