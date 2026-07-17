@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EndpointCard, type ManifestTool } from "@/components/mcp-docs/EndpointCard";
+import { TryItLoginPanel } from "@/components/mcp-docs/TryItLoginPanel";
 import { Search, ShieldCheck, Zap, BookOpen, ArrowRight } from "lucide-react";
 import manifestJson from "../../.lovable/mcp/manifest.json";
 
@@ -184,6 +185,9 @@ export default function McpDocs() {
               </div>
             </div>
           </div>
+
+          {/* Login para teste */}
+          <TryItLoginPanel />
 
           {/* Envelope + Errors */}
           <div className="grid gap-4 md:grid-cols-2">
