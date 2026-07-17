@@ -57,18 +57,19 @@ const ERROR_CODES = [
 ];
 
 export default function McpDocs() {
-  const [manifest, setManifest] = useState<Manifest | null>(null);
+  const [manifest, setManifest] = useState<Manifest | null>(manifestJson as Manifest);
   const [query, setQuery] = useState("");
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = "MCP SoMA+ — API de Operações Marketing OS";
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Documentação interativa do MCP SoMA+: 99 endpoints, exemplos e Try-it. Integração com Marketing OS Orchestrator via OAuth 2.1.");
+    if (meta) meta.setAttribute("content", "Documentação interativa do MCP SoMA+: endpoints, exemplos e Try-it. Integração com Marketing OS Orchestrator via OAuth 2.1.");
+    // Fallback: try to fetch a fresher manifest at runtime (published build).
     fetch("/.lovable/mcp/manifest.json")
-      .then(r => r.json())
-      .then(setManifest)
-      .catch(() => setManifest(null));
+      .then(r => (r.ok ? r.json() : null))
+      .then(m => { if (m && m.mcp?.tools?.length) setManifest(m); })
+      .catch(() => { /* keep bundled manifest */ });
   }, []);
 
   const tools = manifest?.mcp?.tools ?? [];
