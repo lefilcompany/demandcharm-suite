@@ -10,6 +10,79 @@ import { defineTool } from "npm:@lovable.dev/mcp-js@0.22.2";
 
 // src/lib/mcp/_shared/supabase.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.110.7";
+
+// src/lib/mcp/_shared/envelope.ts
+function envelope(payload, extras = {}) {
+  return {
+    source: "soma",
+    generated_at: (/* @__PURE__ */ new Date()).toISOString(),
+    open_url: extras.open_url ?? null,
+    warnings: extras.warnings ?? [],
+    ...payload
+  };
+}
+function ok(payload, extras = {}) {
+  const data = envelope(payload, extras);
+  return {
+    content: [{ type: "text", text: JSON.stringify(data) }],
+    structuredContent: data
+  };
+}
+var DEFAULT_MESSAGES = {
+  PERMISSION_DENIED: "Voc\xEA n\xE3o tem permiss\xE3o para esta a\xE7\xE3o neste contexto.",
+  NOT_FOUND: "O recurso n\xE3o existe mais ou n\xE3o est\xE1 vis\xEDvel para sua conta.",
+  VALIDATION: "Uma informa\xE7\xE3o est\xE1 inv\xE1lida ou incompleta.",
+  PLAN_LIMIT: "O limite do plano ou do quadro foi atingido.",
+  DB_ERROR: "O SoMA+ n\xE3o conseguiu concluir a opera\xE7\xE3o.",
+  AUTH_EXPIRED: "A conex\xE3o precisa ser renovada.",
+  TIMEOUT: "A resposta demorou mais que o esperado.",
+  PARTIAL_RESULT: "Parte das a\xE7\xF5es foi conclu\xEDda.",
+  UNSUPPORTED: "Esta opera\xE7\xE3o ainda n\xE3o est\xE1 dispon\xEDvel pelo MCP."
+};
+var DEFAULT_RECOVERY = {
+  PERMISSION_DENIED: ["Criar uma solicita\xE7\xE3o", "Escolher outro quadro", "Pedir acesso ao administrador"],
+  NOT_FOUND: ["Pesquisar novamente", "Atualizar o v\xEDnculo do projeto"],
+  VALIDATION: ["Revisar os campos informados"],
+  PLAN_LIMIT: ["Arquivar recursos", "Ajustar plano", "Escolher outro quadro"],
+  DB_ERROR: ["Tentar novamente em instantes"],
+  AUTH_EXPIRED: ["Reconectar a integra\xE7\xE3o"],
+  TIMEOUT: ["Consultar o resultado antes de repetir"],
+  PARTIAL_RESULT: ["Retomar apenas as a\xE7\xF5es que falharam"],
+  UNSUPPORTED: ["Usar a interface do SoMA+"]
+};
+function err(code, detail, extras) {
+  const payload = {
+    success: false,
+    error_code: code,
+    user_message: DEFAULT_MESSAGES[code],
+    detail: detail ?? null,
+    recovery_options: extras?.recovery ?? DEFAULT_RECOVERY[code],
+    hint: extras?.hint ?? null,
+    source: "soma",
+    generated_at: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  return {
+    content: [{ type: "text", text: `${code}: ${detail ?? DEFAULT_MESSAGES[code]}` }],
+    structuredContent: payload,
+    isError: true
+  };
+}
+function fromPgError(e) {
+  if (!e) return err("DB_ERROR", "Unknown error");
+  const msg = e.message ?? "Database error";
+  if (msg.startsWith("PLAN_LIMIT_")) return err("PLAN_LIMIT", msg);
+  if (e.code === "42501" || /permission denied|row-level security/i.test(msg)) return err("PERMISSION_DENIED", msg);
+  if (e.code === "PGRST116" || /not found|no rows/i.test(msg)) return err("NOT_FOUND", msg);
+  if (e.code === "23505") return err("VALIDATION", msg, { recovery: ["Usar um valor \xFAnico"] });
+  if (e.code === "23503") return err("VALIDATION", msg, { recovery: ["Verificar refer\xEAncias"] });
+  return err("DB_ERROR", msg);
+}
+function requireAuth(ctx) {
+  if (!ctx.isAuthenticated()) return err("AUTH_EXPIRED", "Not authenticated");
+  return null;
+}
+
+// src/lib/mcp/_shared/supabase.ts
 function sb(ctx) {
   return createClient(
     process.env.SUPABASE_URL,
@@ -19,29 +92,6 @@ function sb(ctx) {
       auth: { persistSession: false, autoRefreshToken: false }
     }
   );
-}
-function requireAuth(ctx) {
-  if (!ctx.isAuthenticated()) {
-    return { content: [{ type: "text", text: "PERMISSION_DENIED: Not authenticated" }], isError: true };
-  }
-  return null;
-}
-function ok(data, message) {
-  return {
-    content: [{ type: "text", text: message ?? JSON.stringify(data) }],
-    structuredContent: typeof data === "object" && data !== null ? data : { data }
-  };
-}
-function err(message, code = "ERROR") {
-  return { content: [{ type: "text", text: `${code}: ${message}` }], isError: true };
-}
-function fromPgError(e) {
-  if (!e) return err("Unknown error");
-  const msg = e.message ?? "Database error";
-  if (msg.startsWith("PLAN_LIMIT_")) return err(msg, "PLAN_LIMIT");
-  if (e.code === "42501" || /permission denied/i.test(msg)) return err(msg, "PERMISSION_DENIED");
-  if (e.code === "PGRST116" || /not found/i.test(msg)) return err(msg, "NOT_FOUND");
-  return err(msg, "DB_ERROR");
 }
 
 // src/lib/mcp/tools/session.ts
