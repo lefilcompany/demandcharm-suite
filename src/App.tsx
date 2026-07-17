@@ -74,6 +74,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminPlans = lazy(() => import("./pages/admin/AdminPlans"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+const McpDocs = lazy(() => import("./pages/McpDocs"));
 
 function CreateDemandGlobal() {
   return <CreateDemand />;
