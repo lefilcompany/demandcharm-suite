@@ -1220,6 +1220,7 @@ export type Database = {
       }
       demands: {
         Row: {
+          aeiou_origin: Json | null
           archived: boolean
           archived_at: string | null
           assigned_to: string | null
@@ -1248,6 +1249,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aeiou_origin?: Json | null
           archived?: boolean
           archived_at?: string | null
           assigned_to?: string | null
@@ -1276,6 +1278,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aeiou_origin?: Json | null
           archived?: boolean
           archived_at?: string | null
           assigned_to?: string | null
