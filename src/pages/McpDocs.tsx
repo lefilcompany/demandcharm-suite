@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EndpointCard, type ManifestTool } from "@/components/mcp-docs/EndpointCard";
 import { Search, ShieldCheck, Zap, BookOpen, ArrowRight } from "lucide-react";
+import manifestJson from "../../.lovable/mcp/manifest.json";
 
 // Toggle to reveal the real MCP endpoint URL in the UI and examples.
 // Keep `false` for public docs; flip to `true` when ready to expose it.
