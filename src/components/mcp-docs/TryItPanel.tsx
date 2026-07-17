@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { exampleFromSchema } from "@/lib/mcp-docs/exampleFromSchema";
 import { toast } from "sonner";
 import { Play, ShieldAlert, Copy, Loader2 } from "lucide-react";
 import { buildCurl } from "@/lib/mcp-docs/curlBuilder";
+import { useMcpTestSession } from "@/lib/mcp-docs/testTokenStore";
 
 interface Props {
   toolName: string;
@@ -17,12 +18,21 @@ interface Props {
   showEndpoint: boolean;
 }
 
+// Tools that must NOT be executable from the public docs (LLM/image credit consumers).
+// Kept as a defensive allowlist for future tools — none currently match.
+const CREDIT_HEAVY_PATTERNS = [/(^|_)generate_image(_|$)/i, /(^|_)llm(_|$)/i, /(^|_)ai_(generate|complete|chat)/i];
+function isCreditHeavy(name: string) { return CREDIT_HEAVY_PATTERNS.some(rx => rx.test(name)); }
+
 export function TryItPanel({ toolName, inputSchema, endpointReal, endpointDisplay, showEndpoint }: Props) {
   const initial = useMemo(() => exampleFromSchema(inputSchema), [inputSchema]);
   const [values, setValues] = useState<Record<string, unknown>>(initial);
-  const [token, setToken] = useState("");
+  const shared = useMcpTestSession();
+  const [tokenOverride, setTokenOverride] = useState<string | null>(null);
+  const token = tokenOverride ?? shared.token;
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<{ status: number; latency: number; body: unknown } | null>(null);
+  const creditHeavy = isCreditHeavy(toolName);
+  useEffect(() => { setTokenOverride(null); }, [shared.token]);
 
   const properties: Record<string, any> = inputSchema?.properties ?? {};
   const required: string[] = inputSchema?.required ?? [];
