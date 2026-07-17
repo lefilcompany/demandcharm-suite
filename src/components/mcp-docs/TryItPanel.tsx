@@ -93,15 +93,17 @@ export function TryItPanel({ toolName, inputSchema, endpointReal, endpointDispla
       </div>
 
       <div className="space-y-1">
-        <Label className="text-xs">Access Token OAuth</Label>
+        <Label className="text-xs">Access Token {shared.token ? "(preenchido pelo login de teste acima)" : ""}</Label>
         <Input
           type="password"
           value={token}
-          onChange={(e) => setToken(e.target.value)}
-          placeholder="Cole aqui o token emitido pelo Orchestrator"
+          onChange={(e) => setTokenOverride(e.target.value)}
+          placeholder="Faça login acima ou cole um Access Token OAuth"
           className="h-9 font-mono text-xs"
         />
-        <p className="text-[11px] text-muted-foreground">O token é usado apenas nesta aba e não é armazenado.</p>
+        <p className="text-[11px] text-muted-foreground">
+          O token vive só nesta aba (sessionStorage). Você pode sobrescrever para testar com outro usuário.
+        </p>
       </div>
 
       {Object.keys(properties).length > 0 ? (
@@ -124,17 +126,26 @@ export function TryItPanel({ toolName, inputSchema, endpointReal, endpointDispla
 
       <Button
         onClick={execute}
-        disabled={loading || !token.trim()}
+        disabled={loading || !token.trim() || creditHeavy}
         className="w-full bg-[#F28705] hover:bg-[#d97604] text-white"
       >
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Executando…</> : <><Play className="w-4 h-4 mr-2" /> Executar</>}
       </Button>
 
-      {!token.trim() && (
+      {creditHeavy && (
         <Alert>
           <ShieldAlert className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            Endpoints exigem OAuth. Conecte este MCP no Marketing OS Orchestrator para receber um Access Token válido.
+            Este endpoint consome créditos de LLM/imagem e não pode ser executado a partir da documentação pública.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!creditHeavy && !token.trim() && (
+        <Alert>
+          <ShieldAlert className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            Faça login no painel acima para gerar um Access Token, ou cole um token emitido pelo Orchestrator.
           </AlertDescription>
         </Alert>
       )}
