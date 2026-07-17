@@ -186,6 +186,9 @@ export default function McpDocs() {
             </div>
           </div>
 
+          {/* Login para teste */}
+          <TryItLoginPanel />
+
           {/* Envelope + Errors */}
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border bg-card p-5">
