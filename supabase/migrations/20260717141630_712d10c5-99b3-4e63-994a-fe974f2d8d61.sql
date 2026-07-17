@@ -1,0 +1,2 @@
+ALTER TABLE public.demands ADD COLUMN IF NOT EXISTS aeiou_origin jsonb;
+COMMENT ON COLUMN public.demands.aeiou_origin IS 'Metadata linking a demand to its Marketing OS/AEIOU origin: { pillar, source_tool, source_ref, recommendation_id, marketing_os_project_id }';
