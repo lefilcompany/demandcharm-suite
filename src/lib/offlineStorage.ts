@@ -407,21 +407,30 @@ export const checkRealConnectivity = async (): Promise<boolean> => {
   }
   
   try {
-    // Try to fetch a small resource to verify actual connectivity
+    // Probe a Supabase endpoint (same infra we actually depend on) with a
+    // cache-busting GET. Avoids the Lovable preview auth-bridge, which
+    // intercepts HEAD /favicon.png with a cross-origin redirect and triggers
+    // CORS failures that falsely mark the app as offline mid-upload.
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
-    
-    const response = await fetch('/favicon.png', {
-      method: 'HEAD',
+
+    const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL as string | undefined;
+    const probeUrl = supabaseUrl
+      ? `${supabaseUrl}/auth/v1/health?t=${Date.now()}`
+      : `/?_probe=${Date.now()}`;
+
+    const response = await fetch(probeUrl, {
+      method: 'GET',
       cache: 'no-store',
+      mode: 'cors',
       signal: controller.signal,
     });
-    
+
     clearTimeout(timeoutId);
-    return response.ok;
+    // Any response (even 4xx) proves the network is reachable.
+    return !!response;
   } catch {
-    // If fetch fails but navigator says we're online, trust navigator
-    // This handles cases where the app is running locally or favicon isn't available
+    // If probe fails but navigator says we're online, trust navigator.
     return navigator.onLine;
   }
 };
