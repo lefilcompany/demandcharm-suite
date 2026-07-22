@@ -15,7 +15,10 @@ function read<T = string>(k: string): T | null {
 }
 function write(k: string, v: string | null) {
   if (typeof window === "undefined") return;
-  try { v === null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch { /* ignore */ }
+  try {
+    if (v === null) sessionStorage.removeItem(k);
+    else sessionStorage.setItem(k, v);
+  } catch { /* ignore */ }
 }
 
 export function setMcpTestSession(session: { access_token: string; email?: string | null; expires_at?: number | null }) {
