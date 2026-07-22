@@ -1069,6 +1069,28 @@ export default function DemandDetail() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 bg-popover">
                   <DependencyMenuItems demandId={demand.id} isDelivered={isDelivered} showEmptyHint />
+                  {canEdit && (
+                    <>
+                      <DropdownMenuSeparator />
+                      {demand.parent_demand_id ? (
+                        <DropdownMenuItem
+                          onSelect={() => setShowUnlinkParentDialog(true)}
+                          className="text-sm"
+                        >
+                          <GitBranch className="h-4 w-4 mr-2 text-[#F28705]" />
+                          Desvincular da demanda pai
+                        </DropdownMenuItem>
+                      ) : (subdemands?.length ?? 0) === 0 ? (
+                        <DropdownMenuItem
+                          onSelect={() => setShowLinkParentDialog(true)}
+                          className="text-sm"
+                        >
+                          <GitBranch className="h-4 w-4 mr-2 text-[#F28705]" />
+                          Tornar subdemanda de...
+                        </DropdownMenuItem>
+                      ) : null}
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
