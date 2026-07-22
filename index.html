@@ -27,9 +27,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
-    <!-- Preload sidebar logos to avoid flicker on collapse/expand -->
-    <link rel="preload" as="image" href="/lovable-uploads/8967ad53-156a-4e31-a5bd-b472b7cde839.png" fetchpriority="high" />
-    <link rel="preload" as="image" href="/logo-soma-sidebar.png" fetchpriority="high" />
+    <!-- Sidebar logos são carregados sob demanda pelos componentes (evita warning de preload não utilizado) -->
+    <link rel="prefetch" as="image" href="/logo-soma-sidebar.png" />
+    <link rel="prefetch" as="image" href="/lovable-uploads/8967ad53-156a-4e31-a5bd-b472b7cde839.png" />
 
     <!-- iOS Splash Screens -->
     <!-- iPhone 14 Pro Max, 15 Pro Max (1284x2778) -->
