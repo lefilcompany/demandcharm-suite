@@ -256,3 +256,72 @@ export function useAddSubdemand() {
     },
   });
 }
+
+/**
+ * Convert an existing demand into a subdemand of another demand (same board).
+ * Pass parentDemandId = null to detach (make it a top-level demand again).
+ */
+export function useConvertToSubdemand() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      demandId,
+      parentDemandId,
+      boardId,
+    }: {
+      demandId: string;
+      parentDemandId: string | null;
+      boardId: string;
+    }) => {
+      if (parentDemandId) {
+        if (parentDemandId === demandId) {
+          throw new Error("Uma demanda não pode ser subdemanda dela mesma.");
+        }
+
+        // Validate parent: must exist in same board, be top-level, not archived
+        const { data: parent, error: parentErr } = await supabase
+          .from("demands")
+          .select("id, board_id, parent_demand_id, archived")
+          .eq("id", parentDemandId)
+          .single();
+        if (parentErr) throw parentErr;
+        if (!parent || parent.archived) {
+          throw new Error("Demanda pai inválida.");
+        }
+        if (parent.board_id !== boardId) {
+          throw new Error("A demanda pai precisa estar no mesmo quadro.");
+        }
+        if (parent.parent_demand_id) {
+          throw new Error("Não é possível aninhar subdemandas em outra subdemanda.");
+        }
+
+        // Child must not have subdemands
+        const { count, error: countErr } = await supabase
+          .from("demands")
+          .select("id", { count: "exact", head: true })
+          .eq("parent_demand_id", demandId)
+          .eq("archived", false);
+        if (countErr) throw countErr;
+        if ((count ?? 0) > 0) {
+          throw new Error("Esta demanda possui subdemandas e não pode se tornar uma subdemanda.");
+        }
+      }
+
+      const { error } = await supabase
+        .from("demands")
+        .update({ parent_demand_id: parentDemandId })
+        .eq("id", demandId);
+      if (error) throw error;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["demand", variables.demandId] });
+      queryClient.invalidateQueries({ queryKey: ["demand-parent"] });
+      queryClient.invalidateQueries({ queryKey: ["subdemands"] });
+      queryClient.invalidateQueries({ queryKey: ["demands"] });
+      queryClient.invalidateQueries({ queryKey: ["demands-list", variables.boardId] });
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      queryClient.invalidateQueries({ queryKey: ["all-boards-kanban-columns"] });
+    },
+  });
+}
