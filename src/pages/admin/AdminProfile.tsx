@@ -554,9 +554,30 @@ export default function AdminProfile() {
           )}
 
           {permissionStatus === "denied" && (
-            <div className="flex items-start gap-2 text-sm text-destructive">
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-              <span>Permissão bloqueada. Clique no cadeado da URL → Notificações → Permitir e recarregue a página.</span>
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+              <div className="flex items-start gap-2 text-sm text-destructive font-medium">
+                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>Permissão bloqueada no navegador</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O navegador está bloqueando as notificações para este site. Nenhum botão aqui consegue reabrir o pedido — é preciso liberar manualmente:
+              </p>
+              <ol className="text-xs text-muted-foreground list-decimal ml-4 space-y-1">
+                <li>Clique no <strong>cadeado</strong> (ou ícone de ajustes) à esquerda do endereço no topo do navegador.</li>
+                <li>Procure <strong>Notificações</strong> e selecione <strong>Permitir</strong> (no Chrome/Edge pode aparecer como "Redefinir permissão").</li>
+                <li>Recarregue esta página (F5) e clique em <strong>Verificar novamente</strong> abaixo.</li>
+              </ol>
+              <p className="text-xs text-muted-foreground">
+                Chrome/Edge: <code className="bg-muted px-1 rounded">chrome://settings/content/notifications</code> — remova o site da lista "Bloqueados". Firefox: <code className="bg-muted px-1 rounded">about:preferences#privacy</code> → Permissões → Notificações.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => window.location.reload()}
+                className="gap-2 mt-1"
+              >
+                Verificar novamente (recarregar)
+              </Button>
             </div>
           )}
 
@@ -568,7 +589,7 @@ export default function AdminProfile() {
                 className="gap-2"
               >
                 {pushLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
-                Ativar notificações neste navegador
+                {permissionStatus === "denied" ? "Bloqueado pelo navegador" : "Ativar notificações neste navegador"}
               </Button>
             ) : (
               <Button
