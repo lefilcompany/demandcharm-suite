@@ -87,6 +87,9 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
   // Step state: 0 = parent, 1..N = subdemand forms
   const [currentStep, setCurrentStep] = useState(0);
   const [maxVisitedStep, setMaxVisitedStep] = useState(0);
+  const [showLinkParentDialog, setShowLinkParentDialog] = useState(false);
+
+
 
   const totalSteps = 1 + newSubdemands.length;
   const contentRef = useRef<HTMLDivElement>(null);
