@@ -21,6 +21,15 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 export default function AdminProfile() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const {
+    isSupported: pushSupported,
+    isLoading: pushLoading,
+    permissionStatus,
+    isEnabled: pushEnabled,
+    fcmToken,
+    enablePushNotifications,
+    disablePushNotifications,
+  } = usePushNotifications();
 
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
