@@ -513,8 +513,10 @@ export default function Auth() {
     setIsLoading(true);
     try {
       await signUp(signupData.email, signupData.password, signupData.fullName);
-      toast.success(t("toast.success"), {
-        description: t("welcome.title")
+      setSignupSuccessEmail(signupData.email);
+      toast.success("Conta criada! Verifique seu e-mail", {
+        description: `Enviamos um link de confirmação para ${signupData.email}. Você precisa confirmar antes de entrar.`,
+        duration: 10000,
       });
     } catch (error: any) {
       toast.error(t("toast.error"), {
