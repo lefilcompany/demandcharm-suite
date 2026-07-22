@@ -1,55 +1,39 @@
-## Objetivo
+## Problema
 
-Adicionar um painel de login (email + senha) na página pública `/mcp-docs` que autentica um **usuário real** e devolve um `access_token` JWT já preenchido no Try-It, permitindo executar todas as tools MCP (exceto as que consomem crédito de LLM/imagem).
+Ao subir foto de perfil, o toast mostra "Erro no upload — Você não tem permissão para realizar esta ação". Esse texto é o mapeamento genérico de erros de RLS/Storage.
 
-## Como vai funcionar
+## Diagnóstico
 
-```text
-[/mcp-docs] ── email + senha ──► [edge function: mcp-test-login]
-                                        │
-                                        ├─ signInWithPassword (Supabase)
-                                        │
-                                        ◄── { access_token, expires_at, user }
-[TryItPanel] preenche o campo Access Token automaticamente
-             ► chama tools normalmente no endpoint /functions/v1/mcp
-```
+Bucket `avatars` está público, mas as policies em `storage.objects` para ele estão assim (todas com role `public`):
 
-## Mudanças
+- INSERT: `bucket_id='avatars' AND auth.uid()::text = storage.foldername(name)[1]`
+- UPDATE: mesma condição
+- DELETE: mesma condição
+- **SELECT: nenhuma**
 
-### 1. Edge function nova `supabase/functions/mcp-test-login/index.ts`
-- Aceita `POST { email, password }` com CORS liberado.
-- Valida entrada com Zod (email válido, senha mínima).
-- Cria client Supabase com anon key e chama `auth.signInWithPassword`.
-- Retorna `{ access_token, refresh_token, expires_at, user: { id, email } }` em caso de sucesso, ou erro amigável (credenciais inválidas, email não confirmado etc.).
-- Sem rate limiting sofisticado — é o mesmo endpoint público que o app já expõe via `/auth/v1/token`, então não abre nova superfície de ataque; adiciono só um `retry-after` básico se `signInWithPassword` devolver 429.
-- Nunca loga senha nem token.
+Duas causas prováveis, que vamos cobrir juntas:
 
-### 2. Ajuste no MCP para aceitar tokens de sessão do app
-Em `src/lib/mcp/index.ts`, no `auth.oauth.issuer(...)`, adicionar `requireOAuthClientClaim: false`.
+1. **Falta policy de SELECT em `avatars`.** Uma migração de segurança anterior removeu a policy "Public bucket viewable by everyone". Sem SELECT, o `upload(..., { upsert: true })` — que envia `x-upsert: true` e faz `INSERT ... ON CONFLICT DO UPDATE` — falha em `HEAD`/verificação de objeto existente e volta como "not authorized". Também impede `createSignedUrl` e qualquer leitura autenticada da imagem.
+2. **Policies com role `public` em vez de `authenticated`.** Funcionam quando o JWT chega, mas ficam frágeis se o header `Authorization` cair (ex.: quando o service worker antigo intercepta). Vale normalizar para `authenticated` (INSERT/UPDATE/DELETE) e `public` (SELECT — leitura pública porque o bucket é público).
 
-Por quê: tokens de `signInWithPassword` não carregam `client_id` e seriam rejeitados. Como o issuer/JWKS/audience continuam sendo validados pelo Supabase, o token continua sendo **um JWT real do usuário** — a única diferença é aceitar tanto tokens OAuth (de clientes externos como ChatGPT/Claude) quanto tokens de sessão do próprio app. Documentar isso claramente no README do MCP.
+## O que a migração vai fazer
 
-### 3. Painel de login no `src/pages/McpDocs.tsx`
-Novo componente `TryItLoginPanel` no topo da coluna direita (ou dentro do `TryItPanel`):
-- Campos: email, senha, botão "Gerar token de teste".
-- Mostra: usuário logado, expiração do token, botão "Sair" que limpa.
-- Armazena o token só em memória (React state) + `sessionStorage` (não `localStorage`), com aviso.
-- Preenche automaticamente o campo `Access Token` já existente no `TryItPanel`.
-- Aviso visível: "Login usa suas credenciais reais do SoMA+. Não use em contas administrativas."
+Numa única migração em `storage.objects`:
 
-### 4. Filtro de tools "que gastam crédito"
-No `TryItPanel`, desabilitar o botão Executar para tools cujo nome bate com uma allowlist de exclusão (ex.: qualquer nome contendo `image`, `generate`, `ai_`, `llm`). Como o MCP atual não expõe geração de imagem/LLM, o filtro fica preparado mas hoje não bloqueia nada — só um `MEMO` no código pra quando forem adicionadas.
+1. `DROP POLICY` das três policies atuais de `avatars` (INSERT/UPDATE/DELETE com role `public`).
+2. Recriar as três com role `authenticated` e a mesma condição `auth.uid()::text = storage.foldername(name)[1]`.
+3. Criar `SELECT` público para o bucket `avatars` (`USING (bucket_id = 'avatars')`), já que o bucket é público e a foto precisa ser lida por qualquer visitante (sidebar, avatares em cards, etc.).
 
-### 5. Documentação
-Adicionar seção "Autenticação de teste" na doc explicando:
-- Como obter o token (formulário na própria página).
-- Diferença entre token de sessão (este) e token OAuth (produção, via `supabase.auth.oauth`).
-- Que RLS aplica normalmente — o usuário só vê o que enxerga no app.
+Sem mudanças no bucket em si (continua público) e sem tocar em `demand-attachments` ou `inline-images`.
 
-## Fora do escopo
-- Não mexe no fluxo OAuth real (`/.lovable/oauth/consent`) usado por Claude/ChatGPT.
-- Não adiciona refresh automático do token — se expirar, o usuário loga de novo.
-- Não altera nenhuma tool existente.
+## Verificação
 
-## Riscos
-- `requireOAuthClientClaim: false` afrouxa um pouco a política: qualquer sessão válida do app pode chamar o MCP. Isso é aceitável porque o SoMA+ já é o mesmo domínio de confiança, e RLS continua sendo a barreira real.
+Após aplicar, testar na UI em `/settings?tab=profile`:
+
+1. Fazer upload de uma imagem — deve concluir sem erro e atualizar o avatar imediatamente na sidebar.
+2. Recarregar e confirmar que a foto persiste (URL pública acessível).
+3. Confirmar no console/network que o `POST /storage/v1/object/avatars/...` retorna 200 e que o `PATCH /rest/v1/profiles?id=eq...` grava o novo `avatar_url`.
+
+Se o upload ainda falhar depois disso, é sinal de que o JWT não está sendo enviado pelo client — aí o próximo passo é inspecionar o request no DevTools e investigar interceptação por service worker / offlineStorage, sem mais mudanças em RLS.
+
+Sem alterações de UI ou lógica de negócio; a mudança é somente nas policies de storage.
