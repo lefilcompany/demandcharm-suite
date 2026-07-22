@@ -13,8 +13,8 @@
     "test:watch": "vitest",
     "preview": "vite preview",
     "generate:firebase-config": "node scripts/generate-firebase-config.mjs",
-    "predev": "npm run generate:firebase-config",
-    "prebuild": "npm run generate:firebase-config"
+    "predev": "node scripts/generate-firebase-config.mjs development",
+    "prebuild": "node scripts/generate-firebase-config.mjs production"
   },
   "overrides": {
     "smob": "1.4.0",
