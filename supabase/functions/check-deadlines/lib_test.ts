@@ -13,11 +13,23 @@ import {
   zonedStartOfDayToUtc,
 } from "./lib.ts";
 
-Deno.test("isAuthorized only accepts the exact CRON_SECRET bearer token", () => {
+Deno.test("isAuthorized accepts CRON_SECRET, CRON_TOKEN, or either", () => {
+  // Legacy single-secret behavior
   assertEquals(isAuthorized("Bearer secret", "secret"), true);
   assertEquals(isAuthorized("Bearer wrong", "secret"), false);
   assertEquals(isAuthorized(null, "secret"), false);
   assertEquals(isAuthorized("Bearer secret", undefined), false);
+
+  // Dual-secret behavior (CRON_SECRET fallback + Vault-managed CRON_TOKEN)
+  assertEquals(isAuthorized("Bearer secret", "secret", "token"), true);
+  assertEquals(isAuthorized("Bearer token", "secret", "token"), true);
+  assertEquals(isAuthorized("Bearer token", null, "token"), true);
+  assertEquals(isAuthorized("Bearer secret", "secret", null), true);
+  assertEquals(isAuthorized("Bearer other", "secret", "token"), false);
+  assertEquals(isAuthorized("Bearer ", "secret", "token"), false);
+  assertEquals(isAuthorized("secret", "secret", "token"), false);
+  assertEquals(isAuthorized(undefined, "secret", "token"), false);
+  assertEquals(isAuthorized("Bearer x", "", ""), false);
 });
 
 Deno.test("calendar helpers calculate tomorrow in America/Recife", () => {
