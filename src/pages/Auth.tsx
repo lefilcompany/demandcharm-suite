@@ -969,6 +969,8 @@ export default function Auth() {
                     {isLoading ? t("common.loading") : "Criar conta com e-mail"}
                   </Button>
                 </form>
+                </>
+                )}
               </TabsContent>
             </Tabs>
 
