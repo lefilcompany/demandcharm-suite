@@ -84,6 +84,7 @@ export default function Auth() {
     password: "",
     confirmPassword: ""
   });
+  const [signupSuccessEmail, setSignupSuccessEmail] = useState<string | null>(null);
 
   // Fetch states from IBGE API
   useEffect(() => {
