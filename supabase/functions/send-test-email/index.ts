@@ -114,6 +114,7 @@ Deno.serve(async (req) => {
 
     const raw = await res.json().catch(() => ({}));
     const accepted = res.ok;
+    const providerError = accepted ? null : normalizeProviderError(raw, res.status);
 
     const logRow = await logResult(admin, {
       userId,
@@ -123,7 +124,7 @@ Deno.serve(async (req) => {
       status: accepted ? "accepted" : "rejected",
       providerMessageId: raw?.id ?? null,
       httpStatus: res.status,
-      errorMessage: accepted ? null : raw?.message || raw?.error || `HTTP ${res.status}`,
+      errorMessage: providerError,
       raw,
     });
 
@@ -132,9 +133,9 @@ Deno.serve(async (req) => {
       status: accepted ? "accepted" : "rejected",
       http_status: res.status,
       provider_message_id: raw?.id ?? null,
-      error_message: accepted ? null : raw?.message || raw?.error || `HTTP ${res.status}`,
+      error_message: providerError,
       log_id: logRow?.id ?? null,
-    }, accepted ? 200 : res.status || 500);
+    }, 200);
   } catch (err) {
     console.error("send-test-email error:", err);
     return json({ error: (err as Error).message }, 500);
@@ -169,6 +170,20 @@ async function logResult(admin: ReturnType<typeof createClient>, params: {
     .single();
   if (error) console.error("Failed to log test email:", error);
   return data;
+}
+
+function normalizeProviderError(raw: any, status: number) {
+  const originalMessage = raw?.message || raw?.error || `HTTP ${status}`;
+
+  if (typeof originalMessage === "string" && originalMessage.includes("You can only send testing emails")) {
+    return `${originalMessage} Configure TEST_EMAIL_FROM com um remetente de domínio verificado no Resend para testar outros destinatários.`;
+  }
+
+  if (typeof originalMessage === "string" && originalMessage.includes("domain is not verified")) {
+    return `${originalMessage} Verifique o domínio no Resend ou use o e-mail dono da conta para testes com onboarding@resend.dev.`;
+  }
+
+  return originalMessage;
 }
 
 function json(payload: unknown, status = 200) {

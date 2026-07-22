@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, MailCheck, RefreshCw, Send } from "lucide-react";
+import { AlertTriangle, Loader2, MailCheck, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -57,7 +57,7 @@ export default function AdminEmailTest() {
       if (data?.status === "accepted") {
         toast.success("E-mail aceito pelo provedor. Verifique a caixa de entrada.");
       } else {
-        toast.error(`E-mail rejeitado: ${data?.error_message ?? "erro desconhecido"}`);
+        toast.warning(`E-mail rejeitado: ${data?.error_message ?? "erro desconhecido"}`);
       }
       await queryClient.invalidateQueries({ queryKey: ["test-email-log"] });
     } catch (err: any) {
@@ -84,10 +84,16 @@ export default function AdminEmailTest() {
             <MailCheck className="h-5 w-5 text-primary" /> Enviar e-mail de teste
           </CardTitle>
           <CardDescription>
-            O e-mail sai do remetente oficial (<code>noreply@pla.soma.lefil.com.br</code>) via Resend e o resultado é registrado abaixo.
+            O resultado aceito ou rejeitado pelo Resend é registrado abaixo sem interromper a tela.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <p>
+              Com o remetente de teste do Resend, só é possível enviar para o e-mail dono da conta Resend. Para testar outros destinatários, verifique um domínio no Resend e configure o remetente verificado.
+            </p>
+          </div>
           <div className="grid gap-4 md:grid-cols-[1fr_240px_auto]">
             <div className="space-y-2">
               <Label htmlFor="recipient">Destinatário</Label>
