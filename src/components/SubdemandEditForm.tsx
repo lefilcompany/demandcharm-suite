@@ -476,6 +476,51 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
             </div>
             )}
 
+            {canManageParentLink && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <GitBranch className="h-4 w-4 text-[#F28705]" />
+                  Vínculo com demanda pai
+                </Label>
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+                  <div className="flex items-center gap-2 min-w-0 text-sm">
+                    <span className="text-muted-foreground shrink-0">Pai atual:</span>
+                    <span className="font-medium truncate">
+                      {parentInfo
+                        ? `#${parentInfo.seq ?? "?"} — ${parentInfo.title}`
+                        : "Carregando..."}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7"
+                      onClick={() => setShowChangeParent(true)}
+                    >
+                      Trocar demanda pai
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setShowUnlinkParent(true)}
+                    >
+                      <Unlink2 className="h-3.5 w-3.5 mr-1" />
+                      Desvincular
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Trocar a demanda pai move esta subdemanda para outra demanda principal do mesmo quadro. Desvincular a transforma em demanda principal.
+                </p>
+              </div>
+            )}
+
+
+
             <div className="space-y-2">
               <Label htmlFor="edit-sub-description">Descrição</Label>
               <RichTextEditor
