@@ -112,16 +112,16 @@ export default function AdminPushTest() {
           </div>
           <div className="grid gap-4 md:grid-cols-[1fr_240px_auto]">
             <div className="space-y-2">
-              <Label htmlFor="target">ID do usuário destino</Label>
+              <Label htmlFor="target">Email do usuário destino</Label>
               <Input
                 id="target"
-                type="text"
-                placeholder="uuid do usuário"
-                value={targetUserId}
-                onChange={(e) => setTargetUserId(e.target.value)}
+                type="email"
+                placeholder="usuario@exemplo.com"
+                value={targetEmail}
+                onChange={(e) => setTargetEmail(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Padrão: seu próprio usuário ({user?.id?.slice(0, 8)}…).
+                Padrão: seu próprio email ({user?.email ?? "—"}). O ID é buscado automaticamente.
               </p>
             </div>
             <div className="space-y-2">
