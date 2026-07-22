@@ -521,6 +521,70 @@ export default function AdminProfile() {
         </CardContent>
       </Card>
 
+      {/* Push Notifications */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Notificações Push (este navegador)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Autorize o navegador para receber notificações push. É necessário fazer isso uma vez por navegador/dispositivo.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="px-2 py-1 rounded-md bg-muted">
+              Suporte: {pushSupported ? "Sim" : "Não"}
+            </span>
+            <span className="px-2 py-1 rounded-md bg-muted">
+              Permissão: {permissionStatus ?? "desconhecida"}
+            </span>
+            <span className={`px-2 py-1 rounded-md ${pushEnabled ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-muted"}`}>
+              Token: {fcmToken ? `${fcmToken.slice(0, 10)}…` : "não registrado"}
+            </span>
+          </div>
+
+          {!pushSupported && (
+            <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>Este navegador não suporta notificações push. Use Chrome, Edge ou Android.</span>
+            </div>
+          )}
+
+          {permissionStatus === "denied" && (
+            <div className="flex items-start gap-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>Permissão bloqueada. Clique no cadeado da URL → Notificações → Permitir e recarregue a página.</span>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            {!pushEnabled ? (
+              <Button
+                onClick={enablePushNotifications}
+                disabled={pushLoading || !pushSupported || permissionStatus === "denied"}
+                className="gap-2"
+              >
+                {pushLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+                Ativar notificações neste navegador
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={disablePushNotifications}
+                disabled={pushLoading}
+                className="gap-2"
+              >
+                {pushLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellOff className="h-4 w-4" />}
+                Desativar neste navegador
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Save */}
       <div className="flex justify-end pb-6">
         <Button onClick={handleSave} disabled={isSaving} className="gap-2 min-w-[160px]">
