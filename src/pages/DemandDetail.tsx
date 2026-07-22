@@ -181,6 +181,9 @@ export default function DemandDetail() {
   const [showSubdemandDialog, setShowSubdemandDialog] = useState(false);
   const [draggedSubId, setDraggedSubId] = useState<string | null>(null);
   const [dragOverSubId, setDragOverSubId] = useState<string | null>(null);
+  const [showLinkParentDialog, setShowLinkParentDialog] = useState(false);
+  const [showUnlinkParentDialog, setShowUnlinkParentDialog] = useState(false);
+  const convertToSubdemand = useConvertToSubdemand();
 
   const handleReorderSubdemand = async (targetId: string) => {
     const sourceId = draggedSubId;
