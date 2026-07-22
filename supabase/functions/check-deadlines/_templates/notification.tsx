@@ -1,3 +1,4 @@
+/** @jsxImportSource npm:react@18.3.1 */
 import {
   Body,
   Button,
