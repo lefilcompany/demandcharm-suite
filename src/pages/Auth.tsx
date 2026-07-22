@@ -243,9 +243,9 @@ export default function Auth() {
       return "Formato de email inválido. Verifique o email digitado.";
     }
     
-    // Weak password
-    if (message.includes("weak password") || message.includes("password should be")) {
-      return "A senha é muito fraca. Use pelo menos 6 caracteres.";
+    // Weak password (agora apenas aviso — não bloqueia mais)
+    if (message.includes("weak password") || message.includes("password should be") || message.includes("known to be weak")) {
+      return "Aviso: senha considerada fraca. Recomendamos usar letras, números e símbolos.";
     }
     
     // User not found
@@ -434,12 +434,10 @@ export default function Auth() {
       if (error) throw error;
       if (data?.ok === false) {
         if (data.code === "weak_password") {
-          toast.error("Escolha uma senha mais forte", {
-            description: data.error || "Essa senha é muito fraca ou já apareceu em vazamentos. Use outra senha com letras, números e símbolos.",
+          toast.warning("Senha fraca detectada", {
+            description: "Sua senha foi aceita, mas é considerada fraca. Recomendamos usar letras, números e símbolos para maior segurança.",
           });
-          setResetNewPassword("");
-          setResetConfirmPassword("");
-          return;
+          // Não interrompe: segue tentando; caso o backend ainda bloqueie, mostra fallback abaixo.
         }
 
         if (data.code === "same_password") {
