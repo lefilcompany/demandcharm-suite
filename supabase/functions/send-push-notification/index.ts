@@ -204,7 +204,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Require authentication: either a valid user JWT or the CRON_SECRET for server-to-server calls
+    // Require authentication: either a valid user JWT, CRON_SECRET, or the Vault-managed CRON_TOKEN for server-to-server calls
+    const authHeader = req.headers.get("authorization") || "";
     const cronSecret = Deno.env.get("CRON_SECRET");
     const cronToken = Deno.env.get("CRON_TOKEN");
     const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : "";
