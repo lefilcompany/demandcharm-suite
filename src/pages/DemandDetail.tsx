@@ -1621,6 +1621,51 @@ export default function DemandDetail() {
         />
       )}
 
+      {/* Link as subdemand of another demand */}
+      {demand && (
+        <LinkAsSubdemandDialog
+          open={showLinkParentDialog}
+          onClose={() => setShowLinkParentDialog(false)}
+          demandId={demand.id}
+          boardId={demand.board_id}
+          demandTitle={demand.title}
+        />
+      )}
+
+      {/* Unlink from parent demand */}
+      <AlertDialog open={showUnlinkParentDialog} onOpenChange={setShowUnlinkParentDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desvincular da demanda pai?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta demanda deixará de ser subdemanda e voltará a aparecer como demanda principal do quadro.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!demand) return;
+                try {
+                  await convertToSubdemand.mutateAsync({
+                    demandId: demand.id,
+                    parentDemandId: null,
+                    boardId: demand.board_id,
+                  });
+                  toast.success("Demanda desvinculada");
+                  setShowUnlinkParentDialog(false);
+                } catch (err) {
+                  toast.error(getErrorMessage(err) || "Não foi possível desvincular");
+                }
+              }}
+              className="bg-[#F28705] text-white hover:bg-[#D95204]"
+            >
+              Desvincular
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ApprovalNotifyDialog
         open={!!approvalDialogState}
         onOpenChange={(o) => { if (!o) setApprovalDialogState(null); }}
