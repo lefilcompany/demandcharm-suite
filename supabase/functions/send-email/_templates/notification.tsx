@@ -48,11 +48,11 @@ export const NotificationEmail = ({
   const getTypeColor = () => {
     switch (type) {
       case 'success':
-        return '#10B981'
+        return BRAND.primary
       case 'warning':
         return BRAND.primaryLight
       case 'error':
-        return '#EF4444'
+        return BRAND.primaryDark
       default:
         return BRAND.primary
     }
