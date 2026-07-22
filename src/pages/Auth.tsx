@@ -769,10 +769,60 @@ export default function Auth() {
               </TabsContent>
 
               <TabsContent value="signup" className="mt-0 space-y-3.5">
+                {signupSuccessEmail ? (
+                  <div className="space-y-4 py-2">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                      <Mail className="h-7 w-7 text-primary" />
+                    </div>
+                    <div className="text-center space-y-1.5">
+                      <h1 className="text-[22px] leading-tight font-semibold tracking-tight text-foreground">
+                        Confirme seu e-mail
+                      </h1>
+                      <p className="text-[13px] text-muted-foreground">
+                        Enviamos um link de confirmação para{" "}
+                        <span className="font-medium text-foreground">{signupSuccessEmail}</span>.
+                        Você precisa clicar nesse link antes de conseguir entrar.
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-[12px] text-muted-foreground">
+                      Não achou? Verifique também as pastas de <span className="font-medium text-foreground">spam</span> ou lixo eletrônico. O e-mail pode levar alguns minutos para chegar.
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-11 rounded-lg text-[13.5px] font-medium"
+                      onClick={() => {
+                        setSignupSuccessEmail(null);
+                        setActiveTab("login");
+                        setLoginData({ email: signupSuccessEmail, password: "" });
+                        setLoginStep("password");
+                      }}
+                    >
+                      Já confirmei — ir para o login
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full h-9 text-[12px] text-muted-foreground"
+                      onClick={() => setSignupSuccessEmail(null)}
+                    >
+                      Criar outra conta
+                    </Button>
+                  </div>
+                ) : (
+                <>
                 <div className="text-center space-y-1.5">
                   <h1 className="text-[26px] leading-tight font-semibold tracking-tight text-foreground">Criar sua conta</h1>
                   <p className="text-[13px] text-muted-foreground">Comece em segundos</p>
                 </div>
+
+                <div className="flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-[12px] text-foreground/85">
+                  <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <span>
+                    Após cadastrar, enviaremos um <span className="font-medium">link de confirmação</span> por e-mail. Você só conseguirá entrar depois de confirmar.
+                  </span>
+                </div>
+
 
                 <Button
                   type="button"
