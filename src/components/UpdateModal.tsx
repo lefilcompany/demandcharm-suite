@@ -67,17 +67,17 @@ export function UpdateModal() {
         {/* Decorative glow */}
         <div className="relative pt-8 pb-6 px-6">
           <div className="absolute inset-x-0 -top-16 h-32 bg-[#F28705]/20 blur-3xl rounded-full pointer-events-none" aria-hidden="true" />
-          <DialogHeader className="items-start text-left gap-5 relative">
-            <img src={logo} alt="SoMA" className="h-16 w-auto drop-shadow-sm" />
-            <div className="space-y-2 flex flex-col items-start text-left w-full">
+          <DialogHeader className="items-center text-center gap-5 relative">
+            <img src={logoDark} alt="SoMA" className="h-16 w-auto mx-auto drop-shadow-sm" />
+            <div className="space-y-2 flex flex-col items-center text-center w-full">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F28705]/10 border border-[#F28705]/20">
                 <Sparkles className="h-3.5 w-3.5 text-[#F28705]" />
                 <span className="text-xs font-medium text-[#F28705]">Nova versão disponível</span>
               </div>
-              <DialogTitle className="text-2xl font-bold tracking-tight text-left w-full">
+              <DialogTitle className="text-2xl font-bold tracking-tight text-center w-full">
                 Novidades no SoMA!
               </DialogTitle>
-              <DialogDescription className="text-left text-sm leading-relaxed text-muted-foreground">
+              <DialogDescription className="text-center text-sm leading-relaxed text-muted-foreground">
                 Uma nova versão está disponível com melhorias e correções.
                 Atualize agora para ter a melhor experiência. Sua sessão será mantida.
               </DialogDescription>
