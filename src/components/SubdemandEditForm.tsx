@@ -20,8 +20,23 @@ import { useDemandDependencyInfo } from "@/hooks/useDependencyCheck";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
-import { Package, Users, Loader2, Link2, Lock, X } from "lucide-react";
+import { Package, Users, Loader2, Link2, Lock, X, GitBranch, Unlink2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useConvertToSubdemand } from "@/hooks/useSubdemands";
+import { LinkAsSubdemandDialog } from "@/components/LinkAsSubdemandDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+
+
 
 interface SubdemandEditFormProps {
   demand: {
@@ -71,7 +86,36 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
     };
   }, [demand.id]);
 
+  // Parent info + link/unlink dialogs
+  const convertToSubdemand = useConvertToSubdemand();
+  const [parentInfo, setParentInfo] = useState<{ id: string; title: string; seq: number | null } | null>(null);
+  const [showChangeParent, setShowChangeParent] = useState(false);
+  const [showUnlinkParent, setShowUnlinkParent] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!demand.parent_demand_id) {
+      setParentInfo(null);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from("demands")
+        .select("id, title, board_sequence_number")
+        .eq("id", demand.parent_demand_id!)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      setParentInfo({ id: data.id, title: data.title, seq: (data as any).board_sequence_number ?? null });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [demand.parent_demand_id]);
+
   const canAssignResponsibles = boardRole !== "requester";
+  const canManageParentLink = boardRole !== "requester";
+
+
 
   const [title, setTitle] = useState(demand.title);
   const [description, setDescription] = useState(demand.description || "");
@@ -432,6 +476,51 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
             </div>
             )}
 
+            {canManageParentLink && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <GitBranch className="h-4 w-4 text-[#F28705]" />
+                  Vínculo com demanda pai
+                </Label>
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+                  <div className="flex items-center gap-2 min-w-0 text-sm">
+                    <span className="text-muted-foreground shrink-0">Pai atual:</span>
+                    <span className="font-medium truncate">
+                      {parentInfo
+                        ? `#${parentInfo.seq ?? "?"} — ${parentInfo.title}`
+                        : "Carregando..."}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7"
+                      onClick={() => setShowChangeParent(true)}
+                    >
+                      Trocar demanda pai
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setShowUnlinkParent(true)}
+                    >
+                      <Unlink2 className="h-3.5 w-3.5 mr-1" />
+                      Desvincular
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Trocar a demanda pai move esta subdemanda para outra demanda principal do mesmo quadro. Desvincular a transforma em demanda principal.
+                </p>
+              </div>
+            )}
+
+
+
             <div className="space-y-2">
               <Label htmlFor="edit-sub-description">Descrição</Label>
               <RichTextEditor
@@ -465,6 +554,48 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
           </Button>
         </div>
       </form>
+
+      <LinkAsSubdemandDialog
+        open={showChangeParent}
+        onClose={() => setShowChangeParent(false)}
+        demandId={demand.id}
+        boardId={demand.board_id}
+        demandTitle={demand.title}
+      />
+
+      <AlertDialog open={showUnlinkParent} onOpenChange={setShowUnlinkParent}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desvincular da demanda pai?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta subdemanda deixará de estar vinculada e voltará a aparecer como demanda principal do quadro.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                try {
+                  await convertToSubdemand.mutateAsync({
+                    demandId: demand.id,
+                    parentDemandId: null,
+                    boardId: demand.board_id,
+                  });
+                  toast.success("Desvinculada da demanda pai");
+                  setShowUnlinkParent(false);
+                  onSuccess();
+                } catch (err) {
+                  toast.error(getErrorMessage(err) || "Não foi possível desvincular");
+                }
+              }}
+              className="bg-[#F28705] text-white hover:bg-[#D95204]"
+            >
+              Desvincular
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
+

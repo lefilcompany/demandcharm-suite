@@ -21,7 +21,8 @@ import { useAddSubdemand } from "@/hooks/useSubdemands";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
-import { GitBranch, Plus, Minus, ChevronLeft, ChevronRight, Trash2, Package, Users, Loader2 } from "lucide-react";
+import { GitBranch, Plus, Minus, ChevronLeft, ChevronRight, Trash2, Package, Users, Loader2, Link2 } from "lucide-react";
+import { LinkAsSubdemandDialog } from "@/components/LinkAsSubdemandDialog";
 import { StepProgress, SubdemandStepForm } from "@/components/create-demand";
 import type { SubdemandFormData } from "@/components/create-demand";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,6 +87,9 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
   // Step state: 0 = parent, 1..N = subdemand forms
   const [currentStep, setCurrentStep] = useState(0);
   const [maxVisitedStep, setMaxVisitedStep] = useState(0);
+  const [showLinkParentDialog, setShowLinkParentDialog] = useState(false);
+
+
 
   const totalSteps = 1 + newSubdemands.length;
   const contentRef = useRef<HTMLDivElement>(null);
@@ -620,8 +624,34 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                   <RecurrenceConfig value={recurrence} onChange={setRecurrence} compact />
                 </div>
               )}
+
+              {/* Vínculo — permite transformar em subdemanda de outra demanda do quadro */}
+              {canManageAssignees && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Link2 className="h-4 w-4 text-[#F28705]" />
+                    Vínculo
+                  </Label>
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+                    <p className="text-sm text-muted-foreground">
+                      Transformar esta demanda em subdemanda de outra demanda principal deste quadro.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7"
+                      onClick={() => setShowLinkParentDialog(true)}
+                    >
+                      Tornar subdemanda de...
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
+
 
           {/* SUBDEMAND STEPS */}
           {isOnSubdemandStep && newSubdemands[currentSubIndex] && (
@@ -710,6 +740,15 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
           </div>
         </div>
       </form>
+
+      <LinkAsSubdemandDialog
+        open={showLinkParentDialog}
+        onClose={() => setShowLinkParentDialog(false)}
+        demandId={demand.id}
+        boardId={demand.board_id}
+        demandTitle={demand.title}
+      />
     </>
+
   );
 }
