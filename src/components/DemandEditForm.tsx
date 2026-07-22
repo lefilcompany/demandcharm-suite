@@ -624,8 +624,34 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                   <RecurrenceConfig value={recurrence} onChange={setRecurrence} compact />
                 </div>
               )}
+
+              {/* Vínculo — permite transformar em subdemanda de outra demanda do quadro */}
+              {canManageAssignees && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Link2 className="h-4 w-4 text-[#F28705]" />
+                    Vínculo
+                  </Label>
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+                    <p className="text-sm text-muted-foreground">
+                      Transformar esta demanda em subdemanda de outra demanda principal deste quadro.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7"
+                      onClick={() => setShowLinkParentDialog(true)}
+                    >
+                      Tornar subdemanda de...
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
+
 
           {/* SUBDEMAND STEPS */}
           {isOnSubdemandStep && newSubdemands[currentSubIndex] && (
