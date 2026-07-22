@@ -13,11 +13,23 @@ import {
   zonedStartOfDayToUtc,
 } from "./lib.ts";
 
-Deno.test("isAuthorized only accepts the exact CRON_SECRET bearer token", () => {
+Deno.test("isAuthorized accepts CRON_SECRET, CRON_TOKEN, or either", () => {
+  // Legacy single-secret behavior
   assertEquals(isAuthorized("Bearer secret", "secret"), true);
   assertEquals(isAuthorized("Bearer wrong", "secret"), false);
   assertEquals(isAuthorized(null, "secret"), false);
   assertEquals(isAuthorized("Bearer secret", undefined), false);
+
+  // Dual-secret behavior (CRON_SECRET fallback + Vault-managed CRON_TOKEN)
+  assertEquals(isAuthorized("Bearer secret", "secret", "token"), true);
+  assertEquals(isAuthorized("Bearer token", "secret", "token"), true);
+  assertEquals(isAuthorized("Bearer token", null, "token"), true);
+  assertEquals(isAuthorized("Bearer secret", "secret", null), true);
+  assertEquals(isAuthorized("Bearer other", "secret", "token"), false);
+  assertEquals(isAuthorized("Bearer ", "secret", "token"), false);
+  assertEquals(isAuthorized("secret", "secret", "token"), false);
+  assertEquals(isAuthorized(undefined, "secret", "token"), false);
+  assertEquals(isAuthorized("Bearer x", "", ""), false);
 });
 
 Deno.test("calendar helpers calculate tomorrow in America/Recife", () => {
@@ -117,4 +129,23 @@ Deno.test("buildOverdueReminder preserves daily overdue alerts without email", (
   assertEquals(reminder.eventType, "deadline_overdue");
   assertEquals(reminder.severity, "error");
   assertEquals(reminder.message.includes("venceu em 10/07/2026"), true);
+});
+
+Deno.test("reminder titles are plain text without emojis", () => {
+  const dayBefore = buildDeadlineReminder(
+    { id: "d1", title: "Título", due_date: "2026-07-15T18:00:00.000Z" },
+    "u1",
+    "2026-07-15",
+  );
+  const overdue = buildOverdueReminder(
+    { id: "d2", title: "Título", due_date: "2026-07-10T18:00:00.000Z" },
+    "u1",
+    "2026-07-10",
+    "2026-07-14",
+  );
+  assertEquals(dayBefore.title, "Demanda vence amanhã");
+  assertEquals(overdue.title, "Demanda com prazo vencido");
+  // Ensure no emoji codepoints leaked into titles
+  assertEquals(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(dayBefore.title), false);
+  assertEquals(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(overdue.title), false);
 });

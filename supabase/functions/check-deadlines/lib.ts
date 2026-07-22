@@ -49,9 +49,12 @@ export interface DeadlineReminder {
 
 export function isAuthorized(
   authHeader: string | null | undefined,
-  cronSecret: string | null | undefined,
+  ...secrets: Array<string | null | undefined>
 ): boolean {
-  return Boolean(cronSecret) && authHeader === `Bearer ${cronSecret}`;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return false;
+  const token = authHeader.slice("Bearer ".length);
+  if (!token) return false;
+  return secrets.some((s) => typeof s === "string" && s.length > 0 && s === token);
 }
 
 function getDatePartsInTimeZone(date: Date, timeZone: string): {
@@ -239,7 +242,7 @@ export function buildDayBeforeReminder(
     severity: "warning",
     demandId: base.demandId,
     userId: base.userId,
-    title: "⏰ Demanda vence amanhã",
+    title: "Demanda vence amanhã",
     message: `A demanda “${base.safeTitle}” vence amanhã (${base.formattedDate}) e ainda não foi entregue.`,
     emailSubject: `Lembrete: “${base.safeTitle}” vence amanhã`,
     link: base.link,
@@ -265,7 +268,7 @@ export function buildOverdueReminder(
     severity: "error",
     demandId: base.demandId,
     userId: base.userId,
-    title: "🚨 Demanda com prazo vencido",
+    title: "Demanda com prazo vencido",
     message: `A demanda “${base.safeTitle}” venceu em ${base.formattedDate} e ainda não foi entregue.`,
     emailSubject: `Prazo vencido: “${base.safeTitle}”`,
     link: base.link,

@@ -2964,6 +2964,7 @@ export type Database = {
         Args: { _board_id: string; _service_id: string }
         Returns: number
       }
+      get_check_deadlines_cron_token: { Args: never; Returns: string }
       get_join_request_profiles: {
         Args: { request_team_id: string }
         Returns: {

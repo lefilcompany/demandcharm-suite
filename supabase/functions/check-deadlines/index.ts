@@ -98,8 +98,12 @@ export async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const cronSecret = requireEnv("CRON_SECRET");
-    if (!isAuthorized(req.headers.get("authorization"), cronSecret)) {
+    const cronSecret = Deno.env.get("CRON_SECRET") || null;
+    const cronToken = Deno.env.get("CRON_TOKEN") || null;
+    if (!cronSecret && !cronToken) {
+      throw new Error("Neither CRON_SECRET nor CRON_TOKEN configured");
+    }
+    if (!isAuthorized(req.headers.get("authorization"), cronSecret, cronToken)) {
       const clientIp = req.headers.get("x-forwarded-for") ||
         req.headers.get("cf-connecting-ip") ||
         req.headers.get("x-real-ip") ||
@@ -107,6 +111,9 @@ export async function handler(req: Request): Promise<Response> {
       console.warn(`[${requestId}] Unauthorized check-deadlines request from ${clientIp}`);
       return jsonResponse({ error: "Unauthorized" }, 401);
     }
+
+    // Prefer the Vault-managed token when forwarding to internal functions.
+    const forwardToken = cronToken || cronSecret!;
 
     const supabaseUrl = requireEnv("SUPABASE_URL");
     const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
@@ -309,7 +316,7 @@ export async function handler(req: Request): Promise<Response> {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${cronSecret}`,
+              Authorization: `Bearer ${forwardToken}`,
             },
             body: JSON.stringify({
               userIds: [reminder.userId],
