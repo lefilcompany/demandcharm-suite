@@ -1372,6 +1372,39 @@ export type Database = {
           },
         ]
       }
+      fcm_tokens: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          last_used_at: string
+          token: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          last_used_at?: string
+          token: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          last_used_at?: string
+          token?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       google_calendar_tokens: {
         Row: {
           access_token: string
@@ -3164,6 +3197,25 @@ export type Database = {
         Returns: Json
       }
       refresh_overdue_demands: { Args: never; Returns: number }
+      register_fcm_token: {
+        Args: { p_device_id: string; p_token: string; p_user_agent: string }
+        Returns: {
+          created_at: string
+          device_id: string
+          id: string
+          last_used_at: string
+          token: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "fcm_tokens"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       reorder_subdemands: {
         Args: { p_ordered_ids: string[]; p_parent_id: string }
         Returns: undefined

@@ -28,3 +28,6 @@ dist-ssr
 /test-results/
 /playwright/.cache/
 e2e/.auth/
+
+# Generated Firebase public config (from VITE_FIREBASE_* at build time)
+public/firebase-config.generated.js

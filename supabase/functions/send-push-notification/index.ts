@@ -23,118 +23,171 @@ interface UserPreferences {
   mentionNotifications?: boolean;
 }
 
-// Get access token for FCM HTTP v1 API
-async function getAccessToken(serviceAccount: any): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  const exp = now + 3600; // Token expires in 1 hour
+interface ServiceAccount {
+  client_email: string;
+  private_key: string;
+  project_id: string;
+}
 
-  // Create JWT header
-  const header = {
-    alg: "RS256",
-    typ: "JWT",
+interface FcmErrorDetail {
+  "@type"?: string;
+  errorCode?: string;
+  fieldViolations?: { field?: string; description?: string }[];
+}
+
+interface FcmErrorResponse {
+  error?: {
+    code?: number;
+    message?: string;
+    status?: string;
+    details?: FcmErrorDetail[];
   };
+}
 
-  // Create JWT payload
+// ---------- Pure helpers (exported for tests) ----------
+
+/**
+ * Resolve a link against APP_URL. Accepts only https (or http on localhost)
+ * and only the same origin as APP_URL. Anything else falls back to `${APP_URL}/`.
+ */
+export function normalizeLink(link: string | undefined | null, appUrl: string): string {
+  let base: URL;
+  try {
+    base = new URL(appUrl);
+  } catch {
+    // If APP_URL is invalid, we cannot safely resolve — but we prefer to still
+    // return something benign; caller should have validated APP_URL first.
+    return appUrl;
+  }
+  const fallback = `${base.origin}/`;
+  const raw = link && link.length > 0 ? link : "/";
+  try {
+    const resolved = new URL(raw, base);
+    if (resolved.protocol !== "https:" && resolved.protocol !== "http:") return fallback;
+    if (resolved.protocol === "http:" && resolved.hostname !== "localhost" && resolved.hostname !== "127.0.0.1") {
+      return fallback;
+    }
+    if (resolved.origin !== base.origin) return fallback;
+    return resolved.toString();
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Classify an FCM HTTP v1 error response. Only returns removeToken=true when the
+ * server explicitly says the registration token is unregistered or the token
+ * field itself is invalid.
+ */
+export function classifyFcmError(
+  parsed: FcmErrorResponse | null,
+  rawStatus: number,
+): { code: string; removeToken: boolean } {
+  const details = parsed?.error?.details ?? [];
+  for (const d of details) {
+    if (d.errorCode === "UNREGISTERED") {
+      return { code: "UNREGISTERED", removeToken: true };
+    }
+    if (d.errorCode === "INVALID_ARGUMENT") {
+      const violations = d.fieldViolations ?? [];
+      const tokenViolation = violations.find(
+        (v) => (v.field ?? "").toLowerCase().includes("token"),
+      );
+      if (tokenViolation) {
+        return { code: "INVALID_TOKEN", removeToken: true };
+      }
+      return { code: "INVALID_ARGUMENT", removeToken: false };
+    }
+    if (d.errorCode === "SENDER_ID_MISMATCH") {
+      return { code: "SENDER_ID_MISMATCH", removeToken: false };
+    }
+  }
+  const status = parsed?.error?.status ?? `HTTP_${rawStatus}`;
+  return { code: status, removeToken: false };
+}
+
+// ---------- Google OAuth token minting ----------
+
+async function getAccessToken(serviceAccount: ServiceAccount): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
   const payload = {
     iss: serviceAccount.client_email,
     sub: serviceAccount.client_email,
     aud: "https://oauth2.googleapis.com/token",
     iat: now,
-    exp: exp,
+    exp: now + 3600,
     scope: "https://www.googleapis.com/auth/firebase.messaging",
   };
+  const b64url = (s: string) =>
+    btoa(s).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const encHeader = b64url(JSON.stringify(header));
+  const encPayload = b64url(JSON.stringify(payload));
+  const signingInput = `${encHeader}.${encPayload}`;
 
-  // Encode header and payload
-  const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-
-  const signatureInput = `${encodedHeader}.${encodedPayload}`;
-
-  // Import the private key
-  const pemContents = serviceAccount.private_key
+  const pem = serviceAccount.private_key
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
-    .replace(/\n/g, "");
-
-  const binaryKey = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
-
+    .replace(/\s/g, "");
+  const binaryKey = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
   const cryptoKey = await crypto.subtle.importKey(
     "pkcs8",
     binaryKey,
-    {
-      name: "RSASSA-PKCS1-v1_5",
-      hash: "SHA-256",
-    },
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
-
-  // Sign the JWT
-  const signatureBuffer = await crypto.subtle.sign(
+  const sigBuf = await crypto.subtle.sign(
     "RSASSA-PKCS1-v1_5",
     cryptoKey,
-    new TextEncoder().encode(signatureInput)
+    new TextEncoder().encode(signingInput),
   );
-
-  const signature = btoa(String.fromCharCode(...new Uint8Array(signatureBuffer)))
+  const signature = btoa(String.fromCharCode(...new Uint8Array(sigBuf)))
     .replace(/=/g, "")
     .replace(/\+/g, "-")
     .replace(/\//g, "_");
+  const jwt = `${signingInput}.${signature}`;
 
-  const jwt = `${signatureInput}.${signature}`;
-
-  // Exchange JWT for access token
-  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+  const resp = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
   });
-
-  if (!tokenResponse.ok) {
-    const error = await tokenResponse.text();
-    throw new Error(`Failed to get access token: ${error}`);
+  if (!resp.ok) {
+    // Avoid leaking the JWT or the raw Google response.
+    throw new Error(`google_oauth_failed_${resp.status}`);
   }
-
-  const tokenData = await tokenResponse.json();
-  return tokenData.access_token;
+  const data = await resp.json();
+  return data.access_token;
 }
 
-// Send push notification via FCM HTTP v1 API
-async function sendPushNotification(
+async function sendOne(
   accessToken: string,
   projectId: string,
   fcmToken: string,
   title: string,
   body: string,
-  data?: Record<string, string>
-): Promise<{ success: boolean; error?: string; shouldRemoveToken?: boolean }> {
+  link: string,
+  data: Record<string, string>,
+  notificationType: string,
+): Promise<{ ok: boolean; code?: string; removeToken?: boolean }> {
   const message = {
     message: {
       token: fcmToken,
-      notification: {
-        title,
-        body,
-      },
+      notification: { title, body },
       webpush: {
         notification: {
           icon: "/favicon.png",
           badge: "/favicon.png",
-          vibrate: [200, 100, 200],
-          requireInteraction: true,
-          tag: data?.type || "soma-notification",
+          tag: notificationType || "soma-notification",
         },
-        fcm_options: {
-          link: data?.link || "/",
-        },
+        fcm_options: { link },
       },
-      data: data || {},
+      data,
     },
   };
-
   try {
-    const response = await fetch(
+    const resp = await fetch(
       `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
       {
         method: "POST",
@@ -143,44 +196,34 @@ async function sendPushNotification(
           "Content-Type": "application/json",
         },
         body: JSON.stringify(message),
-      }
+      },
     );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("FCM send error:", errorText);
-      
-      // Check if token is invalid/expired
-      if (errorText.includes("UNREGISTERED") || errorText.includes("INVALID_ARGUMENT")) {
-        return { success: false, error: errorText, shouldRemoveToken: true };
-      }
-      
-      return { success: false, error: errorText };
+    if (resp.ok) {
+      // Consume body
+      await resp.json().catch(() => undefined);
+      return { ok: true };
     }
-
-    console.log("Push notification sent successfully to token:", fcmToken.substring(0, 20) + "...");
-    return { success: true };
-  } catch (error: any) {
-    console.error("FCM request error:", error);
-    return { success: false, error: error.message };
+    let parsed: FcmErrorResponse | null = null;
+    try {
+      parsed = await resp.json();
+    } catch {
+      parsed = null;
+    }
+    const { code, removeToken } = classifyFcmError(parsed, resp.status);
+    console.warn("[push] FCM error", { code, status: resp.status });
+    return { ok: false, code, removeToken };
+  } catch (err) {
+    console.error("[push] FCM fetch failed", (err as Error)?.message);
+    return { ok: false, code: "NETWORK_ERROR", removeToken: false };
   }
 }
 
-// Check if user has enabled the specific notification type
 function shouldSendNotification(
   preferences: UserPreferences | null,
-  notificationType: string
+  notificationType: string,
 ): boolean {
-  // If no preferences found, default to sending
   if (!preferences) return true;
-  
-  // Check if push notifications are globally enabled
-  if (preferences.pushNotifications === false) {
-    console.log("Push notifications globally disabled for user");
-    return false;
-  }
-
-  // Check specific notification type
+  if (preferences.pushNotifications === false) return false;
   switch (notificationType) {
     case "demandUpdates":
       return preferences.demandUpdates !== false;
@@ -198,230 +241,212 @@ function shouldSendNotification(
 }
 
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const respond = (status: number, body: unknown) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
   try {
-    // Require authentication: either a valid user JWT, CRON_SECRET, or the Vault-managed CRON_TOKEN for server-to-server calls
+    // 1. Authenticate
     const authHeader = req.headers.get("authorization") || "";
     const cronSecret = Deno.env.get("CRON_SECRET");
     const cronToken = Deno.env.get("CRON_TOKEN");
-    const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : "";
-    const isCronCall = !!bearer && ((!!cronSecret && bearer === cronSecret) || (!!cronToken && bearer === cronToken));
+    const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    const isCronCall =
+      !!bearer && ((!!cronSecret && bearer === cronSecret) || (!!cronToken && bearer === cronToken));
 
     let callerUserId: string | null = null;
     if (!isCronCall) {
-      if (!authHeader.startsWith("Bearer ")) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const token = authHeader.replace("Bearer ", "");
+      if (!authHeader.startsWith("Bearer ")) return respond(401, { error: "Unauthorized" });
+      const token = authHeader.slice(7);
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
       const authClient = createClient(supabaseUrl, supabaseAnonKey, {
         auth: { autoRefreshToken: false, persistSession: false },
       });
       const { data: userData, error: userErr } = await authClient.auth.getUser(token);
-      if (userErr || !userData?.user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      if (userErr || !userData?.user) return respond(401, { error: "Unauthorized" });
       callerUserId = userData.user.id;
     }
 
-    // Parse service account from environment
-    const serviceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
-    if (!serviceAccountJson) {
-      throw new Error("FIREBASE_SERVICE_ACCOUNT not configured");
-    }
-
-    const serviceAccount = JSON.parse(serviceAccountJson);
-    const projectId = serviceAccount.project_id;
-
-    // Get access token
-    console.log("Getting FCM access token...");
-    const accessToken = await getAccessToken(serviceAccount);
-
-    // Parse request
+    // 2. Validate request
     const { userId, userIds, title, body, link, data }: PushNotificationRequest = await req.json();
+    if (!title || !body) return respond(400, { error: "title and body are required" });
     const notificationType = data?.notificationType || "demandUpdates";
 
-    console.log(`Processing push notification: "${title}" for notification type: ${notificationType}`);
-
-    if (!title || !body) {
-      throw new Error("title and body are required");
-    }
-
-    // Combine single userId and userIds array
     const targetUserIds: string[] = [];
     if (userId) targetUserIds.push(userId);
     if (userIds) targetUserIds.push(...userIds);
-
-    // Remove duplicates
     const uniqueUserIds = [...new Set(targetUserIds)];
+    if (uniqueUserIds.length === 0) return respond(400, { error: "userId or userIds is required" });
 
-    if (uniqueUserIds.length === 0) {
-      throw new Error("userId or userIds is required");
-    }
-
-    console.log(`Target users: ${uniqueUserIds.length}`);
-
-    // Initialize Supabase client
+    // 3. Authorized users
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Authorization: when called by a real user, only allow targets that share a team with the caller
     let allowedUserIds = uniqueUserIds;
+    let blocked = 0;
     if (!isCronCall && callerUserId) {
       const { data: callerTeams } = await supabase
         .from("team_members")
         .select("team_id")
         .eq("user_id", callerUserId);
       const callerTeamIds = (callerTeams || []).map((r: { team_id: string }) => r.team_id);
-
       if (callerTeamIds.length === 0) {
         allowedUserIds = uniqueUserIds.filter((id) => id === callerUserId);
       } else {
-        const { data: sharedMembers } = await supabase
+        const { data: shared } = await supabase
           .from("team_members")
           .select("user_id")
           .in("team_id", callerTeamIds)
           .in("user_id", allowedUserIds);
-        const sharedSet = new Set((sharedMembers || []).map((r: { user_id: string }) => r.user_id));
-        sharedSet.add(callerUserId);
-        allowedUserIds = uniqueUserIds.filter((id) => sharedSet.has(id));
+        const set = new Set((shared || []).map((r: { user_id: string }) => r.user_id));
+        set.add(callerUserId);
+        allowedUserIds = uniqueUserIds.filter((id) => set.has(id));
       }
-
-      const blocked = uniqueUserIds.length - allowedUserIds.length;
-      if (blocked > 0) {
-        console.warn(`Blocked ${blocked} push targets not sharing a team with caller ${callerUserId}`);
-      }
-      if (allowedUserIds.length === 0) {
-        return new Response(
-          JSON.stringify({ success: true, sent: 0, failed: 0, skipped: 0, blocked }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      blocked = uniqueUserIds.length - allowedUserIds.length;
     }
 
-    // Get FCM tokens and notification preferences for all target users
-    const { data: fcmPreferences, error: fcmError } = await supabase
-      .from("user_preferences")
-      .select("user_id, preference_value")
-      .eq("preference_key", "fcm_token")
-      .in("user_id", allowedUserIds);
-
-    if (fcmError) {
-      console.error("Error fetching FCM tokens:", fcmError);
-      throw fcmError;
+    if (allowedUserIds.length === 0) {
+      return respond(200, { success: true, sent: 0, failed: 0, skipped: 0, blocked, errors: [] });
     }
 
-    // Get notification preferences
-    const { data: notifPreferences, error: notifError } = await supabase
+    // 4. Preferences
+    const { data: notifPreferences } = await supabase
       .from("user_preferences")
       .select("user_id, preference_value")
       .eq("preference_key", "notification_preferences")
       .in("user_id", allowedUserIds);
-
-    if (notifError) {
-      console.error("Error fetching notification preferences:", notifError);
-      // Continue anyway - we'll use defaults
-    }
-
-    // Build a map of user preferences
     const userPrefsMap = new Map<string, UserPreferences>();
-    for (const pref of notifPreferences || []) {
-      userPrefsMap.set(pref.user_id, pref.preference_value as UserPreferences);
+    for (const p of notifPreferences || []) {
+      userPrefsMap.set(p.user_id, p.preference_value as UserPreferences);
     }
 
-    const notificationData = {
-      ...data,
-      link: link || "/",
-    };
+    // 5. Tokens (per-device)
+    const { data: tokens, error: tokensError } = await supabase
+      .from("fcm_tokens")
+      .select("id, user_id, token, device_id")
+      .in("user_id", allowedUserIds);
+    if (tokensError) {
+      console.error("[push] fetching tokens failed", tokensError.message);
+      return respond(500, { error: "database_error" });
+    }
 
-    // Send push notifications
-    let successCount = 0;
-    let failCount = 0;
-    let skippedCount = 0;
-    const tokensToRemove: { userId: string; token: string }[] = [];
+    // 6. Filter opted-out users
+    const eligible = (tokens || []).filter((row) => {
+      const prefs = userPrefsMap.get(row.user_id) || null;
+      return shouldSendNotification(prefs, notificationType);
+    });
+    const skipped = (tokens?.length || 0) - eligible.length;
 
-    for (const pref of fcmPreferences || []) {
-      const prefValue = pref.preference_value as { token?: string };
-      const fcmToken = prefValue?.token;
+    if (eligible.length === 0) {
+      return respond(200, {
+        success: true,
+        sent: 0,
+        failed: 0,
+        skipped,
+        blocked,
+        errors: [],
+      });
+    }
 
-      if (!fcmToken) {
-        console.log(`No FCM token for user ${pref.user_id}`);
-        continue;
+    // 7. Firebase config
+    const serviceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
+    if (!serviceAccountJson) {
+      console.error("[push] FIREBASE_SERVICE_ACCOUNT missing");
+      return respond(500, { error: "firebase_not_configured" });
+    }
+    let serviceAccount: ServiceAccount;
+    try {
+      serviceAccount = JSON.parse(serviceAccountJson);
+    } catch {
+      console.error("[push] FIREBASE_SERVICE_ACCOUNT is not valid JSON");
+      return respond(500, { error: "firebase_service_account_invalid" });
+    }
+    if (!serviceAccount.client_email || !serviceAccount.private_key || !serviceAccount.project_id) {
+      console.error("[push] service account missing required fields");
+      return respond(500, { error: "firebase_service_account_incomplete" });
+    }
+    const configuredProjectId = Deno.env.get("FIREBASE_PROJECT_ID");
+    if (!configuredProjectId) {
+      console.error("[push] FIREBASE_PROJECT_ID missing");
+      return respond(500, { error: "firebase_project_id_missing" });
+    }
+    if (serviceAccount.project_id !== configuredProjectId) {
+      console.error("[push] service account project_id mismatch");
+      return respond(500, { error: "firebase_project_id_mismatch" });
+    }
+
+    const appUrl = Deno.env.get("APP_URL") || "https://demandcharm-suite.lovable.app";
+    const finalLink = normalizeLink(link, appUrl);
+
+    const notificationData: Record<string, string> = {};
+    if (data) {
+      for (const [k, v] of Object.entries(data)) {
+        notificationData[k] = String(v);
       }
+    }
+    notificationData.link = finalLink;
 
-      // Check user preferences
-      const userPrefs = userPrefsMap.get(pref.user_id);
-      if (!shouldSendNotification(userPrefs || null, notificationType)) {
-        console.log(`User ${pref.user_id} has disabled ${notificationType} notifications`);
-        skippedCount++;
-        continue;
-      }
+    // 8. Access token (only after we know we have targets)
+    let accessToken: string;
+    try {
+      accessToken = await getAccessToken(serviceAccount);
+    } catch (err) {
+      console.error("[push] access token failed", (err as Error)?.message);
+      return respond(500, { error: "google_auth_failed" });
+    }
 
-      const result = await sendPushNotification(
+    // 9. Send
+    let sent = 0;
+    let failed = 0;
+    const errors: { userId: string; deviceId: string; code: string }[] = [];
+    const tokensToRemove: string[] = [];
+
+    for (const row of eligible) {
+      const r = await sendOne(
         accessToken,
-        projectId,
-        fcmToken,
+        serviceAccount.project_id,
+        row.token,
         title,
         body,
-        notificationData
+        finalLink,
+        notificationData,
+        notificationType,
       );
-
-      if (result.success) {
-        successCount++;
+      if (r.ok) {
+        sent++;
       } else {
-        failCount++;
-        if (result.shouldRemoveToken) {
-          tokensToRemove.push({ userId: pref.user_id, token: fcmToken });
-        }
+        failed++;
+        errors.push({ userId: row.user_id, deviceId: row.device_id, code: r.code || "UNKNOWN" });
+        if (r.removeToken) tokensToRemove.push(row.token);
       }
     }
 
-    // Remove invalid tokens
     if (tokensToRemove.length > 0) {
-      console.log(`Removing ${tokensToRemove.length} invalid FCM tokens...`);
-      for (const { userId } of tokensToRemove) {
-        await supabase
-          .from("user_preferences")
-          .delete()
-          .eq("user_id", userId)
-          .eq("preference_key", "fcm_token");
-      }
+      const { error: delErr } = await supabase
+        .from("fcm_tokens")
+        .delete()
+        .in("token", tokensToRemove);
+      if (delErr) console.error("[push] token cleanup failed", delErr.message);
     }
 
-    console.log(`Push notifications complete: ${successCount} sent, ${failCount} failed, ${skippedCount} skipped (preferences)`);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        sent: successCount,
-        failed: failCount,
-        skipped: skippedCount,
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  } catch (error: any) {
-    console.error("Error in send-push-notification:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return respond(200, {
+      success: failed === 0,
+      sent,
+      failed,
+      skipped,
+      blocked,
+      errors,
+    });
+  } catch (err) {
+    console.error("[push] fatal", (err as Error)?.message);
+    return respond(500, { error: "internal_error" });
   }
 });

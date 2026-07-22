@@ -326,6 +326,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
+    // Best-effort push cleanup for the current device — must run while the
+    // session is still valid so RLS accepts the delete. Never block logout.
+    try {
+      const currentUserId = user?.id;
+      if (currentUserId && typeof window !== "undefined") {
+        const deviceId = window.localStorage.getItem("soma:fcm_device_id");
+        if (deviceId) {
+          await supabase
+            .from("fcm_tokens")
+            .delete()
+            .eq("user_id", currentUserId)
+            .eq("device_id", deviceId)
+            .then(undefined, () => undefined);
+        }
+        try {
+          const { deleteFcmToken } = await import("@/lib/firebase");
+          await deleteFcmToken();
+        } catch {
+          // ignore
+        }
+      }
+    } catch (err) {
+      console.log("Push cleanup on signOut skipped:", (err as Error)?.message);
+    }
+
     // Clear remember me preferences on logout
     localStorage.removeItem("rememberMe");
     localStorage.removeItem("sessionExpiresAt");
@@ -336,7 +361,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Clear local state first
     setSession(null);
     setUser(null);
-    
+
     try {
       // Try to sign out from Supabase, but don't block on errors
       // (session might already be expired/missing)
@@ -345,7 +370,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Ignore AuthSessionMissingError - session was already gone
       console.log("SignOut cleanup:", error?.name || error?.message);
     }
-    
+
     toast.success("Logout realizado com sucesso!");
     navigate("/auth");
   };
