@@ -21,6 +21,7 @@ const DEFAULT_FROM = "SoMA+ <soma@lefil.com.br>";
 const ALLOWED_ACTION_URL_HOSTS = new Set([
   "pla.soma.lefil.com.br",
   "zen-demand.lovable.app",
+  "demandcharm-suite.lovable.app",
 ]);
 
 const PREVIEW_HOST_PATTERN = /^id-preview--[a-f0-9-]+\.lovable\.app$/i;
