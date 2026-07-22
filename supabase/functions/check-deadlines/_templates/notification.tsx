@@ -23,11 +23,25 @@ interface NotificationEmailProps {
   type?: 'info' | 'success' | 'warning' | 'error'
 }
 
+const BRAND = {
+  primary: '#F28705',
+  primaryLight: '#F29F05',
+  primaryDark: '#D95204',
+  white: '#FFFFFF',
+  ink: '#1D1D1D',
+  bodyText: '#4B5563',
+  mutedText: '#6B7280',
+  softBg: '#FFF7EC',
+  border: '#F1E4D2',
+}
+
+const LOGO_URL = 'https://pla.soma.lefil.com.br/__l5e/assets-v1/06d95757-da83-483e-8bf1-87e39df78686/soma-logo.png'
+
 export const NotificationEmail = ({
   title,
   message,
   actionUrl,
-  actionText = 'Ver Detalhes',
+  actionText = 'Ver detalhes',
   userName,
   type = 'info',
 }: NotificationEmailProps) => {
@@ -36,11 +50,11 @@ export const NotificationEmail = ({
       case 'success':
         return '#10B981'
       case 'warning':
-        return '#F59E0B'
+        return BRAND.primaryLight
       case 'error':
         return '#EF4444'
       default:
-        return '#F28705'
+        return BRAND.primary
     }
   }
 
@@ -54,19 +68,13 @@ export const NotificationEmail = ({
         <Container style={container}>
           {/* Header with logo */}
           <Section style={headerSection}>
-            <table width="100%" cellPadding="0" cellSpacing="0">
-              <tr>
-                <td align="center">
-                  <Img
-                    src="https://pla.soma.lefil.com.br/lovable-uploads/8967ad53-156a-4e31-a5bd-b472b7cde839.png"
-                    alt="SoMA+"
-                    width="150"
-                    height="50"
-                    style={{ margin: '0 auto' }}
-                  />
-                </td>
-              </tr>
-            </table>
+            <Img
+              src={LOGO_URL}
+              alt="SoMA+"
+              width="140"
+              height="auto"
+              style={logo}
+            />
           </Section>
 
           {/* Accent bar */}
@@ -101,12 +109,13 @@ export const NotificationEmail = ({
             <Text style={footerText}>
               Se você não esperava este email, pode ignorá-lo com segurança.
             </Text>
-            <Link href="https://pla.soma.lefil.com.br" style={mainLink}>
-              Acessar SoMA+
-            </Link>
             <Text style={footerLinks}>
+              <Link href="https://pla.soma.lefil.com.br" style={footerLink}>
+                Acessar SoMA+
+              </Link>
+              {'  ·  '}
               <Link href="https://pla.soma.lefil.com.br/settings" style={footerLink}>
-                Configurações de Notificação
+                Configurações
               </Link>
             </Text>
             <Text style={copyright}>
@@ -123,49 +132,67 @@ export default NotificationEmail
 
 // Styles
 const main = {
-  backgroundColor: '#F5F5F5',
+  backgroundColor: '#FFFFFF',
   fontFamily:
     "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+  margin: '0',
+  padding: '0',
 }
 
 const container = {
   margin: '0 auto',
-  padding: '20px 0',
+  padding: '24px 0 32px',
   maxWidth: '600px',
+  backgroundColor: BRAND.white,
 }
 
 const headerSection = {
-  backgroundColor: '#FFFFFF',
+  backgroundColor: BRAND.white,
   borderRadius: '12px 12px 0 0',
-  padding: '32px 40px 24px',
+  padding: '28px 40px 20px',
+  textAlign: 'center' as const,
+  borderTop: `1px solid ${BRAND.border}`,
+  borderLeft: `1px solid ${BRAND.border}`,
+  borderRight: `1px solid ${BRAND.border}`,
+}
+
+const logo = {
+  margin: '0 auto',
+  display: 'block',
+  maxWidth: '140px',
+  height: 'auto' as const,
 }
 
 const accentBar = {
   height: '4px',
   width: '100%',
+  borderLeft: `1px solid ${BRAND.border}`,
+  borderRight: `1px solid ${BRAND.border}`,
 }
 
 const contentSection = {
-  backgroundColor: '#FFFFFF',
-  padding: '32px 40px',
+  backgroundColor: BRAND.white,
+  padding: '32px 40px 8px',
+  borderLeft: `1px solid ${BRAND.border}`,
+  borderRight: `1px solid ${BRAND.border}`,
 }
 
 const greeting = {
-  color: '#6B7280',
+  color: BRAND.mutedText,
   fontSize: '14px',
   margin: '0 0 8px',
 }
 
 const heading = {
-  color: '#1D1D1D',
+  color: BRAND.ink,
   fontSize: '24px',
-  fontWeight: '600',
+  fontWeight: '700',
   lineHeight: '1.3',
   margin: '0 0 16px',
 }
 
 const messageText = {
-  color: '#4B5563',
+  color: BRAND.bodyText,
   fontSize: '16px',
   lineHeight: '1.6',
   margin: '0 0 24px',
@@ -173,12 +200,12 @@ const messageText = {
 
 const buttonSection = {
   textAlign: 'center' as const,
-  margin: '24px 0',
+  margin: '8px 0 24px',
 }
 
 const button = {
   borderRadius: '8px',
-  color: '#FFFFFF',
+  color: BRAND.white,
   display: 'inline-block',
   fontSize: '16px',
   fontWeight: '600',
@@ -188,51 +215,44 @@ const button = {
 }
 
 const divider = {
-  borderColor: '#E5E7EB',
+  borderColor: BRAND.border,
   margin: '0',
 }
 
 const footerSection = {
-  backgroundColor: '#FFFFFF',
+  backgroundColor: BRAND.softBg,
   borderRadius: '0 0 12px 12px',
-  padding: '24px 40px 32px',
+  padding: '24px 40px 28px',
+  textAlign: 'center' as const,
+  borderLeft: `1px solid ${BRAND.border}`,
+  borderRight: `1px solid ${BRAND.border}`,
+  borderBottom: `1px solid ${BRAND.border}`,
 }
 
 const footerText = {
-  color: '#9CA3AF',
+  color: BRAND.mutedText,
   fontSize: '12px',
   lineHeight: '1.5',
-  margin: '0 0 8px',
+  margin: '0 0 6px',
   textAlign: 'center' as const,
 }
 
 const footerLinks = {
-  color: '#9CA3AF',
+  color: BRAND.mutedText,
   fontSize: '12px',
-  margin: '16px 0 8px',
+  margin: '14px 0 8px',
   textAlign: 'center' as const,
 }
 
 const footerLink = {
-  color: '#F28705',
+  color: BRAND.primaryDark,
   textDecoration: 'none',
-}
-
-const mainLink = {
-  color: '#FFFFFF',
-  backgroundColor: '#F28705',
-  padding: '12px 24px',
-  borderRadius: '6px',
-  textDecoration: 'none',
-  display: 'inline-block',
-  fontSize: '14px',
   fontWeight: '600',
-  margin: '16px 0',
 }
 
 const copyright = {
-  color: '#9CA3AF',
+  color: BRAND.mutedText,
   fontSize: '11px',
-  margin: '16px 0 0',
+  margin: '12px 0 0',
   textAlign: 'center' as const,
 }
