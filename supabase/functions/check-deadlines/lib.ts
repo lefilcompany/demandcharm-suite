@@ -49,9 +49,12 @@ export interface DeadlineReminder {
 
 export function isAuthorized(
   authHeader: string | null | undefined,
-  cronSecret: string | null | undefined,
+  ...secrets: Array<string | null | undefined>
 ): boolean {
-  return Boolean(cronSecret) && authHeader === `Bearer ${cronSecret}`;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return false;
+  const token = authHeader.slice("Bearer ".length);
+  if (!token) return false;
+  return secrets.some((s) => typeof s === "string" && s.length > 0 && s === token);
 }
 
 function getDatePartsInTimeZone(date: Date, timeZone: string): {
