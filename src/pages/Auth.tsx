@@ -243,9 +243,9 @@ export default function Auth() {
       return "Formato de email inválido. Verifique o email digitado.";
     }
     
-    // Weak password
-    if (message.includes("weak password") || message.includes("password should be")) {
-      return "A senha é muito fraca. Use pelo menos 6 caracteres.";
+    // Weak password (agora apenas aviso — não bloqueia mais)
+    if (message.includes("weak password") || message.includes("password should be") || message.includes("known to be weak")) {
+      return "Aviso: senha considerada fraca. Recomendamos usar letras, números e símbolos.";
     }
     
     // User not found
