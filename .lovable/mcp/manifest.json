@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "sdk_version": "0.20.0",
+  "sdk_version": "0.22.2",
   "path": "/functions/v1/mcp",
   "auth": {
     "type": "oauth",
@@ -43,18 +43,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "user_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "user_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -68,6 +68,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "full_name": {
@@ -83,9 +84,7 @@
               "type": "string",
               "format": "uri"
             }
-          },
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          }
         },
         "outputSchema": null
       },
@@ -115,18 +114,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "team_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -140,18 +139,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "team_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -165,18 +164,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "team_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -190,6 +189,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "access_code": {
@@ -200,9 +200,7 @@
           },
           "required": [
             "access_code"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -216,18 +214,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "team_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -241,11 +239,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "include_archived": {
               "type": "boolean"
@@ -253,9 +253,7 @@
           },
           "required": [
             "team_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -269,18 +267,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "board_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -295,11 +293,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "name": {
               "type": "string",
@@ -314,9 +314,7 @@
           "required": [
             "team_id",
             "name"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -330,11 +328,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "name": {
               "type": "string",
@@ -348,9 +348,7 @@
           },
           "required": [
             "board_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -365,18 +363,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "board_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -390,18 +388,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "board_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -415,14 +413,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "user_id": {
-              "$ref": "#/properties/board_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "role": {
               "type": "string",
@@ -438,9 +440,7 @@
             "board_id",
             "user_id",
             "role"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -454,14 +454,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "user_id": {
-              "$ref": "#/properties/board_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "role": {
               "type": "string",
@@ -477,9 +481,7 @@
             "board_id",
             "user_id",
             "role"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -494,22 +496,24 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "user_id": {
-              "$ref": "#/properties/board_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "board_id",
             "user_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -523,18 +527,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "board_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -548,18 +552,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "board_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -573,20 +577,25 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "service_id": {
-              "$ref": "#/properties/board_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "monthly_limit": {
               "anyOf": [
                 {
                   "type": "integer",
-                  "minimum": 0
+                  "minimum": 0,
+                  "maximum": 9007199254740991
                 },
                 {
                   "type": "null"
@@ -597,9 +606,7 @@
           "required": [
             "board_id",
             "service_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -613,14 +620,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "status_id": {
-              "$ref": "#/properties/board_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "priority": {
               "type": "string",
@@ -642,9 +653,7 @@
           },
           "required": [
             "board_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -658,6 +667,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "query": {
@@ -667,10 +677,13 @@
             },
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "board_id": {
-              "$ref": "#/properties/team_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "limit": {
               "type": "integer",
@@ -680,9 +693,7 @@
           },
           "required": [
             "query"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -696,18 +707,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "demand_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -722,11 +733,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "title": {
               "type": "string",
@@ -738,7 +751,9 @@
               "maxLength": 20000
             },
             "status_id": {
-              "$ref": "#/properties/board_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "due_date": {
               "type": "string",
@@ -754,18 +769,24 @@
               ]
             },
             "service_id": {
-              "$ref": "#/properties/board_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "responsible_user_id": {
-              "$ref": "#/properties/board_id",
-              "description": "Primary responsible (is_primary=true)."
+              "description": "Primary responsible (is_primary=true).",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "follower_user_ids": {
+              "maxItems": 20,
               "type": "array",
               "items": {
-                "$ref": "#/properties/board_id"
-              },
-              "maxItems": 20
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
             },
             "aeiou_origin": {
               "type": "object",
@@ -794,22 +815,20 @@
                 },
                 "marketing_os_project_id": {
                   "type": "string",
-                  "format": "uuid"
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 }
               },
               "required": [
                 "pillar"
               ],
-              "additionalProperties": false,
               "description": "Origem AEIOU: qual pilar do Marketing OS gerou a demanda."
             }
           },
           "required": [
             "board_id",
             "title"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -823,11 +842,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "title": {
               "type": "string",
@@ -861,7 +882,9 @@
             "service_id": {
               "anyOf": [
                 {
-                  "$ref": "#/properties/demand_id"
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
                 {
                   "type": "null"
@@ -871,9 +894,7 @@
           },
           "required": [
             "demand_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -887,22 +908,24 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "status_id": {
-              "$ref": "#/properties/demand_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "demand_id",
             "status_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -916,22 +939,24 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "user_id": {
-              "$ref": "#/properties/demand_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "demand_id",
             "user_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -945,22 +970,24 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "user_id": {
-              "$ref": "#/properties/demand_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "demand_id",
             "user_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -975,22 +1002,24 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "user_id": {
-              "$ref": "#/properties/demand_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "demand_id",
             "user_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1004,22 +1033,24 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "depends_on_demand_id": {
-              "$ref": "#/properties/demand_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "demand_id",
             "depends_on_demand_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1034,18 +1065,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "demand_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1060,11 +1091,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "confirm": {
               "type": "boolean",
@@ -1075,9 +1108,7 @@
           "required": [
             "demand_id",
             "confirm"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1091,6 +1122,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "parent": {
@@ -1098,7 +1130,8 @@
               "properties": {
                 "board_id": {
                   "type": "string",
-                  "format": "uuid"
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
                 "title": {
                   "type": "string",
@@ -1123,19 +1156,23 @@
                   ]
                 },
                 "service_id": {
-                  "$ref": "#/properties/parent/properties/board_id"
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
                 "status_id": {
-                  "$ref": "#/properties/parent/properties/board_id"
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 }
               },
               "required": [
                 "board_id",
                 "title"
-              ],
-              "additionalProperties": false
+              ]
             },
             "subdemands": {
+              "maxItems": 50,
               "type": "array",
               "items": {
                 "type": "object",
@@ -1150,50 +1187,56 @@
                     "maxLength": 20000
                   },
                   "due_date": {
-                    "$ref": "#/properties/parent/properties/due_date"
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                   },
                   "priority": {
-                    "$ref": "#/properties/parent/properties/priority"
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high",
+                      "urgent"
+                    ]
                   },
                   "service_id": {
-                    "$ref": "#/properties/parent/properties/board_id"
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                   }
                 },
                 "required": [
                   "title"
-                ],
-                "additionalProperties": false
-              },
-              "maxItems": 50
+                ]
+              }
             },
             "dependencies": {
+              "maxItems": 100,
               "type": "array",
               "items": {
                 "type": "object",
                 "properties": {
                   "demand_index": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 9007199254740991
                   },
                   "depends_on_index": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 9007199254740991
                   }
                 },
                 "required": [
                   "demand_index",
                   "depends_on_index"
-                ],
-                "additionalProperties": false
-              },
-              "maxItems": 100
+                ]
+              }
             }
           },
           "required": [
             "parent"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1207,18 +1250,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "demand_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1232,11 +1275,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "title": {
               "type": "string",
@@ -1247,9 +1292,7 @@
           "required": [
             "demand_id",
             "title"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1263,11 +1306,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "subtask_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "completed": {
               "type": "boolean"
@@ -1276,9 +1321,7 @@
           "required": [
             "subtask_id",
             "completed"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1292,11 +1335,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "subtask_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "title": {
               "type": "string",
@@ -1307,9 +1352,7 @@
           "required": [
             "subtask_id",
             "title"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1324,18 +1367,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "subtask_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "subtask_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1349,11 +1392,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "limit": {
               "type": "integer",
@@ -1363,9 +1408,7 @@
           },
           "required": [
             "demand_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1379,11 +1422,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "content": {
               "type": "string",
@@ -1391,16 +1436,14 @@
               "maxLength": 10000
             },
             "internal": {
-              "type": "boolean",
-              "description": "If true, restricts to internal channel."
+              "description": "If true, restricts to internal channel.",
+              "type": "boolean"
             }
           },
           "required": [
             "demand_id",
             "content"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1415,18 +1458,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "comment_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "comment_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1440,18 +1483,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "demand_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1465,11 +1508,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "attachment_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "expires_in_seconds": {
               "type": "integer",
@@ -1479,9 +1524,7 @@
           },
           "required": [
             "attachment_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1496,18 +1539,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "attachment_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "attachment_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1521,11 +1564,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "file_name": {
               "type": "string",
@@ -1548,9 +1593,7 @@
             "file_name",
             "content_type",
             "file_size"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1564,11 +1607,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "storage_path": {
               "type": "string",
@@ -1584,7 +1629,8 @@
             },
             "file_size": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 9007199254740991
             }
           },
           "required": [
@@ -1593,9 +1639,7 @@
             "file_name",
             "content_type",
             "file_size"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1609,18 +1653,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "demand_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1634,15 +1678,15 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
-          },
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          }
         },
         "outputSchema": null
       },
@@ -1672,30 +1716,35 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "user_id": {
-              "$ref": "#/properties/demand_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "from": {
               "type": "string",
-              "format": "date-time"
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             },
             "to": {
-              "$ref": "#/properties/from"
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             },
             "limit": {
               "type": "integer",
               "minimum": 1,
               "maximum": 500
             }
-          },
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          }
         },
         "outputSchema": null
       },
@@ -1709,27 +1758,30 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "started_at": {
               "type": "string",
-              "format": "date-time"
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             },
             "ended_at": {
-              "$ref": "#/properties/started_at"
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           "required": [
             "demand_id",
             "started_at",
             "ended_at"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1743,16 +1795,20 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "parent_id": {
               "anyOf": [
                 {
-                  "$ref": "#/properties/team_id"
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
                 {
                   "type": "null"
@@ -1762,9 +1818,7 @@
           },
           "required": [
             "team_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1778,18 +1832,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "service_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "service_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1803,11 +1857,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "name": {
               "type": "string",
@@ -1825,18 +1881,19 @@
             },
             "price_cents": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 9007199254740991
             },
             "parent_id": {
-              "$ref": "#/properties/team_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "team_id",
             "name"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1850,11 +1907,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "service_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "name": {
               "type": "string",
@@ -1871,14 +1930,13 @@
             },
             "price_cents": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 9007199254740991
             }
           },
           "required": [
             "service_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1893,18 +1951,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "service_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "service_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1918,11 +1976,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "include_archived": {
               "type": "boolean"
@@ -1930,9 +1990,7 @@
           },
           "required": [
             "team_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1946,18 +2004,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "note_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "note_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -1971,11 +2029,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "title": {
               "type": "string",
@@ -1991,22 +2051,22 @@
               "maxLength": 20
             },
             "tags": {
+              "maxItems": 20,
               "type": "array",
               "items": {
                 "type": "string"
-              },
-              "maxItems": 20
+              }
             },
             "parent_id": {
-              "$ref": "#/properties/team_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "team_id",
             "title"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2020,11 +2080,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "note_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "title": {
               "type": "string",
@@ -2040,18 +2102,16 @@
               "maxLength": 20
             },
             "tags": {
+              "maxItems": 20,
               "type": "array",
               "items": {
                 "type": "string"
-              },
-              "maxItems": 20
+              }
             }
           },
           "required": [
             "note_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2066,18 +2126,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "note_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "note_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2091,18 +2151,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "team_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2116,18 +2176,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "project_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "project_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2141,11 +2201,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "name": {
               "type": "string",
@@ -2160,9 +2222,7 @@
           "required": [
             "team_id",
             "name"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2176,22 +2236,24 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "project_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "demand_id": {
-              "$ref": "#/properties/project_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "project_id",
             "demand_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2205,11 +2267,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "status": {
               "type": "string",
@@ -2228,9 +2292,7 @@
           },
           "required": [
             "team_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2244,18 +2306,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "request_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "request_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2269,11 +2331,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "title": {
               "type": "string",
@@ -2285,10 +2349,14 @@
               "maxLength": 20000
             },
             "board_id": {
-              "$ref": "#/properties/team_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "service_id": {
-              "$ref": "#/properties/team_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "priority": {
               "type": "string",
@@ -2303,9 +2371,7 @@
           "required": [
             "team_id",
             "title"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2319,11 +2385,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "request_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "action": {
               "type": "string",
@@ -2334,17 +2402,15 @@
               ]
             },
             "reason": {
+              "description": "Required for reject/return.",
               "type": "string",
-              "maxLength": 2000,
-              "description": "Required for reject/return."
+              "maxLength": 2000
             }
           },
           "required": [
             "request_id",
             "action"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2358,21 +2424,23 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "board_id": {
-              "$ref": "#/properties/team_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "team_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2386,18 +2454,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "template_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "template_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2411,14 +2479,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "board_id": {
-              "$ref": "#/properties/team_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "name": {
               "type": "string",
@@ -2444,7 +2516,9 @@
               ]
             },
             "service_id": {
-              "$ref": "#/properties/team_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
@@ -2452,9 +2526,7 @@
             "board_id",
             "name",
             "title_template"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2468,11 +2540,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "template_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "name": {
               "type": "string",
@@ -2500,7 +2574,9 @@
             "service_id": {
               "anyOf": [
                 {
-                  "$ref": "#/properties/template_id"
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
                 {
                   "type": "null"
@@ -2510,9 +2586,7 @@
           },
           "required": [
             "template_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2527,18 +2601,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "template_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "template_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2552,11 +2626,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "only_active": {
               "type": "boolean"
@@ -2564,9 +2640,7 @@
           },
           "required": [
             "team_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2580,18 +2654,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "recurring_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "recurring_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2605,17 +2679,23 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "team_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "board_id": {
-              "$ref": "#/properties/team_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "status_id": {
-              "$ref": "#/properties/team_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "title": {
               "type": "string",
@@ -2636,7 +2716,9 @@
               ]
             },
             "service_id": {
-              "$ref": "#/properties/team_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "frequency": {
               "type": "string",
@@ -2648,34 +2730,37 @@
               ]
             },
             "weekdays": {
+              "description": "For weekly: 0=Sunday .. 6=Saturday.",
+              "maxItems": 7,
               "type": "array",
               "items": {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 6
-              },
-              "maxItems": 7,
-              "description": "For weekly: 0=Sunday .. 6=Saturday."
+              }
             },
             "day_of_month": {
+              "description": "For monthly/yearly.",
               "type": "integer",
               "minimum": 1,
-              "maximum": 31,
-              "description": "For monthly/yearly."
+              "maximum": 31
             },
             "start_date": {
               "type": "string",
               "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
             },
             "end_date": {
-              "$ref": "#/properties/start_date"
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
             },
             "assignee_ids": {
+              "maxItems": 20,
               "type": "array",
               "items": {
-                "$ref": "#/properties/team_id"
-              },
-              "maxItems": 20
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
             }
           },
           "required": [
@@ -2685,9 +2770,7 @@
             "title",
             "frequency",
             "start_date"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2701,11 +2784,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "recurring_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "title": {
               "type": "string",
@@ -2728,7 +2813,9 @@
             "service_id": {
               "anyOf": [
                 {
-                  "$ref": "#/properties/recurring_id"
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
                 {
                   "type": "null"
@@ -2745,13 +2832,13 @@
               ]
             },
             "weekdays": {
+              "maxItems": 7,
               "type": "array",
               "items": {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 6
-              },
-              "maxItems": 7
+              }
             },
             "day_of_month": {
               "type": "integer",
@@ -2770,18 +2857,18 @@
               ]
             },
             "assignee_ids": {
+              "maxItems": 20,
               "type": "array",
               "items": {
-                "$ref": "#/properties/recurring_id"
-              },
-              "maxItems": 20
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
             }
           },
           "required": [
             "recurring_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2795,18 +2882,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "recurring_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "recurring_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2820,18 +2907,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "recurring_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "recurring_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2846,18 +2933,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "recurring_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "recurring_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2871,6 +2958,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "only_unread": {
@@ -2881,9 +2969,7 @@
               "minimum": 1,
               "maximum": 200
             }
-          },
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          }
         },
         "outputSchema": null
       },
@@ -2897,18 +2983,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "notification_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "notification_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2954,22 +3040,22 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "preferences": {
               "type": "object",
-              "additionalProperties": {},
               "propertyNames": {
+                "type": "string",
                 "maxLength": 80
               },
+              "additionalProperties": {},
               "description": "Map of preference_key -> value. Keys: notifications, deadline_reminders, email_notifications, push_notifications."
             }
           },
           "required": [
             "preferences"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -2983,15 +3069,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "expires_at": {
               "type": "string",
-              "format": "date-time"
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             },
             "auto_join_board": {
               "type": "boolean"
@@ -2999,9 +3088,7 @@
           },
           "required": [
             "demand_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -3015,18 +3102,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "demand_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "demand_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -3041,18 +3128,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "token_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "token_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -3066,18 +3153,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "required": [
             "board_id"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -3091,23 +3178,25 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "team_id": {
-              "$ref": "#/properties/board_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "limit": {
               "type": "integer",
               "minimum": 1,
               "maximum": 200
             }
-          },
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          }
         },
         "outputSchema": null
       },
@@ -3121,14 +3210,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "team_id": {
-              "$ref": "#/properties/board_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "window_days": {
               "type": "integer",
@@ -3140,9 +3233,7 @@
               "minimum": 1,
               "maximum": 200
             }
-          },
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          }
         },
         "outputSchema": null
       },
@@ -3156,23 +3247,25 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "team_id": {
-              "$ref": "#/properties/board_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "window_days": {
               "type": "integer",
               "minimum": 1,
               "maximum": 60
             }
-          },
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          }
         },
         "outputSchema": null
       },
@@ -3186,14 +3279,18 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "board_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "team_id": {
-              "$ref": "#/properties/board_id"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "window_days": {
               "type": "integer",
@@ -3205,9 +3302,7 @@
               "minimum": 1,
               "maximum": 200
             }
-          },
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          }
         },
         "outputSchema": null
       },
@@ -3221,28 +3316,30 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "user_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "from": {
               "type": "string",
-              "format": "date-time"
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             },
             "to": {
               "type": "string",
-              "format": "date-time"
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           "required": [
             "user_id",
             "from",
             "to"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
