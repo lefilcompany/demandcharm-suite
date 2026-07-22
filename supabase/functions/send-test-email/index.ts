@@ -15,7 +15,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const RESEND_GATEWAY_URL = "https://connector-gateway.lovable.dev/resend/emails";
-const DEFAULT_FROM = Deno.env.get("TEST_EMAIL_FROM") ?? "SoMA+ <onboarding@resend.dev>";
+const DEFAULT_FROM = Deno.env.get("TEST_EMAIL_FROM") ?? "SoMA+ <soma@lefil.com.br>";
 
 type Scenario = "creation" | "deadline" | "generic";
 

@@ -18,7 +18,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const DEFAULT_FROM = "SoMA+ <noreply@pla.soma.lefil.com.br>";
+const DEFAULT_FROM = "SoMA+ <soma@lefil.com.br>";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
