@@ -5,6 +5,26 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 
+// Promote unprefixed FIREBASE_* env vars (from Lovable Cloud secrets) into
+// VITE_FIREBASE_* so Vite exposes them to the browser bundle and to the
+// firebase-config generator. Existing VITE_* values always win.
+for (const key of [
+  "FIREBASE_API_KEY",
+  "FIREBASE_AUTH_DOMAIN",
+  "FIREBASE_PROJECT_ID",
+  "FIREBASE_STORAGE_BUCKET",
+  "FIREBASE_MESSAGING_SENDER_ID",
+  "FIREBASE_APP_ID",
+  "FIREBASE_VAPID_KEY",
+]) {
+  const viteKey = `VITE_${key}`;
+  if (!process.env[viteKey] && process.env[key]) {
+    process.env[viteKey] = process.env[key];
+  }
+}
+
+
+
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
