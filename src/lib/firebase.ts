@@ -1,131 +1,214 @@
-import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage, Messaging } from "firebase/messaging";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import {
+  deleteToken,
+  getMessaging,
+  getToken,
+  isSupported,
+  onMessage,
+  type Messaging,
+  type MessagePayload,
+} from "firebase/messaging";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAz0LHEMeuvAfP-NaiSk3jw1VNUIc0Ct14",
-  authDomain: "soma-notifications.firebaseapp.com",
-  projectId: "soma-notifications",
-  storageBucket: "soma-notifications.firebasestorage.app",
-  messagingSenderId: "471966948414",
-  appId: "1:471966948414:web:4d33c7c8e2976a0fbec56f"
-};
+const FCM_SW_URL = "/firebase-messaging-sw.js";
+const FCM_SW_SCOPE = "/firebase-cloud-messaging-push-scope/";
 
-const VAPID_KEY = "BLJfh1Op3Lx2ZaHUboq0nR83mPcCOHoq1fANzmbb4awSIaX16jP0f4rr9_feQ_IFj1-wkoGoRkq5josFXPsXqw4";
+export type PushRegistrationResult =
+  | {
+      ok: true;
+      token: string;
+      registration: ServiceWorkerRegistration;
+    }
+  | {
+      ok: false;
+      reason:
+        | "unsupported"
+        | "insecure-context"
+        | "permission-denied"
+        | "missing-config"
+        | "service-worker-error"
+        | "token-error";
+      error?: string;
+    };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+interface FirebasePublicConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  storageBucket: string;
+  messagingSenderId: string;
+  appId: string;
+}
 
-let messaging: Messaging | null = null;
+function readConfig(): FirebasePublicConfig | null {
+  const env = import.meta.env;
+  const cfg = {
+    apiKey: env.VITE_FIREBASE_API_KEY,
+    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: env.VITE_FIREBASE_APP_ID,
+  };
+  if (Object.values(cfg).some((v) => !v || typeof v !== "string")) return null;
+  return cfg as FirebasePublicConfig;
+}
 
-// Only initialize messaging in browser environment with service worker support
-export function getFirebaseMessaging(): Messaging | null {
-  if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
-    return null;
-  }
-  
-  if (!messaging) {
+function readVapidKey(): string | null {
+  const key = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+  return typeof key === "string" && key.length > 0 ? key : null;
+}
+
+let cachedApp: FirebaseApp | null = null;
+let cachedMessaging: Messaging | null = null;
+let messagingSupportedPromise: Promise<boolean> | null = null;
+
+function getFirebaseApp(): FirebaseApp | null {
+  const cfg = readConfig();
+  if (!cfg) return null;
+  if (cachedApp) return cachedApp;
+  cachedApp = getApps().length ? getApp() : initializeApp(cfg);
+  return cachedApp;
+}
+
+async function getFirebaseMessaging(): Promise<Messaging | null> {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
+  const app = getFirebaseApp();
+  if (!app) return null;
+  if (!messagingSupportedPromise) messagingSupportedPromise = isSupported().catch(() => false);
+  const supported = await messagingSupportedPromise;
+  if (!supported) return null;
+  if (!cachedMessaging) {
     try {
-      messaging = getMessaging(app);
-    } catch (error) {
-      console.error("Error initializing Firebase Messaging:", error);
+      cachedMessaging = getMessaging(app);
+    } catch (err) {
+      console.error("[FCM] getMessaging failed", (err as Error)?.message);
       return null;
     }
   }
-  
-  return messaging;
+  return cachedMessaging;
 }
 
-// Wait for service worker to be ready
-async function waitForServiceWorkerReady(registration: ServiceWorkerRegistration): Promise<ServiceWorker> {
-  return new Promise((resolve, reject) => {
-    const sw = registration.installing || registration.waiting || registration.active;
-    
-    if (registration.active) {
-      resolve(registration.active);
-      return;
-    }
-    
-    if (!sw) {
-      reject(new Error("No service worker found"));
-      return;
-    }
-    
+async function waitForActive(reg: ServiceWorkerRegistration): Promise<void> {
+  if (reg.active) return;
+  const sw = reg.installing || reg.waiting;
+  if (!sw) throw new Error("no service worker instance");
+  await new Promise<void>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("sw activation timeout")), 15000);
     sw.addEventListener("statechange", () => {
       if (sw.state === "activated") {
-        resolve(sw);
+        clearTimeout(t);
+        resolve();
       }
     });
-    
-    // Timeout after 10 seconds
-    setTimeout(() => {
-      if (registration.active) {
-        resolve(registration.active);
-      } else {
-        reject(new Error("Service worker activation timeout"));
-      }
-    }, 10000);
   });
 }
 
-export async function requestNotificationPermission(): Promise<string | null> {
+async function getOrRegisterFcmSw(): Promise<ServiceWorkerRegistration> {
+  // Do NOT use navigator.serviceWorker.ready — it may return the PWA worker.
+  const existing = await navigator.serviceWorker.getRegistration(FCM_SW_SCOPE);
+  if (existing) {
+    await waitForActive(existing);
+    return existing;
+  }
+  const reg = await navigator.serviceWorker.register(FCM_SW_URL, {
+    scope: FCM_SW_SCOPE,
+  });
+  await waitForActive(reg);
+  return reg;
+}
+
+function shortToken(t: string) {
+  return `${t.slice(0, 6)}…`;
+}
+
+export async function requestNotificationPermission(): Promise<PushRegistrationResult> {
+  if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator)) {
+    return { ok: false, reason: "unsupported" };
+  }
+  if (!window.isSecureContext) {
+    return { ok: false, reason: "insecure-context" };
+  }
+  const cfg = readConfig();
+  const vapid = readVapidKey();
+  if (!cfg || !vapid) {
+    return { ok: false, reason: "missing-config" };
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    return { ok: false, reason: "permission-denied" };
+  }
+
+  let registration: ServiceWorkerRegistration;
   try {
-    // Check if running in a secure context
-    if (!window.isSecureContext) {
-      console.error("Push notifications require a secure context (HTTPS)");
-      return null;
-    }
+    registration = await getOrRegisterFcmSw();
+  } catch (err) {
+    return { ok: false, reason: "service-worker-error", error: (err as Error)?.message };
+  }
 
-    const permission = await Notification.requestPermission();
-    
-    if (permission !== "granted") {
-      console.log("Notification permission denied");
-      return null;
-    }
+  const messaging = await getFirebaseMessaging();
+  if (!messaging) return { ok: false, reason: "unsupported" };
 
-    // Register service worker first and wait for it to be active
-    console.log("Registering service worker...");
-    const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
-      scope: "/"
+  try {
+    const token = await getToken(messaging, {
+      vapidKey: vapid,
+      serviceWorkerRegistration: registration,
     });
-    console.log("Service worker registered:", registration);
-    
-    // Wait for the service worker to be ready
-    await waitForServiceWorkerReady(registration);
-    console.log("Service worker is active");
+    if (!token) return { ok: false, reason: "token-error", error: "empty token" };
+    console.log("[FCM] token obtained", shortToken(token));
+    return { ok: true, token, registration };
+  } catch (err) {
+    return { ok: false, reason: "token-error", error: (err as Error)?.message };
+  }
+}
 
-    // Ensure we have an active registration
-    const activeRegistration = await navigator.serviceWorker.ready;
-    console.log("Service worker ready:", activeRegistration);
-
-    const fcmMessaging = getFirebaseMessaging();
-    if (!fcmMessaging) {
-      console.error("Firebase Messaging not available");
-      return null;
-    }
-
-    // Get FCM token
-    console.log("Getting FCM token...");
-    const token = await getToken(fcmMessaging, {
-      vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: activeRegistration,
+/**
+ * Obtain the current FCM token without requesting permission again.
+ * Returns null if permission not granted or messaging unavailable.
+ */
+export async function getCurrentFcmToken(): Promise<string | null> {
+  if (typeof window === "undefined" || !("Notification" in window)) return null;
+  if (Notification.permission !== "granted") return null;
+  const cfg = readConfig();
+  const vapid = readVapidKey();
+  if (!cfg || !vapid) return null;
+  try {
+    const registration = await getOrRegisterFcmSw();
+    const messaging = await getFirebaseMessaging();
+    if (!messaging) return null;
+    const token = await getToken(messaging, {
+      vapidKey: vapid,
+      serviceWorkerRegistration: registration,
     });
-
-    console.log("FCM Token obtained:", token);
-    return token;
-  } catch (error) {
-    console.error("Error getting FCM token:", error);
+    return token || null;
+  } catch (err) {
+    console.error("[FCM] getCurrentFcmToken error", (err as Error)?.message);
     return null;
   }
 }
 
-export function onForegroundMessage(callback: (payload: any) => void): (() => void) | null {
-  const fcmMessaging = getFirebaseMessaging();
-  if (!fcmMessaging) return null;
-
-  return onMessage(fcmMessaging, (payload) => {
-    console.log("Foreground message received:", payload);
-    callback(payload);
+export async function subscribeToForegroundMessages(
+  callback: (payload: MessagePayload) => void
+): Promise<() => void> {
+  const messaging = await getFirebaseMessaging();
+  if (!messaging) return () => {};
+  const unsub = onMessage(messaging, (payload) => {
+    try {
+      callback(payload);
+    } catch (err) {
+      console.error("[FCM] foreground handler error", (err as Error)?.message);
+    }
   });
+  return unsub;
 }
 
-export { app };
+export async function deleteFcmToken(): Promise<boolean> {
+  const messaging = await getFirebaseMessaging();
+  if (!messaging) return false;
+  try {
+    return await deleteToken(messaging);
+  } catch (err) {
+    console.error("[FCM] deleteToken error", (err as Error)?.message);
+    return false;
+  }
+}

@@ -48,9 +48,11 @@ import logoSomaIcon from "@/assets/logo-soma-logout.png";
 import { NotificationToastStack } from "@/components/NotificationToastStack";
 import { TopLoadingBar } from "@/components/TopLoadingBar";
 import { PageSkeleton } from "@/components/skeletons/PageSkeleton";
+import { useForegroundPushListener } from "@/hooks/useForegroundPushListener";
 
 
 export function ProtectedLayout() {
+  useForegroundPushListener();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
