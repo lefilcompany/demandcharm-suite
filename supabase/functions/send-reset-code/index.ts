@@ -62,8 +62,10 @@ Deno.serve(async (req) => {
       });
       if (insertErr) throw insertErr;
 
-      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY_LEFIL") || Deno.env.get("RESEND_API_KEY");
+      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
       if (!RESEND_API_KEY) throw new Error("Missing RESEND_API_KEY");
+      if (!LOVABLE_API_KEY) throw new Error("Missing LOVABLE_API_KEY");
 
       const html = `
         <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1D1D1D;">
@@ -78,11 +80,12 @@ Deno.serve(async (req) => {
           <p style="font-size:13px;color:#666;margin-top:24px;">— Equipe SoMA+</p>
         </div>`;
 
-      const resp = await fetch(`https://api.resend.com/emails`, {
+      const resp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${RESEND_API_KEY}`,
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "X-Connection-Api-Key": RESEND_API_KEY,
         },
         body: JSON.stringify({
           from: "SoMA+ <no-reply@pla.soma.lefil.com.br>",
@@ -94,8 +97,8 @@ Deno.serve(async (req) => {
 
       if (!resp.ok) {
         const body = await resp.text();
-        console.error("resend error", resp.status, body);
-        throw new Error(`Resend failed: ${resp.status}`);
+        console.error("resend gateway error", resp.status, body);
+        throw new Error(`Resend gateway failed: ${resp.status}`);
       }
     }
 

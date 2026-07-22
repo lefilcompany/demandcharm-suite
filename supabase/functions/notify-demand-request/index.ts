@@ -16,6 +16,7 @@ import {
 } from "npm:@react-email/components@0.0.22";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
@@ -376,7 +377,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY || !LOVABLE_API_KEY) {
       console.error("Missing required environment variables");
       return new Response(
         JSON.stringify({ error: "Server configuration error" }),
@@ -541,11 +542,12 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     // Send email to all board members (admin, moderator, executor)
-    const res = await fetch("https://api.resend.com/emails", {
+    const res = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "X-Connection-Api-Key": RESEND_API_KEY!,
       },
       body: JSON.stringify({
         from: "SoMA+ <noreply@pla.soma.lefil.com.br>",
@@ -558,7 +560,7 @@ const handler = async (req: Request): Promise<Response> => {
     const data = await res.json();
 
     if (!res.ok) {
-      console.error("Resend API error:", data);
+      console.error(`Resend gateway error [${res.status}]:`, data);
       return new Response(JSON.stringify({ error: "Failed to send emails" }), {
         status: res.status,
         headers: { "Content-Type": "application/json", ...corsHeaders },
