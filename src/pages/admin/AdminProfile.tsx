@@ -24,6 +24,8 @@ export default function AdminProfile() {
   const {
     isSupported: pushSupported,
     isLoading: pushLoading,
+    configStatus: pushConfigStatus,
+    configMissing: pushConfigMissing,
     permissionStatus,
     isEnabled: pushEnabled,
     fcmToken,
@@ -544,12 +546,32 @@ export default function AdminProfile() {
             <span className={`px-2 py-1 rounded-md ${pushEnabled ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-muted"}`}>
               Token: {fcmToken ? `${fcmToken.slice(0, 10)}…` : "não registrado"}
             </span>
+            <span className={`px-2 py-1 rounded-md ${pushConfigStatus === "ready" ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-amber-500/10 text-amber-700 dark:text-amber-300"}`}>
+              Configuração: {pushConfigStatus === "checking" ? "verificando" : pushConfigStatus === "ready" ? "carregada" : "pendente"}
+            </span>
           </div>
 
           {!pushSupported && (
             <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400">
               <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
               <span>Este navegador não suporta notificações push. Use Chrome, Edge ou Android.</span>
+            </div>
+          )}
+
+          {pushConfigStatus === "missing" && pushSupported && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+              <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300 font-medium">
+                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>Configuração FCM ainda não carregou neste ambiente</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Recarregue a página e tente ativar novamente. Se continuar, revise os dados públicos do Firebase configurados no ambiente.
+              </p>
+              {pushConfigMissing.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Campos pendentes: {pushConfigMissing.join(", ")}
+                </p>
+              )}
             </div>
           )}
 
@@ -585,11 +607,11 @@ export default function AdminProfile() {
             {!pushEnabled ? (
               <Button
                 onClick={enablePushNotifications}
-                disabled={pushLoading || !pushSupported || permissionStatus === "denied"}
+                disabled={pushLoading || !pushSupported || permissionStatus === "denied" || pushConfigStatus === "checking"}
                 className="gap-2"
               >
                 {pushLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
-                {permissionStatus === "denied" ? "Bloqueado pelo navegador" : "Ativar notificações neste navegador"}
+                {permissionStatus === "denied" ? "Bloqueado pelo navegador" : pushConfigStatus === "checking" ? "Verificando configuração" : "Ativar notificações neste navegador"}
               </Button>
             ) : (
               <Button

@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   deleteFcmToken,
+  checkFirebasePushConfig,
   getCurrentFcmToken,
   requestNotificationPermission,
 } from "@/lib/firebase";
@@ -45,6 +46,8 @@ export function usePushNotifications() {
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [isSupported, setIsSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [configStatus, setConfigStatus] = useState<"checking" | "ready" | "missing">("checking");
+  const [configMissing, setConfigMissing] = useState<string[]>([]);
   const [permissionStatus, setPermissionStatus] =
     useState<NotificationPermission | null>(null);
   const deviceIdRef = useRef<string>("");
@@ -60,6 +63,31 @@ export function usePushNotifications() {
       deviceIdRef.current = getOrCreateDeviceId();
     }
   }, []);
+
+  useEffect(() => {
+    if (!isSupported) {
+      setConfigStatus("missing");
+      setConfigMissing(["browser"]);
+      return;
+    }
+    let cancelled = false;
+    setConfigStatus("checking");
+    checkFirebasePushConfig()
+      .then((status) => {
+        if (cancelled) return;
+        setConfigStatus(status.ready ? "ready" : "missing");
+        setConfigMissing(status.missing);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("[push] config check failed", (err as Error)?.message);
+        setConfigStatus("missing");
+        setConfigMissing(["firebase-config"]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSupported]);
 
   // Load existing row for this device and rotate the token if it changed.
   useEffect(() => {
@@ -136,7 +164,7 @@ export function usePushNotifications() {
             toast.error("Push requer HTTPS.");
             break;
           case "missing-config":
-            toast.error("Notificações push indisponíveis no momento.");
+            toast.error("Configuração FCM incompleta neste ambiente. Recarregue a página e tente novamente.");
             break;
           case "unsupported":
             toast.error("Notificações push não suportadas neste navegador.");
@@ -198,6 +226,8 @@ export function usePushNotifications() {
     fcmToken,
     isSupported,
     isLoading,
+    configStatus,
+    configMissing,
     permissionStatus,
     isEnabled: permissionStatus === "granted" && !!fcmToken,
     enablePushNotifications,
