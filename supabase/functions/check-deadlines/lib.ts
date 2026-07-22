@@ -268,7 +268,7 @@ export function buildOverdueReminder(
     severity: "error",
     demandId: base.demandId,
     userId: base.userId,
-    title: "🚨 Demanda com prazo vencido",
+    title: "Demanda com prazo vencido",
     message: `A demanda “${base.safeTitle}” venceu em ${base.formattedDate} e ainda não foi entregue.`,
     emailSubject: `Prazo vencido: “${base.safeTitle}”`,
     link: base.link,
