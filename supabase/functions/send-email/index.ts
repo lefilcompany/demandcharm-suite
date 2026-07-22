@@ -16,7 +16,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const DEFAULT_FROM = "SoMA+ <noreply@pla.soma.lefil.com.br>";
+const DEFAULT_FROM = "SoMA+ <soma@lefil.com.br>";
 
 const ALLOWED_ACTION_URL_HOSTS = new Set([
   "pla.soma.lefil.com.br",

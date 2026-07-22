@@ -550,7 +550,7 @@ const handler = async (req: Request): Promise<Response> => {
         "X-Connection-Api-Key": RESEND_API_KEY!,
       },
       body: JSON.stringify({
-        from: "SoMA+ <noreply@pla.soma.lefil.com.br>",
+        from: "SoMA+ <soma@lefil.com.br>",
         to: memberEmails,
         subject: `Nova Solicitação de Demanda: ${title.substring(0, 50)}${title.length > 50 ? "..." : ""}`,
         html: emailHtml,
