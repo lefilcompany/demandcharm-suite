@@ -554,6 +554,48 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
           </Button>
         </div>
       </form>
+
+      <LinkAsSubdemandDialog
+        open={showChangeParent}
+        onClose={() => setShowChangeParent(false)}
+        demandId={demand.id}
+        boardId={demand.board_id}
+        demandTitle={demand.title}
+      />
+
+      <AlertDialog open={showUnlinkParent} onOpenChange={setShowUnlinkParent}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desvincular da demanda pai?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta subdemanda deixará de estar vinculada e voltará a aparecer como demanda principal do quadro.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                try {
+                  await convertToSubdemand.mutateAsync({
+                    demandId: demand.id,
+                    parentDemandId: null,
+                    boardId: demand.board_id,
+                  });
+                  toast.success("Desvinculada da demanda pai");
+                  setShowUnlinkParent(false);
+                  onSuccess();
+                } catch (err) {
+                  toast.error(getErrorMessage(err) || "Não foi possível desvincular");
+                }
+              }}
+              className="bg-[#F28705] text-white hover:bg-[#D95204]"
+            >
+              Desvincular
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
+
