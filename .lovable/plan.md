@@ -1,124 +1,100 @@
+# Plano — Corrigir push notifications FCM
 
 ## Objetivo
+Resolver conflito entre SW da PWA e do Firebase, suportar múltiplos dispositivos por usuário, evitar notificação duplicada, e tornar o `send-push-notification` mais seguro e resiliente. Nada além do escopo push será tocado.
 
-Trazer para a `main` todos os ajustes que estavam na branch `agent/schedule-deadline-reminders`: agendar a Edge Function `check-deadlines` diariamente às 09:00 America/Recife via `pg_cron` + `pg_net` com token gerado no Vault, aceitar esse token (mantendo `CRON_SECRET` como fallback) tanto em `check-deadlines` quanto em `send-push-notification`, remover emojis dos títulos dos lembretes, marcar as duas funções com `verify_jwt = false`, adicionar testes e garantir a compilação Deno dos entrypoints na CI.
+## Alterações
 
-## Estado atual (verificado)
+### 1. `public/firebase-messaging-sw.js`
+- Atualizar imports para `firebase-*-compat` **10.14.1** (bater com o pacote instalado).
+- **Remover** o `self.registration.showNotification(...)` dentro de `onBackgroundMessage`. Como o backend envia payload `notification`, o próprio browser já exibe — o handler manual causava notificação duplicada. Manter apenas leitura de `payload.data` para logging.
+- Manter `notificationclick` / `notificationclose` / `install` / `activate` como estão (com `clients.claim()` e navegação para `data.link`).
+- Continuar 100% classic worker (sem ES modules).
 
-- `supabase/functions/check-deadlines/index.ts` já valida `CRON_SECRET` via `isAuthorized`, chama `send-push-notification` com o mesmo `Bearer ${cronSecret}` e usa o template React Email (`_templates/notification.tsx` já tipado, sem HTML cru).
-- `supabase/functions/send-push-notification/index.ts` já aceita `Bearer ${CRON_SECRET}` como bypass do JWT do usuário.
-- `supabase/functions/check-deadlines/lib.ts` (linhas 227–279) tem `"⏰ Demanda vence amanhã"` e `"🚨 Demanda com prazo vencido"` — emojis ainda presentes.
-- `supabase/config.toml` só contém `project_id`. Não há bloco `[functions.*]` marcando `verify_jwt = false` para as duas funções.
-- `.github/workflows/ci.yml` já roda `deno test` sobre `supabase/functions/check-deadlines/` (job `edge-functions`), mas **não** compila os entrypoints (`deno check` em `index.ts`). Selenium já está condicionado aos secrets do repositório.
-- Não existe migration agendando `check-deadlines`.
+### 2. `src/lib/firebase.ts`
+- Chamar `isSupported()` de `firebase/messaging` antes de instanciar `getMessaging`.
+- Registrar o SW do Firebase **exclusivamente** em `/firebase-messaging-sw.js` com `scope: "/firebase-cloud-messaging-push-scope/"`, evitando colisão com `/sw.js` da PWA.
+- Reusar registro existente via `navigator.serviceWorker.getRegistration(scope)` antes de registrar de novo.
+- Passar exatamente esse `ServiceWorkerRegistration` para `getToken({ vapidKey, serviceWorkerRegistration })`.
+- Ler config de `import.meta.env.VITE_FIREBASE_*` com fallback para os valores atuais (para não quebrar antes das envs serem adicionadas).
+- Tratar: navegador incompatível, `!window.isSecureContext`, `Notification.permission === "denied"`, falha no registro do SW e erro no `getToken`. Retornar `{ token, registration } | null`.
+- **Não logar o token completo** — apenas `token.slice(0,6) + "…"`.
+- Exportar `deleteFcmToken()` que chama `deleteToken(messaging)`.
+- Guardar única instância de `app` e `messaging`.
 
-## Mudanças
+### 3. Nova tabela `public.fcm_tokens` (migration)
+Colunas: `id uuid pk`, `user_id uuid → auth.users`, `token text unique`, `device_id text`, `user_agent text`, `created_at`, `updated_at`, `last_used_at`.
+GRANTs para `authenticated` e `service_role`. RLS: usuário só lê/insere/atualiza/apaga os próprios registros; `service_role` full access. Trigger `update_updated_at_column`.
 
-### 1. Remover emojis dos títulos (lib.ts)
+**Nada é migrado automaticamente** de `user_preferences.fcm_token` — chaves antigas ficam órfãs e serão limpas em migration separada depois que o novo fluxo estiver estável (fora de escopo desta entrega, apenas comentado no fim).
 
-Em `supabase/functions/check-deadlines/lib.ts`:
-- `title: "⏰ Demanda vence amanhã"` → `title: "Demanda vence amanhã"`
-- `title: "🚨 Demanda com prazo vencido"` → `title: "Demanda com prazo vencido"`
+### 4. `src/hooks/usePushNotifications.ts`
+- Trocar todos os `.single()` por `.maybeSingle()` e propagar `error` de todo `select/insert/update/delete`.
+- Gerar `device_id` estável no `localStorage` (`soma:fcm_device_id`).
+- `enablePushNotifications`: só chama `toast.success` **após** upsert na `fcm_tokens` bem-sucedido.
+- Upsert por `(user_id, device_id)` — atualiza `token`, `user_agent`, `last_used_at`.
+- `disablePushNotifications`: chama `deleteFcmToken()` no Firebase **e** deleta a row **apenas do dispositivo atual** (`device_id`).
+- `isEnabled` = `permissionStatus === "granted"` **e** existe token para este `device_id`. Não considerar ativo só porque o banco tem token antigo.
+- Remover o `useEffect` de `onForegroundMessage` daqui (vira global — ver item 5).
 
-### 2. Autenticação dupla (CRON_SECRET + token do Vault)
+### 5. Listener foreground global
+- Novo hook `src/hooks/useForegroundPushListener.ts` — registra `onMessage` uma única vez (guard `useRef`), mostra `toast` com título/corpo/ação `Ver`.
+- Montado uma única vez em `src/components/layout/ProtectedLayout.tsx` (ou equivalente já existente na área autenticada — vou confirmar o nome exato ao aplicar).
 
-Em `lib.ts`, transformar `isAuthorized` para aceitar múltiplos segredos:
+### 6. `supabase/functions/send-push-notification/index.ts`
+- Ler tokens da nova `fcm_tokens` (não mais de `user_preferences.fcm_token`), fazendo `select token,user_id` filtrado por `user_id in allowedUserIds`.
+- Validar campos essenciais da service account (`client_email`, `private_key`, `project_id`) antes de assinar JWT; se faltar, 500 com mensagem sem vazar payload.
+- Normalizar `link`: se não começar com `http`, prefixar `Deno.env.get("APP_URL")` (fallback `https://demandcharm-suite.lovable.app`).
+- Refinar remoção de token: **apenas** quando resposta FCM contiver `UNREGISTERED`, `NOT_FOUND`, ou `errorCode === "UNREGISTERED"`, ou detalhe apontar `message.token` como inválido. **Não** remover em `INVALID_ARGUMENT` genérico.
+- `DELETE` deve ser por `token` (não por `user_id`), preservando outros dispositivos.
+- Sanitizar erros no retorno (mensagem curta, sem stack, sem access token, sem private key).
+- Resposta: `{ success, sent, failed, skipped, blocked, errors: [{userId, code}] }`.
+- Manter autorização atual (JWT ou CRON_SECRET/CRON_TOKEN) intacta.
 
-```ts
-export function isAuthorized(
-  authHeader: string | null | undefined,
-  ...secrets: Array<string | null | undefined>
-): boolean {
-  if (!authHeader?.startsWith("Bearer ")) return false;
-  const token = authHeader.slice("Bearer ".length);
-  return secrets.some((s) => typeof s === "string" && s.length > 0 && s === token);
-}
+### 7. `supabase/config.toml`
+Já contém `verify_jwt = false` para `check-deadlines` e `send-push-notification`. Nenhuma mudança necessária. Não expor outras funções.
+
+## Validação
+Rodar e corrigir até verde:
+- `bunx tsgo --noEmit`
+- `bun run lint`
+- `bun run test` (se existir script; caso contrário `bunx vitest run`)
+- `bun run build`
+
+Sem desativar regras ou testes. Sem mexer em lockfile a não ser que uma dep nova exija (não deve — tudo já está instalado).
+
+## Detalhes técnicos
+
+```text
+Escopo do SW da PWA:      /            (arquivo /sw.js — gerado pelo VitePWA)
+Escopo do SW do Firebase: /firebase-cloud-messaging-push-scope/  (arquivo /firebase-messaging-sw.js)
 ```
 
-Atualizar `check-deadlines/index.ts`:
-- Ler também `CRON_TOKEN` (novo, populado a partir do Vault pela migration/secret) via `Deno.env.get("CRON_TOKEN")`.
-- Chamar `isAuthorized(header, cronSecret, cronToken)` — pelo menos um dos dois precisa estar definido; caso contrário 401.
-- Encaminhar para `send-push-notification` o mesmo token que autenticou a requisição (preferir `cronToken` quando presente, senão `cronSecret`).
-
-Atualizar `send-push-notification/index.ts`:
-- Aceitar `Bearer ${CRON_SECRET}` **ou** `Bearer ${CRON_TOKEN}` como bypass do JWT do usuário. Usuários autenticados continuam passando pela validação atual via `auth.getUser`.
-
-### 3. Testes Deno adicionais
-
-- `check-deadlines/lib_test.ts`: adicionar casos garantindo que `isAuthorized` aceita CRON_SECRET, aceita CRON_TOKEN, aceita qualquer um dos dois, rejeita token vazio/ausente, e que `buildDayBeforeReminder`/`buildOverdueReminder` produzem títulos sem emoji (`"Demanda vence amanhã"`, `"Demanda com prazo vencido"`).
-- Ajustar quaisquer asserts existentes que dependessem dos emojis.
-
-### 4. `supabase/config.toml`
-
-Adicionar blocos explícitos:
-
-```toml
-[functions.check-deadlines]
-verify_jwt = false
-
-[functions.send-push-notification]
-verify_jwt = false
+Tabela:
+```sql
+CREATE TABLE public.fcm_tokens (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  token text NOT NULL UNIQUE,
+  device_id text,
+  user_agent text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  last_used_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX ON public.fcm_tokens(user_id);
 ```
+Grants + RLS + trigger `updated_at` inclusos na migration.
 
-(Ambas fazem autenticação própria — via CRON_SECRET/CRON_TOKEN ou JWT do usuário lido em código.)
+## Variáveis / secrets necessários
+**Frontend (`.env`, opcionais — fallback já existe):**
+- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_VAPID_KEY`
 
-### 5. Migration `pg_cron` + `pg_net` + Vault
+**Edge Function (já configurados; confirmar):**
+- `FIREBASE_SERVICE_ACCOUNT` (JSON completo), `APP_URL`, `CRON_SECRET`/`CRON_TOKEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`.
 
-Criar `supabase/migrations/<timestamp>_schedule_deadline_reminders.sql`:
-
-- `create extension if not exists pg_cron;`
-- `create extension if not exists pg_net;`
-- Gerar um token aleatório (`encode(gen_random_bytes(32), 'hex')`) e armazenar em `vault.secrets` sob o nome `check_deadlines_cron_token` (usando `vault.create_secret(...)` idempotente — se já existir, apenas reaproveita).
-- Criar função `public.get_check_deadlines_cron_token()` `security definer` cujo `EXECUTE` é revogado de `public/anon/authenticated` e concedido apenas a `service_role`, retornando o `decrypted_secret` do Vault.
-- Remover job anterior com o mesmo nome (`select cron.unschedule('check-deadlines-daily') where exists (...)`), então:
-  ```sql
-  select cron.schedule(
-    'check-deadlines-daily',
-    '0 12 * * *',
-    $$
-    select net.http_post(
-      url := 'https://erxhxmetrvkigjwxchbj.supabase.co/functions/v1/check-deadlines',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || public.get_check_deadlines_cron_token()
-      ),
-      body := jsonb_build_object('scheduled_at', now())
-    );
-    $$
-  );
-  ```
-- O mesmo token gerado será também salvo como secret `CRON_TOKEN` na Edge Function (via `secrets--set_secret`) após a migration ser aprovada, para que `check-deadlines` e `send-push-notification` possam validá-lo. O `CRON_SECRET` existente permanece intocado como fallback.
-
-### 6. CI: compilar entrypoints das Edge Functions
-
-Em `.github/workflows/ci.yml`, dentro do job `edge-functions`, adicionar um step antes do `deno test`:
-
-```yaml
-- name: Compile edge function entrypoints
-  run: |
-    deno check supabase/functions/check-deadlines/index.ts
-    deno check supabase/functions/send-push-notification/index.ts
-```
-
-Isso captura falhas de tipagem/import que os testes atuais não pegavam.
-
-## Passos técnicos (ordem)
-
-1. `supabase--migration` com o SQL descrito no item 5 (aguarda aprovação do usuário).
-2. Após aprovação, `set_secret` do `CRON_TOKEN` com o valor lido de `select public.get_check_deadlines_cron_token()`.
-3. Editar `lib.ts` (emojis + `isAuthorized` variádico).
-4. Editar `check-deadlines/index.ts` (ler `CRON_TOKEN`, passar adiante).
-5. Editar `send-push-notification/index.ts` (aceitar `CRON_TOKEN`).
-6. Editar `supabase/config.toml` (dois blocos `verify_jwt = false`).
-7. Editar `check-deadlines/lib_test.ts` com os novos casos + títulos sem emoji.
-8. Editar `.github/workflows/ci.yml` com o step `deno check`.
-9. `supabase--test_edge_functions` para rodar os testes Deno das duas funções.
-10. `supabase--deploy_edge_functions` para `check-deadlines` e `send-push-notification`.
-11. `supabase--read_query` em `cron.job` para confirmar `check-deadlines-daily` ativo com `0 12 * * *`.
-
-## Riscos e observações
-
-- O valor do secret `CRON_TOKEN` só é conhecido depois que a migration roda; por isso o passo 2 acontece após o 1. Enquanto `CRON_TOKEN` não estiver configurado, `check-deadlines` continua funcionando via `CRON_SECRET` (fallback preservado).
-- A migration usa `vault.create_secret` de forma idempotente; se o Vault já contiver `check_deadlines_cron_token`, o job reutiliza sem regenerar (evita quebrar chamadas em voo).
-- Nenhuma mudança em RLS de tabelas de negócio, nenhuma alteração no fluxo de deduplicação (`notification_deliveries`).
-- Selenium continua condicional aos secrets — não é reintroduzido nem mascarado.
+## Passos manuais depois do merge
+1. Após deploy, testar `enablePushNotifications` em desktop e mobile — confirmar duas rows em `fcm_tokens` com `device_id` distintos.
+2. Enviar teste via `/admin` → confirmar que a notificação aparece **uma vez só** (sem duplicata).
+3. Se quiser padronizar via env, adicionar as `VITE_FIREBASE_*` na Lovable.
+4. Migration futura (fora deste escopo): remover linhas antigas de `user_preferences` com `preference_key = 'fcm_token'`.
