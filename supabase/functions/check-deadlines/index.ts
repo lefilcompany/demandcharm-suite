@@ -1,7 +1,7 @@
 import React from "npm:react@18.3.1";
 import { render } from "npm:@react-email/render@0.0.12";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { NotificationEmail } from "../send-email/_templates/notification.tsx";
+import { NotificationEmail } from "./_templates/notification.tsx";
 import { runDeadlineReminderJob } from "./job.ts";
 import {
   DEFAULT_APP_URL,
@@ -45,23 +45,26 @@ async function parseJsonResponse(response: Response): Promise<Record<string, unk
 
 async function sendResendEmail({
   apiKey,
+  lovableApiKey,
   to,
   subject,
   html,
   maxRetries = 3,
 }: {
   apiKey: string;
+  lovableApiKey: string;
   to: string;
   subject: string;
   html: string;
   maxRetries?: number;
 }): Promise<void> {
   for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
-    const response = await fetch("https://api.resend.com/emails", {
+    const response = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${lovableApiKey}`,
+        "X-Connection-Api-Key": apiKey,
       },
       body: JSON.stringify({
         from: DEFAULT_FROM,
@@ -79,7 +82,7 @@ async function sendResendEmail({
       continue;
     }
 
-    throw new Error(`Resend failed (${response.status}): ${JSON.stringify(payload).slice(0, 1000)}`);
+    throw new Error(`Resend gateway failed (${response.status}): ${JSON.stringify(payload).slice(0, 1000)}`);
   }
 }
 
@@ -108,6 +111,7 @@ export async function handler(req: Request): Promise<Response> {
     const supabaseUrl = requireEnv("SUPABASE_URL");
     const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     const timeZone = Deno.env.get("NOTIFICATION_TIME_ZONE") || DEFAULT_NOTIFICATION_TIME_ZONE;
     const appUrl = Deno.env.get("APP_URL") || DEFAULT_APP_URL;
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
@@ -286,9 +290,13 @@ export async function handler(req: Request): Promise<Response> {
           if (!resendApiKey) {
             throw new Error("RESEND_API_KEY not configured");
           }
+          if (!lovableApiKey) {
+            throw new Error("LOVABLE_API_KEY not configured");
+          }
 
           await sendResendEmail({
             apiKey: resendApiKey,
+            lovableApiKey,
             to: email,
             subject: reminder.emailSubject,
             html,

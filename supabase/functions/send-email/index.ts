@@ -4,9 +4,11 @@ import { NotificationEmail } from "./_templates/notification.tsx";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+const RESEND_GATEWAY_URL = "https://connector-gateway.lovable.dev/resend/emails";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -351,11 +353,16 @@ const handler = async (req: Request): Promise<Response> => {
     // Helper function to send with retry for rate limiting
     const sendWithRetry = async (maxRetries = 3): Promise<{ success: boolean; data?: any; status?: number }> => {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        const res = await fetch("https://api.resend.com/emails", {
+        if (!LOVABLE_API_KEY || !RESEND_API_KEY) {
+          console.error("Missing LOVABLE_API_KEY or RESEND_API_KEY for Resend gateway");
+          return { success: false, status: 500 };
+        }
+        const res = await fetch(RESEND_GATEWAY_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${RESEND_API_KEY}`,
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "X-Connection-Api-Key": RESEND_API_KEY,
           },
           body: JSON.stringify({
             from: DEFAULT_FROM,
@@ -379,7 +386,7 @@ const handler = async (req: Request): Promise<Response> => {
           continue;
         }
 
-        console.error("Resend API error:", data);
+        console.error(`Resend gateway error [${res.status}]:`, data);
         return { success: false, data, status: res.status };
       }
       
