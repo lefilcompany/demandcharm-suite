@@ -14,8 +14,9 @@ import { SEOHead } from "@/components/SEOHead";
 import {
   Camera, Loader2, Save, User, Mail, Lock, Eye, EyeOff,
   MapPin, Link as LinkIcon, Github, Linkedin, Briefcase, Phone,
-  CheckCircle2, XCircle,
+  CheckCircle2, XCircle, Bell, BellOff, AlertCircle,
 } from "lucide-react";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 export default function AdminProfile() {
   const { user } = useAuth();
