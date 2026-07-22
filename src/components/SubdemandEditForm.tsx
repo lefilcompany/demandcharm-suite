@@ -86,7 +86,36 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
     };
   }, [demand.id]);
 
+  // Parent info + link/unlink dialogs
+  const convertToSubdemand = useConvertToSubdemand();
+  const [parentInfo, setParentInfo] = useState<{ id: string; title: string; seq: number | null } | null>(null);
+  const [showChangeParent, setShowChangeParent] = useState(false);
+  const [showUnlinkParent, setShowUnlinkParent] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!demand.parent_demand_id) {
+      setParentInfo(null);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from("demands")
+        .select("id, title, board_sequence_number")
+        .eq("id", demand.parent_demand_id!)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      setParentInfo({ id: data.id, title: data.title, seq: (data as any).board_sequence_number ?? null });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [demand.parent_demand_id]);
+
   const canAssignResponsibles = boardRole !== "requester";
+  const canManageParentLink = boardRole !== "requester";
+
+
 
   const [title, setTitle] = useState(demand.title);
   const [description, setDescription] = useState(demand.description || "");
