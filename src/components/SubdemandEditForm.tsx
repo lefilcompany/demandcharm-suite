@@ -20,8 +20,21 @@ import { useDemandDependencyInfo } from "@/hooks/useDependencyCheck";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
-import { Package, Users, Loader2, Link2, Lock, X } from "lucide-react";
+import { Package, Users, Loader2, Link2, Lock, X, GitBranch, Unlink2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useConvertToSubdemand } from "@/hooks/useSubdemands";
+import { LinkAsSubdemandDialog } from "@/components/LinkAsSubdemandDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { getErrorMessage as _getErr } from "@/lib/errorUtils";
 
 interface SubdemandEditFormProps {
   demand: {
