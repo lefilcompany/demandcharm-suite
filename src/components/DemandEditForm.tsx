@@ -740,6 +740,15 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
           </div>
         </div>
       </form>
+
+      <LinkAsSubdemandDialog
+        open={showLinkParentDialog}
+        onClose={() => setShowLinkParentDialog(false)}
+        demandId={demand.id}
+        boardId={demand.board_id}
+        demandTitle={demand.title}
+      />
     </>
+
   );
 }
