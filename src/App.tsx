@@ -73,6 +73,7 @@ const AdminTeams = lazy(() => import("./pages/admin/AdminTeams"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminPlans = lazy(() => import("./pages/admin/AdminPlans"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
+const AdminEmailTest = lazy(() => import("./pages/admin/AdminEmailTest"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const McpDocs = lazy(() => import("./pages/McpDocs"));
 
@@ -151,6 +152,7 @@ const App = () => {
                                 <Route path="teams" element={<AdminTeams />} />
                                 <Route path="users" element={<AdminUsers />} />
                                 <Route path="profile" element={<AdminProfile />} />
+                                <Route path="email-test" element={<AdminEmailTest />} />
                               </Route>
 
                               <Route path="/welcome" element={<RequireAuth><Welcome /></RequireAuth>} />
