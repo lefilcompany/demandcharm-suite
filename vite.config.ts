@@ -30,6 +30,51 @@ const firebasePublicDefines = Object.fromEntries(
     JSON.stringify(process.env[`VITE_${key}`] || ""),
   ]),
 );
+
+function buildFirebaseConfigJs(): string {
+  const cfg = {
+    apiKey: process.env.VITE_FIREBASE_API_KEY || "",
+    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID || "",
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+    messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+    appId: process.env.VITE_FIREBASE_APP_ID || "",
+    vapidKey: process.env.VITE_FIREBASE_VAPID_KEY || "",
+  };
+  const hasAll = Object.values(cfg).every((v) => typeof v === "string" && v.length > 0);
+  return `// AUTO-GENERATED at request time. Public Firebase config only.\nself.__FIREBASE_CONFIG__ = ${hasAll ? JSON.stringify(cfg, null, 2) : "null"};\n`;
+}
+
+// Serves /firebase-config.generated.js dynamically in dev AND build previews,
+// so the file is always in sync with runtime env even when not committed to disk.
+const firebaseConfigPlugin = {
+  name: "firebase-config-runtime",
+  configureServer(server: any) {
+    server.middlewares.use("/firebase-config.generated.js", (_req: any, res: any) => {
+      res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+      res.setHeader("Cache-Control", "no-store");
+      res.end(buildFirebaseConfigJs());
+    });
+  },
+  configurePreviewServer(server: any) {
+    server.middlewares.use("/firebase-config.generated.js", (_req: any, res: any) => {
+      res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+      res.setHeader("Cache-Control", "no-store");
+      res.end(buildFirebaseConfigJs());
+    });
+  },
+  buildStart() {
+    // Emit into public/ so `vite build` copies it into dist/.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const fs = require("fs");
+      fs.writeFileSync("public/firebase-config.generated.js", buildFirebaseConfigJs());
+    } catch (err) {
+      console.warn("[firebase-config] could not write public/firebase-config.generated.js", (err as Error)?.message);
+    }
+  },
+};
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -41,6 +86,8 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     mcpPlugin(),
+    firebaseConfigPlugin,
+
     
     VitePWA({
       registerType: "prompt",
