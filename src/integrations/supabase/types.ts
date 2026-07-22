@@ -1220,6 +1220,7 @@ export type Database = {
       }
       demands: {
         Row: {
+          aeiou_origin: Json | null
           archived: boolean
           archived_at: string | null
           assigned_to: string | null
@@ -1248,6 +1249,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aeiou_origin?: Json | null
           archived?: boolean
           archived_at?: string | null
           assigned_to?: string | null
@@ -1276,6 +1278,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aeiou_origin?: Json | null
           archived?: boolean
           archived_at?: string | null
           assigned_to?: string | null
@@ -2425,6 +2428,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      test_email_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          http_status: number | null
+          id: string
+          provider_message_id: string | null
+          raw_response: Json | null
+          recipient_email: string
+          scenario: string
+          status: string
+          subject: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          provider_message_id?: string | null
+          raw_response?: Json | null
+          recipient_email: string
+          scenario: string
+          status: string
+          subject: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          provider_message_id?: string | null
+          raw_response?: Json | null
+          recipient_email?: string
+          scenario?: string
+          status?: string
+          subject?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
       }
       trial_coupons: {
         Row: {
