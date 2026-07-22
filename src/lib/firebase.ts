@@ -37,7 +37,14 @@ interface FirebasePublicConfig {
   storageBucket: string;
   messagingSenderId: string;
   appId: string;
+  vapidKey?: string;
 }
+
+type FirebaseRuntimeConfig = {
+  config: FirebasePublicConfig | null;
+  vapidKey: string | null;
+  missing: string[];
+};
 
 function readConfig(): FirebasePublicConfig | null {
   const env = import.meta.env;
@@ -58,12 +65,82 @@ function readVapidKey(): string | null {
   return typeof key === "string" && key.length > 0 ? key : null;
 }
 
+let generatedRuntimePromise: Promise<FirebaseRuntimeConfig> | null = null;
+
+function parseGeneratedAssignment(text: string): FirebasePublicConfig | null {
+  const match = text.match(/self\.__FIREBASE_CONFIG__\s*=\s*([\s\S]*?);\s*$/m);
+  if (!match?.[1] || match[1].trim() === "null") return null;
+  try {
+    const parsed = JSON.parse(match[1]) as FirebasePublicConfig;
+    if (!parsed || typeof parsed !== "object") return null;
+    return parsed;
+  } catch (err) {
+    console.error("[FCM] generated config parse failed", (err as Error)?.message);
+    return null;
+  }
+}
+
+function missingConfigFields(config: FirebasePublicConfig | null, vapidKey: string | null): string[] {
+  const missing: string[] = [];
+  if (!config?.apiKey) missing.push("apiKey");
+  if (!config?.authDomain) missing.push("authDomain");
+  if (!config?.projectId) missing.push("projectId");
+  if (!config?.storageBucket) missing.push("storageBucket");
+  if (!config?.messagingSenderId) missing.push("messagingSenderId");
+  if (!config?.appId) missing.push("appId");
+  if (!vapidKey) missing.push("vapidKey");
+  return missing;
+}
+
+async function loadGeneratedRuntimeConfig(): Promise<FirebaseRuntimeConfig> {
+  if (typeof window === "undefined") {
+    return { config: null, vapidKey: null, missing: ["browser"] };
+  }
+  try {
+    const response = await fetch("/firebase-config.generated.js", {
+      cache: "no-store",
+      credentials: "same-origin",
+    });
+    if (!response.ok) {
+      return { config: null, vapidKey: null, missing: ["firebase-config.generated.js"] };
+    }
+    const generated = parseGeneratedAssignment(await response.text());
+    const vapidKey = generated?.vapidKey || null;
+    return {
+      config: generated,
+      vapidKey,
+      missing: missingConfigFields(generated, vapidKey),
+    };
+  } catch (err) {
+    console.error("[FCM] generated config load failed", (err as Error)?.message);
+    return { config: null, vapidKey: null, missing: ["firebase-config.generated.js"] };
+  }
+}
+
+async function resolveRuntimeConfig(): Promise<FirebaseRuntimeConfig> {
+  const inlineConfig = readConfig();
+  const inlineVapid = readVapidKey();
+  const inlineMissing = missingConfigFields(inlineConfig, inlineVapid);
+  if (inlineMissing.length === 0) {
+    return { config: inlineConfig, vapidKey: inlineVapid, missing: [] };
+  }
+
+  if (!generatedRuntimePromise) generatedRuntimePromise = loadGeneratedRuntimeConfig();
+  const generated = await generatedRuntimePromise;
+  if (generated.missing.length === 0) return generated;
+  return { config: inlineConfig || generated.config, vapidKey: inlineVapid || generated.vapidKey, missing: generated.missing };
+}
+
+export async function checkFirebasePushConfig(): Promise<{ ready: boolean; missing: string[] }> {
+  const runtime = await resolveRuntimeConfig();
+  return { ready: runtime.missing.length === 0, missing: runtime.missing };
+}
+
 let cachedApp: FirebaseApp | null = null;
 let cachedMessaging: Messaging | null = null;
 let messagingSupportedPromise: Promise<boolean> | null = null;
 
-function getFirebaseApp(): FirebaseApp | null {
-  const cfg = readConfig();
+function getFirebaseApp(cfg: FirebasePublicConfig | null): FirebaseApp | null {
   if (!cfg) return null;
   if (cachedApp) return cachedApp;
   cachedApp = getApps().length ? getApp() : initializeApp(cfg);
@@ -72,7 +149,8 @@ function getFirebaseApp(): FirebaseApp | null {
 
 async function getFirebaseMessaging(): Promise<Messaging | null> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
-  const app = getFirebaseApp();
+  const runtime = await resolveRuntimeConfig();
+  const app = getFirebaseApp(runtime.config);
   if (!app) return null;
   if (!messagingSupportedPromise) messagingSupportedPromise = isSupported().catch(() => false);
   const supported = await messagingSupportedPromise;
@@ -128,10 +206,9 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
   if (!window.isSecureContext) {
     return { ok: false, reason: "insecure-context" };
   }
-  const cfg = readConfig();
-  const vapid = readVapidKey();
-  if (!cfg || !vapid) {
-    return { ok: false, reason: "missing-config" };
+  const runtime = await resolveRuntimeConfig();
+  if (!runtime.config || !runtime.vapidKey || runtime.missing.length > 0) {
+    return { ok: false, reason: "missing-config", error: runtime.missing.join(", ") };
   }
 
   const permission = await Notification.requestPermission();
@@ -151,7 +228,7 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
 
   try {
     const token = await getToken(messaging, {
-      vapidKey: vapid,
+      vapidKey: runtime.vapidKey,
       serviceWorkerRegistration: registration,
     });
     if (!token) return { ok: false, reason: "token-error", error: "empty token" };
@@ -169,15 +246,14 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
 export async function getCurrentFcmToken(): Promise<string | null> {
   if (typeof window === "undefined" || !("Notification" in window)) return null;
   if (Notification.permission !== "granted") return null;
-  const cfg = readConfig();
-  const vapid = readVapidKey();
-  if (!cfg || !vapid) return null;
+  const runtime = await resolveRuntimeConfig();
+  if (!runtime.config || !runtime.vapidKey || runtime.missing.length > 0) return null;
   try {
     const registration = await getOrRegisterFcmSw();
     const messaging = await getFirebaseMessaging();
     if (!messaging) return null;
     const token = await getToken(messaging, {
-      vapidKey: vapid,
+      vapidKey: runtime.vapidKey,
       serviceWorkerRegistration: registration,
     });
     return token || null;
