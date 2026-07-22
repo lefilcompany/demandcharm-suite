@@ -91,7 +91,7 @@ export function CreateBoardDialog({ trigger }: CreateBoardDialogProps) {
             <Button
               onClick={() => {
                 setNoServicesOpen(false);
-                navigate("/services");
+                if (selectedTeamId) navigate(`/teams/${selectedTeamId}/services`);
               }}
             >
               Cadastrar serviços
