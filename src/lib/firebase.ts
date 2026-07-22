@@ -206,7 +206,6 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
   if (!window.isSecureContext) {
     return { ok: false, reason: "insecure-context" };
   }
-  const cfg = readConfig();
   const runtime = await resolveRuntimeConfig();
   if (!runtime.config || !runtime.vapidKey || runtime.missing.length > 0) {
     return { ok: false, reason: "missing-config", error: runtime.missing.join(", ") };
