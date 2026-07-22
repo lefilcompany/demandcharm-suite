@@ -5,6 +5,7 @@ export interface DemandListItem {
   id: string;
   title: string;
   board_sequence_number: number;
+  parent_demand_id: string | null;
 }
 
 export function useDemandsList(boardId: string | null) {
@@ -15,7 +16,7 @@ export function useDemandsList(boardId: string | null) {
       
       const { data, error } = await supabase
         .from("demands")
-        .select("id, title, board_sequence_number")
+        .select("id, title, board_sequence_number, parent_demand_id")
         .eq("board_id", boardId)
         .eq("archived", false)
         .order("board_sequence_number", { ascending: true });

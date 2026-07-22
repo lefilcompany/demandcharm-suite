@@ -42,7 +42,7 @@ import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { cn } from "@/lib/utils";
 import { formatDemandCode } from "@/lib/demandCodeUtils";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { DependencyMenuItems } from "@/components/DependencyMenuItems";
 import { sendAdjustmentPushNotification } from "@/hooks/useSendPushNotification";
 import { useSendEmail } from "@/hooks/useSendEmail";
@@ -50,7 +50,8 @@ import { buildPublicDemandUrl } from "@/lib/demandShareUtils";
 import { useRealtimeDemandDetail } from "@/hooks/useRealtimeDemandDetail";
 import { DemandPresenceIndicator } from "@/components/DemandPresenceIndicator";
 import { RealtimeUpdateIndicator } from "@/components/RealtimeUpdateIndicator";
-import { useSubdemands, useAddSubdemand, useReorderSubdemands } from "@/hooks/useSubdemands";
+import { useSubdemands, useAddSubdemand, useReorderSubdemands, useConvertToSubdemand } from "@/hooks/useSubdemands";
+import { LinkAsSubdemandDialog } from "@/components/LinkAsSubdemandDialog";
 import { validateSubdemandOrder } from "@/lib/subdemandOrderUtils";
 import { SubdemandBadge } from "@/components/SubdemandBadge";
 import { SubdemandTimer } from "@/components/SubdemandTimer";
@@ -180,6 +181,9 @@ export default function DemandDetail() {
   const [showSubdemandDialog, setShowSubdemandDialog] = useState(false);
   const [draggedSubId, setDraggedSubId] = useState<string | null>(null);
   const [dragOverSubId, setDragOverSubId] = useState<string | null>(null);
+  const [showLinkParentDialog, setShowLinkParentDialog] = useState(false);
+  const [showUnlinkParentDialog, setShowUnlinkParentDialog] = useState(false);
+  const convertToSubdemand = useConvertToSubdemand();
 
   const handleReorderSubdemand = async (targetId: string) => {
     const sourceId = draggedSubId;
@@ -1065,6 +1069,28 @@ export default function DemandDetail() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 bg-popover">
                   <DependencyMenuItems demandId={demand.id} isDelivered={isDelivered} showEmptyHint />
+                  {canEdit && (
+                    <>
+                      <DropdownMenuSeparator />
+                      {demand.parent_demand_id ? (
+                        <DropdownMenuItem
+                          onSelect={() => setShowUnlinkParentDialog(true)}
+                          className="text-sm"
+                        >
+                          <GitBranch className="h-4 w-4 mr-2 text-[#F28705]" />
+                          Desvincular da demanda pai
+                        </DropdownMenuItem>
+                      ) : (subdemands?.length ?? 0) === 0 ? (
+                        <DropdownMenuItem
+                          onSelect={() => setShowLinkParentDialog(true)}
+                          className="text-sm"
+                        >
+                          <GitBranch className="h-4 w-4 mr-2 text-[#F28705]" />
+                          Tornar subdemanda de...
+                        </DropdownMenuItem>
+                      ) : null}
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -1594,6 +1620,51 @@ export default function DemandDetail() {
           isPending={updateDemand.isPending}
         />
       )}
+
+      {/* Link as subdemand of another demand */}
+      {demand && (
+        <LinkAsSubdemandDialog
+          open={showLinkParentDialog}
+          onClose={() => setShowLinkParentDialog(false)}
+          demandId={demand.id}
+          boardId={demand.board_id}
+          demandTitle={demand.title}
+        />
+      )}
+
+      {/* Unlink from parent demand */}
+      <AlertDialog open={showUnlinkParentDialog} onOpenChange={setShowUnlinkParentDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desvincular da demanda pai?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta demanda deixará de ser subdemanda e voltará a aparecer como demanda principal do quadro.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!demand) return;
+                try {
+                  await convertToSubdemand.mutateAsync({
+                    demandId: demand.id,
+                    parentDemandId: null,
+                    boardId: demand.board_id,
+                  });
+                  toast.success("Demanda desvinculada");
+                  setShowUnlinkParentDialog(false);
+                } catch (err) {
+                  toast.error(getErrorMessage(err) || "Não foi possível desvincular");
+                }
+              }}
+              className="bg-[#F28705] text-white hover:bg-[#D95204]"
+            >
+              Desvincular
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ApprovalNotifyDialog
         open={!!approvalDialogState}

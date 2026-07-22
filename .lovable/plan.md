@@ -1,43 +1,55 @@
-## Contexto
+# Converter demanda em subdemanda
 
-O projeto **não tem domínio do Lovable Emails configurado** (`not_started`), então não há nada de "Lovable Emails" a desativar/remover — as tentativas anteriores nunca chegaram a provisionar infraestrutura.
+Hoje só é possível criar subdemandas do zero dentro de uma demanda pai. Vamos adicionar a possibilidade de pegar uma demanda **já existente** e transformá-la em subdemanda de outra demanda do mesmo quadro, com um seletor para escolher qual demanda receberá o vínculo.
 
-Hoje quatro edge functions enviam email chamando **direto** `https://api.resend.com/emails` com `RESEND_API_KEY` como token do provider:
-- `send-email`
-- `send-reset-code`
-- `notify-demand-request`
-- `check-deadlines`
+## Fluxo de usuário
 
-O workspace já tem o connector **Resend** linkado ao projeto (`lefil@lefil.com.br`, `uses connector gateway: true`). O padrão correto é rotear pelo **gateway do Lovable**, não pela API do Resend direto.
+1. Na tela **Detalhes da Demanda** (`/demands/:id`), no menu de ações (⋯) da demanda, adicionar a opção **"Tornar subdemanda de..."**.
+   - Visível apenas quando a demanda:
+     - Não é já uma subdemanda (`parent_demand_id` nulo);
+     - Não possui subdemandas próprias (para não criar hierarquia de 2 níveis, que hoje não é suportada pela UI);
+     - Usuário tem permissão de editar a demanda (mesma regra do editar hoje).
+   - Quando a demanda já é subdemanda, a opção muda para **"Desvincular da demanda pai"**.
 
-## O que muda
+2. Ao clicar, abre um modal **"Vincular como subdemanda"** com:
+   - Combobox pesquisável listando demandas do **mesmo quadro** (usa `useDemandsList(boardId)`), mostrando `#seq — título`.
+   - Exclui da lista: a própria demanda, demandas que já são subdemandas (têm `parent_demand_id`) e a lista respeita `archived=false`.
+   - Aviso curto: "A demanda passará a ser subdemanda da demanda selecionada. Você pode reverter depois."
+   - Botões **Cancelar** / **Vincular** (laranja `#F28705`, desabilitado enquanto nada selecionado).
 
-Refatorar as 4 functions para usar o gateway:
+3. Ao confirmar, atualiza `parent_demand_id` da demanda para o id escolhido, invalida os caches relevantes e mostra toast de sucesso. A tela recarrega os dados e passa a exibir o cabeçalho de subdemanda existente.
 
-- URL: `https://connector-gateway.lovable.dev/resend/emails`
-- Headers:
-  - `Authorization: Bearer ${LOVABLE_API_KEY}`
-  - `X-Connection-Api-Key: ${RESEND_API_KEY}`
-  - `Content-Type: application/json`
-- Body: o mesmo payload atual (`from`, `to`, `subject`, `html`, etc.)
-- Tratar erros pelo status + body do gateway (não fazer fallback para `api.resend.com`).
+4. **Desvincular**: confirma via dialog simples e seta `parent_demand_id = null`.
 
-Nada muda nos remetentes/templates: continua `noreply@pla.soma.lefil.com.br` (domínio já verificado no Resend do workspace) e nos templates React Email atuais.
+## Alterações técnicas
 
-`send-reset-code` hoje faz fallback para `RESEND_API_KEY_LEFIL`; com o gateway só precisamos do connector, então essa variável deixa de ser usada (fica apenas `RESEND_API_KEY`, que é o env var do connector).
+- **Hook novo** `useConvertToSubdemand` em `src/hooks/useSubdemands.ts`:
+  - `mutationFn` faz `update demands set parent_demand_id = :parentId where id = :childId`;
+  - Validações no client antes do update: parent está no mesmo `board_id`, parent não é a própria demanda, parent não tem `parent_demand_id` (é raiz), child não tem subdemandas (`select count from demands where parent_demand_id = child`).
+  - `onSuccess`: invalidar `["demand", childId]`, `["subdemands", parentId]`, `["subdemands", oldParentId]` (se houver), `["demands"]`, `["kanban-*"]` (mesmo padrão dos outros mutations).
+  - Hook irmão `useUnlinkSubdemand` que seta `parent_demand_id = null`.
 
-## Passos
+- **Componente novo** `src/components/LinkAsSubdemandDialog.tsx`:
+  - Reaproveita `Command`/`Popover` (shadcn) para o combobox com busca.
+  - Recebe `demandId`, `boardId`, `currentParentId`, `hasSubdemands`, `open`, `onClose`.
+  - Filtra a lista de `useDemandsList` removendo a própria demanda e as que têm `parent_demand_id` (extender o select do hook para trazer `parent_demand_id`, ou criar `useDemandsList` com flag `excludeSubdemands`).
 
-1. Atualizar `supabase/functions/send-email/index.ts` para chamar o gateway.
-2. Atualizar `supabase/functions/send-reset-code/index.ts` (remover fallback `RESEND_API_KEY_LEFIL`).
-3. Atualizar `supabase/functions/notify-demand-request/index.ts`.
-4. Atualizar `supabase/functions/check-deadlines/index.ts` (dois pontos de envio).
-5. Em cada function, validar `LOVABLE_API_KEY` e `RESEND_API_KEY` no início e logar `status + body` em falhas.
-6. Deploy das 4 functions.
-7. Teste rápido: disparar `send-email` com template `notification` e confirmar entrega + resposta 200 do gateway.
+- **Ajuste** em `src/hooks/useDemandsList.ts`: incluir `parent_demand_id` no `select` para permitir a filtragem no dialog. Mantém compatibilidade com usos atuais (só adiciona campo).
 
-## Fora de escopo
+- **Integração** em `src/pages/DemandDetail.tsx`:
+  - Importar o novo dialog e hooks;
+  - Adicionar item no menu de ações existente da demanda (⋯) — "Tornar subdemanda de..." ou "Desvincular da demanda pai" conforme o caso, gated pelas condições acima;
+  - Estado local `showLinkParentDialog`.
 
-- Não configurar/scaffoldar Lovable Emails (usuário escolheu Resend).
-- Não mexer em templates, remetentes, domínio DNS, filas pgmq, cron.
-- Não alterar callers no frontend — a interface das functions permanece igual.
+## Regras / restrições respeitadas
+
+- Nível máximo de hierarquia continua **1** (subdemanda de subdemanda não é permitido) — validado tanto no client quanto por checagem de estado antes de habilitar o botão.
+- Permissões: só quem já pode editar a demanda vê a ação (mesma verificação usada para editar título/descrição).
+- Sem mudanças em RLS: `update demands` já respeita as policies existentes de edição.
+- Sem alterações em edge functions, timers, ou fluxo de status — apenas reparent.
+
+## Fora do escopo
+
+- Mover subdemanda de um pai para outro em um único passo (fica coberto por desvincular + vincular).
+- Suporte a hierarquia com mais de 1 nível.
+- Ação em massa a partir do Kanban.
