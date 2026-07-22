@@ -242,7 +242,7 @@ export function buildDayBeforeReminder(
     severity: "warning",
     demandId: base.demandId,
     userId: base.userId,
-    title: "⏰ Demanda vence amanhã",
+    title: "Demanda vence amanhã",
     message: `A demanda “${base.safeTitle}” vence amanhã (${base.formattedDate}) e ainda não foi entregue.`,
     emailSubject: `Lembrete: “${base.safeTitle}” vence amanhã`,
     link: base.link,
