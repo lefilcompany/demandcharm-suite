@@ -66,9 +66,23 @@ Deno.serve(async (req) => {
     const scenario: Scenario = (["creation", "deadline", "mention", "generic"] as const).includes(body?.scenario)
       ? body.scenario
       : "generic";
-    const targetUserId: string = typeof body?.targetUserId === "string" && body.targetUserId
-      ? body.targetUserId
-      : userId;
+
+    let targetUserId: string = userId;
+    let targetEmail: string | null = null;
+    if (typeof body?.targetEmail === "string" && body.targetEmail.trim()) {
+      const email = body.targetEmail.trim().toLowerCase();
+      targetEmail = email;
+      const { data: profile, error: profErr } = await admin
+        .from("profiles")
+        .select("id")
+        .ilike("email", email)
+        .maybeSingle();
+      if (profErr) return json({ error: `Erro ao buscar perfil: ${profErr.message}` }, 500);
+      if (!profile?.id) return json({ error: `Nenhum usuário encontrado para o email ${email}` }, 404);
+      targetUserId = profile.id;
+    } else if (typeof body?.targetUserId === "string" && body.targetUserId) {
+      targetUserId = body.targetUserId;
+    }
 
     const cfg = SCENARIOS[scenario];
     const cronToken = Deno.env.get("CRON_TOKEN") || Deno.env.get("CRON_SECRET");
