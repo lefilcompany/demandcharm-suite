@@ -27,7 +27,7 @@ const SCENARIO_LABEL: Record<Scenario, string> = {
 export default function AdminPushTest() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [targetUserId, setTargetUserId] = useState(user?.id ?? "");
+  const [targetEmail, setTargetEmail] = useState(user?.email ?? "");
   const [scenario, setScenario] = useState<Scenario>("generic");
   const [sending, setSending] = useState(false);
 
@@ -57,14 +57,15 @@ export default function AdminPushTest() {
   });
 
   const handleSend = async () => {
-    if (!targetUserId) {
-      toast.error("Informe o ID do usuário destino");
+    const email = targetEmail.trim();
+    if (!email) {
+      toast.error("Informe o email do usuário destino");
       return;
     }
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-test-push", {
-        body: { targetUserId, scenario },
+        body: { targetEmail: email, scenario },
       });
       if (error) throw error;
       if (data?.status === "accepted") {
@@ -80,6 +81,7 @@ export default function AdminPushTest() {
       setSending(false);
     }
   };
+
 
   return (
     <div className="space-y-6">
