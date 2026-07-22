@@ -34,13 +34,25 @@ export default function AdminPushTest() {
   const { data: logs, isLoading, refetch } = useQuery({
     queryKey: ["test-push-log"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("test_push_log")
         .select("id, target_user_id, scenario, title, status, sent, failed, skipped, http_status, error_message, created_at")
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Array<{
+        id: string;
+        target_user_id: string;
+        scenario: string;
+        title: string;
+        status: string;
+        sent: number;
+        failed: number;
+        skipped: number;
+        http_status: number | null;
+        error_message: string | null;
+        created_at: string;
+      }>;
     },
   });
 
