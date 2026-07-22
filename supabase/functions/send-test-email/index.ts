@@ -1,7 +1,7 @@
 import React from "npm:react@18.3.1";
 import { render } from "npm:@react-email/render@0.0.12";
 import { createClient } from "npm:@supabase/supabase-js@2.110.7";
-import { NotificationEmail } from "../send-email/_templates/notification.tsx";
+import { NotificationEmail } from "./_templates/notification.tsx";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
