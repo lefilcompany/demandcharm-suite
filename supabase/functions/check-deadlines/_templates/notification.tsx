@@ -80,7 +80,9 @@ export const NotificationEmail = ({
           </Section>
 
           {/* Accent bar */}
-          <div style={{ ...accentBar, backgroundColor: accentColor }} />
+          {React.createElement("div", {
+            style: { ...accentBar, backgroundColor: accentColor },
+          })}
 
           {/* Main content */}
           <Section style={contentSection}>
