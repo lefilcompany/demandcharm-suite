@@ -316,7 +316,7 @@ export async function handler(req: Request): Promise<Response> {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${cronSecret}`,
+              Authorization: `Bearer ${forwardToken}`,
             },
             body: JSON.stringify({
               userIds: [reminder.userId],
