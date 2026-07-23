@@ -352,7 +352,7 @@ export function CreateRequestQuickDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl w-[95vw] max-h-[92vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl w-[95vw] max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
@@ -458,17 +458,19 @@ export function CreateRequestQuickDialog({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Anexos (opcional)</Label>
-                <InlineFileUploader
-                  pendingFiles={pendingFiles}
-                  onFilesChange={setPendingFiles}
-                  disabled={busy}
-                />
-              </div>
+              <div className="flex flex-col sm:flex-row gap-4 items-start">
+                <div className="space-y-2 flex-1 min-w-0">
+                  <Label>Anexos (opcional)</Label>
+                  <InlineFileUploader
+                    pendingFiles={pendingFiles}
+                    onFilesChange={setPendingFiles}
+                    disabled={busy}
+                  />
+                </div>
 
-              <div className="pt-1">
-                <SubdemandCountStep count={subdemandCount} onChange={setSubdemandCount} />
+                <div className="flex-1 min-w-0">
+                  <SubdemandCountStep count={subdemandCount} onChange={setSubdemandCount} />
+                </div>
               </div>
             </>
           )}
