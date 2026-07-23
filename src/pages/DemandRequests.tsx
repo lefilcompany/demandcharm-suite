@@ -90,6 +90,7 @@ export default function DemandRequests() {
   const [viewing, setViewing] = useState<any | null>(null);
   const [approving, setApproving] = useState<any | null>(null);
   const [returning, setReturning] = useState<any | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState("");
   const [returnReason, setReturnReason] = useState("");
