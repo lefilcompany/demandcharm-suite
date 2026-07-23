@@ -495,30 +495,99 @@ export default function DemandRequests() {
     setEditDescription(request.description || "");
     setEditPriority(request.priority || "média");
     setEditServiceId(request.service_id || "");
+    const plan = Array.isArray(request.subdemands_plan) ? request.subdemands_plan : [];
+    setEditSubdemands(
+      plan.map((s: any) => ({
+        tempId: s.tempId || (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2)),
+        title: s.title || "",
+        description: s.description || "",
+        priority: s.priority || "média",
+        service_id: s.service_id,
+        dependsOnIndex: s.dependsOnIndex,
+        pendingFiles: [],
+      }))
+    );
+  };
+
+  const addEditSubdemand = () => {
+    setEditSubdemands((prev) => [
+      ...prev,
+      {
+        tempId: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+        title: "",
+        priority: "média",
+        pendingFiles: [],
+      },
+    ]);
+  };
+
+  const removeEditSubdemand = (index: number) => {
+    setEditSubdemands((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleResubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingRequest || !editTitle.trim()) return;
-    updateRequest.mutate(
-      {
+
+    // Validate subdemands
+    for (let i = 0; i < editSubdemands.length; i++) {
+      const s = editSubdemands[i];
+      if (!s.title.trim()) {
+        toast.error(`Informe o título da Subdemanda ${i + 1}`);
+        return;
+      }
+      if (!s.service_id) {
+        toast.error(`Selecione o serviço da Subdemanda ${i + 1}`);
+        return;
+      }
+    }
+
+    setSavingEdit(true);
+    try {
+      await updateRequest.mutateAsync({
         id: editingRequest.id,
         title: editTitle.trim(),
         description: editDescription.trim() || undefined,
         priority: editPriority,
         service_id: editServiceId && editServiceId !== "none" ? editServiceId : undefined,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Solicitação reenviada com sucesso!");
-          setEditingRequest(null);
-        },
-        onError: (error: any) => {
-          toast.error("Erro ao reenviar", { description: getErrorMessage(error) });
-        },
+        subdemands_plan: editSubdemands.map((s) => ({
+          tempId: s.tempId,
+          title: s.title.trim(),
+          description: s.description,
+          priority: s.priority || "média",
+          service_id: s.service_id,
+          dependsOnIndex: s.dependsOnIndex,
+        })),
+      });
+
+      // Upload any new pending files per subdemand
+      for (let i = 0; i < editSubdemands.length; i++) {
+        const files = editSubdemands[i].pendingFiles || [];
+        for (const pf of files) {
+          try {
+            await uploadAttachment.mutateAsync({
+              requestId: editingRequest.id,
+              file: pf.file,
+              subdemandIndex: i,
+            });
+            if (pf.preview) URL.revokeObjectURL(pf.preview);
+          } catch (err) {
+            toast.error(`Erro ao enviar ${pf.file.name}`);
+          }
+        }
       }
-    );
+
+      toast.success("Solicitação salva com sucesso!");
+      setEditingRequest(null);
+      setEditSubdemands([]);
+    } catch (error: any) {
+      toast.error("Erro ao salvar", { description: getErrorMessage(error) });
+    } finally {
+      setSavingEdit(false);
+    }
   };
+
+
 
   const handleDeleteRequest = (id: string) => {
     setDeletingId(id);
