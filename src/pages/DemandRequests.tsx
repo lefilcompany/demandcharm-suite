@@ -1513,12 +1513,20 @@ export default function DemandRequests() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-sm font-medium">
                   <Paperclip className="h-4 w-4" />
-                  Anexos
+                  Anexos da demanda principal
                 </Label>
                 <div className="border rounded-lg p-3">
-                  <RequestAttachmentUploader requestId={viewing.id} readOnly />
+                  <RequestAttachmentUploader requestId={viewing.id} readOnly subdemandIndex={null} />
                 </div>
               </div>
+            )}
+
+            {viewing && Array.isArray((viewing as any).subdemands_plan) && (viewing as any).subdemands_plan.length > 0 && (
+              <SubdemandsPlanSection
+                requestId={viewing.id}
+                boardId={viewing.board_id}
+                plan={(viewing as any).subdemands_plan}
+              />
             )}
 
             <div className="space-y-3 pt-4 border-t">
