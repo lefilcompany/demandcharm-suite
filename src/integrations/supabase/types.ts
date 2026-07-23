@@ -780,6 +780,7 @@ export type Database = {
           file_size: number
           file_type: string
           id: string
+          subdemand_index: number | null
           uploaded_by: string
         }
         Insert: {
@@ -791,6 +792,7 @@ export type Database = {
           file_size: number
           file_type: string
           id?: string
+          subdemand_index?: number | null
           uploaded_by: string
         }
         Update: {
@@ -802,6 +804,7 @@ export type Database = {
           file_size?: number
           file_type?: string
           id?: string
+          subdemand_index?: number | null
           uploaded_by?: string
         }
         Relationships: [
@@ -917,6 +920,7 @@ export type Database = {
           responded_by: string | null
           service_id: string | null
           status: string
+          subdemands_plan: Json
           team_id: string
           title: string
           updated_at: string
@@ -935,6 +939,7 @@ export type Database = {
           responded_by?: string | null
           service_id?: string | null
           status?: string
+          subdemands_plan?: Json
           team_id: string
           title: string
           updated_at?: string
@@ -953,6 +958,7 @@ export type Database = {
           responded_by?: string | null
           service_id?: string | null
           status?: string
+          subdemands_plan?: Json
           team_id?: string
           title?: string
           updated_at?: string

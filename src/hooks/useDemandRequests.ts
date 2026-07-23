@@ -208,6 +208,15 @@ export function useCreateDemandRequest() {
       description?: string;
       priority?: string;
       service_id?: string;
+      subdemands_plan?: Array<{
+        tempId: string;
+        title: string;
+        description?: string;
+        priority?: string;
+        service_id?: string;
+        due_date?: string;
+        dependsOnIndex?: number;
+      }>;
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
@@ -220,12 +229,15 @@ export function useCreateDemandRequest() {
 
       const requesterName = profile?.full_name || "Usuário";
 
+      const { subdemands_plan = [], ...rest } = data;
+
       const { data: result, error } = await supabase
         .from("demand_requests")
         .insert({
-          ...data,
+          ...rest,
           created_by: user.id,
-        })
+          subdemands_plan: subdemands_plan as any,
+        } as any)
         .select()
         .single();
 
@@ -418,13 +430,14 @@ export function useApproveDemandRequest() {
         if (assignError) console.error("Erro ao atribuir responsáveis:", assignError);
       }
 
-      // Copy attachments from request to demand (only request-level, not comment attachments)
+      // Copy PARENT-level attachments (subdemand_index is null) from request to demand
       if (demand) {
         const { data: requestAttachments } = await supabase
           .from("demand_request_attachments")
           .select("*")
           .eq("demand_request_id", requestId)
-          .is("comment_id", null);
+          .is("comment_id", null)
+          .is("subdemand_index", null);
 
         if (requestAttachments && requestAttachments.length > 0) {
           // Insert attachment records pointing to the same files
@@ -443,6 +456,85 @@ export function useApproveDemandRequest() {
             );
 
           if (attachError) console.error("Erro ao copiar anexos:", attachError);
+        }
+      }
+
+      // Materialize subdemands from the request's saved plan
+      const plan = Array.isArray((request as any).subdemands_plan)
+        ? ((request as any).subdemands_plan as Array<any>)
+        : [];
+
+      if (demand && plan.length > 0) {
+        const createdSubIds: string[] = [];
+
+        for (let i = 0; i < plan.length; i++) {
+          const item = plan[i] || {};
+          const { data: subDemand, error: subError } = await supabase
+            .from("demands")
+            .insert({
+              team_id: request.team_id,
+              board_id: request.board_id,
+              created_by: request.created_by,
+              parent_demand_id: demand.id,
+              title: String(item.title || "Subdemanda"),
+              description: item.description || null,
+              priority: item.priority || "média",
+              service_id: item.service_id || null,
+              status_id: defaultStatusId,
+              due_date: item.due_date || null,
+            })
+            .select("id")
+            .single();
+
+          if (subError || !subDemand) {
+            console.error("Erro ao criar subdemanda:", subError);
+            createdSubIds.push("");
+            continue;
+          }
+
+          createdSubIds.push(subDemand.id);
+
+          // Copy attachments for this subdemand (subdemand_index = i)
+          const { data: subAttachments } = await supabase
+            .from("demand_request_attachments")
+            .select("*")
+            .eq("demand_request_id", requestId)
+            .is("comment_id", null)
+            .eq("subdemand_index", i);
+
+          if (subAttachments && subAttachments.length > 0) {
+            const { error: subAttachError } = await supabase
+              .from("demand_attachments")
+              .insert(
+                subAttachments.map((att) => ({
+                  demand_id: subDemand.id,
+                  file_name: att.file_name,
+                  file_path: att.file_path,
+                  file_type: att.file_type,
+                  file_size: att.file_size,
+                  uploaded_by: user.id,
+                }))
+              );
+            if (subAttachError) console.error("Erro ao copiar anexos da subdemanda:", subAttachError);
+          }
+        }
+
+        // Create dependencies (travamento) between subdemands
+        const dependencyRows: Array<{ demand_id: string; depends_on_demand_id: string }> = [];
+        for (let i = 0; i < plan.length; i++) {
+          const item = plan[i] || {};
+          const dep = item.dependsOnIndex;
+          if (typeof dep === "number" && dep >= 0 && dep < i) {
+            const from = createdSubIds[i];
+            const to = createdSubIds[dep];
+            if (from && to) dependencyRows.push({ demand_id: from, depends_on_demand_id: to });
+          }
+        }
+        if (dependencyRows.length > 0) {
+          const { error: depError } = await supabase
+            .from("demand_dependencies")
+            .insert(dependencyRows);
+          if (depError) console.error("Erro ao criar dependências entre subdemandas:", depError);
         }
       }
 
