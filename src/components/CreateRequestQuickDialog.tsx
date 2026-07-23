@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { Calendar, Loader2, Send, ArrowLeft, ArrowRight } from "lucide-react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { InlineFileUploader, PendingFile } from "@/components/InlineFileUploader";
+import { ServiceSelector } from "@/components/ServiceSelector";
 import { StepProgress, SubdemandCountStep } from "@/components/create-demand";
 import {
   RequestSubdemandStepForm,
@@ -440,19 +441,14 @@ export function CreateRequestQuickDialog({
 
                 <div className="space-y-2">
                   <Label>Serviço *</Label>
-                  <Select value={serviceId} onValueChange={setServiceId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {boardServices?.map((bs) => (
-                        <SelectItem key={bs.service.id} value={bs.service.id}>
-                          {bs.service.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ServiceSelector
+                    teamId={currentTeamId || null}
+                    boardId={selectedBoardId || null}
+                    value={serviceId}
+                    onChange={(id) => setServiceId(id || "")}
+                  />
                 </div>
+
               </div>
 
               <div className="space-y-2">
