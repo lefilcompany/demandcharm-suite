@@ -168,6 +168,8 @@ export default function DemandRequests() {
   const [editDescription, setEditDescription] = useState("");
   const [editPriority, setEditPriority] = useState("média");
   const [editServiceId, setEditServiceId] = useState("");
+  const [editSubdemands, setEditSubdemands] = useState<RequestSubdemandFormData[]>([]);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Search state
   const [searchOpen, setSearchOpen] = useState(false);
