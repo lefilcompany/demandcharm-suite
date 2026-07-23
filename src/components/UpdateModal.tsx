@@ -11,8 +11,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import logoLight from "@/assets/logo-soma.png";
-import logoDark from "@/assets/logo-soma-dark.png";
+import logoBlack from "@/assets/logo-soma-black.png";
 
 const POLL_INTERVAL = 60 * 1000; // 60s
 
