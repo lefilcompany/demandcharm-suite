@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateDemandRequest } from "@/hooks/useDemandRequests";
+import { useUploadRequestAttachment } from "@/hooks/useRequestAttachments";
 import { useSelectedBoard } from "@/contexts/BoardContext";
 import { useBoardServices } from "@/hooks/useBoardServices";
 import { useFormDraft } from "@/hooks/useFormDraft";
@@ -29,6 +30,7 @@ import { logBlockedSubmit } from "@/lib/submitBlockAudit";
 import { toast } from "sonner";
 import { Calendar, Loader2, Send } from "lucide-react";
 import { getErrorMessage } from "@/lib/errorUtils";
+import { PendingFileUploader, PendingFile } from "@/components/PendingFileUploader";
 
 interface CreateRequestQuickDialogProps {
   open: boolean;
@@ -45,11 +47,14 @@ export function CreateRequestQuickDialog({
   const { selectedBoardId, currentTeamId } = useSelectedBoard();
   const { data: boardServices } = useBoardServices(selectedBoardId || undefined);
   const createRequest = useCreateDemandRequest();
+  const uploadAttachment = useUploadRequestAttachment();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<string>("média");
   const [serviceId, setServiceId] = useState<string>("");
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Draft persistence
   const draftFields = useMemo(
@@ -106,7 +111,7 @@ export function CreateRequestQuickDialog({
     }
 
     try {
-      await createRequest.mutateAsync({
+      const created = await createRequest.mutateAsync({
         title: title.trim(),
         description: description.trim(),
         priority,
@@ -114,6 +119,25 @@ export function CreateRequestQuickDialog({
         team_id: currentTeamId,
         service_id: serviceId,
       });
+
+      // Upload pending attachments
+      if (pendingFiles.length > 0 && created?.id) {
+        setIsUploading(true);
+        try {
+          for (const pf of pendingFiles) {
+            await uploadAttachment.mutateAsync({ requestId: created.id, file: pf.file });
+          }
+          pendingFiles.forEach((pf) => {
+            if (pf.preview) URL.revokeObjectURL(pf.preview);
+          });
+        } catch (err) {
+          toast.error("Alguns anexos não foram enviados", {
+            description: getErrorMessage(err),
+          });
+        } finally {
+          setIsUploading(false);
+        }
+      }
 
       // Clear draft on success
       clearDraft();
@@ -139,6 +163,10 @@ export function CreateRequestQuickDialog({
     setDescription("");
     setPriority("média");
     setServiceId("");
+    pendingFiles.forEach((pf) => {
+      if (pf.preview) URL.revokeObjectURL(pf.preview);
+    });
+    setPendingFiles([]);
   };
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -245,20 +273,30 @@ export function CreateRequestQuickDialog({
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>Anexos (opcional)</Label>
+            <PendingFileUploader
+              files={pendingFiles}
+              onFilesChange={setPendingFiles}
+              disabled={createRequest.isPending || isUploading}
+            />
+          </div>
+
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
+              disabled={createRequest.isPending || isUploading}
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={createRequest.isPending}>
-              {createRequest.isPending && (
+            <Button type="submit" disabled={createRequest.isPending || isUploading}>
+              {(createRequest.isPending || isUploading) && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               <Send className="mr-2 h-4 w-4" />
-              Enviar Solicitação
+              {isUploading ? "Enviando anexos..." : "Enviar Solicitação"}
             </Button>
           </DialogFooter>
         </form>
