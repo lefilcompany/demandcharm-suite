@@ -16,12 +16,30 @@ interface PushNotificationRequest {
 
 interface UserPreferences {
   pushNotifications?: boolean;
+  emailNotifications?: boolean;
   demandUpdates?: boolean;
   teamUpdates?: boolean;
   deadlineReminders?: boolean;
   adjustmentRequests?: boolean;
   mentionNotifications?: boolean;
 }
+
+// Map internal notification channel -> email visual type
+function emailTypeForNotification(notificationType: string): "info" | "success" | "warning" | "error" {
+  switch (notificationType) {
+    case "adjustmentRequests":
+      return "warning";
+    case "deadlineReminders":
+      return "warning";
+    case "mentionNotifications":
+      return "info";
+    case "teamUpdates":
+      return "info";
+    default:
+      return "info";
+  }
+}
+
 
 interface ServiceAccount {
   client_email: string;
