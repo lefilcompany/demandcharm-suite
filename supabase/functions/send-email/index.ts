@@ -278,33 +278,37 @@ const handler = async (req: Request): Promise<Response> => {
       recipientEmail = userData.user.email;
       console.log(`Found email for user: ${recipientEmail}`);
 
-      // Authorization: caller must share a team with the recipient (prevents arbitrary cross-user emails)
-      const { data: sharedTeam } = await supabaseAdmin
-        .from("team_members")
-        .select("team_id")
-        .eq("user_id", userId)
-        .in(
-          "team_id",
-          (
-            await supabaseAdmin
-              .from("team_members")
-              .select("team_id")
-              .eq("user_id", recipientUserId)
-          ).data?.map((r: { team_id: string }) => r.team_id) || []
-        )
-        .limit(1);
+      // Authorization: caller must share a team with the recipient (prevents arbitrary cross-user emails).
+      // Internal service-role callers bypass this check.
+      if (!isInternalCall) {
+        const { data: sharedTeam } = await supabaseAdmin
+          .from("team_members")
+          .select("team_id")
+          .eq("user_id", userId)
+          .in(
+            "team_id",
+            (
+              await supabaseAdmin
+                .from("team_members")
+                .select("team_id")
+                .eq("user_id", recipientUserId)
+            ).data?.map((r: { team_id: string }) => r.team_id) || []
+          )
+          .limit(1);
 
-      if (userId !== recipientUserId && (!sharedTeam || sharedTeam.length === 0)) {
-        console.warn(`User ${userId} attempted to email user ${recipientUserId} without shared team`);
-        return new Response(
-          JSON.stringify({ error: "Forbidden: recipient not in your team" }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          }
-        );
+        if (userId !== recipientUserId && (!sharedTeam || sharedTeam.length === 0)) {
+          console.warn(`User ${userId} attempted to email user ${recipientUserId} without shared team`);
+          return new Response(
+            JSON.stringify({ error: "Forbidden: recipient not in your team" }),
+            {
+              status: 403,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            }
+          );
+        }
       }
     }
+
 
     // Respect recipient notification preferences (emailNotifications toggle)
     try {
