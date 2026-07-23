@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Paperclip, X, Download, FileText, Image, File, Trash2, Loader2, Maximize2, Eye } from "lucide-react";
+import { Paperclip, X, Download, FileText, Image, File, Trash2, Loader2, Maximize2, Eye, Copy, Check } from "lucide-react";
 import { 
   useRequestAttachments, 
   useUploadRequestAttachment, 
