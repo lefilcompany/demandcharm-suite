@@ -31,9 +31,6 @@ export function UpdateModal() {
 
   const [open, setOpen] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const { resolvedTheme } = useTheme();
-
-  const logo = resolvedTheme === "dark" ? logoDark : logoLight;
 
   const handleUpdate = async () => {
     setUpdating(true);
