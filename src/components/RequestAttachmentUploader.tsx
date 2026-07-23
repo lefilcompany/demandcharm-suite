@@ -70,67 +70,57 @@ function ImageAttachment({ attachment, readOnly, onDelete, url }: AttachmentItem
 
   return (
     <>
-      <div className="relative rounded-lg overflow-hidden border bg-muted/30 group">
-        {/* Imagem grande */}
-        <div className="relative w-full max-h-80 overflow-hidden">
-          <img
-            src={url}
-            alt={attachment.file_name}
-            className="w-full h-auto max-h-80 object-contain bg-background"
-          />
-          
-          {/* Overlay com informações */}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-            <div className="flex items-end justify-between gap-2">
-              <div className="text-white min-w-0">
-                <p className="text-sm font-medium truncate">{attachment.file_name}</p>
-                <p className="text-xs text-white/80">
-                  {formatSize(attachment.file_size)} • {format(new Date(attachment.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                </p>
-              </div>
-              
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
-                  onClick={() => setPreviewOpen(true)}
-                  title="Ampliar imagem"
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-                
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
-                  onClick={handleDownload}
-                  disabled={downloading}
-                  title="Baixar arquivo"
-                >
-                  {downloading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
-                </Button>
-                
-                {!readOnly && (
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-8 w-8 bg-white/20 hover:bg-destructive/80 text-white border-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => onDelete(attachment.id, attachment.file_path)}
-                    title="Remover anexo"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+      <div className="flex items-center gap-3 p-2 pr-3 rounded-lg bg-muted/50 group">
+        <button
+          type="button"
+          onClick={() => setPreviewOpen(true)}
+          className="h-12 w-12 rounded border bg-background overflow-hidden flex-shrink-0 hover:ring-2 hover:ring-primary/40 transition"
+          title="Ampliar imagem"
+        >
+          <img src={url} alt={attachment.file_name} className="h-full w-full object-cover" />
+        </button>
+
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{attachment.file_name}</p>
+          <p className="text-xs text-muted-foreground">
+            {formatSize(attachment.file_size)} • {format(new Date(attachment.created_at), "dd/MM/yyyy", { locale: ptBR })}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setPreviewOpen(true)}
+            title="Ampliar imagem"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleDownload}
+            disabled={downloading}
+            title="Baixar arquivo"
+          >
+            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 opacity-0 group-hover:opacity-100"
+              onClick={() => onDelete(attachment.id, attachment.file_path)}
+              title="Remover anexo"
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          )}
         </div>
       </div>
+
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden bg-background border-0 sm:rounded-xl">
