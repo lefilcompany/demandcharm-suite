@@ -508,26 +508,29 @@ export function CreateRequestQuickDialog({
             >
               Cancelar
             </Button>
+          </div>
+
+          <div className="flex gap-2">
             {!isFirst && (
               <Button type="button" variant="outline" onClick={goBack} disabled={busy}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar
               </Button>
             )}
-          </div>
 
-          {isReview ? (
-            <Button type="button" onClick={handleSubmit} disabled={busy}>
-              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Send className="mr-2 h-4 w-4" />
-              {isUploading ? "Enviando anexos..." : "Enviar Solicitação"}
-            </Button>
-          ) : (
-            <Button type="button" onClick={goNext} disabled={busy}>
-              Próximo
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          )}
+            {isReview ? (
+              <Button type="button" onClick={handleSubmit} disabled={busy}>
+                {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Send className="mr-2 h-4 w-4" />
+                {isUploading ? "Enviando anexos..." : "Enviar Solicitação"}
+              </Button>
+            ) : (
+              <Button type="button" onClick={goNext} disabled={busy}>
+                Próximo
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
