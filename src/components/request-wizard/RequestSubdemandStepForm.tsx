@@ -57,15 +57,6 @@ export function RequestSubdemandStepForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label>Serviço *</Label>
-          <ServiceSelector
-            teamId={teamId}
-            boardId={boardId}
-            value={data.service_id || ""}
-            onChange={(id) => update({ service_id: id || undefined })}
-          />
-        </div>
-        <div className="space-y-2">
           <Label>Prioridade *</Label>
           <Select value={data.priority || "média"} onValueChange={(v) => update({ priority: v })}>
             <SelectTrigger className="h-8">
@@ -77,6 +68,15 @@ export function RequestSubdemandStepForm({
               <SelectItem value="alta">Alta</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Serviço *</Label>
+          <ServiceSelector
+            teamId={teamId}
+            boardId={boardId}
+            value={data.service_id || ""}
+            onChange={(id) => update({ service_id: id || undefined })}
+          />
         </div>
       </div>
 
