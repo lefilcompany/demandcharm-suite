@@ -1738,9 +1738,20 @@ export default function DemandRequests() {
             </div>
 
             {approving && (
-              <div className="border rounded-lg p-3">
-                <RequestAttachmentUploader requestId={approving.id} readOnly />
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Demanda Principal</Label>
+                <div className="border rounded-lg p-3">
+                  <RequestAttachmentUploader requestId={approving.id} readOnly subdemandIndex={null} />
+                </div>
               </div>
+            )}
+
+            {approving && Array.isArray((approving as any).subdemands_plan) && (approving as any).subdemands_plan.length > 0 && (
+              <SubdemandsPlanSection
+                requestId={approving.id}
+                boardId={approving.board_id}
+                plan={(approving as any).subdemands_plan}
+              />
             )}
 
             <div className="space-y-2">
