@@ -1,28 +1,38 @@
-## Problema
+## Objetivo
+No modal de visualização de solicitação em `/demand-requests`, quando a solicitação tiver subdemandas planejadas (`subdemands_plan`), separar visualmente a demanda principal e cada subdemanda, cada uma com seus próprios anexos.
 
-O upload de anexos em solicitações de demanda falha com `new row violates row-level security policy` porque a policy de INSERT no bucket `demand-attachments` exige que o **primeiro segmento do path seja o `auth.uid()` do usuário**:
+## Contexto atual
+- `src/pages/DemandRequests.tsx` (linhas 1510-1520) mostra um único bloco `RequestAttachmentUploader` com todos os anexos da solicitação, sem distinguir os que pertencem à demanda principal dos que pertencem às subdemandas.
+- No banco, `demand_request_attachments` já possui a coluna `subdemand_index`: os anexos da demanda principal têm `subdemand_index = null` e os das subdemandas têm o índice correspondente (0-based) — a lógica de upload já grava isso corretamente (`src/hooks/useRequestAttachments.ts` linha 89).
+- `subdemands_plan` é um array JSONB salvo em `demand_requests` com `{ title, description, priority, service_id, ... }` por item.
 
-```
-((auth.uid())::text = (storage.foldername(name))[1])
-```
+## Mudanças (apenas frontend, no modal de visualização)
 
-Todos os outros uploaders do sistema (`useAttachments`, `imageUploadUtils`, MCP) seguem essa convenção: `${user.id}/...`. Já o `useUploadRequestAttachment` usa `request-${requestId}/uuid.ext` ou `comment-${commentId}/uuid.ext`, sem o prefixo do usuário — por isso o RLS bloqueia.
+### 1. `src/components/RequestAttachmentUploader.tsx`
+- Aceitar prop opcional `subdemandIndex?: number | null` (default `null` = principal).
+- Filtrar `attachments` pelo `subdemand_index` correspondente antes de renderizar (principal = `subdemand_index == null`).
+- Repassar `subdemandIndex` ao `uploadAttachment.mutateAsync` (já suportado pelo hook).
+- Título do bloco continua "Anexos (N)" refletindo o total filtrado.
 
-## Correção
+### 2. `src/pages/DemandRequests.tsx` — modal `viewing`
+Reorganizar a área entre linhas ~1465-1520 em seções:
 
-Ajustar o path no `src/hooks/useRequestAttachments.ts` para seguir a mesma convenção do restante do sistema, mantendo o agrupamento por request/comentário:
+- **Demanda principal** (accordion/card aberto por padrão)
+  - Prioridade, Serviço, Descrição (já existentes)
+  - `RequestAttachmentUploader requestId={viewing.id}` (sem prop, = principal)
 
-- Antes: `request-${requestId}/${uuid}.${ext}` / `comment-${commentId}/${uuid}.${ext}`
-- Depois: `${user.id}/request-${requestId}/${uuid}.${ext}` / `${user.id}/comment-${commentId}/${uuid}.${ext}`
+- **Subdemandas** (se `Array.isArray(viewing.subdemands_plan) && length > 0`)
+  - Renderizar um `Accordion` (shadcn) com um item por subdemanda:
+    - Trigger: `#{i+1} — {title}` + badge de prioridade + badge de serviço (nome + horas via lookup em `services` já carregados no board, ou usar `service_id` bruto se indisponível).
+    - Conteúdo: descrição (RichTextDisplay) + `RequestAttachmentUploader requestId={viewing.id} subdemandIndex={i}`.
+  - Cabeçalho da seção: ícone `Layers` + "Subdemandas (N)".
 
-Isso resolve o erro sem precisar alterar policies (a policy atual já é a correta e segura — cada usuário só grava na sua própria pasta).
+- Comentários permanecem inalterados abaixo (são da solicitação inteira).
 
-## Fora de escopo
+### 3. Serviços das subdemandas
+Para exibir nome/horas do serviço da subdemanda, reutilizar o hook `useBoardServices(viewing.board_id)` já usado no arquivo (verificar; caso não esteja carregado ali, importar e resolver por `service_id`).
 
-- Não mexer nas policies de storage — a regra vigente é a padrão do projeto e alinhada com todos os outros uploads.
-- Não migrar anexos antigos de solicitações já criadas (se houver algum órfão, continuará acessível via `file_path` gravado no banco).
-- Nenhuma mudança em RLS de `demand_request_attachments` (a tabela já cobre o solicitante corretamente).
-
-## Verificação
-
-- Enviar solicitação com múltiplos anexos na principal e em subdemandas via `CreateRequestQuickDialog` como usuário solicitante e confirmar que todos os anexos ficam vinculados sem erro no console.
+## Fora do escopo
+- Não alterar RLS, storage, migrations ou o hook de upload.
+- Não mexer no card da lista (o "empilhamento estilo iOS" já existe).
+- Comentários da solicitação continuam globais (não por subdemanda).
