@@ -11,6 +11,7 @@ import {
 
 const FCM_SW_URL = "/firebase-messaging-sw.js";
 const FCM_SW_SCOPE = "/firebase-cloud-messaging-push-scope/";
+const FIREBASE_PUBLIC_CONFIG_FUNCTION = "firebase-public-config";
 
 export type PushRegistrationResult =
   | {
@@ -37,103 +38,203 @@ interface FirebasePublicConfig {
   storageBucket: string;
   messagingSenderId: string;
   appId: string;
-  vapidKey?: string;
 }
+
+type FirebaseConfigCandidate = {
+  config: Partial<FirebasePublicConfig>;
+  vapidKey: string | null;
+  source: "inline" | "generated" | "supabase";
+};
 
 type FirebaseRuntimeConfig = {
   config: FirebasePublicConfig | null;
   vapidKey: string | null;
   missing: string[];
+  source: string;
 };
 
-function readConfig(): FirebasePublicConfig | null {
+const CONFIG_FIELDS = [
+  "apiKey",
+  "authDomain",
+  "projectId",
+  "storageBucket",
+  "messagingSenderId",
+  "appId",
+] as const satisfies readonly (keyof FirebasePublicConfig)[];
+
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function readInlineCandidate(): FirebaseConfigCandidate {
   const env = import.meta.env;
-  const cfg = {
-    apiKey: env.VITE_FIREBASE_API_KEY,
-    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: env.VITE_FIREBASE_APP_ID,
+  return {
+    config: {
+      apiKey: stringValue(env.VITE_FIREBASE_API_KEY),
+      authDomain: stringValue(env.VITE_FIREBASE_AUTH_DOMAIN),
+      projectId: stringValue(env.VITE_FIREBASE_PROJECT_ID),
+      storageBucket: stringValue(env.VITE_FIREBASE_STORAGE_BUCKET),
+      messagingSenderId: stringValue(env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+      appId: stringValue(env.VITE_FIREBASE_APP_ID),
+    },
+    vapidKey: stringValue(env.VITE_FIREBASE_VAPID_KEY) || null,
+    source: "inline",
   };
-  if (Object.values(cfg).some((v) => !v || typeof v !== "string")) return null;
-  return cfg as FirebasePublicConfig;
 }
 
-function readVapidKey(): string | null {
-  const key = import.meta.env.VITE_FIREBASE_VAPID_KEY;
-  return typeof key === "string" && key.length > 0 ? key : null;
+function normalizeCandidate(
+  value: unknown,
+  source: FirebaseConfigCandidate["source"],
+): FirebaseConfigCandidate {
+  const record = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  return {
+    config: {
+      apiKey: stringValue(record.apiKey),
+      authDomain: stringValue(record.authDomain),
+      projectId: stringValue(record.projectId),
+      storageBucket: stringValue(record.storageBucket),
+      messagingSenderId: stringValue(record.messagingSenderId),
+      appId: stringValue(record.appId),
+    },
+    vapidKey: stringValue(record.vapidKey) || null,
+    source,
+  };
 }
 
-let generatedRuntimePromise: Promise<FirebaseRuntimeConfig> | null = null;
+function mergeCandidates(candidates: FirebaseConfigCandidate[]): FirebaseRuntimeConfig {
+  const merged: Partial<FirebasePublicConfig> = {};
+  const usedSources = new Set<string>();
 
-function parseGeneratedAssignment(text: string): FirebasePublicConfig | null {
+  for (const field of CONFIG_FIELDS) {
+    for (const candidate of candidates) {
+      const value = stringValue(candidate.config[field]);
+      if (!value) continue;
+      merged[field] = value;
+      usedSources.add(candidate.source);
+      break;
+    }
+  }
+
+  let vapidKey: string | null = null;
+  for (const candidate of candidates) {
+    if (!candidate.vapidKey) continue;
+    vapidKey = candidate.vapidKey;
+    usedSources.add(candidate.source);
+    break;
+  }
+
+  const missing: string[] = [];
+  for (const field of CONFIG_FIELDS) {
+    if (!stringValue(merged[field])) missing.push(field);
+  }
+  if (!vapidKey) missing.push("vapidKey");
+
+  return {
+    config: missing.some((field) => field !== "vapidKey")
+      ? null
+      : (merged as FirebasePublicConfig),
+    vapidKey,
+    missing,
+    source: usedSources.size > 0 ? [...usedSources].join("+") : "none",
+  };
+}
+
+function parseGeneratedAssignment(text: string): unknown {
   const match = text.match(/self\.__FIREBASE_CONFIG__\s*=\s*([\s\S]*?);\s*$/m);
   if (!match?.[1] || match[1].trim() === "null") return null;
   try {
-    const parsed = JSON.parse(match[1]) as FirebasePublicConfig;
-    if (!parsed || typeof parsed !== "object") return null;
-    return parsed;
+    return JSON.parse(match[1]);
   } catch (err) {
     console.error("[FCM] generated config parse failed", (err as Error)?.message);
     return null;
   }
 }
 
-function missingConfigFields(config: FirebasePublicConfig | null, vapidKey: string | null): string[] {
-  const missing: string[] = [];
-  if (!config?.apiKey) missing.push("apiKey");
-  if (!config?.authDomain) missing.push("authDomain");
-  if (!config?.projectId) missing.push("projectId");
-  if (!config?.storageBucket) missing.push("storageBucket");
-  if (!config?.messagingSenderId) missing.push("messagingSenderId");
-  if (!config?.appId) missing.push("appId");
-  if (!vapidKey) missing.push("vapidKey");
-  return missing;
-}
+let generatedConfigPromise: Promise<FirebaseConfigCandidate> | null = null;
+let supabaseConfigPromise: Promise<FirebaseConfigCandidate> | null = null;
 
-async function loadGeneratedRuntimeConfig(): Promise<FirebaseRuntimeConfig> {
-  if (typeof window === "undefined") {
-    return { config: null, vapidKey: null, missing: ["browser"] };
-  }
+async function loadGeneratedCandidate(cacheBust = false): Promise<FirebaseConfigCandidate> {
+  if (typeof window === "undefined") return normalizeCandidate(null, "generated");
   try {
-    const response = await fetch("/firebase-config.generated.js", {
+    const suffix = cacheBust ? `?t=${Date.now()}` : "";
+    const response = await fetch(`/firebase-config.generated.js${suffix}`, {
       cache: "no-store",
       credentials: "same-origin",
     });
-    if (!response.ok) {
-      return { config: null, vapidKey: null, missing: ["firebase-config.generated.js"] };
-    }
-    const generated = parseGeneratedAssignment(await response.text());
-    const vapidKey = generated?.vapidKey || null;
-    return {
-      config: generated,
-      vapidKey,
-      missing: missingConfigFields(generated, vapidKey),
-    };
+    if (!response.ok) return normalizeCandidate(null, "generated");
+    return normalizeCandidate(parseGeneratedAssignment(await response.text()), "generated");
   } catch (err) {
     console.error("[FCM] generated config load failed", (err as Error)?.message);
-    return { config: null, vapidKey: null, missing: ["firebase-config.generated.js"] };
+    return normalizeCandidate(null, "generated");
   }
 }
 
-async function resolveRuntimeConfig(): Promise<FirebaseRuntimeConfig> {
-  const inlineConfig = readConfig();
-  const inlineVapid = readVapidKey();
-  const inlineMissing = missingConfigFields(inlineConfig, inlineVapid);
-  if (inlineMissing.length === 0) {
-    return { config: inlineConfig, vapidKey: inlineVapid, missing: [] };
-  }
+async function loadSupabaseCandidate(): Promise<FirebaseConfigCandidate> {
+  const supabaseUrl = stringValue(import.meta.env.VITE_SUPABASE_URL).replace(/\/$/, "");
+  const publishableKey = stringValue(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+  if (!supabaseUrl) return normalizeCandidate(null, "supabase");
 
-  if (!generatedRuntimePromise) generatedRuntimePromise = loadGeneratedRuntimeConfig();
-  const generated = await generatedRuntimePromise;
-  if (generated.missing.length === 0) return generated;
-  return { config: inlineConfig || generated.config, vapidKey: inlineVapid || generated.vapidKey, missing: generated.missing };
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/${FIREBASE_PUBLIC_CONFIG_FUNCTION}`,
+      {
+        method: "GET",
+        cache: "no-store",
+        headers: publishableKey ? { apikey: publishableKey } : undefined,
+        signal: controller.signal,
+      },
+    );
+    if (!response.ok) {
+      console.warn("[FCM] runtime config endpoint unavailable", response.status);
+      return normalizeCandidate(null, "supabase");
+    }
+    return normalizeCandidate(await response.json(), "supabase");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "unknown error";
+    console.warn("[FCM] runtime config load failed", message);
+    return normalizeCandidate(null, "supabase");
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
-export async function checkFirebasePushConfig(): Promise<{ ready: boolean; missing: string[] }> {
-  const runtime = await resolveRuntimeConfig();
-  return { ready: runtime.missing.length === 0, missing: runtime.missing };
+async function resolveRuntimeConfig(forceRefresh = false): Promise<FirebaseRuntimeConfig> {
+  if (forceRefresh) {
+    generatedConfigPromise = null;
+    supabaseConfigPromise = null;
+  }
+
+  const inline = readInlineCandidate();
+  if (!generatedConfigPromise) {
+    generatedConfigPromise = loadGeneratedCandidate(forceRefresh);
+  }
+  const generated = await generatedConfigPromise;
+  const localRuntime = mergeCandidates([inline, generated]);
+  if (localRuntime.missing.length === 0) return localRuntime;
+
+  if (!supabaseConfigPromise) supabaseConfigPromise = loadSupabaseCandidate();
+  const remote = await supabaseConfigPromise;
+  const runtime = mergeCandidates([inline, generated, remote]);
+
+  // Do not permanently cache an incomplete/error response. A later retry can
+  // succeed immediately after the Edge Function or its secrets are deployed.
+  if (runtime.missing.length > 0) supabaseConfigPromise = null;
+  return runtime;
+}
+
+export async function checkFirebasePushConfig(): Promise<{
+  ready: boolean;
+  missing: string[];
+  source: string;
+}> {
+  const runtime = await resolveRuntimeConfig(true);
+  return {
+    ready: runtime.missing.length === 0,
+    missing: runtime.missing,
+    source: runtime.source,
+  };
 }
 
 let cachedApp: FirebaseApp | null = null;
@@ -147,10 +248,10 @@ function getFirebaseApp(cfg: FirebasePublicConfig | null): FirebaseApp | null {
   return cachedApp;
 }
 
-async function getFirebaseMessaging(): Promise<Messaging | null> {
+async function getFirebaseMessaging(runtime?: FirebaseRuntimeConfig): Promise<Messaging | null> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
-  const runtime = await resolveRuntimeConfig();
-  const app = getFirebaseApp(runtime.config);
+  const resolved = runtime ?? (await resolveRuntimeConfig());
+  const app = getFirebaseApp(resolved.config);
   if (!app) return null;
   if (!messagingSupportedPromise) messagingSupportedPromise = isSupported().catch(() => false);
   const supported = await messagingSupportedPromise;
@@ -166,64 +267,117 @@ async function getFirebaseMessaging(): Promise<Messaging | null> {
   return cachedMessaging;
 }
 
-async function waitForActive(reg: ServiceWorkerRegistration): Promise<void> {
-  if (reg.active) return;
-  const sw = reg.installing || reg.waiting;
-  if (!sw) throw new Error("no service worker instance");
+function buildFcmServiceWorkerUrl(config: FirebasePublicConfig): string {
+  const url = new URL(FCM_SW_URL, window.location.origin);
+  for (const field of CONFIG_FIELDS) url.searchParams.set(field, config[field]);
+  return `${url.pathname}${url.search}`;
+}
+
+async function waitForExpectedActive(
+  registration: ServiceWorkerRegistration,
+  expectedScriptUrl: string,
+): Promise<void> {
+  const expected = new URL(expectedScriptUrl, window.location.origin).href;
+  if (registration.active?.scriptURL === expected) return;
+
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error("sw activation timeout")), 15000);
-    sw.addEventListener("statechange", () => {
-      if (sw.state === "activated") {
-        clearTimeout(t);
+    const watched = new WeakSet<ServiceWorker>();
+    let intervalId = 0;
+    let timeoutId = 0;
+
+    const cleanup = () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+      registration.removeEventListener("updatefound", onUpdateFound);
+    };
+
+    const check = () => {
+      if (registration.active?.scriptURL === expected) {
+        cleanup();
         resolve();
       }
-    });
+    };
+
+    const watch = (worker: ServiceWorker | null) => {
+      if (!worker || watched.has(worker)) return;
+      watched.add(worker);
+      worker.addEventListener("statechange", check);
+    };
+
+    const onUpdateFound = () => {
+      watch(registration.installing);
+      check();
+    };
+
+    registration.addEventListener("updatefound", onUpdateFound);
+    watch(registration.installing);
+    watch(registration.waiting);
+    watch(registration.active);
+    intervalId = window.setInterval(check, 100);
+    timeoutId = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("sw activation timeout"));
+    }, 15000);
+    check();
   });
 }
 
-async function getOrRegisterFcmSw(): Promise<ServiceWorkerRegistration> {
-  // Do NOT use navigator.serviceWorker.ready — it may return the PWA worker.
+async function getOrRegisterFcmSw(
+  config: FirebasePublicConfig,
+): Promise<ServiceWorkerRegistration> {
+  // The public config is included in the script URL so the classic worker can
+  // initialize synchronously even when Lovable did not inject Firebase vars at build time.
+  const scriptUrl = buildFcmServiceWorkerUrl(config);
+  const expected = new URL(scriptUrl, window.location.origin).href;
   const existing = await navigator.serviceWorker.getRegistration(FCM_SW_SCOPE);
-  if (existing) {
-    await waitForActive(existing);
-    return existing;
-  }
-  const reg = await navigator.serviceWorker.register(FCM_SW_URL, {
+  if (existing?.active?.scriptURL === expected) return existing;
+
+  const registration = await navigator.serviceWorker.register(scriptUrl, {
     scope: FCM_SW_SCOPE,
+    updateViaCache: "none",
   });
-  await waitForActive(reg);
-  return reg;
+  await waitForExpectedActive(registration, expected);
+  return registration;
 }
 
-function shortToken(t: string) {
-  return `${t.slice(0, 6)}…`;
+function shortToken(token: string): string {
+  return `${token.slice(0, 6)}…`;
 }
 
 export async function requestNotificationPermission(): Promise<PushRegistrationResult> {
-  if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator)) {
+  if (
+    typeof window === "undefined" ||
+    !("Notification" in window) ||
+    !("serviceWorker" in navigator)
+  ) {
     return { ok: false, reason: "unsupported" };
   }
-  if (!window.isSecureContext) {
-    return { ok: false, reason: "insecure-context" };
-  }
-  const runtime = await resolveRuntimeConfig();
+  if (!window.isSecureContext) return { ok: false, reason: "insecure-context" };
+
+  const runtime = await resolveRuntimeConfig(true);
   if (!runtime.config || !runtime.vapidKey || runtime.missing.length > 0) {
-    return { ok: false, reason: "missing-config", error: runtime.missing.join(", ") };
+    return {
+      ok: false,
+      reason: "missing-config",
+      error: runtime.missing.join(", "),
+    };
   }
 
   const permission = await Notification.requestPermission();
-  if (permission !== "granted") {
-    return { ok: false, reason: "permission-denied" };
-  }
+  if (permission !== "granted") return { ok: false, reason: "permission-denied" };
 
   let registration: ServiceWorkerRegistration;
   try {
-    registration = await getOrRegisterFcmSw();
+    registration = await getOrRegisterFcmSw(runtime.config);
   } catch (err) {
-    return { ok: false, reason: "service-worker-error", error: (err as Error)?.message };
+    return {
+      ok: false,
+      reason: "service-worker-error",
+      error: (err as Error)?.message,
+    };
   }
 
-  const messaging = await getFirebaseMessaging();
+  const messaging = await getFirebaseMessaging(runtime);
   if (!messaging) return { ok: false, reason: "unsupported" };
 
   try {
@@ -235,22 +389,23 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
     console.log("[FCM] token obtained", shortToken(token));
     return { ok: true, token, registration };
   } catch (err) {
-    return { ok: false, reason: "token-error", error: (err as Error)?.message };
+    return {
+      ok: false,
+      reason: "token-error",
+      error: (err as Error)?.message,
+    };
   }
 }
 
-/**
- * Obtain the current FCM token without requesting permission again.
- * Returns null if permission not granted or messaging unavailable.
- */
+/** Obtain the current FCM token without requesting permission again. */
 export async function getCurrentFcmToken(): Promise<string | null> {
   if (typeof window === "undefined" || !("Notification" in window)) return null;
   if (Notification.permission !== "granted") return null;
   const runtime = await resolveRuntimeConfig();
   if (!runtime.config || !runtime.vapidKey || runtime.missing.length > 0) return null;
   try {
-    const registration = await getOrRegisterFcmSw();
-    const messaging = await getFirebaseMessaging();
+    const registration = await getOrRegisterFcmSw(runtime.config);
+    const messaging = await getFirebaseMessaging(runtime);
     if (!messaging) return null;
     const token = await getToken(messaging, {
       vapidKey: runtime.vapidKey,
@@ -264,18 +419,17 @@ export async function getCurrentFcmToken(): Promise<string | null> {
 }
 
 export async function subscribeToForegroundMessages(
-  callback: (payload: MessagePayload) => void
+  callback: (payload: MessagePayload) => void,
 ): Promise<() => void> {
   const messaging = await getFirebaseMessaging();
   if (!messaging) return () => {};
-  const unsub = onMessage(messaging, (payload) => {
+  return onMessage(messaging, (payload) => {
     try {
       callback(payload);
     } catch (err) {
       console.error("[FCM] foreground handler error", (err as Error)?.message);
     }
   });
-  return unsub;
 }
 
 export async function deleteFcmToken(): Promise<boolean> {
