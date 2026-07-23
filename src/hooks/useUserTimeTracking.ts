@@ -171,32 +171,22 @@ export function useStartUserTimer() {
     mutationFn: async (demandId: string) => {
       if (!user?.id) throw new Error("Usuário não autenticado");
 
-      // First, stop any active timer the user has on ANY demand
-      const { data: activeTimers, error: fetchError } = await supabase
+      // Allow multiple concurrent timers: do NOT stop other active timers.
+      // Only prevent starting a duplicate timer on the SAME demand.
+      const { data: existing, error: existingError } = await supabase
         .from("demand_time_entries")
-        .select("*")
+        .select("id")
         .eq("user_id", user.id)
-        .is("ended_at", null);
+        .eq("demand_id", demandId)
+        .is("ended_at", null)
+        .maybeSingle();
 
-      if (fetchError) throw fetchError;
-
-      // Stop all active timers
-      for (const timer of activeTimers || []) {
-        const elapsedMs = Date.now() - new Date(timer.started_at).getTime();
-        const elapsedSeconds = Math.floor(elapsedMs / 1000);
-
-        const { error: updateError } = await supabase
-          .from("demand_time_entries")
-          .update({
-            ended_at: new Date().toISOString(),
-            duration_seconds: elapsedSeconds,
-          })
-          .eq("id", timer.id);
-
-        if (updateError) throw updateError;
+      if (existingError) throw existingError;
+      if (existing) {
+        return { entry: existing, stoppedCount: 0 };
       }
 
-      // Now start new timer for this demand
+      // Start new timer for this demand
       const { data, error } = await supabase
         .from("demand_time_entries")
         .insert({
@@ -208,8 +198,9 @@ export function useStartUserTimer() {
         .single();
 
       if (error) throw error;
-      return { entry: data, stoppedCount: activeTimers?.length || 0 };
+      return { entry: data, stoppedCount: 0 };
     },
+
     onMutate: async (demandId) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["user-demand-time", demandId, user?.id] });
@@ -235,16 +226,21 @@ export function useStartUserTimer() {
         };
       });
 
-      // Optimistically update sidebar: replace all active timers with this one
+      // Optimistically append to sidebar active timers (keep existing ones)
       queryClient.setQueryData(["active-timer-demands", user?.id], (old: any[]) => {
-        return [{
-          id: demandId,
-          title: "...",
-          board_id: "",
-          boards: null,
-          started_at: now,
-          total_seconds: 0,
-        }];
+        const list = Array.isArray(old) ? old : [];
+        if (list.some((t) => t.id === demandId)) return list;
+        return [
+          ...list,
+          {
+            id: demandId,
+            title: "...",
+            board_id: "",
+            boards: null,
+            started_at: now,
+            total_seconds: 0,
+          },
+        ];
       });
       
       return { previousTime, previousActive };
@@ -260,11 +256,8 @@ export function useStartUserTimer() {
       console.error("Error starting timer:", error);
       toast.error("Erro ao iniciar o timer");
     },
-    onSuccess: (data) => {
-      if (data.stoppedCount > 0) {
-        toast.info("Timer anterior pausado automaticamente");
-      }
-    },
+    onSuccess: () => {},
+
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["demand-time-entries"] });
       queryClient.invalidateQueries({ queryKey: ["user-active-timer"] });
