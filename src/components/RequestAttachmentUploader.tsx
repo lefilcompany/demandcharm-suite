@@ -410,6 +410,35 @@ export function RequestAttachmentUploader({ requestId, readOnly = false, subdema
     handleFiles(e.dataTransfer.files);
   }, [handleFiles]);
 
+  // Paste-to-upload for images from clipboard
+  useEffect(() => {
+    if (readOnly) return;
+    const onPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const files: File[] = [];
+      for (const item of Array.from(items)) {
+        if (item.kind === "file") {
+          const f = item.getAsFile();
+          if (f) {
+            const named = f.name && f.name !== "image.png"
+              ? f
+              : new File([f], `pasted-${Date.now()}.${(f.type.split("/")[1] || "png")}`, { type: f.type });
+            files.push(named);
+          }
+        }
+      }
+      if (files.length === 0) return;
+      const dt = new DataTransfer();
+      files.forEach((f) => dt.items.add(f));
+      handleFiles(dt.files);
+      toast.success(`${files.length} arquivo(s) colado(s)`);
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [readOnly, handleFiles]);
+
+
   const handleDelete = async (id: string, filePath: string) => {
     try {
       await deleteAttachment.mutateAsync({ id, filePath, requestId });
