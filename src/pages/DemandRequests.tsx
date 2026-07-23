@@ -54,6 +54,8 @@ import { useTeamMembershipRole } from "@/hooks/useTeamRole";
 import { cn } from "@/lib/utils";
 import { SEOHead } from "@/components/SEOHead";
 import { RequestSubdemandStepForm, type RequestSubdemandFormData } from "@/components/request-wizard/RequestSubdemandStepForm";
+import { SubdemandCountStep } from "@/components/create-demand";
+
 import { Plus as PlusIcon, Trash2 as TrashIcon } from "lucide-react";
 import { safeDateTimestamp } from "@/lib/demandViewSafety";
 
@@ -524,6 +526,24 @@ export default function DemandRequests() {
   const removeEditSubdemand = (index: number) => {
     setEditSubdemands((prev) => prev.filter((_, i) => i !== index));
   };
+
+  const setEditSubdemandCount = (count: number) => {
+    const bounded = Math.max(0, Math.min(20, count));
+    setEditSubdemands((prev) => {
+      if (bounded === prev.length) return prev;
+      if (bounded > prev.length) {
+        const extra = Array.from({ length: bounded - prev.length }, () => ({
+          tempId: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+          title: "",
+          priority: "média" as const,
+          pendingFiles: [],
+        })) as RequestSubdemandFormData[];
+        return [...prev, ...extra];
+      }
+      return prev.slice(0, bounded);
+    });
+  };
+
 
   const handleResubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1945,22 +1965,23 @@ export default function DemandRequests() {
                 </div>
               )}
 
-              <div className="border-t pt-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base font-semibold flex items-center gap-2">
-                      <Layers className="h-4 w-4" />
-                      Subdemandas ({editSubdemands.length})
-                    </Label>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Divida esta solicitação em etapas menores. Cada subdemanda pode ter serviço, prioridade e anexos próprios.
-                    </p>
-                  </div>
-                  <Button type="button" variant="outline" size="sm" onClick={addEditSubdemand}>
-                    <PlusIcon className="h-4 w-4 mr-1" />
-                    Adicionar
-                  </Button>
+              <div className="border-t pt-4 space-y-4">
+                <div>
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    <Layers className="h-4 w-4" />
+                    Subdemandas ({editSubdemands.length})
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Divida esta solicitação em etapas menores. Cada subdemanda pode ter serviço, prioridade e anexos próprios.
+                  </p>
                 </div>
+
+                <SubdemandCountStep
+                  count={editSubdemands.length}
+                  onChange={setEditSubdemandCount}
+                />
+
+
 
                 {editSubdemands.length > 0 && (
                   <Accordion type="multiple" className="space-y-2">
