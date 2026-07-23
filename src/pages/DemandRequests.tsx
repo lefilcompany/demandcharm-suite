@@ -53,6 +53,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { useTeamMembershipRole } from "@/hooks/useTeamRole";
 import { cn } from "@/lib/utils";
 import { SEOHead } from "@/components/SEOHead";
+import { RequestSubdemandStepForm, type RequestSubdemandFormData } from "@/components/request-wizard/RequestSubdemandStepForm";
+import { Plus as PlusIcon, Trash2 as TrashIcon } from "lucide-react";
 import { safeDateTimestamp } from "@/lib/demandViewSafety";
 
 const priorityColors: Record<string, string> = {
