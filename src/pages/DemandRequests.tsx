@@ -61,6 +61,69 @@ const priorityColors: Record<string, string> = {
   alta: "bg-destructive/20 text-destructive border-destructive/30"
 };
 
+interface SubdemandPlanItem {
+  title?: string;
+  description?: string;
+  priority?: string;
+  service_id?: string;
+}
+
+function SubdemandsPlanSection({ requestId, boardId, plan }: { requestId: string; boardId: string; plan: SubdemandPlanItem[] }) {
+  const { data: boardServices } = useBoardServices(boardId);
+  const serviceMap = useMemo(() => {
+    const map = new Map<string, { name: string; estimated_hours: number | null }>();
+    (boardServices || []).forEach((bs: any) => {
+      if (bs?.service?.id) map.set(bs.service.id, { name: bs.service.name, estimated_hours: bs.service.estimated_hours });
+    });
+    return map;
+  }, [boardServices]);
+
+  return (
+    <div className="space-y-2 pt-4 border-t">
+      <Label className="flex items-center gap-2 text-sm font-medium">
+        <Layers className="h-4 w-4" />
+        Subdemandas ({plan.length})
+      </Label>
+      <Accordion type="multiple" className="border rounded-lg divide-y">
+        {plan.map((sub, i) => {
+          const svc = sub.service_id ? serviceMap.get(sub.service_id) : null;
+          return (
+            <AccordionItem key={i} value={`sub-${i}`} className="border-0 px-3">
+              <AccordionTrigger className="hover:no-underline py-3">
+                <div className="flex flex-1 items-center gap-2 text-left flex-wrap pr-2">
+                  <span className="text-xs font-mono text-muted-foreground">#{i + 1}</span>
+                  <span className="text-sm font-medium">{sub.title || "(sem título)"}</span>
+                  {sub.priority && (
+                    <Badge variant="outline" className={`${priorityColors[sub.priority] || ""} text-[10px]`}>
+                      {sub.priority}
+                    </Badge>
+                  )}
+                  {svc && (
+                    <Badge variant="outline" className="text-[10px]">
+                      {svc.name}{svc.estimated_hours != null ? ` (${svc.estimated_hours}h)` : ""}
+                    </Badge>
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-3 space-y-3">
+                {sub.description && (
+                  <div className="p-3 rounded-md bg-muted text-sm">
+                    <RichTextDisplay content={sub.description} />
+                  </div>
+                )}
+                <div className="border rounded-lg p-3">
+                  <RequestAttachmentUploader requestId={requestId} readOnly subdemandIndex={i} />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
+      </Accordion>
+    </div>
+  );
+}
+
+
 export default function DemandRequests() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
