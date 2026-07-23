@@ -43,10 +43,10 @@ export async function uploadInlineImages(content: string): Promise<string> {
     try {
       const blob = await dataUrlToBlob(m.dataUrl);
       const ext = blob.type.split("/")[1] === "jpeg" ? "jpg" : (blob.type.split("/")[1] || "png");
-      const filePath = `${user.id}/inline/${crypto.randomUUID()}.${ext}`;
+      const filePath = `${user.id}/chat/${crypto.randomUUID()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("demand-attachments")
+        .from("inline-images")
         .upload(filePath, blob, { contentType: blob.type });
 
       if (uploadError) {
@@ -54,11 +54,11 @@ export async function uploadInlineImages(content: string): Promise<string> {
         continue;
       }
 
-      const { data: signedData } = await supabase.storage
-        .from("demand-attachments")
-        .createSignedUrl(filePath, 31536000); // 1 year
+      const { data: publicData } = supabase.storage
+        .from("inline-images")
+        .getPublicUrl(filePath);
 
-      const url = signedData?.signedUrl;
+      const url = publicData?.publicUrl;
       if (!url) continue;
 
       const replacement = m.width
