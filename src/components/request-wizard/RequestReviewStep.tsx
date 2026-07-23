@@ -67,7 +67,6 @@ export function RequestReviewStep({
                 </div>
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
                   <span>{priorityLabels[sub.priority || "média"] || sub.priority}</span>
-                  {sub.due_date && <span>Entrega: {sub.due_date}</span>}
                   {sub.pendingFiles && sub.pendingFiles.length > 0 && (
                     <span className="flex items-center gap-1">
                       <Paperclip className="h-3 w-3" />

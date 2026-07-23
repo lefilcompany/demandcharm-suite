@@ -13,7 +13,6 @@ export interface RequestSubdemandFormData {
   description?: string;
   priority?: string;
   service_id?: string;
-  due_date?: string;
   dependsOnIndex?: number;
   pendingFiles?: PendingFile[];
 }
@@ -79,16 +78,6 @@ export function RequestSubdemandStepForm({
             </SelectContent>
           </Select>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Data de Entrega desejada</Label>
-        <Input
-          type="date"
-          value={data.due_date || ""}
-          onChange={(e) => update({ due_date: e.target.value || undefined })}
-          className="h-8"
-        />
       </div>
 
       {availableDeps.length > 0 && (

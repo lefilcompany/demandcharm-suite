@@ -101,7 +101,6 @@ export function CreateRequestQuickDialog({
         description: s.description,
         priority: s.priority,
         service_id: s.service_id,
-        due_date: s.due_date,
         dependsOnIndex: s.dependsOnIndex,
       })),
     [subdemands]
@@ -133,7 +132,6 @@ export function CreateRequestQuickDialog({
               description: v.description,
               priority: v.priority || "média",
               service_id: v.service_id,
-              due_date: v.due_date,
               dependsOnIndex: v.dependsOnIndex,
             }))
           );
@@ -264,7 +262,6 @@ export function CreateRequestQuickDialog({
           description: s.description,
           priority: s.priority || "média",
           service_id: s.service_id,
-          due_date: s.due_date,
           dependsOnIndex: s.dependsOnIndex,
         })),
       });

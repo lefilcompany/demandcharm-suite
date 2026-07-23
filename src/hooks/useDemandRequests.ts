@@ -214,7 +214,6 @@ export function useCreateDemandRequest() {
         description?: string;
         priority?: string;
         service_id?: string;
-        due_date?: string;
         dependsOnIndex?: number;
       }>;
     }) => {
@@ -481,7 +480,7 @@ export function useApproveDemandRequest() {
               priority: item.priority || "média",
               service_id: item.service_id || null,
               status_id: defaultStatusId,
-              due_date: item.due_date || null,
+              due_date: null,
             })
             .select("id")
             .single();
