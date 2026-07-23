@@ -54,6 +54,8 @@ import { useTeamMembershipRole } from "@/hooks/useTeamRole";
 import { cn } from "@/lib/utils";
 import { SEOHead } from "@/components/SEOHead";
 import { RequestSubdemandStepForm, type RequestSubdemandFormData } from "@/components/request-wizard/RequestSubdemandStepForm";
+import { SubdemandCountStep } from "@/components/create-demand";
+
 import { Plus as PlusIcon, Trash2 as TrashIcon } from "lucide-react";
 import { safeDateTimestamp } from "@/lib/demandViewSafety";
 
