@@ -55,7 +55,7 @@ export function CreateRequestQuickDialog({
   selectedDate,
 }: CreateRequestQuickDialogProps) {
   const navigate = useNavigate();
-  const { selectedBoardId, currentTeamId, selectedBoard } = useSelectedBoard();
+  const { selectedBoardId, currentTeamId, currentBoard } = useSelectedBoard();
   const { data: boardServices } = useBoardServices(selectedBoardId || undefined);
   const createRequest = useCreateDemandRequest();
   const uploadAttachment = useUploadRequestAttachment();
