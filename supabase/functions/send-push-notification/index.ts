@@ -16,12 +16,30 @@ interface PushNotificationRequest {
 
 interface UserPreferences {
   pushNotifications?: boolean;
+  emailNotifications?: boolean;
   demandUpdates?: boolean;
   teamUpdates?: boolean;
   deadlineReminders?: boolean;
   adjustmentRequests?: boolean;
   mentionNotifications?: boolean;
 }
+
+// Map internal notification channel -> email visual type
+function emailTypeForNotification(notificationType: string): "info" | "success" | "warning" | "error" {
+  switch (notificationType) {
+    case "adjustmentRequests":
+      return "warning";
+    case "deadlineReminders":
+      return "warning";
+    case "mentionNotifications":
+      return "info";
+    case "teamUpdates":
+      return "info";
+    default:
+      return "info";
+  }
+}
+
 
 interface ServiceAccount {
   client_email: string;
@@ -221,9 +239,11 @@ async function sendOne(
 function shouldSendNotification(
   preferences: UserPreferences | null,
   notificationType: string,
+  channel: "push" | "email" = "push",
 ): boolean {
   if (!preferences) return true;
-  if (preferences.pushNotifications === false) return false;
+  if (channel === "push" && preferences.pushNotifications === false) return false;
+  if (channel === "email" && preferences.emailNotifications === false) return false;
   switch (notificationType) {
     case "demandUpdates":
       return preferences.demandUpdates !== false;
@@ -239,6 +259,50 @@ function shouldSendNotification(
       return true;
   }
 }
+
+async function sendMirrorEmail(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  userId: string,
+  title: string,
+  body: string,
+  actionUrl: string,
+  notificationType: string,
+): Promise<{ ok: boolean; code?: string }> {
+  try {
+    const resp = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceRoleKey}`,
+        apikey: serviceRoleKey,
+      },
+      body: JSON.stringify({
+        to: userId,
+        subject: title.slice(0, 200),
+        template: "notification",
+        templateData: {
+          title: title.slice(0, 200),
+          message: body.slice(0, 5000),
+          actionUrl,
+          actionText: "Abrir no SoMA+",
+          type: emailTypeForNotification(notificationType),
+        },
+      }),
+    });
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => "");
+      console.warn("[push->email] mirror failed", resp.status, errText.slice(0, 200));
+      return { ok: false, code: `HTTP_${resp.status}` };
+    }
+    await resp.json().catch(() => undefined);
+    return { ok: true };
+  } catch (err) {
+    console.error("[push->email] mirror error", (err as Error)?.message);
+    return { ok: false, code: "NETWORK_ERROR" };
+  }
+}
+
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -328,7 +392,11 @@ Deno.serve(async (req: Request) => {
       userPrefsMap.set(p.user_id, p.preference_value as UserPreferences);
     }
 
-    // 5. Tokens (per-device)
+    // 5. Compute app URL + normalized link (needed for both push and email)
+    const appUrl = Deno.env.get("APP_URL") || "https://demandcharm-suite.lovable.app";
+    const finalLink = normalizeLink(link, appUrl);
+
+    // 6. Tokens (per-device)
     const { data: tokens, error: tokensError } = await supabase
       .from("fcm_tokens")
       .select("id, user_id, token, device_id")
@@ -338,94 +406,84 @@ Deno.serve(async (req: Request) => {
       return respond(500, { error: "database_error" });
     }
 
-    // 6. Filter opted-out users
+    // 7. Filter opted-out users for push
     const eligible = (tokens || []).filter((row) => {
       const prefs = userPrefsMap.get(row.user_id) || null;
-      return shouldSendNotification(prefs, notificationType);
+      return shouldSendNotification(prefs, notificationType, "push");
     });
     const skipped = (tokens?.length || 0) - eligible.length;
 
-    if (eligible.length === 0) {
-      return respond(200, {
-        success: true,
-        sent: 0,
-        failed: 0,
-        skipped,
-        blocked,
-        errors: [],
-      });
-    }
-
-    // 7. Firebase config
-    const serviceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
-    if (!serviceAccountJson) {
-      console.error("[push] FIREBASE_SERVICE_ACCOUNT missing");
-      return respond(500, { error: "firebase_not_configured" });
-    }
-    let serviceAccount: ServiceAccount;
-    try {
-      serviceAccount = JSON.parse(serviceAccountJson);
-    } catch {
-      console.error("[push] FIREBASE_SERVICE_ACCOUNT is not valid JSON");
-      return respond(500, { error: "firebase_service_account_invalid" });
-    }
-    if (!serviceAccount.client_email || !serviceAccount.private_key || !serviceAccount.project_id) {
-      console.error("[push] service account missing required fields");
-      return respond(500, { error: "firebase_service_account_incomplete" });
-    }
-    const configuredProjectId = Deno.env.get("FIREBASE_PROJECT_ID");
-    if (!configuredProjectId) {
-      console.error("[push] FIREBASE_PROJECT_ID missing");
-      return respond(500, { error: "firebase_project_id_missing" });
-    }
-    if (serviceAccount.project_id !== configuredProjectId) {
-      console.error("[push] service account project_id mismatch");
-      return respond(500, { error: "firebase_project_id_mismatch" });
-    }
-
-    const appUrl = Deno.env.get("APP_URL") || "https://demandcharm-suite.lovable.app";
-    const finalLink = normalizeLink(link, appUrl);
-
-    const notificationData: Record<string, string> = {};
-    if (data) {
-      for (const [k, v] of Object.entries(data)) {
-        notificationData[k] = String(v);
-      }
-    }
-    notificationData.link = finalLink;
-
-    // 8. Access token (only after we know we have targets)
-    let accessToken: string;
-    try {
-      accessToken = await getAccessToken(serviceAccount);
-    } catch (err) {
-      console.error("[push] access token failed", (err as Error)?.message);
-      return respond(500, { error: "google_auth_failed" });
-    }
-
-    // 9. Send
+    // 8. Send push (only when we have tokens AND Firebase config is valid)
     let sent = 0;
     let failed = 0;
     const errors: { userId: string; deviceId: string; code: string }[] = [];
     const tokensToRemove: string[] = [];
 
-    for (const row of eligible) {
-      const r = await sendOne(
-        accessToken,
-        serviceAccount.project_id,
-        row.token,
-        title,
-        body,
-        finalLink,
-        notificationData,
-        notificationType,
-      );
-      if (r.ok) {
-        sent++;
+    if (eligible.length > 0) {
+      const serviceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
+      const configuredProjectId = Deno.env.get("FIREBASE_PROJECT_ID");
+      let serviceAccount: ServiceAccount | null = null;
+      let firebaseReady = false;
+
+      if (!serviceAccountJson) {
+        console.error("[push] FIREBASE_SERVICE_ACCOUNT missing — skipping push, still sending emails");
       } else {
-        failed++;
-        errors.push({ userId: row.user_id, deviceId: row.device_id, code: r.code || "UNKNOWN" });
-        if (r.removeToken) tokensToRemove.push(row.token);
+        try {
+          serviceAccount = JSON.parse(serviceAccountJson);
+        } catch {
+          console.error("[push] FIREBASE_SERVICE_ACCOUNT is not valid JSON — skipping push");
+        }
+        if (
+          serviceAccount &&
+          serviceAccount.client_email &&
+          serviceAccount.private_key &&
+          serviceAccount.project_id &&
+          configuredProjectId &&
+          serviceAccount.project_id === configuredProjectId
+        ) {
+          firebaseReady = true;
+        } else {
+          console.error("[push] Firebase config incomplete/mismatch — skipping push");
+        }
+      }
+
+      if (firebaseReady && serviceAccount) {
+        const notificationData: Record<string, string> = {};
+        if (data) {
+          for (const [k, v] of Object.entries(data)) {
+            notificationData[k] = String(v);
+          }
+        }
+        notificationData.link = finalLink;
+
+        let accessToken: string | null = null;
+        try {
+          accessToken = await getAccessToken(serviceAccount);
+        } catch (err) {
+          console.error("[push] access token failed", (err as Error)?.message);
+        }
+
+        if (accessToken) {
+          for (const row of eligible) {
+            const r = await sendOne(
+              accessToken,
+              serviceAccount.project_id,
+              row.token,
+              title,
+              body,
+              finalLink,
+              notificationData,
+              notificationType,
+            );
+            if (r.ok) {
+              sent++;
+            } else {
+              failed++;
+              errors.push({ userId: row.user_id, deviceId: row.device_id, code: r.code || "UNKNOWN" });
+              if (r.removeToken) tokensToRemove.push(row.token);
+            }
+          }
+        }
       }
     }
 
@@ -437,14 +495,51 @@ Deno.serve(async (req: Request) => {
       if (delErr) console.error("[push] token cleanup failed", delErr.message);
     }
 
+    // 9. Mirror to email — one message per user in allowedUserIds who has not
+    // opted out of the email channel or this notification type. Runs even when
+    // the user has no devices, so notifications are never lost.
+    let emailsSent = 0;
+    let emailsFailed = 0;
+    let emailsSkipped = 0;
+    const emailErrors: { userId: string; code: string }[] = [];
+
+    for (const uid of allowedUserIds) {
+      const prefs = userPrefsMap.get(uid) || null;
+      if (!shouldSendNotification(prefs, notificationType, "email")) {
+        emailsSkipped++;
+        continue;
+      }
+      const r = await sendMirrorEmail(
+        supabaseUrl,
+        supabaseServiceKey,
+        uid,
+        title,
+        body,
+        finalLink,
+        notificationType,
+      );
+      if (r.ok) emailsSent++;
+      else {
+        emailsFailed++;
+        emailErrors.push({ userId: uid, code: r.code || "UNKNOWN" });
+      }
+    }
+
     return respond(200, {
-      success: failed === 0,
+      success: failed === 0 && emailsFailed === 0,
       sent,
       failed,
       skipped,
       blocked,
       errors,
+      email: {
+        sent: emailsSent,
+        failed: emailsFailed,
+        skipped: emailsSkipped,
+        errors: emailErrors,
+      },
     });
+
   } catch (err) {
     console.error("[push] fatal", (err as Error)?.message);
     return respond(500, { error: "internal_error" });
