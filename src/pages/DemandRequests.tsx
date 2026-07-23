@@ -513,8 +513,34 @@ export default function DemandRequests() {
     }
   };
 
-  const renderRequestCard = (request: any, showReapproveButton = false) => (
-    <Card key={request.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setViewing(request)}>
+  const getSubdemandCount = (request: any): number => {
+    const plan = request?.subdemands_plan;
+    return Array.isArray(plan) ? plan.length : 0;
+  };
+
+  const withSubdemandStack = (request: any, cardNode: React.ReactNode) => {
+    const count = getSubdemandCount(request);
+    if (count <= 0) return cardNode;
+    return (
+      <div key={request.id} className="relative" style={{ marginBottom: count > 1 ? 14 : 8 }}>
+        {/* iOS-style stacked layers behind the card */}
+        <div
+          aria-hidden
+          className="absolute left-3 right-3 -bottom-1 h-3 rounded-xl border border-border/60 bg-card shadow-sm -z-10"
+        />
+        {count > 1 && (
+          <div
+            aria-hidden
+            className="absolute left-5 right-5 -bottom-2 h-3 rounded-xl border border-border/50 bg-card/80 shadow-sm -z-20"
+          />
+        )}
+        {cardNode}
+      </div>
+    );
+  };
+
+  const renderRequestCard = (request: any, showReapproveButton = false) => withSubdemandStack(request,
+    <Card key={request.id} className="cursor-pointer hover:shadow-md transition-shadow relative" onClick={() => setViewing(request)}>
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
           <div className="flex-1">
