@@ -335,13 +335,24 @@ export function useUpdateDemandRequest() {
       status?: string;
       subdemands_plan?: any;
     }) => {
+      // Only reset to "pending" when the requester is resubmitting a returned request.
+      // Editing an already-approved/pending request must preserve its status.
+      const { data: current, error: fetchError } = await supabase
+        .from("demand_requests")
+        .select("status")
+        .eq("id", id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const patch: Record<string, unknown> = { ...data };
+      if (current?.status === "returned") {
+        patch.status = "pending";
+        patch.rejection_reason = null;
+      }
+
       const { data: result, error } = await supabase
         .from("demand_requests")
-        .update({
-          ...data,
-          status: "pending", // Reset to pending when resubmitting
-          rejection_reason: null,
-        } as any)
+        .update(patch as any)
         .eq("id", id)
         .select()
         .single();
