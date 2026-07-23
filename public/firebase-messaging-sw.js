@@ -5,7 +5,12 @@
 // inject Firebase variables at build time and the frontend loads them from the
 // Supabase firebase-public-config Edge Function.
 
-importScripts("/firebase-config.generated.js");
+try {
+  importScripts("/firebase-config.generated.js");
+} catch (error) {
+  console.warn("[FCM SW] Generated Firebase config asset unavailable", error?.message);
+  self.__FIREBASE_CONFIG__ = null;
+}
 
 function readConfigFromScriptUrl() {
   try {
