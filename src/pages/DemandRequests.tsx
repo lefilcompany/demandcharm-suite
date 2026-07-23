@@ -525,6 +525,24 @@ export default function DemandRequests() {
     setEditSubdemands((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const setEditSubdemandCount = (count: number) => {
+    const bounded = Math.max(0, Math.min(20, count));
+    setEditSubdemands((prev) => {
+      if (bounded === prev.length) return prev;
+      if (bounded > prev.length) {
+        const extra = Array.from({ length: bounded - prev.length }, () => ({
+          tempId: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+          title: "",
+          priority: "média" as const,
+          pendingFiles: [],
+        })) as RequestSubdemandFormData[];
+        return [...prev, ...extra];
+      }
+      return prev.slice(0, bounded);
+    });
+  };
+
+
   const handleResubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingRequest || !editTitle.trim()) return;
