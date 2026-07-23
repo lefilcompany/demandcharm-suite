@@ -47,11 +47,14 @@ export function CreateRequestQuickDialog({
   const { selectedBoardId, currentTeamId } = useSelectedBoard();
   const { data: boardServices } = useBoardServices(selectedBoardId || undefined);
   const createRequest = useCreateDemandRequest();
+  const uploadAttachment = useUploadRequestAttachment();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<string>("média");
   const [serviceId, setServiceId] = useState<string>("");
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Draft persistence
   const draftFields = useMemo(
