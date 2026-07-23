@@ -46,6 +46,8 @@ import { useUploadRequestAttachment } from "@/hooks/useRequestAttachments";
 import { CommentAttachmentUploader } from "@/components/CommentAttachmentUploader";
 import { CommentAttachments } from "@/components/CommentAttachments";
 import { ServiceSelector } from "@/components/ServiceSelector";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useBoardServices } from "@/hooks/useBoardServices";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useTeamMembershipRole } from "@/hooks/useTeamRole";
