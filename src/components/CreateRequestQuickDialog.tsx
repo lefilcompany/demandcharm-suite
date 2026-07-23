@@ -262,7 +262,6 @@ export function CreateRequestQuickDialog({
           description: s.description,
           priority: s.priority || "média",
           service_id: s.service_id,
-          due_date: s.due_date,
           dependsOnIndex: s.dependsOnIndex,
         })),
       });
