@@ -21,6 +21,7 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { RichTextEditor, RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { Input } from "@/components/ui/input";
@@ -89,6 +90,7 @@ export default function DemandRequests() {
   const [viewing, setViewing] = useState<any | null>(null);
   const [approving, setApproving] = useState<any | null>(null);
   const [returning, setReturning] = useState<any | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState("");
   const [returnReason, setReturnReason] = useState("");
@@ -450,12 +452,19 @@ export default function DemandRequests() {
   };
 
   const handleDeleteRequest = (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta solicitação?")) return;
+    setDeletingId(id);
+  };
+
+  const confirmDeleteRequest = () => {
+    if (!deletingId) return;
+    const id = deletingId;
     deleteRequest.mutate(id, {
       onSuccess: () => toast.success("Solicitação excluída"),
       onError: (error: any) => toast.error("Erro ao excluir", { description: getErrorMessage(error) }),
     });
+    setDeletingId(null);
   };
+
 
   const getInitials = (name: string) => {
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
@@ -1744,6 +1753,26 @@ export default function DemandRequests() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir solicitação?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta solicitação? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteRequest}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
