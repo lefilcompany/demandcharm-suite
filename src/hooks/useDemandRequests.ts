@@ -208,6 +208,15 @@ export function useCreateDemandRequest() {
       description?: string;
       priority?: string;
       service_id?: string;
+      subdemands_plan?: Array<{
+        tempId: string;
+        title: string;
+        description?: string;
+        priority?: string;
+        service_id?: string;
+        due_date?: string;
+        dependsOnIndex?: number;
+      }>;
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
@@ -220,12 +229,15 @@ export function useCreateDemandRequest() {
 
       const requesterName = profile?.full_name || "Usuário";
 
+      const { subdemands_plan = [], ...rest } = data;
+
       const { data: result, error } = await supabase
         .from("demand_requests")
         .insert({
-          ...data,
+          ...rest,
           created_by: user.id,
-        })
+          subdemands_plan: subdemands_plan as any,
+        } as any)
         .select()
         .single();
 
