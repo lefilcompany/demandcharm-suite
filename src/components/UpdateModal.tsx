@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { useRegisterSW } from "virtual:pwa-register/react";
-import { useTheme } from "next-themes";
+
 import {
   Dialog,
   DialogContent,
