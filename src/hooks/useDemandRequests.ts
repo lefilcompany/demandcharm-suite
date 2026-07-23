@@ -593,7 +593,7 @@ export function useReturnDemandRequest() {
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("demand_requests")
         .update({
           status: "returned",
@@ -601,9 +601,16 @@ export function useReturnDemandRequest() {
           responded_by: user.id,
           responded_at: new Date().toISOString(),
         })
-        .eq("id", requestId);
+        .eq("id", requestId)
+        .select("id")
+        .maybeSingle();
 
       if (error) throw error;
+      if (!updated) {
+        throw new Error(
+          "Não foi possível devolver a solicitação: você não tem permissão de aprovador neste quadro."
+        );
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["demand-requests"] });
