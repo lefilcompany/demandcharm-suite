@@ -18,7 +18,6 @@ const POLL_INTERVAL = 60 * 1000; // 60s
 export function UpdateModal() {
   const {
     needRefresh: [needRefresh],
-    updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
       if (registration) {
