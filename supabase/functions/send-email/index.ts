@@ -141,21 +141,28 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Verify authentication
-    const { userId, error: authError } = await verifyAuth(req);
-    
-    if (authError || !userId) {
-      console.warn("Unauthorized email attempt:", authError);
-      return new Response(
-        JSON.stringify({ error: authError || "Unauthorized" }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+    // Allow internal callers (edge-to-edge) using the service-role bearer to bypass
+    // per-user auth. External callers still require a valid user JWT.
+    const authHeader = req.headers.get("authorization") || "";
+    const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    const isInternalCall = !!SUPABASE_SERVICE_ROLE_KEY && bearer === SUPABASE_SERVICE_ROLE_KEY;
+
+    let userId: string | null = null;
+    if (!isInternalCall) {
+      const auth = await verifyAuth(req);
+      if (auth.error || !auth.userId) {
+        console.warn("Unauthorized email attempt:", auth.error);
+        return new Response(
+          JSON.stringify({ error: auth.error || "Unauthorized" }),
+          { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      userId = auth.userId;
+      console.log(`Email request from authenticated user: ${userId}`);
+    } else {
+      console.log("Email request from internal service-role caller");
     }
 
-    console.log(`Email request from authenticated user: ${userId}`);
 
     const rawPayload = await req.json().catch(() => null);
     if (!isRecord(rawPayload)) {
