@@ -18,7 +18,6 @@ const POLL_INTERVAL = 60 * 1000; // 60s
 export function UpdateModal() {
   const {
     needRefresh: [needRefresh],
-    updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
       if (registration) {
@@ -35,17 +34,23 @@ export function UpdateModal() {
   const handleUpdate = async () => {
     setUpdating(true);
     try {
-      // 1. Clear ONLY service worker caches (NOT localStorage/sessionStorage)
-      // This preserves the Supabase auth session so users don't get logged out.
+      // 1. Unregister every service worker so no stale worker intercepts the reload.
+      if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((r) => r.unregister()));
+      }
+
+      // 2. Clear all Cache Storage entries (app shell, runtime, precache, etc.).
+      // localStorage/sessionStorage are intentionally preserved so the Supabase
+      // auth session survives the update.
       const cacheKeys = await caches.keys();
       await Promise.all(cacheKeys.map((k) => caches.delete(k)));
 
-      // 2. Activate new SW
-      await updateServiceWorker(true);
-
-      // 3. Soft reload — keeps storage intact
+      // 3. Hard reload bypassing browser cache.
       setTimeout(() => {
-        window.location.reload();
+        const url = new URL(window.location.href);
+        url.searchParams.set("_refresh", Date.now().toString());
+        window.location.replace(url.toString());
       }, 300);
     } catch {
       window.location.reload();
