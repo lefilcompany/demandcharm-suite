@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateDemandRequest } from "@/hooks/useDemandRequests";
+import { useUploadRequestAttachment } from "@/hooks/useRequestAttachments";
 import { useSelectedBoard } from "@/contexts/BoardContext";
 import { useBoardServices } from "@/hooks/useBoardServices";
 import { useFormDraft } from "@/hooks/useFormDraft";
@@ -29,6 +30,7 @@ import { logBlockedSubmit } from "@/lib/submitBlockAudit";
 import { toast } from "sonner";
 import { Calendar, Loader2, Send } from "lucide-react";
 import { getErrorMessage } from "@/lib/errorUtils";
+import { PendingFileUploader, PendingFile } from "@/components/PendingFileUploader";
 
 interface CreateRequestQuickDialogProps {
   open: boolean;
