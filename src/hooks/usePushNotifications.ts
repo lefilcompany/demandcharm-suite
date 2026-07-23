@@ -11,6 +11,12 @@ import {
 
 const DEVICE_ID_KEY = "soma:fcm_device_id";
 
+type ConfigCheckResult = {
+  ready: boolean;
+  missing: string[];
+  source: string;
+};
+
 function getOrCreateDeviceId(): string {
   if (typeof window === "undefined") return "";
   try {
@@ -46,8 +52,11 @@ export function usePushNotifications() {
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [isSupported, setIsSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [configStatus, setConfigStatus] = useState<"checking" | "ready" | "missing">("checking");
+  const [configStatus, setConfigStatus] = useState<"checking" | "ready" | "missing">(
+    "checking",
+  );
   const [configMissing, setConfigMissing] = useState<string[]>([]);
+  const [configSource, setConfigSource] = useState("none");
   const [permissionStatus, setPermissionStatus] =
     useState<NotificationPermission | null>(null);
   const deviceIdRef = useRef<string>("");
@@ -64,30 +73,40 @@ export function usePushNotifications() {
     }
   }, []);
 
-  useEffect(() => {
+  const refreshConfigStatus = useCallback(async (): Promise<ConfigCheckResult> => {
     if (!isSupported) {
+      const result = { ready: false, missing: ["browser"], source: "none" };
       setConfigStatus("missing");
-      setConfigMissing(["browser"]);
-      return;
+      setConfigMissing(result.missing);
+      setConfigSource(result.source);
+      return result;
     }
-    let cancelled = false;
+
     setConfigStatus("checking");
-    checkFirebasePushConfig()
-      .then((status) => {
-        if (cancelled) return;
-        setConfigStatus(status.ready ? "ready" : "missing");
-        setConfigMissing(status.missing);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        console.error("[push] config check failed", (err as Error)?.message);
-        setConfigStatus("missing");
-        setConfigMissing(["firebase-config"]);
-      });
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const result = await checkFirebasePushConfig();
+      setConfigStatus(result.ready ? "ready" : "missing");
+      setConfigMissing(result.missing);
+      setConfigSource(result.source);
+      return result;
+    } catch (err) {
+      console.error("[push] config check failed", (err as Error)?.message);
+      const result = {
+        ready: false,
+        missing: ["firebase-public-config"],
+        source: "none",
+      };
+      setConfigStatus("missing");
+      setConfigMissing(result.missing);
+      setConfigSource(result.source);
+      return result;
+    }
   }, [isSupported]);
+
+  useEffect(() => {
+    if (!isSupported) return;
+    void refreshConfigStatus();
+  }, [isSupported, refreshConfigStatus]);
 
   // Load existing row for this device and rotate the token if it changed.
   useEffect(() => {
@@ -96,7 +115,7 @@ export function usePushNotifications() {
     if (!deviceId) return;
 
     let cancelled = false;
-    (async () => {
+    void (async () => {
       const { data, error } = await supabase
         .from("fcm_tokens")
         .select("id, token")
@@ -120,15 +139,16 @@ export function usePushNotifications() {
         const current = await getCurrentFcmToken();
         if (cancelled || !current) return;
         if (current === data.token) {
-          await supabase
+          const { error: touchError } = await supabase
             .from("fcm_tokens")
             .update({ last_used_at: new Date().toISOString() })
             .eq("id", data.id);
+          if (touchError) console.error("[push] token touch failed", touchError.message);
           return;
         }
-        const res = await registerToken(current, deviceId, navigator.userAgent);
-        if (!res.ok) {
-          console.error("[push] rotate failed", res.error);
+        const result = await registerToken(current, deviceId, navigator.userAgent);
+        if (!result.ok) {
+          console.error("[push] rotate failed", result.error);
           return;
         }
         if (!cancelled) setFcmToken(current);
@@ -151,6 +171,14 @@ export function usePushNotifications() {
 
     setIsLoading(true);
     try {
+      const config = await refreshConfigStatus();
+      if (!config.ready) {
+        toast.error(
+          "Configuração FCM incompleta neste ambiente. Verifique o deploy da função firebase-public-config.",
+        );
+        return null;
+      }
+
       const result = await requestNotificationPermission();
       if (result.ok === false) {
         setPermissionStatus(
@@ -164,10 +192,15 @@ export function usePushNotifications() {
             toast.error("Push requer HTTPS.");
             break;
           case "missing-config":
-            toast.error("Configuração FCM incompleta neste ambiente. Recarregue a página e tente novamente.");
+            setConfigStatus("missing");
+            setConfigMissing(result.error ? result.error.split(", ") : ["firebase-config"]);
+            toast.error("Configuração FCM incompleta neste ambiente.");
             break;
           case "unsupported":
             toast.error("Notificações push não suportadas neste navegador.");
+            break;
+          case "service-worker-error":
+            toast.error("Não foi possível ativar o service worker de notificações.");
             break;
           default:
             toast.error("Erro ao ativar notificações push");
@@ -175,15 +208,17 @@ export function usePushNotifications() {
         return null;
       }
 
-      const reg = await registerToken(result.token, deviceId, navigator.userAgent);
-      if (!reg.ok) {
-        console.error("[push] server registration failed", reg.error);
+      const registration = await registerToken(result.token, deviceId, navigator.userAgent);
+      if (!registration.ok) {
+        console.error("[push] server registration failed", registration.error);
         toast.error("Não foi possível registrar o dispositivo. Tente novamente.");
         return null;
       }
 
       setFcmToken(result.token);
       setPermissionStatus("granted");
+      setConfigStatus("ready");
+      setConfigMissing([]);
       toast.success("Notificações push ativadas com sucesso!");
       return result.token;
     } catch (err) {
@@ -193,7 +228,7 @@ export function usePushNotifications() {
     } finally {
       setIsLoading(false);
     }
-  }, [isSupported, user?.id]);
+  }, [isSupported, user?.id, refreshConfigStatus]);
 
   const disablePushNotifications = useCallback(async () => {
     if (!user?.id) return;
@@ -209,11 +244,8 @@ export function usePushNotifications() {
         toast.error("Erro ao desativar notificações push");
         return;
       }
-      try {
-        await deleteFcmToken();
-      } catch (err) {
-        console.warn("[push] deleteFcmToken warning", (err as Error)?.message);
-      }
+      const deleted = await deleteFcmToken();
+      if (!deleted) console.warn("[push] browser token could not be deleted");
       setFcmToken(null);
       toast.success("Notificações push desativadas");
     } catch (err) {
@@ -228,8 +260,10 @@ export function usePushNotifications() {
     isLoading,
     configStatus,
     configMissing,
+    configSource,
     permissionStatus,
     isEnabled: permissionStatus === "granted" && !!fcmToken,
+    refreshConfigStatus,
     enablePushNotifications,
     disablePushNotifications,
   };
