@@ -14,7 +14,7 @@ import {
   useDeleteDemandRequest
 } from "@/hooks/useDemandRequests";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
-import { Clock, CheckCircle, RotateCcw, Users, Layout, Paperclip, MessageSquare, Send, Trash2, XCircle, ChevronLeft, ChevronRight, ClipboardList, Edit, Plus, CalendarIcon, X, Search, Filter, ChevronDown } from "lucide-react";
+import { Clock, CheckCircle, RotateCcw, Users, Layout, Paperclip, MessageSquare, Send, Trash2, XCircle, ChevronLeft, ChevronRight, ClipboardList, Edit, Plus, CalendarIcon, X, Search, Filter, ChevronDown, Layers } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { format, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -513,8 +513,34 @@ export default function DemandRequests() {
     }
   };
 
-  const renderRequestCard = (request: any, showReapproveButton = false) => (
-    <Card key={request.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setViewing(request)}>
+  const getSubdemandCount = (request: any): number => {
+    const plan = request?.subdemands_plan;
+    return Array.isArray(plan) ? plan.length : 0;
+  };
+
+  const withSubdemandStack = (request: any, cardNode: React.ReactNode) => {
+    const count = getSubdemandCount(request);
+    if (count <= 0) return cardNode;
+    return (
+      <div key={request.id} className="relative" style={{ marginBottom: count > 1 ? 14 : 8 }}>
+        {/* iOS-style stacked layers behind the card */}
+        <div
+          aria-hidden
+          className="absolute left-3 right-3 -bottom-1 h-3 rounded-xl border border-border/60 bg-card shadow-sm -z-10"
+        />
+        {count > 1 && (
+          <div
+            aria-hidden
+            className="absolute left-5 right-5 -bottom-2 h-3 rounded-xl border border-border/50 bg-card/80 shadow-sm -z-20"
+          />
+        )}
+        {cardNode}
+      </div>
+    );
+  };
+
+  const renderRequestCard = (request: any, showReapproveButton = false) => withSubdemandStack(request,
+    <Card key={request.id} className="cursor-pointer hover:shadow-md transition-shadow relative" onClick={() => setViewing(request)}>
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
           <div className="flex-1">
@@ -564,6 +590,12 @@ export default function DemandRequests() {
             </Badge>
           )}
           <RequestAttachmentBadge requestId={request.id} />
+          {getSubdemandCount(request) > 0 && (
+            <Badge variant="outline" className="bg-primary/5 border-primary/30 text-primary">
+              <Layers className="h-3 w-3 mr-1" />
+              {getSubdemandCount(request)} {getSubdemandCount(request) === 1 ? "subdemanda" : "subdemandas"}
+            </Badge>
+          )}
         </div>
 
         {request.status === "returned" && request.rejection_reason && (
@@ -602,6 +634,11 @@ export default function DemandRequests() {
     </Card>
   );
 
+
+
+
+
+
   // Render a "my request" card (requester view with edit/delete)
   const renderMyRequestCard = (request: any) => {
     const statusMap: Record<string, { label: string; icon: any; color: string }> = {
@@ -614,8 +651,8 @@ export default function DemandRequests() {
     const StatusIcon = status.icon;
     const canEdit = request.status === "returned" || request.status === "pending";
 
-    return (
-      <Card key={request.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setViewing(request)}>
+    return withSubdemandStack(request,
+      <Card key={request.id} className="cursor-pointer hover:shadow-md transition-shadow relative" onClick={() => setViewing(request)}>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
             <div className="flex-1">
@@ -647,6 +684,12 @@ export default function DemandRequests() {
               <Badge variant="outline">Serviço: {request.service.name}</Badge>
             )}
             <RequestAttachmentBadge requestId={request.id} />
+            {getSubdemandCount(request) > 0 && (
+              <Badge variant="outline" className="bg-primary/5 border-primary/30 text-primary">
+                <Layers className="h-3 w-3 mr-1" />
+                {getSubdemandCount(request)} {getSubdemandCount(request) === 1 ? "subdemanda" : "subdemandas"}
+              </Badge>
+            )}
           </div>
 
           {request.rejection_reason && (
