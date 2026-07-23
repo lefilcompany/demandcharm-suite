@@ -226,16 +226,21 @@ export function useStartUserTimer() {
         };
       });
 
-      // Optimistically update sidebar: replace all active timers with this one
+      // Optimistically append to sidebar active timers (keep existing ones)
       queryClient.setQueryData(["active-timer-demands", user?.id], (old: any[]) => {
-        return [{
-          id: demandId,
-          title: "...",
-          board_id: "",
-          boards: null,
-          started_at: now,
-          total_seconds: 0,
-        }];
+        const list = Array.isArray(old) ? old : [];
+        if (list.some((t) => t.id === demandId)) return list;
+        return [
+          ...list,
+          {
+            id: demandId,
+            title: "...",
+            board_id: "",
+            boards: null,
+            started_at: now,
+            total_seconds: 0,
+          },
+        ];
       });
       
       return { previousTime, previousActive };
@@ -251,11 +256,8 @@ export function useStartUserTimer() {
       console.error("Error starting timer:", error);
       toast.error("Erro ao iniciar o timer");
     },
-    onSuccess: (data) => {
-      if (data.stoppedCount > 0) {
-        toast.info("Timer anterior pausado automaticamente");
-      }
-    },
+    onSuccess: () => {},
+
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["demand-time-entries"] });
       queryClient.invalidateQueries({ queryKey: ["user-active-timer"] });
