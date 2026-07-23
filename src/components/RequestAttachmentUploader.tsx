@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Paperclip, X, Download, FileText, Image, File, Trash2, Loader2, Maximize2, Eye } from "lucide-react";
 import { 
   useRequestAttachments, 
@@ -124,10 +123,8 @@ function ImageAttachment({ attachment, readOnly, onDelete, url }: AttachmentItem
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden bg-background border-0 sm:rounded-xl">
-          <VisuallyHidden>
-            <DialogTitle>{attachment.file_name}</DialogTitle>
-            <DialogDescription>Visualização ampliada do anexo</DialogDescription>
-          </VisuallyHidden>
+          <DialogTitle className="sr-only">{attachment.file_name}</DialogTitle>
+          <DialogDescription className="sr-only">Visualização ampliada do anexo</DialogDescription>
 
           <div className="flex flex-col max-h-[90vh]">
             {/* Header */}
