@@ -56,10 +56,12 @@ export function useUploadRequestAttachment() {
       requestId,
       file,
       commentId,
+      subdemandIndex,
     }: {
       requestId: string;
       file: File;
       commentId?: string;
+      subdemandIndex?: number;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
@@ -84,7 +86,8 @@ export function useUploadRequestAttachment() {
           file_size: file.size,
           uploaded_by: user.id,
           comment_id: commentId || null,
-        })
+          subdemand_index: subdemandIndex ?? null,
+        } as any)
         .select()
         .single();
 
