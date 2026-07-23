@@ -273,20 +273,30 @@ export function CreateRequestQuickDialog({
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>Anexos (opcional)</Label>
+            <PendingFileUploader
+              files={pendingFiles}
+              onFilesChange={setPendingFiles}
+              disabled={createRequest.isPending || isUploading}
+            />
+          </div>
+
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
+              disabled={createRequest.isPending || isUploading}
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={createRequest.isPending}>
-              {createRequest.isPending && (
+            <Button type="submit" disabled={createRequest.isPending || isUploading}>
+              {(createRequest.isPending || isUploading) && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               <Send className="mr-2 h-4 w-4" />
-              Enviar Solicitação
+              {isUploading ? "Enviando anexos..." : "Enviar Solicitação"}
             </Button>
           </DialogFooter>
         </form>
