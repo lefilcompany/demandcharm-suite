@@ -132,57 +132,58 @@ function ImageAttachment({ attachment, readOnly, onDelete, url }: AttachmentItem
         </div>
       </div>
 
-      {/* Modal de preview ampliado */}
-      {previewOpen && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setPreviewOpen(false)}
-        >
-          <div className="relative max-w-6xl max-h-[95vh] w-full flex flex-col items-center">
-            <div className="absolute top-0 right-0 flex gap-2 z-10">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="bg-white/20 hover:bg-white/30 text-white border-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDownload();
-                }}
-                disabled={downloading}
-              >
-                {downloading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Download className="h-4 w-4 mr-2" />
-                )}
-                Baixar
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/20"
-                onClick={() => setPreviewOpen(false)}
-              >
-                <X className="h-5 w-5" />
-              </Button>
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden bg-background border-0 sm:rounded-xl">
+          <VisuallyHidden>
+            <DialogTitle>{attachment.file_name}</DialogTitle>
+            <DialogDescription>Visualização ampliada do anexo</DialogDescription>
+          </VisuallyHidden>
+
+          <div className="flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b bg-background">
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{attachment.file_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatSize(attachment.file_size)} • {format(new Date(attachment.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownload}
+                  disabled={downloading}
+                >
+                  {downloading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-2" />
+                  )}
+                  Baixar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setPreviewOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            
-            <img
-              src={url}
-              alt={attachment.file_name}
-              className="max-w-full max-h-[85vh] object-contain rounded-lg mt-12"
-              onClick={(e) => e.stopPropagation()}
-            />
-            
-            <div className="mt-3 text-center text-white">
-              <p className="text-sm font-medium">{attachment.file_name}</p>
-              <p className="text-xs text-white/70">
-                {formatSize(attachment.file_size)} • {format(new Date(attachment.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-              </p>
+
+            {/* Image area */}
+            <div className="flex-1 min-h-0 bg-muted/40 flex items-center justify-center p-4 overflow-auto">
+              <img
+                src={url}
+                alt={attachment.file_name}
+                className="max-w-full max-h-[75vh] object-contain"
+              />
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
