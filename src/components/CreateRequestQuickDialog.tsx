@@ -111,7 +111,7 @@ export function CreateRequestQuickDialog({
     }
 
     try {
-      await createRequest.mutateAsync({
+      const created = await createRequest.mutateAsync({
         title: title.trim(),
         description: description.trim(),
         priority,
@@ -119,6 +119,25 @@ export function CreateRequestQuickDialog({
         team_id: currentTeamId,
         service_id: serviceId,
       });
+
+      // Upload pending attachments
+      if (pendingFiles.length > 0 && created?.id) {
+        setIsUploading(true);
+        try {
+          for (const pf of pendingFiles) {
+            await uploadAttachment.mutateAsync({ requestId: created.id, file: pf.file });
+          }
+          pendingFiles.forEach((pf) => {
+            if (pf.preview) URL.revokeObjectURL(pf.preview);
+          });
+        } catch (err) {
+          toast.error("Alguns anexos não foram enviados", {
+            description: getErrorMessage(err),
+          });
+        } finally {
+          setIsUploading(false);
+        }
+      }
 
       // Clear draft on success
       clearDraft();
@@ -144,6 +163,10 @@ export function CreateRequestQuickDialog({
     setDescription("");
     setPriority("média");
     setServiceId("");
+    pendingFiles.forEach((pf) => {
+      if (pf.preview) URL.revokeObjectURL(pf.preview);
+    });
+    setPendingFiles([]);
   };
 
   const handleOpenChange = (isOpen: boolean) => {
