@@ -63,6 +63,7 @@ jobs:
         run: |
           deno check supabase/functions/check-deadlines/index.ts
           deno check supabase/functions/send-push-notification/index.ts
+          deno check supabase/functions/firebase-public-config/index.ts
       - name: Run Deno tests
         run: |
           set +e
