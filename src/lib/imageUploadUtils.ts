@@ -43,7 +43,7 @@ export async function uploadInlineImages(content: string): Promise<string> {
     try {
       const blob = await dataUrlToBlob(m.dataUrl);
       const ext = blob.type.split("/")[1] === "jpeg" ? "jpg" : (blob.type.split("/")[1] || "png");
-      const filePath = `inline/${user.id}/${crypto.randomUUID()}.${ext}`;
+      const filePath = `${user.id}/inline/${crypto.randomUUID()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("demand-attachments")
