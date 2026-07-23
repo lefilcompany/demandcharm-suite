@@ -333,6 +333,7 @@ export function useUpdateDemandRequest() {
       priority?: string;
       service_id?: string;
       status?: string;
+      subdemands_plan?: any;
     }) => {
       const { data: result, error } = await supabase
         .from("demand_requests")
@@ -340,7 +341,7 @@ export function useUpdateDemandRequest() {
           ...data,
           status: "pending", // Reset to pending when resubmitting
           rejection_reason: null,
-        })
+        } as any)
         .eq("id", id)
         .select()
         .single();

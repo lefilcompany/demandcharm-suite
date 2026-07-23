@@ -53,6 +53,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { useTeamMembershipRole } from "@/hooks/useTeamRole";
 import { cn } from "@/lib/utils";
 import { SEOHead } from "@/components/SEOHead";
+import { RequestSubdemandStepForm, type RequestSubdemandFormData } from "@/components/request-wizard/RequestSubdemandStepForm";
+import { Plus as PlusIcon, Trash2 as TrashIcon } from "lucide-react";
 import { safeDateTimestamp } from "@/lib/demandViewSafety";
 
 const priorityColors: Record<string, string> = {
@@ -168,6 +170,8 @@ export default function DemandRequests() {
   const [editDescription, setEditDescription] = useState("");
   const [editPriority, setEditPriority] = useState("média");
   const [editServiceId, setEditServiceId] = useState("");
+  const [editSubdemands, setEditSubdemands] = useState<RequestSubdemandFormData[]>([]);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Search state
   const [searchOpen, setSearchOpen] = useState(false);
@@ -491,30 +495,99 @@ export default function DemandRequests() {
     setEditDescription(request.description || "");
     setEditPriority(request.priority || "média");
     setEditServiceId(request.service_id || "");
+    const plan = Array.isArray(request.subdemands_plan) ? request.subdemands_plan : [];
+    setEditSubdemands(
+      plan.map((s: any) => ({
+        tempId: s.tempId || (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2)),
+        title: s.title || "",
+        description: s.description || "",
+        priority: s.priority || "média",
+        service_id: s.service_id,
+        dependsOnIndex: s.dependsOnIndex,
+        pendingFiles: [],
+      }))
+    );
+  };
+
+  const addEditSubdemand = () => {
+    setEditSubdemands((prev) => [
+      ...prev,
+      {
+        tempId: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+        title: "",
+        priority: "média",
+        pendingFiles: [],
+      },
+    ]);
+  };
+
+  const removeEditSubdemand = (index: number) => {
+    setEditSubdemands((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleResubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingRequest || !editTitle.trim()) return;
-    updateRequest.mutate(
-      {
+
+    // Validate subdemands
+    for (let i = 0; i < editSubdemands.length; i++) {
+      const s = editSubdemands[i];
+      if (!s.title.trim()) {
+        toast.error(`Informe o título da Subdemanda ${i + 1}`);
+        return;
+      }
+      if (!s.service_id) {
+        toast.error(`Selecione o serviço da Subdemanda ${i + 1}`);
+        return;
+      }
+    }
+
+    setSavingEdit(true);
+    try {
+      await updateRequest.mutateAsync({
         id: editingRequest.id,
         title: editTitle.trim(),
         description: editDescription.trim() || undefined,
         priority: editPriority,
         service_id: editServiceId && editServiceId !== "none" ? editServiceId : undefined,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Solicitação reenviada com sucesso!");
-          setEditingRequest(null);
-        },
-        onError: (error: any) => {
-          toast.error("Erro ao reenviar", { description: getErrorMessage(error) });
-        },
+        subdemands_plan: editSubdemands.map((s) => ({
+          tempId: s.tempId,
+          title: s.title.trim(),
+          description: s.description,
+          priority: s.priority || "média",
+          service_id: s.service_id,
+          dependsOnIndex: s.dependsOnIndex,
+        })),
+      });
+
+      // Upload any new pending files per subdemand
+      for (let i = 0; i < editSubdemands.length; i++) {
+        const files = editSubdemands[i].pendingFiles || [];
+        for (const pf of files) {
+          try {
+            await uploadAttachment.mutateAsync({
+              requestId: editingRequest.id,
+              file: pf.file,
+              subdemandIndex: i,
+            });
+            if (pf.preview) URL.revokeObjectURL(pf.preview);
+          } catch (err) {
+            toast.error(`Erro ao enviar ${pf.file.name}`);
+          }
+        }
       }
-    );
+
+      toast.success("Solicitação salva com sucesso!");
+      setEditingRequest(null);
+      setEditSubdemands([]);
+    } catch (error: any) {
+      toast.error("Erro ao salvar", { description: getErrorMessage(error) });
+    } finally {
+      setSavingEdit(false);
+    }
   };
+
+
 
   const handleDeleteRequest = (id: string) => {
     setDeletingId(id);
@@ -1823,11 +1896,12 @@ export default function DemandRequests() {
 
       {/* Edit/Resubmit Dialog (Requester) */}
       <Dialog open={!!editingRequest} onOpenChange={() => setEditingRequest(null)}>
-        <DialogContent className="max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {editingRequest?.status === "returned" ? "Editar e Reenviar Solicitação" : "Editar Solicitação"}
             </DialogTitle>
+            <DialogDescription className="sr-only">Editar dados da solicitação</DialogDescription>
           </DialogHeader>
           <div className="flex-1 min-h-0 overflow-y-auto pr-1">
             <form onSubmit={handleResubmit} className="space-y-4">
@@ -1864,22 +1938,94 @@ export default function DemandRequests() {
 
               {editingRequest && (
                 <div className="border-t pt-4">
-                  <RequestAttachmentUploader requestId={editingRequest.id} />
+                  <RequestAttachmentUploader requestId={editingRequest.id} subdemandIndex={null} />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Dica: você pode colar (Ctrl+V) uma imagem para anexar.
+                  </p>
                 </div>
               )}
-              
-              <div className="flex gap-2 pt-2 pb-1">
+
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-semibold flex items-center gap-2">
+                      <Layers className="h-4 w-4" />
+                      Subdemandas ({editSubdemands.length})
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Divida esta solicitação em etapas menores. Cada subdemanda pode ter serviço, prioridade e anexos próprios.
+                    </p>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={addEditSubdemand}>
+                    <PlusIcon className="h-4 w-4 mr-1" />
+                    Adicionar
+                  </Button>
+                </div>
+
+                {editSubdemands.length > 0 && (
+                  <Accordion type="multiple" className="space-y-2">
+                    {editSubdemands.map((sub, i) => (
+                      <AccordionItem key={sub.tempId} value={sub.tempId} className="border rounded-lg px-3">
+                        <div className="flex items-center gap-2">
+                          <AccordionTrigger className="flex-1 hover:no-underline">
+                            <span className="text-sm font-medium text-left">
+                              Subdemanda {i + 1}
+                              {sub.title ? `: ${sub.title}` : ""}
+                            </span>
+                          </AccordionTrigger>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive shrink-0"
+                            onClick={() => removeEditSubdemand(i)}
+                            title="Remover subdemanda"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <AccordionContent className="pt-2 pb-4 space-y-4">
+                          <RequestSubdemandStepForm
+                            index={i}
+                            data={sub}
+                            onChange={(next) =>
+                              setEditSubdemands((prev) => prev.map((s, idx) => (idx === i ? next : s)))
+                            }
+                            allSubdemands={editSubdemands}
+                            teamId={editingRequest?.team_id}
+                            boardId={editingRequest?.board_id || selectedBoardId}
+                          />
+                          {editingRequest && (
+                            <div className="border-t pt-3">
+                              <Label className="text-xs text-muted-foreground mb-2 block">
+                                Anexos já enviados desta subdemanda
+                              </Label>
+                              <RequestAttachmentUploader
+                                requestId={editingRequest.id}
+                                subdemandIndex={i}
+                              />
+                            </div>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-2 pb-1 sticky bottom-0 bg-background">
                 <Button type="button" variant="outline" onClick={() => setEditingRequest(null)} className="flex-1">
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={updateRequest.isPending} className="flex-1">
-                  {updateRequest.isPending ? "Salvando..." : editingRequest?.status === "returned" ? "Reenviar" : "Salvar"}
+                <Button type="submit" disabled={savingEdit || updateRequest.isPending} className="flex-1">
+                  {savingEdit || updateRequest.isPending ? "Salvando..." : editingRequest?.status === "returned" ? "Reenviar" : "Salvar"}
                 </Button>
               </div>
             </form>
           </div>
         </DialogContent>
       </Dialog>
+
 
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>
