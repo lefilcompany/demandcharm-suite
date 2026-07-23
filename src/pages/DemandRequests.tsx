@@ -645,8 +645,8 @@ export default function DemandRequests() {
     const StatusIcon = status.icon;
     const canEdit = request.status === "returned" || request.status === "pending";
 
-    return (
-      <Card key={request.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setViewing(request)}>
+    return withSubdemandStack(request,
+      <Card key={request.id} className="cursor-pointer hover:shadow-md transition-shadow relative" onClick={() => setViewing(request)}>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
             <div className="flex-1">
