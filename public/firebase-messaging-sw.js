@@ -1,23 +1,58 @@
 // Firebase Messaging Service Worker for SoMA
 // Loaded at /firebase-messaging-sw.js under scope /firebase-cloud-messaging-push-scope/.
-// Config comes from /firebase-config.generated.js so frontend and worker stay in sync.
+// Prefer the generated build config, but also accept the same public config in
+// the service-worker script URL. The URL fallback is used when Lovable does not
+// inject Firebase variables at build time and the frontend loads them from the
+// Supabase firebase-public-config Edge Function.
 
 importScripts("/firebase-config.generated.js");
 
-if (!self.__FIREBASE_CONFIG__) {
+function readConfigFromScriptUrl() {
+  try {
+    const params = new URL(self.location.href).searchParams;
+    const config = {
+      apiKey: params.get("apiKey") || "",
+      authDomain: params.get("authDomain") || "",
+      projectId: params.get("projectId") || "",
+      storageBucket: params.get("storageBucket") || "",
+      messagingSenderId: params.get("messagingSenderId") || "",
+      appId: params.get("appId") || "",
+    };
+    return Object.values(config).every((value) => value.length > 0) ? config : null;
+  } catch {
+    return null;
+  }
+}
+
+function sanitizeFirebaseConfig(value) {
+  if (!value || typeof value !== "object") return null;
+  const config = {
+    apiKey: typeof value.apiKey === "string" ? value.apiKey : "",
+    authDomain: typeof value.authDomain === "string" ? value.authDomain : "",
+    projectId: typeof value.projectId === "string" ? value.projectId : "",
+    storageBucket: typeof value.storageBucket === "string" ? value.storageBucket : "",
+    messagingSenderId:
+      typeof value.messagingSenderId === "string" ? value.messagingSenderId : "",
+    appId: typeof value.appId === "string" ? value.appId : "",
+  };
+  return Object.values(config).every((entry) => entry.length > 0) ? config : null;
+}
+
+const firebaseConfig =
+  sanitizeFirebaseConfig(self.__FIREBASE_CONFIG__) || readConfigFromScriptUrl();
+
+if (!firebaseConfig) {
   console.log("[FCM SW] Missing Firebase config; messaging disabled.");
 } else {
   importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
   importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
-  if (!firebase.apps.length) {
-    firebase.initializeApp(self.__FIREBASE_CONFIG__);
-  }
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
   const messaging = firebase.messaging();
 
-  // Backend sends `notification` payload, so FCM shows the notification itself.
-  // Log only sanitized metadata here.
+  // Backend sends a `notification` payload, so FCM shows it automatically in
+  // the background. Do not call showNotification() again here.
   messaging.onBackgroundMessage((payload) => {
     console.log("[FCM SW] Background message received", {
       type: payload?.data?.type,
@@ -26,7 +61,6 @@ if (!self.__FIREBASE_CONFIG__) {
   });
 }
 
-// Log notification close (analytics hook, optional).
 self.addEventListener("notificationclose", (event) => {
   console.log("[FCM SW] Notification closed", event.notification?.tag);
 });
