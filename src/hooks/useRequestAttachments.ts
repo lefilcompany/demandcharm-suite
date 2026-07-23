@@ -68,7 +68,7 @@ export function useUploadRequestAttachment() {
 
       const ext = file.name.split(".").pop();
       const folder = commentId ? `comment-${commentId}` : `request-${requestId}`;
-      const filePath = `${folder}/${crypto.randomUUID()}.${ext}`;
+      const filePath = `${user.id}/${folder}/${crypto.randomUUID()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("demand-attachments")
