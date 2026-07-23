@@ -239,9 +239,11 @@ async function sendOne(
 function shouldSendNotification(
   preferences: UserPreferences | null,
   notificationType: string,
+  channel: "push" | "email" = "push",
 ): boolean {
   if (!preferences) return true;
-  if (preferences.pushNotifications === false) return false;
+  if (channel === "push" && preferences.pushNotifications === false) return false;
+  if (channel === "email" && preferences.emailNotifications === false) return false;
   switch (notificationType) {
     case "demandUpdates":
       return preferences.demandUpdates !== false;
@@ -257,6 +259,50 @@ function shouldSendNotification(
       return true;
   }
 }
+
+async function sendMirrorEmail(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  userId: string,
+  title: string,
+  body: string,
+  actionUrl: string,
+  notificationType: string,
+): Promise<{ ok: boolean; code?: string }> {
+  try {
+    const resp = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceRoleKey}`,
+        apikey: serviceRoleKey,
+      },
+      body: JSON.stringify({
+        to: userId,
+        subject: title.slice(0, 200),
+        template: "notification",
+        templateData: {
+          title: title.slice(0, 200),
+          message: body.slice(0, 5000),
+          actionUrl,
+          actionText: "Abrir no SoMA+",
+          type: emailTypeForNotification(notificationType),
+        },
+      }),
+    });
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => "");
+      console.warn("[push->email] mirror failed", resp.status, errText.slice(0, 200));
+      return { ok: false, code: `HTTP_${resp.status}` };
+    }
+    await resp.json().catch(() => undefined);
+    return { ok: true };
+  } catch (err) {
+    console.error("[push->email] mirror error", (err as Error)?.message);
+    return { ok: false, code: "NETWORK_ERROR" };
+  }
+}
+
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
