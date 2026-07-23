@@ -24,7 +24,7 @@ const ALLOWED_ACTION_URL_HOSTS = new Set([
   "demandcharm-suite.lovable.app",
 ]);
 
-const PREVIEW_HOST_PATTERN = /^id-preview--[a-f0-9-]+\.lovable\.app$/i;
+const PREVIEW_HOST_PATTERN = /^([a-z0-9-]+\.)*lovable\.(app|dev)$/i;
 
 type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
