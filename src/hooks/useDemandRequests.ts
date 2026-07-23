@@ -335,13 +335,24 @@ export function useUpdateDemandRequest() {
       status?: string;
       subdemands_plan?: any;
     }) => {
+      // Only reset to "pending" when the requester is resubmitting a returned request.
+      // Editing an already-approved/pending request must preserve its status.
+      const { data: current, error: fetchError } = await supabase
+        .from("demand_requests")
+        .select("status")
+        .eq("id", id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const patch: Record<string, unknown> = { ...data };
+      if (current?.status === "returned") {
+        patch.status = "pending";
+        patch.rejection_reason = null;
+      }
+
       const { data: result, error } = await supabase
         .from("demand_requests")
-        .update({
-          ...data,
-          status: "pending", // Reset to pending when resubmitting
-          rejection_reason: null,
-        } as any)
+        .update(patch as any)
         .eq("id", id)
         .select()
         .single();
@@ -539,17 +550,24 @@ export function useApproveDemandRequest() {
         }
       }
 
-      // Update request status
-      const { error: updateError } = await supabase
+      // Update request status — use .select() to detect silent RLS 0-row updates
+      const { data: updated, error: updateError } = await supabase
         .from("demand_requests")
         .update({
           status: "approved",
           responded_by: user.id,
           responded_at: new Date().toISOString(),
         })
-        .eq("id", requestId);
+        .eq("id", requestId)
+        .select("id")
+        .maybeSingle();
 
       if (updateError) throw updateError;
+      if (!updated) {
+        throw new Error(
+          "Não foi possível aprovar a solicitação: você não tem permissão de aprovador neste quadro."
+        );
+      }
 
       return demand;
     },
@@ -575,7 +593,7 @@ export function useReturnDemandRequest() {
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("demand_requests")
         .update({
           status: "returned",
@@ -583,9 +601,16 @@ export function useReturnDemandRequest() {
           responded_by: user.id,
           responded_at: new Date().toISOString(),
         })
-        .eq("id", requestId);
+        .eq("id", requestId)
+        .select("id")
+        .maybeSingle();
 
       if (error) throw error;
+      if (!updated) {
+        throw new Error(
+          "Não foi possível devolver a solicitação: você não tem permissão de aprovador neste quadro."
+        );
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["demand-requests"] });
