@@ -214,7 +214,7 @@ export default defineConfig(({ mode }) => {
               },
             },
             {
-              urlPattern: /\.(?:woff|woff2|tt|eot)$/i,
+              urlPattern: /\.(?:woff|woff2|ttf|eot)$/i,
               handler: "CacheFirst",
               options: {
                 cacheName: "fonts-cache",
