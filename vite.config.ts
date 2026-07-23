@@ -1,6 +1,7 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { fileURLToPath } from "url";
+import { readFileSync } from "node:fs";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
@@ -45,33 +46,45 @@ function buildFirebaseConfigJs(): string {
   return `// AUTO-GENERATED at request time. Public Firebase config only.\nself.__FIREBASE_CONFIG__ = ${hasAll ? JSON.stringify(cfg, null, 2) : "null"};\n`;
 }
 
+function getFirebaseConfigJs(): string {
+  const generated = buildFirebaseConfigJs();
+  if (!generated.includes("self.__FIREBASE_CONFIG__ = null")) return generated;
+
+  try {
+    const existing = readFileSync("public/firebase-config.generated.js", "utf8");
+    if (!existing.includes("self.__FIREBASE_CONFIG__ = null")) return existing;
+  } catch {
+    // Fall back to null config below; the UI shows the missing fields.
+  }
+
+  return generated;
+}
+
 // Serves /firebase-config.generated.js dynamically in dev AND build previews,
 // so the file is always in sync with runtime env even when not committed to disk.
-const firebaseConfigPlugin = {
+const firebaseConfigPlugin: Plugin = {
   name: "firebase-config-runtime",
   configureServer(server: any) {
     server.middlewares.use("/firebase-config.generated.js", (_req: any, res: any) => {
       res.setHeader("Content-Type", "application/javascript; charset=utf-8");
       res.setHeader("Cache-Control", "no-store");
-      res.end(buildFirebaseConfigJs());
+      res.end(getFirebaseConfigJs());
     });
   },
   configurePreviewServer(server: any) {
     server.middlewares.use("/firebase-config.generated.js", (_req: any, res: any) => {
       res.setHeader("Content-Type", "application/javascript; charset=utf-8");
       res.setHeader("Cache-Control", "no-store");
-      res.end(buildFirebaseConfigJs());
+      res.end(getFirebaseConfigJs());
     });
   },
-  buildStart() {
-    // Emit into public/ so `vite build` copies it into dist/.
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const fs = require("fs");
-      fs.writeFileSync("public/firebase-config.generated.js", buildFirebaseConfigJs());
-    } catch (err) {
-      console.warn("[firebase-config] could not write public/firebase-config.generated.js", (err as Error)?.message);
-    }
+  generateBundle() {
+    // Emit directly into dist even when the generated file is gitignored.
+    this.emitFile({
+      type: "asset",
+      fileName: "firebase-config.generated.js",
+      source: getFirebaseConfigJs(),
+    });
   },
 };
 
