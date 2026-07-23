@@ -550,17 +550,24 @@ export function useApproveDemandRequest() {
         }
       }
 
-      // Update request status
-      const { error: updateError } = await supabase
+      // Update request status — use .select() to detect silent RLS 0-row updates
+      const { data: updated, error: updateError } = await supabase
         .from("demand_requests")
         .update({
           status: "approved",
           responded_by: user.id,
           responded_at: new Date().toISOString(),
         })
-        .eq("id", requestId);
+        .eq("id", requestId)
+        .select("id")
+        .maybeSingle();
 
       if (updateError) throw updateError;
+      if (!updated) {
+        throw new Error(
+          "Não foi possível aprovar a solicitação: você não tem permissão de aprovador neste quadro."
+        );
+      }
 
       return demand;
     },
