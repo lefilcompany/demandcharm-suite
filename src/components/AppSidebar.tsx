@@ -116,13 +116,8 @@ export function AppSidebar() {
   ] : [];
 
   // Requester-specific items (store + my requests) - always shown for requesters
-  const requesterMenuItems = isRequester ? [
-    {
-      title: "Loja de Serviços",
-      url: "/store",
-      icon: ShoppingCart
-    }
-  ] : [];
+  // Loja de Serviços temporarily hidden (keep code for future re-activation)
+  const requesterMenuItems: any[] = [];
 
   const aiMenuItems = [
     {
