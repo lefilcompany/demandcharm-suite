@@ -15,6 +15,8 @@ import { DocumentPreviewDialog, isPreviewable } from "@/components/DocumentPrevi
 interface RequestAttachmentUploaderProps {
   requestId: string;
   readOnly?: boolean;
+  /** null/undefined = anexos da demanda principal; número = índice da subdemanda (0-based) */
+  subdemandIndex?: number | null;
 }
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
