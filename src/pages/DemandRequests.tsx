@@ -1966,16 +1966,6 @@ export default function DemandRequests() {
               )}
 
               <div className="border-t pt-4 space-y-4">
-                <div>
-                  <Label className="text-base font-semibold flex items-center gap-2">
-                    <Layers className="h-4 w-4" />
-                    Subdemandas ({editSubdemands.length})
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Divida esta solicitação em etapas menores. Cada subdemanda pode ter serviço, prioridade e anexos próprios.
-                  </p>
-                </div>
-
                 <SubdemandCountStep
                   count={editSubdemands.length}
                   onChange={setEditSubdemandCount}
