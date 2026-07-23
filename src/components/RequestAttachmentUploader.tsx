@@ -423,8 +423,8 @@ export function RequestAttachmentUploader({ requestId, readOnly = false, subdema
           if (f) {
             const named = f.name && f.name !== "image.png"
               ? f
-              : new File([f], `pasted-${Date.now()}.${(f.type.split("/")[1] || "png")}`, { type: f.type });
-            files.push(named);
+              : new (globalThis as any).File([f], `pasted-${Date.now()}.${(f.type.split("/")[1] || "png")}`, { type: f.type });
+            files.push(named as File);
           }
         }
       }
