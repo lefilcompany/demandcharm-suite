@@ -491,7 +491,7 @@ export function CreateRequestQuickDialog({
               parentTitle={title}
               parentPriority={priority}
               parentDueDate={selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined}
-              parentBoardName={selectedBoard?.name || ""}
+              parentBoardName={currentBoard?.name || ""}
               parentAttachmentsCount={pendingFiles.length}
               subdemands={subdemands}
             />
