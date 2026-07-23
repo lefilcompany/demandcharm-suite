@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth";
 
 interface PresenceState {
   [key: string]: {
@@ -10,9 +10,25 @@ interface PresenceState {
 }
 
 export function useUserPresence(channelName: string = "online-users") {
-  const { user } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [isConnected, setIsConnected] = useState(false);
+
+  // Track auth state without depending on AuthProvider so this hook stays safe
+  // even when mounted outside the AuthContext (e.g. stale bundles / SW cache).
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setUser(data.session?.user ?? null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -23,21 +39,14 @@ export function useUserPresence(channelName: string = "online-users") {
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState() as PresenceState;
         const users = new Set<string>();
-        
+
         Object.values(state).forEach((presences) => {
           presences.forEach((presence) => {
             users.add(presence.user_id);
           });
         });
-        
+
         setOnlineUsers(users);
-        console.log("Presence sync:", users);
-      })
-      .on("presence", { event: "join" }, ({ newPresences }) => {
-        console.log("User joined:", newPresences);
-      })
-      .on("presence", { event: "leave" }, ({ leftPresences }) => {
-        console.log("User left:", leftPresences);
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
