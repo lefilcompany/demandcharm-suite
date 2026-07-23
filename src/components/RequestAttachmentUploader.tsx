@@ -336,11 +336,16 @@ function AttachmentItem({ attachment, readOnly, onDelete }: AttachmentItemProps)
   return <FileAttachment attachment={attachment} readOnly={readOnly} onDelete={onDelete} url={url} />;
 }
 
-export function RequestAttachmentUploader({ requestId, readOnly = false }: RequestAttachmentUploaderProps) {
+export function RequestAttachmentUploader({ requestId, readOnly = false, subdemandIndex = null }: RequestAttachmentUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const { data: attachments, isLoading } = useRequestAttachments(requestId);
+  const { data: allAttachments, isLoading } = useRequestAttachments(requestId);
   const uploadAttachment = useUploadRequestAttachment();
   const deleteAttachment = useDeleteRequestAttachment();
+
+  const attachments = (allAttachments || []).filter((a: any) => {
+    const idx = a.subdemand_index ?? null;
+    return subdemandIndex == null ? idx == null : idx === subdemandIndex;
+  });
 
   const handleFiles = useCallback(async (files: FileList | null) => {
     if (!files) return;
@@ -352,13 +357,13 @@ export function RequestAttachmentUploader({ requestId, readOnly = false }: Reque
       }
       
       try {
-        await uploadAttachment.mutateAsync({ requestId, file });
+        await uploadAttachment.mutateAsync({ requestId, file, subdemandIndex: subdemandIndex ?? undefined });
         toast.success(`${file.name} enviado com sucesso`);
       } catch {
         toast.error(`Erro ao enviar ${file.name}`);
       }
     }
-  }, [requestId, uploadAttachment]);
+  }, [requestId, subdemandIndex, uploadAttachment]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
