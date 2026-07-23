@@ -678,6 +678,12 @@ export default function DemandRequests() {
               <Badge variant="outline">Serviço: {request.service.name}</Badge>
             )}
             <RequestAttachmentBadge requestId={request.id} />
+            {getSubdemandCount(request) > 0 && (
+              <Badge variant="outline" className="bg-primary/5 border-primary/30 text-primary">
+                <Layers className="h-3 w-3 mr-1" />
+                {getSubdemandCount(request)} {getSubdemandCount(request) === 1 ? "subdemanda" : "subdemandas"}
+              </Badge>
+            )}
           </div>
 
           {request.rejection_reason && (
