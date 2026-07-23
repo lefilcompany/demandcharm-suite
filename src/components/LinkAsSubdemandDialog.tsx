@@ -96,7 +96,11 @@ export function LinkAsSubdemandDialog({
                 }}
               >
                 <CommandInput placeholder="Buscar por número ou título..." />
-                <CommandList>
+                <CommandList
+                  className="max-h-[260px] overflow-y-auto overscroll-contain"
+                  onWheel={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                >
                   <CommandEmpty>Nenhuma demanda disponível.</CommandEmpty>
                   <CommandGroup>
                     {options.map((d) => {
@@ -112,11 +116,11 @@ export function LinkAsSubdemandDialog({
                         >
                           <Check
                             className={cn(
-                              "mr-2 h-4 w-4",
+                              "mr-2 h-4 w-4 shrink-0",
                               selectedId === d.id ? "opacity-100" : "opacity-0",
                             )}
                           />
-                          <span className="truncate">{label}</span>
+                          <span className="truncate min-w-0">{label}</span>
                         </CommandItem>
                       );
                     })}
