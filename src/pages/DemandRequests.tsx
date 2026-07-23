@@ -452,12 +452,19 @@ export default function DemandRequests() {
   };
 
   const handleDeleteRequest = (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta solicitação?")) return;
+    setDeletingId(id);
+  };
+
+  const confirmDeleteRequest = () => {
+    if (!deletingId) return;
+    const id = deletingId;
     deleteRequest.mutate(id, {
       onSuccess: () => toast.success("Solicitação excluída"),
       onError: (error: any) => toast.error("Erro ao excluir", { description: getErrorMessage(error) }),
     });
+    setDeletingId(null);
   };
+
 
   const getInitials = (name: string) => {
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
