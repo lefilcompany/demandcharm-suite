@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Paperclip, X, Download, FileText, Image, File, Trash2, Loader2, Maximize2, Eye } from "lucide-react";
+import { Paperclip, X, Download, FileText, Image, File, Trash2, Loader2, Maximize2, Eye, Copy, Check } from "lucide-react";
 import { 
   useRequestAttachments, 
   useUploadRequestAttachment, 
@@ -37,6 +37,8 @@ interface AttachmentItemProps {
 
 function ImageAttachment({ attachment, readOnly, onDelete, url }: AttachmentItemProps & { url: string }) {
   const [downloading, setDownloading] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const formatSize = (bytes: number) => {
@@ -64,6 +66,37 @@ function ImageAttachment({ attachment, readOnly, onDelete, url }: AttachmentItem
       toast.error("Erro ao baixar arquivo");
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    setCopying(true);
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type]: blob })
+        ]);
+      } else {
+        await navigator.clipboard.writeText(url);
+      }
+      
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success("Imagem copiada");
+    } catch (error) {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        toast.success("Link copiado");
+      } catch {
+        toast.error("Erro ao copiar");
+      }
+    } finally {
+      setCopying(false);
     }
   };
 
@@ -122,7 +155,7 @@ function ImageAttachment({ attachment, readOnly, onDelete, url }: AttachmentItem
 
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden bg-background border-0 sm:rounded-xl">
+        <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden bg-background border-0 sm:rounded-xl [&>button]:hidden">
           <DialogTitle className="sr-only">{attachment.file_name}</DialogTitle>
           <DialogDescription className="sr-only">Visualização ampliada do anexo</DialogDescription>
 
@@ -150,10 +183,26 @@ function ImageAttachment({ attachment, readOnly, onDelete, url }: AttachmentItem
                   Baixar
                 </Button>
                 <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopy}
+                  disabled={copying || copied}
+                >
+                  {copying ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : copied ? (
+                    <Check className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Copy className="h-4 w-4 mr-2" />
+                  )}
+                  {copied ? "Copiado" : "Copiar"}
+                </Button>
+                <Button
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
                   onClick={() => setPreviewOpen(false)}
+                  title="Fechar"
                 >
                   <X className="h-4 w-4" />
                 </Button>
