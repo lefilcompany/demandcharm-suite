@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { Calendar, Loader2, Send, ArrowLeft, ArrowRight } from "lucide-react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { InlineFileUploader, PendingFile } from "@/components/InlineFileUploader";
+import { ServiceSelector } from "@/components/ServiceSelector";
 import { StepProgress, SubdemandCountStep } from "@/components/create-demand";
 import {
   RequestSubdemandStepForm,
