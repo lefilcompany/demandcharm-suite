@@ -136,6 +136,7 @@ export function useMyDemandRequests() {
         .from("demand_requests")
         .select(`
           *,
+          creator:profiles!demand_requests_created_by_fkey(full_name, avatar_url),
           responder:profiles!demand_requests_responded_by_fkey(full_name),
           service:services(name, estimated_hours),
           board:boards(name)
