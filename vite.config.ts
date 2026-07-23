@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { fileURLToPath } from "url";
 import { readFileSync } from "node:fs";
@@ -62,7 +62,7 @@ function getFirebaseConfigJs(): string {
 
 // Serves /firebase-config.generated.js dynamically in dev AND build previews,
 // so the file is always in sync with runtime env even when not committed to disk.
-const firebaseConfigPlugin = {
+const firebaseConfigPlugin: Plugin = {
   name: "firebase-config-runtime",
   configureServer(server: any) {
     server.middlewares.use("/firebase-config.generated.js", (_req: any, res: any) => {
