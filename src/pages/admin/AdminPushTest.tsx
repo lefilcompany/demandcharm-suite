@@ -18,6 +18,68 @@ import { SEOHead } from "@/components/SEOHead";
 
 type Scenario = "creation" | "deadline" | "mention" | "generic";
 
+const EXPECTED_VAPID_STORAGE_KEY = "admin.pushTest.expectedVapidKey";
+
+function decodeBase64Url(input: string): Uint8Array | null {
+  try {
+    const pad = input.length % 4 === 0 ? "" : "=".repeat(4 - (input.length % 4));
+    const b64 = (input + pad).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(b64);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+type VapidFormatCheck = {
+  length: number;
+  lengthOk: boolean;
+  base64UrlOk: boolean;
+  decodedBytes: number;
+  decodedOk: boolean;
+  ecPrefixOk: boolean;
+};
+
+function checkVapidFormat(key: string): VapidFormatCheck {
+  const trimmed = key.trim();
+  const base64UrlOk = /^[A-Za-z0-9_-]+$/.test(trimmed);
+  const decoded = base64UrlOk ? decodeBase64Url(trimmed) : null;
+  const decodedBytes = decoded?.length ?? 0;
+  return {
+    length: trimmed.length,
+    lengthOk: trimmed.length === 87,
+    base64UrlOk,
+    decodedBytes,
+    decodedOk: decodedBytes === 65,
+    ecPrefixOk: decoded?.[0] === 0x04,
+  };
+}
+
+type VapidValidation = {
+  running: boolean;
+  configured?: {
+    key: string;
+    fingerprint: string;
+    format: VapidFormatCheck;
+  };
+  expected?: {
+    fingerprint: string;
+    format: VapidFormatCheck;
+  };
+  matches?: boolean;
+  configError?: string;
+};
+
+
+
 type FcmSwDiagnostic = {
   scope: string;
   scriptPath: string;
@@ -44,6 +106,65 @@ export default function AdminPushTest() {
   const [resetting, setResetting] = useState(false);
   const [fcmSwRegistrations, setFcmSwRegistrations] = useState<FcmSwDiagnostic[]>([]);
   const [fcmSwStatus, setFcmSwStatus] = useState("checando...");
+  const [expectedVapid, setExpectedVapid] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem(EXPECTED_VAPID_STORAGE_KEY) ?? "";
+  });
+  const [vapidValidation, setVapidValidation] = useState<VapidValidation>({ running: false });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (expectedVapid) window.localStorage.setItem(EXPECTED_VAPID_STORAGE_KEY, expectedVapid);
+    else window.localStorage.removeItem(EXPECTED_VAPID_STORAGE_KEY);
+  }, [expectedVapid]);
+
+  const runVapidValidation = async () => {
+    setVapidValidation({ running: true });
+    try {
+      const { data, error } = await supabase.functions.invoke("firebase-public-config");
+      if (error) throw error;
+      const configuredKey = String((data as any)?.vapidKey ?? "").trim();
+      if (!configuredKey) {
+        setVapidValidation({ running: false, configError: "FIREBASE_VAPID_KEY não retornada pela função firebase-public-config." });
+        return;
+      }
+      const configuredFingerprint = (await sha256Hex(configuredKey)).slice(0, 16);
+      const configuredFormat = checkVapidFormat(configuredKey);
+      const expected = expectedVapid.trim();
+      if (!expected) {
+        setVapidValidation({
+          running: false,
+          configured: { key: configuredKey, fingerprint: configuredFingerprint, format: configuredFormat },
+        });
+        return;
+      }
+      const expectedFingerprint = (await sha256Hex(expected)).slice(0, 16);
+      const expectedFormat = checkVapidFormat(expected);
+      setVapidValidation({
+        running: false,
+        configured: { key: configuredKey, fingerprint: configuredFingerprint, format: configuredFormat },
+        expected: { fingerprint: expectedFingerprint, format: expectedFormat },
+        matches: configuredFingerprint === expectedFingerprint,
+      });
+    } catch (err) {
+      setVapidValidation({ running: false, configError: (err as Error)?.message ?? "Falha ao buscar config" });
+    }
+  };
+
+  const vapidBlocksSubscribe =
+    (vapidValidation.configured && !vapidValidation.configured.format.lengthOk) ||
+    (vapidValidation.configured && !vapidValidation.configured.format.ecPrefixOk) ||
+    (vapidValidation.expected && vapidValidation.matches === false);
+
+  const handleEnableGuarded = async () => {
+    if (vapidBlocksSubscribe) {
+      toast.error("VAPID inválida ou não bate com a chave esperada — corrija antes de assinar o push.");
+      return;
+    }
+    await handleEnable();
+  };
+
+
 
   const handleEnable = async () => {
     setEnabling(true);
@@ -254,7 +375,7 @@ export default function AdminPushTest() {
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleEnable} disabled={enabling || push.isLoading || resetting}>
+            <Button onClick={handleEnableGuarded} disabled={enabling || push.isLoading || resetting}>
               {(enabling || push.isLoading) ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <BellRing className="h-4 w-4 mr-2" />}
               Ativar notificações neste dispositivo
             </Button>
@@ -277,6 +398,103 @@ export default function AdminPushTest() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5 text-primary" /> Validação da VAPID key
+          </CardTitle>
+          <CardDescription>
+            Cole a chave pública exibida em <span className="font-mono">Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Key pair</span>.
+            Comparamos com o valor de <span className="font-mono">FIREBASE_VAPID_KEY</span> servido pelo backend antes de chamar <span className="font-mono">pushManager.subscribe</span>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="expected-vapid">Chave esperada (Firebase Console)</Label>
+            <Input
+              id="expected-vapid"
+              placeholder="B... (87 chars, base64url)"
+              value={expectedVapid}
+              onChange={(e) => setExpectedVapid(e.target.value)}
+              className="font-mono text-xs"
+            />
+            <p className="text-xs text-muted-foreground">Salvo apenas neste navegador (localStorage).</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={runVapidValidation} disabled={vapidValidation.running}>
+              {vapidValidation.running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Stethoscope className="h-4 w-4 mr-2" />}
+              Validar VAPID
+            </Button>
+            {expectedVapid && (
+              <Button variant="ghost" onClick={() => setExpectedVapid("")}>Limpar</Button>
+            )}
+          </div>
+
+          {vapidValidation.configError && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+              {vapidValidation.configError}
+            </div>
+          )}
+
+          {vapidValidation.configured && (
+            <div className="grid gap-2 text-sm md:grid-cols-2">
+              <DiagRow label="Fingerprint configurado" value={vapidValidation.configured.fingerprint} />
+              <DiagRow label="Fingerprint esperado" value={vapidValidation.expected?.fingerprint ?? "— (cole a chave)"} />
+              <DiagRow
+                label="Match"
+                value={
+                  vapidValidation.expected
+                    ? vapidValidation.matches ? "✅ idêntico" : "❌ diferente"
+                    : "— (sem chave esperada)"
+                }
+              />
+              <DiagRow
+                label="Comprimento (config)"
+                value={`${vapidValidation.configured.format.length} ${vapidValidation.configured.format.lengthOk ? "✅" : "❌ (esperado 87)"}`}
+              />
+              <DiagRow
+                label="Base64url válido (config)"
+                value={vapidValidation.configured.format.base64UrlOk ? "✅" : "❌"}
+              />
+              <DiagRow
+                label="Decodifica p/ 65 bytes (config)"
+                value={`${vapidValidation.configured.format.decodedBytes} ${vapidValidation.configured.format.decodedOk ? "✅" : "❌"}`}
+              />
+              <DiagRow
+                label="Prefixo EC 0x04 (config)"
+                value={vapidValidation.configured.format.ecPrefixOk ? "✅" : "❌"}
+              />
+              {vapidValidation.expected && (
+                <>
+                  <DiagRow
+                    label="Comprimento (esperado)"
+                    value={`${vapidValidation.expected.format.length} ${vapidValidation.expected.format.lengthOk ? "✅" : "❌"}`}
+                  />
+                  <DiagRow
+                    label="Prefixo EC 0x04 (esperado)"
+                    value={vapidValidation.expected.format.ecPrefixOk ? "✅" : "❌"}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          {vapidBlocksSubscribe && (
+            <div className="flex gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+              <p>
+                A VAPID configurada está inválida ou diverge da esperada. "Ativar notificações" está bloqueado até corrigir o secret
+                <span className="font-mono"> FIREBASE_VAPID_KEY</span>.
+              </p>
+            </div>
+          )}
+          {vapidValidation.expected && vapidValidation.matches && (
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+              VAPID configurada bate com a chave esperada. Pode prosseguir com o subscribe.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
 
       <Card>
