@@ -5,7 +5,7 @@
 // Never include service account JSON or any private credential here — this file
 // is fetched by the browser and by the FCM service worker. The VAPID key is a
 // Firebase Web Push public key and is safe to expose to the browser.
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadEnv } from "vite";
@@ -33,6 +33,16 @@ const PUBLIC_KEYS = [
   "FIREBASE_VAPID_KEY",
 ];
 
+const CONFIG_FIELDS = [
+  "apiKey",
+  "authDomain",
+  "projectId",
+  "storageBucket",
+  "messagingSenderId",
+  "appId",
+  "vapidKey",
+];
+
 function readFirebasePublicValue(key) {
   const viteKey = `VITE_${key}`;
   const value = env[viteKey] || env[key];
@@ -45,10 +55,36 @@ const header =
 
 const missing = PUBLIC_KEYS.filter((k) => !readFirebasePublicValue(k));
 
+function readExistingGeneratedConfig() {
+  try {
+    const text = readFileSync(OUT_PATH, "utf8");
+    const match = text.match(/self\.__FIREBASE_CONFIG__\s*=\s*([\s\S]*?);\s*$/m);
+    if (!match?.[1] || match[1].trim() === "null") return null;
+    const parsed = JSON.parse(match[1]);
+    if (!parsed || typeof parsed !== "object") return null;
+    return CONFIG_FIELDS.every(
+      (field) => typeof parsed[field] === "string" && parsed[field].trim() !== ""
+    )
+      ? text
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 
 mkdirSync(dirname(OUT_PATH), { recursive: true });
 
 if (missing.length > 0) {
+  const existing = readExistingGeneratedConfig();
+  if (existing) {
+    console.warn(
+      `[firebase-config] Missing env vars: ${missing.join(", ")}. ` +
+        "Preserved existing public/firebase-config.generated.js."
+    );
+    process.exit(0);
+  }
+
   writeFileSync(
     OUT_PATH,
     header + "self.__FIREBASE_CONFIG__ = null;\n",
