@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { sendAdjustmentPushNotification } from "@/hooks/useSendPushNotification";
 import { buildPublicDemandUrl } from "@/lib/demandShareUtils";
+import { filterRecipientsByChannel } from "@/lib/notificationDispatch";
 
 export type AdjustmentType = "internal" | "external";
 
@@ -157,55 +158,63 @@ export const KanbanAdjustmentDialog = React.memo(function KanbanAdjustmentDialog
         const notificationMessage = isInternal 
           ? `Foi solicitado um ajuste interno na demanda "${demandTitle}": ${plainReason.substring(0, 100)}${plainReason.length > 100 ? '...' : ''}`
           : `O cliente solicitou um ajuste na demanda "${demandTitle}": ${plainReason.substring(0, 100)}${plainReason.length > 100 ? '...' : ''}`;
-        
-        const notifications = notifyUserIds.map((userId) => ({
-          user_id: userId,
-          title: notificationTitle,
-          message: notificationMessage,
-          type: "warning",
-          link: `/demands/${demandId}`,
-        }));
-        
-        await supabase.from("notifications").insert(notifications);
-        
-        // Send push notifications
-        sendAdjustmentPushNotification({
-          assigneeIds: notifyUserIds,
+
+        const filtered = await filterRecipientsByChannel({
+          recipientIds: notifyUserIds,
+          type: "demandAdjustment",
           demandId,
-          demandTitle: demandTitle || "",
-          reason: reason.trim(),
-          isInternal,
-          boardName,
-        }).catch(err => console.error("Error sending push notification:", err));
-        
-        // Send email notifications to each user with public link
-        const publicUrl = await buildPublicDemandUrl(demandId, user?.id || "");
-        for (const userId of notifyUserIds) {
-          try {
-            // Get user profile for name
-            const { data: userProfile } = await supabase
-              .from("profiles")
-              .select("full_name")
-              .eq("id", userId)
-              .single();
-            
-            await supabase.functions.invoke("send-email", {
-              body: {
-                to: userId,
-                subject: `🔧 ${typeLabel} solicitado: ${demandTitle}`,
-                template: "notification",
-                templateData: {
-                  title: notificationTitle,
-                  message: `${isInternal ? 'Foi solicitado um ajuste interno' : 'O cliente solicitou um ajuste'} na demanda "${demandTitle}".\n\nMotivo: ${plainReason}`,
-                  actionUrl: publicUrl,
-                  actionText: "Ver Demanda",
-                  userName: userProfile?.full_name || "Usuário",
-                  type: "warning" as const,
+        });
+
+        if (filtered.inapp.length > 0) {
+          const notifications = filtered.inapp.map((userId) => ({
+            user_id: userId,
+            title: notificationTitle,
+            message: notificationMessage,
+            type: "warning",
+            link: `/demands/${demandId}`,
+          }));
+          await supabase.from("notifications").insert(notifications);
+        }
+
+        if (filtered.push.length > 0) {
+          sendAdjustmentPushNotification({
+            assigneeIds: filtered.push,
+            demandId,
+            demandTitle: demandTitle || "",
+            reason: reason.trim(),
+            isInternal,
+            boardName,
+          }).catch(err => console.error("Error sending push notification:", err));
+        }
+
+        if (filtered.email.length > 0) {
+          const publicUrl = await buildPublicDemandUrl(demandId, user?.id || "");
+          for (const userId of filtered.email) {
+            try {
+              const { data: userProfile } = await supabase
+                .from("profiles")
+                .select("full_name")
+                .eq("id", userId)
+                .single();
+
+              await supabase.functions.invoke("send-email", {
+                body: {
+                  to: userId,
+                  subject: `🔧 ${typeLabel} solicitado: ${demandTitle}`,
+                  template: "notification",
+                  templateData: {
+                    title: notificationTitle,
+                    message: `${isInternal ? 'Foi solicitado um ajuste interno' : 'O cliente solicitou um ajuste'} na demanda "${demandTitle}".\n\nMotivo: ${plainReason}`,
+                    actionUrl: publicUrl,
+                    actionText: "Ver Demanda",
+                    userName: userProfile?.full_name || "Usuário",
+                    type: "warning" as const,
+                  },
                 },
-              },
-            });
-          } catch (emailError) {
-            console.error("Error sending adjustment email:", emailError);
+              });
+            } catch (emailError) {
+              console.error("Error sending adjustment email:", emailError);
+            }
           }
         }
       }
