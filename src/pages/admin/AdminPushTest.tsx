@@ -276,3 +276,12 @@ export default function AdminPushTest() {
     </div>
   );
 }
+
+function DiagRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-mono text-xs text-right break-all">{value}</span>
+    </div>
+  );
+}
