@@ -164,57 +164,6 @@ export default function AdminPushTest() {
     await handleEnable();
   };
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const refresh = async () => {
-      if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
-        if (!cancelled) setFcmSwStatus("indisponível");
-        return;
-      }
-      try {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        const fcmRegs = await Promise.all(
-          regs
-            .filter((reg) => {
-              const script = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "";
-              return script.includes("firebase-messaging-sw.js");
-            })
-            .map(async (reg) => {
-              const worker = reg.active || reg.waiting || reg.installing;
-              const script = worker?.scriptURL || "";
-              const url = script ? new URL(script) : null;
-              let hasPushSubscription: boolean | null = null;
-              try {
-                hasPushSubscription = Boolean(await reg.pushManager.getSubscription());
-              } catch {
-                hasPushSubscription = null;
-              }
-              return {
-                scope: new URL(reg.scope).pathname,
-                scriptPath: url ? url.pathname : "—",
-                hasRuntimeConfig: Boolean(url && url.searchParams.size > 0),
-                state: worker?.state ?? "sem worker",
-                hasPushSubscription,
-              };
-            }),
-        );
-        if (!cancelled) {
-          setFcmSwRegistrations(fcmRegs);
-          setFcmSwStatus(fcmRegs.length ? `${fcmRegs.length} registro(s)` : "nenhum");
-        }
-      } catch (err) {
-        if (!cancelled) setFcmSwStatus((err as Error)?.message || "erro ao ler SW");
-      }
-    };
-
-    void refresh();
-    const interval = window.setInterval(refresh, 3000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-    };
-  }, []);
 
 
   const handleEnable = async () => {
