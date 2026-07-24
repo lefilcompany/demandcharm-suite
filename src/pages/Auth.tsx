@@ -935,7 +935,7 @@ export default function Auth() {
                       {/* Password validation feedback */}
                       {passwordsDontMatch}
 
-                      <div className="flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-[12px] text-foreground/85 max-w-sm mx-auto">
+                      <div className="flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-1.5 text-[12px] leading-snug text-foreground/85 max-w-sm mx-auto">
                         <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                         <span>
                           Após cadastrar, enviaremos um <span className="font-medium">link de confirmação</span> por e-mail. Você só conseguirá entrar depois de confirmar.
