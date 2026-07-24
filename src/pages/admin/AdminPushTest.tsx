@@ -18,6 +18,68 @@ import { SEOHead } from "@/components/SEOHead";
 
 type Scenario = "creation" | "deadline" | "mention" | "generic";
 
+const EXPECTED_VAPID_STORAGE_KEY = "admin.pushTest.expectedVapidKey";
+
+function decodeBase64Url(input: string): Uint8Array | null {
+  try {
+    const pad = input.length % 4 === 0 ? "" : "=".repeat(4 - (input.length % 4));
+    const b64 = (input + pad).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(b64);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+type VapidFormatCheck = {
+  length: number;
+  lengthOk: boolean;
+  base64UrlOk: boolean;
+  decodedBytes: number;
+  decodedOk: boolean;
+  ecPrefixOk: boolean;
+};
+
+function checkVapidFormat(key: string): VapidFormatCheck {
+  const trimmed = key.trim();
+  const base64UrlOk = /^[A-Za-z0-9_-]+$/.test(trimmed);
+  const decoded = base64UrlOk ? decodeBase64Url(trimmed) : null;
+  const decodedBytes = decoded?.length ?? 0;
+  return {
+    length: trimmed.length,
+    lengthOk: trimmed.length === 87,
+    base64UrlOk,
+    decodedBytes,
+    decodedOk: decodedBytes === 65,
+    ecPrefixOk: decoded?.[0] === 0x04,
+  };
+}
+
+type VapidValidation = {
+  running: boolean;
+  configured?: {
+    key: string;
+    fingerprint: string;
+    format: VapidFormatCheck;
+  };
+  expected?: {
+    fingerprint: string;
+    format: VapidFormatCheck;
+  };
+  matches?: boolean;
+  configError?: string;
+};
+
+
+
 type FcmSwDiagnostic = {
   scope: string;
   scriptPath: string;
