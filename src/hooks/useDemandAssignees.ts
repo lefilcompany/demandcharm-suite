@@ -1,5 +1,72 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  notifyDemandAssigneeChange,
+  type DemandAssigneeEvent,
+} from "@/lib/demandAssigneeNotifications";
+
+interface DemandContext {
+  demandTitle: string;
+  boardName?: string;
+}
+
+async function loadDemandContext(demandId: string): Promise<DemandContext> {
+  const { data } = await supabase
+    .from("demands")
+    .select("title, boards(name)")
+    .eq("id", demandId)
+    .maybeSingle();
+  const boardName = (data as { boards?: { name?: string } } | null)?.boards?.name;
+  return {
+    demandTitle: (data as { title?: string } | null)?.title ?? "",
+    boardName: boardName ?? undefined,
+  };
+}
+
+async function loadActor(): Promise<{ id: string; name: string } | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  return {
+    id: user.id,
+    name: (profile as { full_name?: string } | null)?.full_name || "Alguém",
+  };
+}
+
+async function dispatchAssigneeNotifications(
+  demandId: string,
+  events: Array<{ userId: string; event: DemandAssigneeEvent }>
+) {
+  if (events.length === 0) return;
+  try {
+    const [ctx, actor] = await Promise.all([
+      loadDemandContext(demandId),
+      loadActor(),
+    ]);
+    if (!actor) return;
+    await Promise.allSettled(
+      events.map(({ userId, event }) =>
+        notifyDemandAssigneeChange({
+          event,
+          userId,
+          demandId,
+          demandTitle: ctx.demandTitle,
+          boardName: ctx.boardName,
+          actorId: actor.id,
+          actorName: actor.name,
+        })
+      )
+    );
+  } catch (err) {
+    console.warn("[useDemandAssignees] dispatch notifications failed:", err);
+  }
+}
 
 export interface Assignee {
   id: string;
