@@ -7,6 +7,7 @@ import {
   checkFirebasePushConfig,
   getCurrentFcmToken,
   requestNotificationPermission,
+  resetPushRegistration as resetPushRegistrationLib,
 } from "@/lib/firebase";
 
 const DEVICE_ID_KEY = "soma:fcm_device_id";
