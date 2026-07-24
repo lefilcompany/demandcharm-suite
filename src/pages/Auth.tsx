@@ -663,41 +663,53 @@ export default function Auth() {
                 </TabsList>
               </div>
 
-              <TabsContent value="login" className="mt-0 space-y-3.5">
-                <div className="text-center space-y-1.5">
-                  <h1 className="text-[26px] leading-tight font-semibold tracking-tight text-foreground">Entrar na sua conta</h1>
-                  <p className="text-[13px] text-muted-foreground">Acesse sua conta da forma mais rápida</p>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-11 text-[13.5px] font-medium gap-2.5 bg-background border-border/80 hover:bg-muted/40 hover:border-border rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
-                  disabled={isLoading || isGoogleLoading}
-                  onClick={handleGoogleSignIn}
-                >
-                  {isGoogleLoading ? (
-                    <Loader2 className="h-[18px] w-[18px] animate-spin" />
-                  ) : (
-                    <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                    </svg>
-                  )}
-                  Continuar com Google
-                </Button>
-
-                <div className="relative py-1">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border/50" />
+              {/* Shared fixed header: title + Google button + divider.
+                  Hidden when the signup success screen is showing so it can render its own layout. */}
+              {!(activeTab === "signup" && signupSuccessEmail) && (
+                <div className="space-y-3.5">
+                  <div className="text-center space-y-1.5">
+                    <h1 className="text-[26px] leading-tight font-semibold tracking-tight text-foreground">
+                      {activeTab === "login" ? "Entrar na sua conta" : "Criar sua conta"}
+                    </h1>
+                    <p className="text-[13px] text-muted-foreground">
+                      {activeTab === "login" ? "Acesse sua conta da forma mais rápida" : "Comece em segundos"}
+                    </p>
                   </div>
-                  <div className="relative flex justify-center text-[11px]">
-                    <span className="bg-background px-3 text-muted-foreground/80">ou entre com seu e-mail</span>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-11 text-[13.5px] font-medium gap-2.5 bg-background border-border/80 hover:bg-muted/40 hover:border-border rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                    disabled={isLoading || isGoogleLoading}
+                    onClick={handleGoogleSignIn}
+                  >
+                    {isGoogleLoading ? (
+                      <Loader2 className="h-[18px] w-[18px] animate-spin" />
+                    ) : (
+                      <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                      </svg>
+                    )}
+                    {activeTab === "login" ? "Continuar com Google" : "Cadastrar com Google"}
+                  </Button>
+
+                  <div className="relative py-1">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border/50" />
+                    </div>
+                    <div className="relative flex justify-center text-[11px]">
+                      <span className="bg-background px-3 text-muted-foreground/80">
+                        {activeTab === "login" ? "ou entre com seu e-mail" : "ou crie sua conta com e-mail"}
+                      </span>
+                    </div>
                   </div>
                 </div>
+              )}
 
+              <TabsContent value="login" className="mt-3.5 space-y-3.5">
                 {loginStep === "email" ? (
                   <form onSubmit={handleEmailContinue} className="space-y-3">
                     <div className="space-y-1.5">
@@ -768,7 +780,7 @@ export default function Auth() {
                 )}
               </TabsContent>
 
-              <TabsContent value="signup" className="mt-0 space-y-3.5">
+              <TabsContent value="signup" className="mt-3.5 space-y-3.5">
                 {signupSuccessEmail ? (
                   <div className="space-y-4 py-2">
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
@@ -810,166 +822,131 @@ export default function Auth() {
                     </Button>
                   </div>
                 ) : (
-                <>
-                <div className="text-center space-y-1.5">
-                  <h1 className="text-[26px] leading-tight font-semibold tracking-tight text-foreground">Criar sua conta</h1>
-                  <p className="text-[13px] text-muted-foreground">Comece em segundos</p>
-                </div>
-
-                <div className="flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-[12px] text-foreground/85">
-                  <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <span>
-                    Após cadastrar, enviaremos um <span className="font-medium">link de confirmação</span> por e-mail. Você só conseguirá entrar depois de confirmar.
-                  </span>
-                </div>
-
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-11 text-[13.5px] font-medium gap-2.5 bg-background border-border/80 hover:bg-muted/40 hover:border-border rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
-                  disabled={isLoading || isGoogleLoading}
-                  onClick={handleGoogleSignIn}
-                >
-                  {isGoogleLoading ? (
-                    <Loader2 className="h-[18px] w-[18px] animate-spin" />
-                  ) : (
-                    <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                    </svg>
-                  )}
-                  Cadastrar com Google
-                </Button>
-
-                <div className="relative py-1">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border/50" />
-                  </div>
-                  <div className="relative flex justify-center text-[11px]">
-                    <span className="bg-background px-3 text-muted-foreground/80">ou crie sua conta com e-mail</span>
-                  </div>
-                </div>
-
-                <form onSubmit={handleSignup} className="space-y-3 lg:max-h-[calc(100dvh-460px)] lg:overflow-y-auto lg:pr-1 lg:-mr-1">
-                  {/* Nome */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="signup-name" className="text-[12px] font-medium text-foreground/70">{t("auth.fullName")}</Label>
-                    <Input id="signup-name" type="text" placeholder={t("common.name")} className="h-11 rounded-lg text-[14px] placeholder:text-muted-foreground/60" value={signupData.fullName} onChange={e => setSignupData({
-                    ...signupData,
-                    fullName: e.target.value
-                  })} required />
-                  </div>
-
-                  {/* Email */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="signup-email" className="text-[12px] font-medium text-foreground/70">{t("common.email")}</Label>
-                    <Input id="signup-email" type="email" placeholder="seu@email.com" className="h-11 rounded-lg text-[14px] placeholder:text-muted-foreground/60" value={signupData.email} onChange={e => setSignupData({
-                    ...signupData,
-                    email: e.target.value
-                  })} required />
-                  </div>
-
-                  {/* Telefone */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="signup-phone" className="text-[12px] font-medium text-foreground/70">{t("common.phone")}</Label>
-                    <Input id="signup-phone" type="tel" placeholder="(00) 00000-0000" className="h-11 rounded-lg text-[14px] placeholder:text-muted-foreground/60" value={signupData.phone} onChange={handlePhoneChange} maxLength={16} required />
-                  </div>
-
-                  {/* Estado + Cidade */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="signup-state" className="text-[12px] font-medium text-foreground/70">{t("common.state")}</Label>
-                      <Select value={signupData.state} onValueChange={value => setSignupData({
-                      ...signupData,
-                      state: value
-                    })}>
-                        <SelectTrigger className="h-11 rounded-lg text-[14px]">
-                          <SelectValue placeholder={loadingStates ? "..." : "UF"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {loadingStates ? <div className="flex items-center justify-center p-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            </div> : states.map(state => <SelectItem key={state.id} value={state.sigla}>
-                                {state.sigla} - {state.nome}
-                              </SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                  <div className="space-y-3.5 lg:max-h-[calc(100dvh-540px)] lg:overflow-y-auto lg:pr-1 lg:-mr-1">
+                    <div className="flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-[12px] text-foreground/85">
+                      <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                      <span>
+                        Após cadastrar, enviaremos um <span className="font-medium">link de confirmação</span> por e-mail. Você só conseguirá entrar depois de confirmar.
+                      </span>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="signup-city" className="text-[12px] font-medium text-foreground/70">{t("common.city")}</Label>
-                    <Select value={signupData.city} onValueChange={value => setSignupData({
-                      ...signupData,
-                      city: value
-                    })} disabled={!signupData.state || loadingCities}>
-                      <SelectTrigger className="h-11 rounded-lg text-[14px]">
-                        <SelectValue placeholder={loadingCities ? "Carregando..." : "Cidade"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {loadingCities ? <div className="flex items-center justify-center p-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          </div> : cities.map(city => <SelectItem key={city.id} value={city.nome}>
-                              {city.nome}
-                            </SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    </div>
-                  </div>
 
-                  {/* Senha + Confirmar Senha */}
-                  <div className="space-y-1.5">
-                    <div className="grid grid-cols-2 gap-3">
+                    <form onSubmit={handleSignup} className="space-y-3">
+                      {/* Nome */}
                       <div className="space-y-1.5">
-                        <Label htmlFor="signup-password" className="text-[12px] font-medium text-foreground/70">{t("common.password")}</Label>
-                        <div className="relative">
-                          <Input id="signup-password" type={showSignupPassword ? "text" : "password"} placeholder="••••••••" className="h-11 pr-9 rounded-lg text-[14px] placeholder:text-muted-foreground/60" value={signupData.password} onChange={e => setSignupData({
+                        <Label htmlFor="signup-name" className="text-[12px] font-medium text-foreground/70">{t("auth.fullName")}</Label>
+                        <Input id="signup-name" type="text" placeholder={t("common.name")} className="h-11 rounded-lg text-[14px] placeholder:text-muted-foreground/60" value={signupData.fullName} onChange={e => setSignupData({
+                        ...signupData,
+                        fullName: e.target.value
+                      })} required />
+                      </div>
+
+                      {/* Email */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-email" className="text-[12px] font-medium text-foreground/70">{t("common.email")}</Label>
+                        <Input id="signup-email" type="email" placeholder="seu@email.com" className="h-11 rounded-lg text-[14px] placeholder:text-muted-foreground/60" value={signupData.email} onChange={e => setSignupData({
+                        ...signupData,
+                        email: e.target.value
+                      })} required />
+                      </div>
+
+                      {/* Telefone */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-phone" className="text-[12px] font-medium text-foreground/70">{t("common.phone")}</Label>
+                        <Input id="signup-phone" type="tel" placeholder="(00) 00000-0000" className="h-11 rounded-lg text-[14px] placeholder:text-muted-foreground/60" value={signupData.phone} onChange={handlePhoneChange} maxLength={16} required />
+                      </div>
+
+                      {/* Estado + Cidade */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="signup-state" className="text-[12px] font-medium text-foreground/70">{t("common.state")}</Label>
+                          <Select value={signupData.state} onValueChange={value => setSignupData({
                           ...signupData,
-                          password: e.target.value
-                        })} required />
-                          <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-2.5 hover:bg-transparent" onClick={() => setShowSignupPassword(!showSignupPassword)}>
-                            {showSignupPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                          </Button>
+                          state: value
+                        })}>
+                            <SelectTrigger className="h-11 rounded-lg text-[14px]">
+                              <SelectValue placeholder={loadingStates ? "..." : "UF"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {loadingStates ? <div className="flex items-center justify-center p-2">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                </div> : states.map(state => <SelectItem key={state.id} value={state.sigla}>
+                                    {state.sigla} - {state.nome}
+                                  </SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="signup-city" className="text-[12px] font-medium text-foreground/70">{t("common.city")}</Label>
+                        <Select value={signupData.city} onValueChange={value => setSignupData({
+                          ...signupData,
+                          city: value
+                        })} disabled={!signupData.state || loadingCities}>
+                          <SelectTrigger className="h-11 rounded-lg text-[14px]">
+                            <SelectValue placeholder={loadingCities ? "Carregando..." : "Cidade"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {loadingCities ? <div className="flex items-center justify-center p-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              </div> : cities.map(city => <SelectItem key={city.id} value={city.nome}>
+                                  {city.nome}
+                                </SelectItem>)}
+                          </SelectContent>
+                        </Select>
                         </div>
                       </div>
+
+                      {/* Senha + Confirmar Senha */}
                       <div className="space-y-1.5">
-                        <Label htmlFor="signup-confirm-password" className="text-[12px] font-medium text-foreground/70">{t("auth.confirmPassword")}</Label>
-                        <div className="relative">
-                          <Input id="signup-confirm-password" type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" className={`h-11 pr-16 rounded-lg text-[14px] placeholder:text-muted-foreground/60 ${passwordsMatch ? 'border-emerald-500 focus-visible:ring-emerald-500' : ''} ${passwordsDontMatch ? 'border-destructive focus-visible:ring-destructive' : ''}`} value={signupData.confirmPassword} onChange={e => setSignupData({
-                          ...signupData,
-                          confirmPassword: e.target.value
-                        })} required />
-                          <div className="absolute right-0 top-0 h-full flex items-center">
-                            {signupData.confirmPassword && <span className="pr-1">
-                                {passwordsMatch ? <Check className="h-4 w-4 text-emerald-500" /> : <X className="h-4 w-4 text-destructive" />}
-                              </span>}
-                            <Button type="button" variant="ghost" size="icon" className="h-full px-2.5 hover:bg-transparent" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                              {showConfirmPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                            </Button>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label htmlFor="signup-password" className="text-[12px] font-medium text-foreground/70">{t("common.password")}</Label>
+                            <div className="relative">
+                              <Input id="signup-password" type={showSignupPassword ? "text" : "password"} placeholder="••••••••" className="h-11 pr-9 rounded-lg text-[14px] placeholder:text-muted-foreground/60" value={signupData.password} onChange={e => setSignupData({
+                              ...signupData,
+                              password: e.target.value
+                            })} required />
+                              <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-2.5 hover:bg-transparent" onClick={() => setShowSignupPassword(!showSignupPassword)}>
+                                {showSignupPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="signup-confirm-password" className="text-[12px] font-medium text-foreground/70">{t("auth.confirmPassword")}</Label>
+                            <div className="relative">
+                              <Input id="signup-confirm-password" type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" className={`h-11 pr-16 rounded-lg text-[14px] placeholder:text-muted-foreground/60 ${passwordsMatch ? 'border-emerald-500 focus-visible:ring-emerald-500' : ''} ${passwordsDontMatch ? 'border-destructive focus-visible:ring-destructive' : ''}`} value={signupData.confirmPassword} onChange={e => setSignupData({
+                              ...signupData,
+                              confirmPassword: e.target.value
+                            })} required />
+                              <div className="absolute right-0 top-0 h-full flex items-center">
+                                {signupData.confirmPassword && <span className="pr-1">
+                                    {passwordsMatch ? <Check className="h-4 w-4 text-emerald-500" /> : <X className="h-4 w-4 text-destructive" />}
+                                  </span>}
+                                <Button type="button" variant="ghost" size="icon" className="h-full px-2.5 hover:bg-transparent" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                  {showConfirmPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         </div>
+                        {/* Password Strength Indicator */}
+                        {signupData.password && <div className="space-y-1 mt-2">
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map(i => <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= passwordStrength.level ? passwordStrength.color : "bg-muted"}`} />)}
+                            </div>
+                            <p className={`text-[11px] ${passwordStrength.level <= 2 ? "text-destructive" : passwordStrength.level === 3 ? "text-amber-500" : "text-emerald-500"}`}>
+                              Força: {passwordStrength.label}
+                            </p>
+                          </div>}
                       </div>
-                    </div>
-                    {/* Password Strength Indicator */}
-                    {signupData.password && <div className="space-y-1 mt-2">
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4, 5].map(i => <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= passwordStrength.level ? passwordStrength.color : "bg-muted"}`} />)}
-                        </div>
-                        <p className={`text-[11px] ${passwordStrength.level <= 2 ? "text-destructive" : passwordStrength.level === 3 ? "text-amber-500" : "text-emerald-500"}`}>
-                          Força: {passwordStrength.label}
-                        </p>
-                      </div>}
+
+                      {/* Password validation feedback */}
+                      {passwordsDontMatch}
+
+                      <Button type="submit" className="w-full h-11 text-[13.5px] font-semibold rounded-lg mt-1" disabled={isLoading || passwordsDontMatch}>
+                        {isLoading ? t("common.loading") : "Criar conta com e-mail"}
+                      </Button>
+                    </form>
                   </div>
-
-                  {/* Password validation feedback */}
-                  {passwordsDontMatch}
-
-                  <Button type="submit" className="w-full h-11 text-[13.5px] font-semibold rounded-lg mt-1" disabled={isLoading || passwordsDontMatch}>
-                    {isLoading ? t("common.loading") : "Criar conta com e-mail"}
-                  </Button>
-                </form>
-                </>
                 )}
               </TabsContent>
             </Tabs>
