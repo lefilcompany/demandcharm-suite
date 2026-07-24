@@ -644,10 +644,10 @@ export default function Auth() {
 
       {/* Form Section - Scrollable on mobile */}
       <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background overflow-y-auto lg:h-screen lg:overflow-hidden">
-        <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-8 py-8 lg:px-10 lg:py-10 lg:min-h-0">
-          <div className="w-full max-w-[380px] lg:h-[min(620px,calc(100dvh-5rem))] lg:min-h-0 lg:flex lg:flex-col">
+        <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-8 py-8 lg:px-10 lg:py-6 lg:min-h-0">
+          <div className="w-full max-w-[380px] lg:h-[min(720px,calc(100dvh-4rem))] lg:min-h-0 lg:flex lg:flex-col">
             {/* Logo */}
-            <div className="flex justify-center mb-5 lg:shrink-0">
+            <div className="flex justify-center mb-3 lg:shrink-0">
               <img alt="SoMA+" src="/lovable-uploads/9889f524-0819-424e-9185-2cc441526116.png" className="h-14 w-auto" />
             </div>
 
