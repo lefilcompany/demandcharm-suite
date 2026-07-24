@@ -1246,22 +1246,31 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
             const importantStatuses = ["Entregue", "Aprovação do Cliente", "Em Ajuste"];
             if (importantStatuses.includes(newStatusKey) && demand.created_by && demand.created_by !== user?.id) {
               try {
-                const statusEmoji = newStatusKey === "Entregue" ? "✅" : newStatusKey === "Em Ajuste" ? "🔧" : "📋";
-                const publicUrl = await buildPublicDemandUrl(demand.id, user?.id || "");
-                await supabase.functions.invoke("send-email", {
-                  body: {
-                    to: demand.created_by,
-                    subject: `${statusEmoji} Status atualizado: ${demand.title}`,
-                    template: "notification",
-                    templateData: {
-                      title: "Status da Demanda Atualizado",
-                      message: `A demanda "${demand.title}" mudou de "${previousStatusName}" para "${newStatusKey}".`,
-                      actionUrl: publicUrl,
-                      actionText: "Ver Demanda",
-                      type: newStatusKey === "Entregue" ? "success" : newStatusKey === "Em Ajuste" ? "warning" : "info",
-                    },
-                  },
+                const creatorId = demand.created_by;
+                const isCreatorAssigned = (demand.demand_assignees || []).some((a: any) => a.user_id === creatorId);
+                const prefsMap = await fetchPreferencesForUsers([creatorId]);
+                const prefs = prefsMap.get(creatorId)!;
+                const wantEmail = shouldNotifyUser(prefs, {
+                  channel: "email", type: "demandStatusChanged", boardId, isUserAssigned: isCreatorAssigned,
                 });
+                if (wantEmail) {
+                  const statusEmoji = newStatusKey === "Entregue" ? "✅" : newStatusKey === "Em Ajuste" ? "🔧" : "📋";
+                  const publicUrl = await buildPublicDemandUrl(demand.id, user?.id || "");
+                  await supabase.functions.invoke("send-email", {
+                    body: {
+                      to: creatorId,
+                      subject: `${statusEmoji} Status atualizado: ${demand.title}`,
+                      template: "notification",
+                      templateData: {
+                        title: "Status da Demanda Atualizado",
+                        message: `A demanda "${demand.title}" mudou de "${previousStatusName}" para "${newStatusKey}".`,
+                        actionUrl: publicUrl,
+                        actionText: "Ver Demanda",
+                        type: newStatusKey === "Entregue" ? "success" : newStatusKey === "Em Ajuste" ? "warning" : "info",
+                      },
+                    },
+                  });
+                }
               } catch (emailError) {
                 console.error("Erro ao enviar email de status:", emailError);
               }
