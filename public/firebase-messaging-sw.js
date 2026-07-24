@@ -1,9 +1,8 @@
 // Firebase Messaging Service Worker for SoMA
 // Loaded at /firebase-messaging-sw.js under scope /firebase-cloud-messaging-push-scope/.
-// Prefer the generated build config, but also accept the same public config in
-// the service-worker script URL. The URL fallback is used when Lovable does not
-// inject Firebase variables at build time and the frontend loads them from the
-// Supabase firebase-public-config Edge Function.
+// Prefer the config embedded in the service-worker script URL. It is the exact
+// runtime config used by getToken(). The generated asset is a fallback for any
+// browser path that registers this worker without query params.
 
 try {
   importScripts("/firebase-config.generated.js");
@@ -43,16 +42,21 @@ function sanitizeFirebaseConfig(value) {
   return Object.values(config).every((entry) => entry.length > 0) ? config : null;
 }
 
-const firebaseConfig =
-  sanitizeFirebaseConfig(self.__FIREBASE_CONFIG__) || readConfigFromScriptUrl();
+const urlConfig = readConfigFromScriptUrl();
+const generatedConfig = sanitizeFirebaseConfig(self.__FIREBASE_CONFIG__);
+const firebaseConfig = urlConfig || generatedConfig;
+self.__FCM_CONFIG_SOURCE__ = urlConfig ? "script-url" : generatedConfig ? "generated" : "missing";
 
 if (!firebaseConfig) {
-  console.log("[FCM SW] Missing Firebase config; messaging disabled.");
+  console.log("[FCM SW] Missing Firebase config; messaging disabled.", {
+    hasScriptParams: new URL(self.location.href).searchParams.size > 0,
+  });
 } else {
   importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
   importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  console.log("[FCM SW] Messaging initialized", { source: self.__FCM_CONFIG_SOURCE__ });
 
   const messaging = firebase.messaging();
 

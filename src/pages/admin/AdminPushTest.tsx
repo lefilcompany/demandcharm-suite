@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +34,7 @@ export default function AdminPushTest() {
   const [sending, setSending] = useState(false);
   const [enabling, setEnabling] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [fcmSwRegistrations, setFcmSwRegistrations] = useState("checando...");
 
   const handleEnable = async () => {
     setEnabling(true);
@@ -53,6 +54,37 @@ export default function AdminPushTest() {
       setResetting(false);
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const refresh = async () => {
+      if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+        if (!cancelled) setFcmSwRegistrations("indisponível");
+        return;
+      }
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        const fcmRegs = regs
+          .map((reg) => reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "")
+          .filter((script) => script.includes("firebase-messaging-sw.js"))
+          .map((script) => {
+            const url = new URL(script);
+            return `${url.pathname}${url.search ? "?config=sim" : "?config=não"}`;
+          });
+        if (!cancelled) setFcmSwRegistrations(fcmRegs.length ? fcmRegs.join(" | ") : "nenhum");
+      } catch (err) {
+        if (!cancelled) setFcmSwRegistrations((err as Error)?.message || "erro ao ler SW");
+      }
+    };
+
+    void refresh();
+    const interval = window.setInterval(refresh, 3000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
 
   const swScriptUrl = typeof navigator !== "undefined"
     ? navigator.serviceWorker?.controller?.scriptURL ?? "—"
@@ -142,6 +174,7 @@ export default function AdminPushTest() {
             <DiagRow label="Campos faltando" value={push.configMissing.length ? push.configMissing.join(", ") : "nenhum"} />
             <DiagRow label="Token FCM ativo" value={push.fcmToken ? `${push.fcmToken.slice(0, 12)}…` : "—"} />
             <DiagRow label="SW controlador" value={swScriptUrl} />
+            <DiagRow label="SW FCM registrados" value={fcmSwRegistrations} />
           </div>
           {push.lastError && (
             <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
