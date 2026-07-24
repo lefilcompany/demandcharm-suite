@@ -278,11 +278,40 @@ export default function Demands() {
         return false;
       }
 
-      // Search query filter
+      // Search query filter — title, description, priority, code (#123 / 123 / BOARD-123), service name, due date
       if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchesSearch = safeIncludesText(d.title, query) || safeIncludesText(d.description, query) || safeIncludesText(d.priority, query);
-        if (!matchesSearch) return false;
+        const query = searchQuery.trim().toLowerCase();
+
+        // Code match: strip # and optional BOARD- prefix, keep trailing digits
+        const codeQuery = query.replace(/^#/, "");
+        const codeMatch = codeQuery.match(/(?:^|-)(\d+)$/);
+        const seqNum = codeMatch ? parseInt(codeMatch[1], 10) : null;
+        const matchesCode = seqNum !== null && Number(d.board_sequence_number) === seqNum;
+
+        // Service name
+        const serviceName = (d.services as any)?.name;
+        const matchesService = safeIncludesText(serviceName, query);
+
+        // Due date: match yyyy-MM-dd, dd/MM/yyyy, dd/MM (accepts - or / as separator)
+        let matchesDueDate = false;
+        if (typeof d.due_date === "string" && d.due_date) {
+          const iso = d.due_date.substring(0, 10);
+          const [y, m, day] = iso.split("-");
+          const br = `${day}/${m}/${y}`;
+          const brShort = `${day}/${m}`;
+          const normalized = query.replace(/-/g, "/");
+          matchesDueDate =
+            iso.includes(query) ||
+            br.includes(normalized) ||
+            brShort.includes(normalized);
+        }
+
+        const matchesText =
+          safeIncludesText(d.title, query) ||
+          safeIncludesText(d.description, query) ||
+          safeIncludesText(d.priority, query);
+
+        if (!(matchesText || matchesCode || matchesService || matchesDueDate)) return false;
       }
 
       // Status filter (multi-select; sentinel "delivered late" = entregue + is_overdue)
@@ -446,7 +475,7 @@ export default function Demands() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder={t("common.search")} 
+              placeholder="Buscar por título, código (ex: 284), serviço ou data de vencimento…" 
               value={searchQuery} 
               onChange={e => setSearchQuery(e.target.value)} 
               className="pl-10 h-10 bg-background"
