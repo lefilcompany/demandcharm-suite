@@ -375,7 +375,7 @@ export default function AdminPushTest() {
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleEnable} disabled={enabling || push.isLoading || resetting}>
+            <Button onClick={handleEnableGuarded} disabled={enabling || push.isLoading || resetting}>
               {(enabling || push.isLoading) ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <BellRing className="h-4 w-4 mr-2" />}
               Ativar notificações neste dispositivo
             </Button>
