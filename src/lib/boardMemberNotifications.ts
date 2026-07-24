@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sendPushNotification } from "@/hooks/useSendPushNotification";
 import { getBoardRoleLabel } from "@/lib/boardRoleLabels";
+import { fetchPreferencesForUsers, shouldNotifyUser } from "@/lib/notificationDispatch";
 
 export type BoardMemberEvent = "added" | "removed" | "role_changed";
 
@@ -20,42 +21,6 @@ interface NotifyBoardMemberChangeParams {
   actorId: string;
   /** Nome de quem realizou a ação */
   actorName: string;
-}
-
-interface UserPrefRow {
-  user_id: string;
-  preference_value: {
-    emailNotifications?: boolean;
-    teamUpdates?: boolean;
-  } | null;
-}
-
-/**
- * Lê as preferências de notificação do destinatário e decide se devemos enviar e-mail.
- * Por padrão, se não houver preferências salvas, enviamos.
- */
-async function shouldSendEmail(userId: string): Promise<boolean> {
-  try {
-    const { data, error } = await supabase
-      .from("user_preferences")
-      .select("user_id, preference_value")
-      .eq("user_id", userId)
-      .eq("preference_key", "notification_preferences")
-      .maybeSingle<UserPrefRow>();
-
-    if (error) {
-      console.warn("[boardMemberNotifications] failed reading prefs, defaulting to send:", error);
-      return true;
-    }
-    const prefs = data?.preference_value ?? null;
-    if (!prefs) return true;
-    if (prefs.emailNotifications === false) return false;
-    if (prefs.teamUpdates === false) return false;
-    return true;
-  } catch (err) {
-    console.warn("[boardMemberNotifications] prefs lookup error, defaulting to send:", err);
-    return true;
-  }
 }
 
 function buildAppOrigin(): string {
