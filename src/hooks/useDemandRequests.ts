@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { useSelectedTeam } from "@/contexts/TeamContext";
 import { useSelectedBoardSafe } from "@/contexts/BoardContext";
 import { sendDemandRequestPushNotification } from "./useSendPushNotification";
 
@@ -383,193 +382,22 @@ export function useApproveDemandRequest() {
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      // Get the request details
-      const { data: request, error: fetchError } = await supabase
-        .from("demand_requests")
-        .select("*, service:services(estimated_hours)")
-        .eq("id", requestId)
-        .single();
+      const uniqueAssigneeIds = Array.from(new Set(assigneeIds.filter(Boolean)));
 
-      if (fetchError) throw fetchError;
-      if (!request) throw new Error("Solicitação não encontrada");
+      const { data, error } = await supabase.rpc("approve_demand_request", {
+        p_request_id: requestId,
+        p_assignee_ids: uniqueAssigneeIds,
+        p_due_date: dueDate || null,
+      });
 
-      // Get default status for the specific board
-      const { data: boardStatuses } = await supabase
-        .from("board_statuses")
-        .select("status_id, demand_statuses:demand_statuses!board_statuses_status_id_fkey(id, name)")
-        .eq("board_id", request.board_id)
-        .order("position", { ascending: true });
+      if (error) throw error;
 
-      const defaultBoardStatus = boardStatuses?.find(
-        (bs: any) => bs.demand_statuses?.name === "A Iniciar"
-      );
-      const defaultStatusId = defaultBoardStatus?.status_id || boardStatuses?.[0]?.status_id;
-
-      if (!defaultStatusId) throw new Error("Status padrão não encontrado para este quadro");
-
-      
-
-      // Create the demand
-      const { data: demand, error: demandError } = await supabase
-        .from("demands")
-        .insert({
-          team_id: request.team_id,
-          board_id: request.board_id,
-          created_by: request.created_by,
-          title: request.title,
-          description: request.description,
-          priority: request.priority,
-          service_id: request.service_id,
-          status_id: defaultStatusId,
-          due_date: dueDate || null,
-        })
-        .select()
-        .single();
-
-      if (demandError) throw demandError;
-
-      // Add assignees
-      if (assigneeIds.length > 0 && demand) {
-        const { error: assignError } = await supabase
-          .from("demand_assignees")
-          .insert(
-            assigneeIds.map((userId) => ({
-              demand_id: demand.id,
-              user_id: userId,
-            }))
-          );
-
-        if (assignError) console.error("Erro ao atribuir responsáveis:", assignError);
+      const result = data as { parent_id?: string; subdemand_ids?: string[]; already_approved?: boolean } | null;
+      if (!result?.parent_id) {
+        throw new Error("A aprovação não retornou a demanda criada.");
       }
 
-      // Copy PARENT-level attachments (subdemand_index is null) from request to demand
-      if (demand) {
-        const { data: requestAttachments } = await supabase
-          .from("demand_request_attachments")
-          .select("*")
-          .eq("demand_request_id", requestId)
-          .is("comment_id", null)
-          .is("subdemand_index", null);
-
-        if (requestAttachments && requestAttachments.length > 0) {
-          // Insert attachment records pointing to the same files
-          // Use current user as uploaded_by to satisfy RLS policy (uploaded_by = auth.uid())
-          const { error: attachError } = await supabase
-            .from("demand_attachments")
-            .insert(
-              requestAttachments.map((att) => ({
-                demand_id: demand.id,
-                file_name: att.file_name,
-                file_path: att.file_path,
-                file_type: att.file_type,
-                file_size: att.file_size,
-                uploaded_by: user.id,
-              }))
-            );
-
-          if (attachError) console.error("Erro ao copiar anexos:", attachError);
-        }
-      }
-
-      // Materialize subdemands from the request's saved plan
-      const plan = Array.isArray((request as any).subdemands_plan)
-        ? ((request as any).subdemands_plan as Array<any>)
-        : [];
-
-      if (demand && plan.length > 0) {
-        const createdSubIds: string[] = [];
-
-        for (let i = 0; i < plan.length; i++) {
-          const item = plan[i] || {};
-          const { data: subDemand, error: subError } = await supabase
-            .from("demands")
-            .insert({
-              team_id: request.team_id,
-              board_id: request.board_id,
-              created_by: request.created_by,
-              parent_demand_id: demand.id,
-              title: String(item.title || "Subdemanda"),
-              description: item.description || null,
-              priority: item.priority || "média",
-              service_id: item.service_id || null,
-              status_id: defaultStatusId,
-              due_date: null,
-            })
-            .select("id")
-            .single();
-
-          if (subError || !subDemand) {
-            console.error("Erro ao criar subdemanda:", subError);
-            createdSubIds.push("");
-            continue;
-          }
-
-          createdSubIds.push(subDemand.id);
-
-          // Copy attachments for this subdemand (subdemand_index = i)
-          const { data: subAttachments } = await supabase
-            .from("demand_request_attachments")
-            .select("*")
-            .eq("demand_request_id", requestId)
-            .is("comment_id", null)
-            .eq("subdemand_index", i);
-
-          if (subAttachments && subAttachments.length > 0) {
-            const { error: subAttachError } = await supabase
-              .from("demand_attachments")
-              .insert(
-                subAttachments.map((att) => ({
-                  demand_id: subDemand.id,
-                  file_name: att.file_name,
-                  file_path: att.file_path,
-                  file_type: att.file_type,
-                  file_size: att.file_size,
-                  uploaded_by: user.id,
-                }))
-              );
-            if (subAttachError) console.error("Erro ao copiar anexos da subdemanda:", subAttachError);
-          }
-        }
-
-        // Create dependencies (travamento) between subdemands
-        const dependencyRows: Array<{ demand_id: string; depends_on_demand_id: string }> = [];
-        for (let i = 0; i < plan.length; i++) {
-          const item = plan[i] || {};
-          const dep = item.dependsOnIndex;
-          if (typeof dep === "number" && dep >= 0 && dep < i) {
-            const from = createdSubIds[i];
-            const to = createdSubIds[dep];
-            if (from && to) dependencyRows.push({ demand_id: from, depends_on_demand_id: to });
-          }
-        }
-        if (dependencyRows.length > 0) {
-          const { error: depError } = await supabase
-            .from("demand_dependencies")
-            .insert(dependencyRows);
-          if (depError) console.error("Erro ao criar dependências entre subdemandas:", depError);
-        }
-      }
-
-      // Update request status — use .select() to detect silent RLS 0-row updates
-      const { data: updated, error: updateError } = await supabase
-        .from("demand_requests")
-        .update({
-          status: "approved",
-          responded_by: user.id,
-          responded_at: new Date().toISOString(),
-        })
-        .eq("id", requestId)
-        .select("id")
-        .maybeSingle();
-
-      if (updateError) throw updateError;
-      if (!updated) {
-        throw new Error(
-          "Não foi possível aprovar a solicitação: você não tem permissão de aprovador neste quadro."
-        );
-      }
-
-      return demand;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["demand-requests"] });

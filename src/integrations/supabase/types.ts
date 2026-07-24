@@ -907,6 +907,7 @@ export type Database = {
       }
       demand_requests: {
         Row: {
+          approved_demand_id: string | null
           board_id: string | null
           created_at: string
           created_by: string
@@ -926,6 +927,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approved_demand_id?: string | null
           board_id?: string | null
           created_at?: string
           created_by: string
@@ -945,6 +947,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approved_demand_id?: string | null
           board_id?: string | null
           created_at?: string
           created_by?: string
@@ -964,6 +967,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "demand_requests_approved_demand_id_fkey"
+            columns: ["approved_demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "demand_requests_board_id_fkey"
             columns: ["board_id"]
@@ -2910,6 +2920,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_demand_request: {
+        Args: {
+          p_assignee_ids?: string[]
+          p_due_date?: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       can_create_demand: { Args: { _team_id: string }; Returns: boolean }
       can_create_demand_with_service: {
         Args: { _board_id: string; _service_id: string }
