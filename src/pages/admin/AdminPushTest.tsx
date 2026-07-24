@@ -33,6 +33,7 @@ export default function AdminPushTest() {
   const [scenario, setScenario] = useState<Scenario>("generic");
   const [sending, setSending] = useState(false);
   const [enabling, setEnabling] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const handleEnable = async () => {
     setEnabling(true);
@@ -40,6 +41,16 @@ export default function AdminPushTest() {
       await push.enablePushNotifications();
     } finally {
       setEnabling(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      await push.resetPushRegistration();
+      await push.refreshConfigStatus();
+    } finally {
+      setResetting(false);
     }
   };
 
