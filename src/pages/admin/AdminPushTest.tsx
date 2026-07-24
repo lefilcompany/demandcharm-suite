@@ -151,9 +151,13 @@ export default function AdminPushTest() {
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleEnable} disabled={enabling || push.isLoading}>
+            <Button onClick={handleEnable} disabled={enabling || push.isLoading || resetting}>
               {(enabling || push.isLoading) ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <BellRing className="h-4 w-4 mr-2" />}
               Ativar notificações neste dispositivo
+            </Button>
+            <Button variant="outline" onClick={handleReset} disabled={resetting || enabling || push.isLoading}>
+              {resetting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+              Resetar registro FCM
             </Button>
             <Button variant="outline" onClick={() => push.refreshConfigStatus()}>
               <RefreshCw className="h-4 w-4 mr-2" /> Rechecar config
@@ -164,8 +168,12 @@ export default function AdminPushTest() {
               </Button>
             )}
           </div>
+          <p className="text-xs text-muted-foreground">
+            Se aparecer <span className="font-mono">token-error</span> com "Registration failed", clique em "Resetar registro FCM" e tente ativar novamente — isso limpa PushSubscription/service worker antigos vinculados a uma VAPID key anterior.
+          </p>
         </CardContent>
       </Card>
+
 
 
       <Card>
