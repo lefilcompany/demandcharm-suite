@@ -398,6 +398,103 @@ export default function AdminPushTest() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5 text-primary" /> Validação da VAPID key
+          </CardTitle>
+          <CardDescription>
+            Cole a chave pública exibida em <span className="font-mono">Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Key pair</span>.
+            Comparamos com o valor de <span className="font-mono">FIREBASE_VAPID_KEY</span> servido pelo backend antes de chamar <span className="font-mono">pushManager.subscribe</span>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="expected-vapid">Chave esperada (Firebase Console)</Label>
+            <Input
+              id="expected-vapid"
+              placeholder="B... (87 chars, base64url)"
+              value={expectedVapid}
+              onChange={(e) => setExpectedVapid(e.target.value)}
+              className="font-mono text-xs"
+            />
+            <p className="text-xs text-muted-foreground">Salvo apenas neste navegador (localStorage).</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={runVapidValidation} disabled={vapidValidation.running}>
+              {vapidValidation.running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Stethoscope className="h-4 w-4 mr-2" />}
+              Validar VAPID
+            </Button>
+            {expectedVapid && (
+              <Button variant="ghost" onClick={() => setExpectedVapid("")}>Limpar</Button>
+            )}
+          </div>
+
+          {vapidValidation.configError && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+              {vapidValidation.configError}
+            </div>
+          )}
+
+          {vapidValidation.configured && (
+            <div className="grid gap-2 text-sm md:grid-cols-2">
+              <DiagRow label="Fingerprint configurado" value={vapidValidation.configured.fingerprint} />
+              <DiagRow label="Fingerprint esperado" value={vapidValidation.expected?.fingerprint ?? "— (cole a chave)"} />
+              <DiagRow
+                label="Match"
+                value={
+                  vapidValidation.expected
+                    ? vapidValidation.matches ? "✅ idêntico" : "❌ diferente"
+                    : "— (sem chave esperada)"
+                }
+              />
+              <DiagRow
+                label="Comprimento (config)"
+                value={`${vapidValidation.configured.format.length} ${vapidValidation.configured.format.lengthOk ? "✅" : "❌ (esperado 87)"}`}
+              />
+              <DiagRow
+                label="Base64url válido (config)"
+                value={vapidValidation.configured.format.base64UrlOk ? "✅" : "❌"}
+              />
+              <DiagRow
+                label="Decodifica p/ 65 bytes (config)"
+                value={`${vapidValidation.configured.format.decodedBytes} ${vapidValidation.configured.format.decodedOk ? "✅" : "❌"}`}
+              />
+              <DiagRow
+                label="Prefixo EC 0x04 (config)"
+                value={vapidValidation.configured.format.ecPrefixOk ? "✅" : "❌"}
+              />
+              {vapidValidation.expected && (
+                <>
+                  <DiagRow
+                    label="Comprimento (esperado)"
+                    value={`${vapidValidation.expected.format.length} ${vapidValidation.expected.format.lengthOk ? "✅" : "❌"}`}
+                  />
+                  <DiagRow
+                    label="Prefixo EC 0x04 (esperado)"
+                    value={vapidValidation.expected.format.ecPrefixOk ? "✅" : "❌"}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          {vapidBlocksSubscribe && (
+            <div className="flex gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+              <p>
+                A VAPID configurada está inválida ou diverge da esperada. "Ativar notificações" está bloqueado até corrigir o secret
+                <span className="font-mono"> FIREBASE_VAPID_KEY</span>.
+              </p>
+            </div>
+          )}
+          {vapidValidation.expected && vapidValidation.matches && (
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+              VAPID configurada bate com a chave esperada. Pode prosseguir com o subscribe.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
 
       <Card>
