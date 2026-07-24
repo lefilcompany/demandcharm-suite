@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sendPushNotification } from "@/hooks/useSendPushNotification";
+import { fetchPreferencesForUsers, shouldNotifyUser } from "@/lib/notificationDispatch";
 
 export type DemandAssigneeEvent =
   | "assigned_primary"
@@ -113,62 +114,71 @@ export async function notifyDemandAssigneeChange(
   const origin = buildAppOrigin();
   const fullActionUrl = `${origin}${msg.link}`;
 
-  // 1) In-app
-  const inAppPromise = supabase
-    .from("notifications")
-    .insert({
-      user_id: params.userId,
-      title: msg.inAppTitle,
-      message: msg.inAppMessage,
-      type: msg.inAppType,
-      link: msg.link,
-    })
-    .then((res) => {
-      if (res.error) {
-        console.warn("[demandAssigneeNotifications] in-app failed:", res.error);
-      }
-    });
+  // Preferências do destinatário — evento demandAssigned nunca é filtrado por escopo de quadro
+  // (é sobre o próprio usuário), mas respeita canais/tipo.
+  const prefsMap = await fetchPreferencesForUsers([params.userId]);
+  const prefs = prefsMap.get(params.userId)!;
+  const ctx = { type: "demandAssigned" as const, isUserAssigned: true };
 
-  // 2) Push
-  const pushPromise = sendPushNotification({
-    userIds: [params.userId],
-    title: msg.pushTitle,
-    body: msg.pushBody,
-    link: msg.link,
-    data: {
-      type: `demand_assignee_${params.event}`,
-      demandId: params.demandId,
-      boardName: params.boardName || "",
-    },
-    notificationType: "demandUpdates",
-  }).catch((err) => {
-    console.warn("[demandAssigneeNotifications] push failed:", err);
-  });
+  const wantInApp = shouldNotifyUser(prefs, { ...ctx, channel: "inapp" });
+  const wantPush = shouldNotifyUser(prefs, { ...ctx, channel: "push" });
+  const wantEmail = shouldNotifyUser(prefs, { ...ctx, channel: "email" });
 
-  // 3) E-mail (a edge respeita a preferência emailNotifications)
-  const emailPromise = supabase.functions
-    .invoke("send-email", {
-      body: {
-        to: params.userId,
-        subject: msg.emailSubject,
-        template: "notification",
-        templateData: {
+  const inAppPromise = wantInApp
+    ? supabase
+        .from("notifications")
+        .insert({
+          user_id: params.userId,
           title: msg.inAppTitle,
-          message: msg.emailMessage,
-          actionUrl: fullActionUrl,
-          actionText: "Abrir demanda",
+          message: msg.inAppMessage,
           type: msg.inAppType,
+          link: msg.link,
+        })
+        .then((res) => {
+          if (res.error) console.warn("[demandAssigneeNotifications] in-app failed:", res.error);
+        })
+    : Promise.resolve();
+
+  const pushPromise = wantPush
+    ? sendPushNotification({
+        userIds: [params.userId],
+        title: msg.pushTitle,
+        body: msg.pushBody,
+        link: msg.link,
+        data: {
+          type: `demand_assignee_${params.event}`,
+          demandId: params.demandId,
+          boardName: params.boardName || "",
         },
-      },
-    })
-    .then((res) => {
-      if (res.error) {
-        console.warn("[demandAssigneeNotifications] email failed:", res.error);
-      }
-    })
-    .catch((err) => {
-      console.warn("[demandAssigneeNotifications] email exception:", err);
-    });
+        notificationType: "demandUpdates",
+      }).catch((err) => {
+        console.warn("[demandAssigneeNotifications] push failed:", err);
+      })
+    : Promise.resolve();
+
+  const emailPromise = wantEmail
+    ? supabase.functions
+        .invoke("send-email", {
+          body: {
+            to: params.userId,
+            subject: msg.emailSubject,
+            template: "notification",
+            templateData: {
+              title: msg.inAppTitle,
+              message: msg.emailMessage,
+              actionUrl: fullActionUrl,
+              actionText: "Abrir demanda",
+              type: msg.inAppType,
+            },
+          },
+        })
+        .then((res) => {
+          if (res.error) console.warn("[demandAssigneeNotifications] email failed:", res.error);
+        })
+        .catch((err) => {
+          console.warn("[demandAssigneeNotifications] email exception:", err);
+        })
+    : Promise.resolve();
 
   await Promise.allSettled([inAppPromise, pushPromise, emailPromise]);
 }
