@@ -1,5 +1,72 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  notifyDemandAssigneeChange,
+  type DemandAssigneeEvent,
+} from "@/lib/demandAssigneeNotifications";
+
+interface DemandContext {
+  demandTitle: string;
+  boardName?: string;
+}
+
+async function loadDemandContext(demandId: string): Promise<DemandContext> {
+  const { data } = await supabase
+    .from("demands")
+    .select("title, boards(name)")
+    .eq("id", demandId)
+    .maybeSingle();
+  const boardName = (data as { boards?: { name?: string } } | null)?.boards?.name;
+  return {
+    demandTitle: (data as { title?: string } | null)?.title ?? "",
+    boardName: boardName ?? undefined,
+  };
+}
+
+async function loadActor(): Promise<{ id: string; name: string } | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  return {
+    id: user.id,
+    name: (profile as { full_name?: string } | null)?.full_name || "Alguém",
+  };
+}
+
+async function dispatchAssigneeNotifications(
+  demandId: string,
+  events: Array<{ userId: string; event: DemandAssigneeEvent }>
+) {
+  if (events.length === 0) return;
+  try {
+    const [ctx, actor] = await Promise.all([
+      loadDemandContext(demandId),
+      loadActor(),
+    ]);
+    if (!actor) return;
+    await Promise.allSettled(
+      events.map(({ userId, event }) =>
+        notifyDemandAssigneeChange({
+          event,
+          userId,
+          demandId,
+          demandTitle: ctx.demandTitle,
+          boardName: ctx.boardName,
+          actorId: actor.id,
+          actorName: actor.name,
+        })
+      )
+    );
+  } catch (err) {
+    console.warn("[useDemandAssignees] dispatch notifications failed:", err);
+  }
+}
 
 export interface Assignee {
   id: string;
@@ -47,15 +114,21 @@ export function useAddAssignee() {
           demand_id: demandId,
           user_id: userId,
         })
-        .select()
+        .select("is_primary")
         .single();
 
       if (error) throw error;
-      return data;
+      return { demandId, userId, isPrimary: !!(data as { is_primary?: boolean })?.is_primary };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["demand-assignees", variables.demandId] });
       queryClient.invalidateQueries({ queryKey: ["demands"] });
+      void dispatchAssigneeNotifications(result.demandId, [
+        {
+          userId: result.userId,
+          event: result.isPrimary ? "assigned_primary" : "assigned_follower",
+        },
+      ]);
     },
   });
 }
@@ -72,10 +145,14 @@ export function useRemoveAssignee() {
         .eq("user_id", userId);
 
       if (error) throw error;
+      return { demandId, userId };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["demand-assignees", variables.demandId] });
       queryClient.invalidateQueries({ queryKey: ["demands"] });
+      void dispatchAssigneeNotifications(result.demandId, [
+        { userId: result.userId, event: "unassigned" },
+      ]);
     },
   });
 }
@@ -204,10 +281,36 @@ export function useSetAssignees() {
           .eq("user_id", resolvedPrimary);
         if (promoteErr) throw promoteErr;
       }
+
+      // Build notification events
+      const events: Array<{ userId: string; event: DemandAssigneeEvent }> = [];
+      for (const uid of toAdd) {
+        events.push({
+          userId: uid,
+          event: uid === resolvedPrimary ? "assigned_primary" : "assigned_follower",
+        });
+      }
+      for (const uid of toRemove) {
+        events.push({ userId: uid, event: "unassigned" });
+      }
+      // Existing assignee promoted to primary (wasn't newly added)
+      if (
+        resolvedPrimary &&
+        currentPrimary !== resolvedPrimary &&
+        !toAdd.includes(resolvedPrimary) &&
+        currentUserIds.includes(resolvedPrimary)
+      ) {
+        events.push({ userId: resolvedPrimary, event: "promoted_primary" });
+      }
+
+      return { demandId, events };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["demand-assignees", variables.demandId] });
       queryClient.invalidateQueries({ queryKey: ["demands"] });
+      if (result?.events?.length) {
+        void dispatchAssigneeNotifications(result.demandId, result.events);
+      }
     },
   });
 }
