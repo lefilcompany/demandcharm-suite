@@ -643,7 +643,7 @@ export default function Auth() {
       </div>
 
       {/* Form Section - Scrollable on mobile */}
-      <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background overflow-y-auto">
+      <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background overflow-y-auto lg:overflow-hidden">
         <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-8 py-8 lg:px-10 lg:py-10">
           <div className="w-full max-w-[380px]">
             {/* Logo */}
