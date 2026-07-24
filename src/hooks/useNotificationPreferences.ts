@@ -203,7 +203,7 @@ export function useNotificationPreferences() {
         const { error } = await supabase
           .from("user_preferences")
           .update({
-            preference_value: newPreferences as unknown as Record<string, unknown>,
+            preference_value: newPreferences as any,
             updated_at: new Date().toISOString(),
           })
           .eq("id", existing.id);
@@ -212,7 +212,7 @@ export function useNotificationPreferences() {
         const { error } = await supabase.from("user_preferences").insert([{
           user_id: user.id,
           preference_key: "notification_preferences",
-          preference_value: newPreferences as unknown as Record<string, unknown>,
+          preference_value: newPreferences as any,
         }]);
         if (error) throw error;
       }
