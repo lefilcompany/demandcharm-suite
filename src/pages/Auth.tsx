@@ -853,7 +853,7 @@ export default function Auth() {
                   </div>
                 </div>
 
-                <form onSubmit={handleSignup} className="space-y-3">
+                <form onSubmit={handleSignup} className="space-y-3 lg:max-h-[calc(100dvh-460px)] lg:overflow-y-auto lg:pr-1 lg:-mr-1">
                   {/* Nome */}
                   <div className="space-y-1.5">
                     <Label htmlFor="signup-name" className="text-[12px] font-medium text-foreground/70">{t("auth.fullName")}</Label>
