@@ -234,8 +234,10 @@ export function usePushNotifications() {
       toast.success("Notificações push ativadas com sucesso!");
       return result.token;
     } catch (err) {
-      console.error("[push] enable error", (err as Error)?.message);
-      toast.error("Erro ao ativar notificações push");
+      const message = (err as Error)?.message || String(err);
+      console.error("[push] enable error", err);
+      setLastError({ reason: "exception", message });
+      toast.error(`Erro inesperado ao ativar push: ${message}`);
       return null;
     } finally {
       setIsLoading(false);
