@@ -468,7 +468,7 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
   // previous VAPID key) before requesting a new token. The push service rejects
   // re-subscription with a different applicationServerKey until the previous
   // subscription is unsubscribed.
-  await resetPushSubscription(registration);
+  await resetPushSubscription(registration, { deleteBrowserToken: true });
   clearCachedMessaging();
 
   const tryGetToken = async () => {
@@ -492,7 +492,7 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
       const msg = (err as Error)?.message || "";
       if (!isSubscribeError(msg)) throw err;
       console.warn("[FCM] first getToken failed, resetting and retrying", msg);
-      await resetPushSubscription(registration);
+      await resetPushSubscription(registration, { deleteBrowserToken: true });
       clearCachedMessaging();
       token = await tryGetToken();
     }
