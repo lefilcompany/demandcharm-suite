@@ -112,69 +112,72 @@ export async function notifyBoardMemberChange(
   const origin = buildAppOrigin();
   const fullActionUrl = msg.link ? `${origin}${msg.link}` : undefined;
 
-  // 1) In-app via RPC
-  const inAppPromise = supabase
-    .rpc("create_board_membership_notification", {
-      p_user_id: params.userId,
-      p_board_id: params.boardId,
-      p_title: msg.inAppTitle,
-      p_message: msg.inAppMessage,
-      p_type: msg.inAppType,
-      p_link: msg.link ?? null,
-    })
-    .then((res) => {
-      if (res.error) {
-        console.warn("[boardMemberNotifications] in-app failed:", res.error);
-      }
-    });
+  // Consulta preferências (evento boardMembership é sobre o próprio usuário,
+  // portanto NÃO é filtrado pelo escopo do quadro).
+  const prefsMap = await fetchPreferencesForUsers([params.userId]);
+  const prefs = prefsMap.get(params.userId)!;
+  const ctx = { type: "boardMembership" as const, isUserAssigned: true };
+  const wantInApp = shouldNotifyUser(prefs, { ...ctx, channel: "inapp" });
+  const wantPush = shouldNotifyUser(prefs, { ...ctx, channel: "push" });
+  const wantEmail = shouldNotifyUser(prefs, { ...ctx, channel: "email" });
 
-  // 2) Push (já filtra por preferência teamUpdates dentro da edge function)
-  const pushPromise = sendPushNotification({
-    userIds: [params.userId],
-    title: msg.pushTitle,
-    body: msg.pushBody,
-    link: msg.link ?? "/",
-    data: {
-      type: `board_member_${params.event}`,
-      boardId: params.boardId,
-      boardName: params.boardName,
-      role: params.newRole,
-      ...(params.oldRole ? { oldRole: params.oldRole } : {}),
-    },
-    notificationType: "teamUpdates",
-  }).catch((err) => {
-    console.warn("[boardMemberNotifications] push failed:", err);
-  });
+  const inAppPromise = wantInApp
+    ? supabase
+        .rpc("create_board_membership_notification", {
+          p_user_id: params.userId,
+          p_board_id: params.boardId,
+          p_title: msg.inAppTitle,
+          p_message: msg.inAppMessage,
+          p_type: msg.inAppType,
+          p_link: msg.link ?? null,
+        })
+        .then((res) => {
+          if (res.error) console.warn("[boardMemberNotifications] in-app failed:", res.error);
+        })
+    : Promise.resolve();
 
-  // 3) E-mail (verificamos preferência client-side antes de chamar)
-  const emailPromise = (async () => {
-    try {
-      const allowed = await shouldSendEmail(params.userId);
-      if (!allowed) {
-        console.log(`[boardMemberNotifications] email skipped (user prefs) for ${params.userId}`);
-        return;
-      }
-      const { error } = await supabase.functions.invoke("send-email", {
-        body: {
-          to: params.userId, // a edge resolve UUID -> e-mail
-          subject: msg.emailSubject,
-          template: "notification",
-          templateData: {
-            title: msg.inAppTitle,
-            message: msg.emailMessage,
-            actionUrl: fullActionUrl,
-            actionText: fullActionUrl ? "Abrir quadro" : undefined,
-            type: msg.inAppType,
-          },
+  const pushPromise = wantPush
+    ? sendPushNotification({
+        userIds: [params.userId],
+        title: msg.pushTitle,
+        body: msg.pushBody,
+        link: msg.link ?? "/",
+        data: {
+          type: `board_member_${params.event}`,
+          boardId: params.boardId,
+          boardName: params.boardName,
+          role: params.newRole,
+          ...(params.oldRole ? { oldRole: params.oldRole } : {}),
         },
-      });
-      if (error) {
-        console.warn("[boardMemberNotifications] email failed:", error);
-      }
-    } catch (err) {
-      console.warn("[boardMemberNotifications] email exception:", err);
-    }
-  })();
+        notificationType: "teamUpdates",
+      }).catch((err) => {
+        console.warn("[boardMemberNotifications] push failed:", err);
+      })
+    : Promise.resolve();
+
+  const emailPromise = wantEmail
+    ? (async () => {
+        try {
+          const { error } = await supabase.functions.invoke("send-email", {
+            body: {
+              to: params.userId,
+              subject: msg.emailSubject,
+              template: "notification",
+              templateData: {
+                title: msg.inAppTitle,
+                message: msg.emailMessage,
+                actionUrl: fullActionUrl,
+                actionText: fullActionUrl ? "Abrir quadro" : undefined,
+                type: msg.inAppType,
+              },
+            },
+          });
+          if (error) console.warn("[boardMemberNotifications] email failed:", error);
+        } catch (err) {
+          console.warn("[boardMemberNotifications] email exception:", err);
+        }
+      })()
+    : Promise.resolve();
 
   await Promise.allSettled([inAppPromise, pushPromise, emailPromise]);
 }
