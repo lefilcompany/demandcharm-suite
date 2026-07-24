@@ -115,6 +115,51 @@ export default function AdminPushTest() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5 text-primary" /> Diagnóstico deste dispositivo
+          </CardTitle>
+          <CardDescription>
+            Estado atual da configuração FCM neste navegador. Use "Ativar notificações" para reproduzir o erro e ver a causa exata.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-2 text-sm md:grid-cols-2">
+            <DiagRow label="Suportado pelo navegador" value={String(push.isSupported)} />
+            <DiagRow label="Contexto seguro (HTTPS)" value={secureCtx} />
+            <DiagRow label="Permissão Notification" value={String(push.permissionStatus ?? notifPermission)} />
+            <DiagRow label="Config FCM" value={push.configStatus} />
+            <DiagRow label="Origem da config" value={push.configSource} />
+            <DiagRow label="Campos faltando" value={push.configMissing.length ? push.configMissing.join(", ") : "nenhum"} />
+            <DiagRow label="Token FCM ativo" value={push.fcmToken ? `${push.fcmToken.slice(0, 12)}…` : "—"} />
+            <DiagRow label="SW controlador" value={swScriptUrl} />
+          </div>
+          {push.lastError && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              <p className="font-medium text-destructive">Último erro capturado</p>
+              <p className="mt-1"><span className="font-mono text-xs">reason:</span> {push.lastError.reason}</p>
+              <p className="break-all"><span className="font-mono text-xs">error:</span> {push.lastError.message}</p>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={handleEnable} disabled={enabling || push.isLoading}>
+              {(enabling || push.isLoading) ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <BellRing className="h-4 w-4 mr-2" />}
+              Ativar notificações neste dispositivo
+            </Button>
+            <Button variant="outline" onClick={() => push.refreshConfigStatus()}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Rechecar config
+            </Button>
+            {push.isEnabled && (
+              <Button variant="ghost" onClick={() => push.disablePushNotifications()}>
+                Desativar
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
             <BellRing className="h-5 w-5 text-primary" /> Enviar push de teste
           </CardTitle>
           <CardDescription>
