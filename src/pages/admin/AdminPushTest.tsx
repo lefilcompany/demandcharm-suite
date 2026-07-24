@@ -28,9 +28,26 @@ const SCENARIO_LABEL: Record<Scenario, string> = {
 export default function AdminPushTest() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const push = usePushNotifications();
   const [targetEmail, setTargetEmail] = useState(user?.email ?? "");
   const [scenario, setScenario] = useState<Scenario>("generic");
   const [sending, setSending] = useState(false);
+  const [enabling, setEnabling] = useState(false);
+
+  const handleEnable = async () => {
+    setEnabling(true);
+    try {
+      await push.enablePushNotifications();
+    } finally {
+      setEnabling(false);
+    }
+  };
+
+  const swScriptUrl = typeof navigator !== "undefined"
+    ? navigator.serviceWorker?.controller?.scriptURL ?? "—"
+    : "—";
+  const secureCtx = typeof window !== "undefined" ? String(window.isSecureContext) : "—";
+  const notifPermission = typeof Notification !== "undefined" ? Notification.permission : "—";
 
   const { data: logs, isLoading, refetch } = useQuery({
     queryKey: ["test-push-log"],
