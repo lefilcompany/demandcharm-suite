@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { SectionShell } from "./SectionShell";
@@ -91,25 +92,38 @@ function ChannelBlock({
     });
   };
 
+  const [open, setOpen] = useState<boolean>(state.enabled);
+
   return (
-    <Collapsible open={state.enabled} className="rounded-lg border bg-card">
+    <Collapsible open={open} onOpenChange={setOpen} className="rounded-lg border bg-card">
       <div className="flex items-center justify-between gap-3 p-3">
-        <CollapsibleTrigger asChild disabled>
-          <div className="flex items-center gap-3 min-w-0 flex-1 cursor-default">
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex items-center gap-3 min-w-0 flex-1 text-left rounded-md hover:bg-muted/40 transition-colors -m-1 p-1"
+          >
             <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
               <Icon className="h-4 w-4 text-muted-foreground" />
             </div>
-            <div className="min-w-0">
-              <Label className="text-sm font-medium block">{title}</Label>
+            <div className="min-w-0 flex-1">
+              <Label className="text-sm font-medium block cursor-pointer">{title}</Label>
               <p className="text-xs text-muted-foreground truncate">{description}</p>
             </div>
             <ChevronDown
-              className={`h-4 w-4 text-muted-foreground transition-transform ${state.enabled ? "rotate-180" : ""}`}
+              className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${open ? "rotate-180" : ""}`}
             />
-          </div>
+          </button>
         </CollapsibleTrigger>
-        <Switch checked={state.enabled} onCheckedChange={setEnabled} disabled={disabled} />
+        <Switch
+          checked={state.enabled}
+          onCheckedChange={(v) => {
+            setEnabled(v);
+            if (v) setOpen(true);
+          }}
+          disabled={disabled}
+        />
       </div>
+
 
       <CollapsibleContent>
         <div className="px-3 pb-3 space-y-3">
