@@ -459,11 +459,32 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
   const messaging = await getFirebaseMessaging(runtime);
   if (!messaging) return { ok: false, reason: "unsupported" };
 
-  try {
-    const token = await getToken(messaging, {
-      vapidKey: runtime.vapidKey,
+  // Defensive: proactively clear any stale PushSubscription (e.g. bound to a
+  // previous VAPID key) before requesting a new token. The push service rejects
+  // re-subscription with a different applicationServerKey until the previous
+  // subscription is unsubscribed.
+  await resetPushSubscription(registration);
+
+  const tryGetToken = () =>
+    getToken(messaging, {
+      vapidKey: runtime.vapidKey!,
       serviceWorkerRegistration: registration,
     });
+
+  const isSubscribeError = (msg: string) =>
+    /token-subscribe-failed|push service|Registration failed|AbortError/i.test(msg);
+
+  try {
+    let token: string | null = null;
+    try {
+      token = await tryGetToken();
+    } catch (err) {
+      const msg = (err as Error)?.message || "";
+      if (!isSubscribeError(msg)) throw err;
+      console.warn("[FCM] first getToken failed, resetting and retrying", msg);
+      await resetPushSubscription(registration);
+      token = await tryGetToken();
+    }
     if (!token) return { ok: false, reason: "token-error", error: "empty token" };
     console.log("[FCM] token obtained", shortToken(token));
     return { ok: true, token, registration };
