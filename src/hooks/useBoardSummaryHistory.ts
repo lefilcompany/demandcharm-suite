@@ -89,7 +89,7 @@ export function useBoardSummaryHistory(boardId: string | undefined) {
           analytics_data: analyticsData,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -138,7 +138,7 @@ export function useBoardSummaryHistory(boardId: string | undefined) {
           created_by: user.id,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;

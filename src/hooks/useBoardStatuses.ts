@@ -342,7 +342,7 @@ export function useAddBoardStatus() {
           onConflict: 'board_id,status_id',
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -456,7 +456,7 @@ export function useCreateCustomStatus() {
         .from("demand_statuses")
         .insert({ name, color, is_system: false, board_id: boardId })
         .select()
-        .single();
+        .maybeSingle();
 
       if (statusError) throw statusError;
 
@@ -487,7 +487,7 @@ export function useCreateCustomStatus() {
           visible_to_roles: rolesValue,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (boardError) throw boardError;
 

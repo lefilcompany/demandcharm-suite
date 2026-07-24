@@ -195,7 +195,7 @@ export function useStartUserTimer() {
           started_at: new Date().toISOString(),
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return { entry: data, stoppedCount: 0 };

@@ -155,7 +155,7 @@ export function useCreateShareToken() {
           auto_join_board: !!autoJoinBoard,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (result.error) throw result.error;
       return result.data as unknown as ShareToken;

@@ -82,7 +82,7 @@ export function useUploadAttachment() {
         .from("demand_attachments")
         .insert(insertData)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         // Rollback: remove orphan file from storage since the DB insert failed

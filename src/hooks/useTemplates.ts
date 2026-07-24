@@ -65,7 +65,7 @@ export function useCreateTemplate() {
           created_by: user.id,
         })
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -96,7 +96,7 @@ export function useUpdateTemplate() {
         .update(updateFields)
         .eq("id", validatedId)
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },

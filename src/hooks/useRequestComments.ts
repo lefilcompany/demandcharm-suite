@@ -63,7 +63,7 @@ export function useCreateRequestComment() {
           content,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -84,7 +84,7 @@ export function useUpdateRequestComment() {
         .update({ content })
         .eq("id", commentId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;

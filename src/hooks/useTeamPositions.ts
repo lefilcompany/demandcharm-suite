@@ -62,7 +62,7 @@ export function useCreatePosition() {
           created_by: user.id,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (error.code === "23505") {
@@ -107,7 +107,7 @@ export function useUpdatePosition() {
         })
         .eq("id", positionId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (error.code === "23505") {

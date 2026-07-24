@@ -48,7 +48,7 @@ export function useCreateSubtask() {
         .from("demand_subtasks")
         .insert({ demand_id: validatedData.demandId, title: validatedData.title, sort_order: nextOrder })
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -74,7 +74,7 @@ export function useUpdateSubtask() {
         .update(updates)
         .eq("id", validatedData.id)
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },

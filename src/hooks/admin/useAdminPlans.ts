@@ -25,7 +25,7 @@ export function useCreatePlan() {
         .from("plans")
         .insert(plan as any)
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },

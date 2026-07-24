@@ -151,7 +151,7 @@ export function useCreateNote() {
           parent_id: data.parent_id || null,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return note;
@@ -184,7 +184,7 @@ export function useUpdateNote() {
         .update(data)
         .eq("id", noteId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return note;

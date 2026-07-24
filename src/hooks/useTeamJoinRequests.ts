@@ -77,7 +77,7 @@ export function useCreateJoinRequest() {
           message: message || null,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;

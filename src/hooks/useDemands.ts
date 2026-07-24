@@ -335,7 +335,7 @@ export function useCreateDemand() {
           created_by: userId,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return demand;
@@ -407,7 +407,7 @@ export function useUpdateDemand() {
         .update(updateData)
         .eq("id", validatedId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return demand;
@@ -480,7 +480,7 @@ export function useCreateInteraction() {
         .from("demand_interactions")
         .insert(insertData)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error creating interaction:", error);
@@ -509,7 +509,7 @@ export function useUpdateInteraction() {
         .update({ content })
         .eq("id", id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
