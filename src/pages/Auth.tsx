@@ -643,7 +643,7 @@ export default function Auth() {
       </div>
 
       {/* Form Section - Scrollable on mobile */}
-      <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background overflow-y-auto">
+      <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background overflow-y-auto lg:overflow-hidden">
         <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-8 py-8 lg:px-10 lg:py-10">
           <div className="w-full max-w-[380px]">
             {/* Logo */}
@@ -768,7 +768,7 @@ export default function Auth() {
                 )}
               </TabsContent>
 
-              <TabsContent value="signup" className="mt-0 space-y-3.5 lg:max-h-[calc(100dvh-220px)] lg:overflow-y-auto lg:pr-1 lg:-mr-1">
+              <TabsContent value="signup" className="mt-0 space-y-3.5">
                 {signupSuccessEmail ? (
                   <div className="space-y-4 py-2">
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
@@ -853,7 +853,7 @@ export default function Auth() {
                   </div>
                 </div>
 
-                <form onSubmit={handleSignup} className="space-y-3">
+                <form onSubmit={handleSignup} className="space-y-3 lg:max-h-[calc(100dvh-460px)] lg:overflow-y-auto lg:pr-1 lg:-mr-1">
                   {/* Nome */}
                   <div className="space-y-1.5">
                     <Label htmlFor="signup-name" className="text-[12px] font-medium text-foreground/70">{t("auth.fullName")}</Label>
