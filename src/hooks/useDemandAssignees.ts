@@ -271,10 +271,36 @@ export function useSetAssignees() {
           .eq("user_id", resolvedPrimary);
         if (promoteErr) throw promoteErr;
       }
+
+      // Build notification events
+      const events: Array<{ userId: string; event: DemandAssigneeEvent }> = [];
+      for (const uid of toAdd) {
+        events.push({
+          userId: uid,
+          event: uid === resolvedPrimary ? "assigned_primary" : "assigned_follower",
+        });
+      }
+      for (const uid of toRemove) {
+        events.push({ userId: uid, event: "unassigned" });
+      }
+      // Existing assignee promoted to primary (wasn't newly added)
+      if (
+        resolvedPrimary &&
+        currentPrimary !== resolvedPrimary &&
+        !toAdd.includes(resolvedPrimary) &&
+        currentUserIds.includes(resolvedPrimary)
+      ) {
+        events.push({ userId: resolvedPrimary, event: "promoted_primary" });
+      }
+
+      return { demandId, events };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["demand-assignees", variables.demandId] });
       queryClient.invalidateQueries({ queryKey: ["demands"] });
+      if (result?.events?.length) {
+        void dispatchAssigneeNotifications(result.demandId, result.events);
+      }
     },
   });
 }
