@@ -34,6 +34,7 @@ import { KanbanAdjustmentDialog } from "@/components/KanbanAdjustmentDialog";
 import { ApprovalNotifyDialog } from "@/components/ApprovalNotifyDialog";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import { notifyApproval, approvalKindFromStatusName } from "@/lib/approvalNotifications";
+import { fetchPreferencesForUsers, shouldNotifyUser, filterRecipientsByChannel } from "@/lib/notificationDispatch";
 import { useBoardMembers } from "@/hooks/useBoardMembers";
 import { toast } from "sonner";
 import { useAdjustmentCounts, AdjustmentInfo } from "@/hooks/useAdjustmentCount";
