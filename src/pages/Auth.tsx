@@ -643,16 +643,16 @@ export default function Auth() {
       </div>
 
       {/* Form Section - Scrollable on mobile */}
-      <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background overflow-y-auto lg:overflow-hidden">
-        <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-8 py-8 lg:px-10 lg:py-10">
-          <div className="w-full max-w-[380px]">
+      <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background overflow-y-auto lg:h-screen lg:overflow-hidden">
+        <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-8 py-8 lg:px-10 lg:py-10 lg:min-h-0">
+          <div className="w-full max-w-[380px] lg:h-[min(620px,calc(100dvh-5rem))] lg:min-h-0 lg:flex lg:flex-col">
             {/* Logo */}
-            <div className="flex justify-center mb-5">
+            <div className="flex justify-center mb-5 lg:shrink-0">
               <img alt="SoMA+" src="/lovable-uploads/9889f524-0819-424e-9185-2cc441526116.png" className="h-14 w-auto" />
             </div>
 
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")} className="w-full">
-              <div className="flex justify-center mb-4">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")} className="w-full lg:min-h-0 lg:flex-1 lg:flex lg:flex-col">
+              <div className="flex justify-center mb-4 lg:shrink-0">
                 <TabsList className="inline-flex h-9 bg-muted/70 p-1 rounded-full gap-0.5">
                   <TabsTrigger value="login" className="text-[13px] font-medium rounded-full px-5 h-7 data-[state=active]:bg-background data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.06)] data-[state=active]:text-foreground text-muted-foreground transition-all">
                     Entrar
@@ -666,8 +666,8 @@ export default function Auth() {
               {/* Shared fixed header: title + Google button + divider.
                   Hidden when the signup success screen is showing so it can render its own layout. */}
               {!(activeTab === "signup" && signupSuccessEmail) && (
-                <div className="space-y-3.5">
-                  <div className="text-center space-y-1.5">
+                <div className="space-y-3.5 lg:h-[154px] lg:shrink-0 lg:overflow-hidden">
+                  <div className="text-center space-y-1.5 h-[58px] flex flex-col items-center justify-center">
                     <h1 className="text-[26px] leading-tight font-semibold tracking-tight text-foreground">
                       {activeTab === "login" ? "Entrar na sua conta" : "Criar sua conta"}
                     </h1>
@@ -696,12 +696,12 @@ export default function Auth() {
                     {activeTab === "login" ? "Continuar com Google" : "Cadastrar com Google"}
                   </Button>
 
-                  <div className="relative py-1">
+                  <div className="relative h-6 flex items-center">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t border-border/50" />
                     </div>
                     <div className="relative flex justify-center text-[11px]">
-                      <span className="bg-background px-3 text-muted-foreground/80">
+                      <span className="w-[180px] bg-background px-3 text-center text-muted-foreground/80">
                         {activeTab === "login" ? "ou entre com seu e-mail" : "ou crie sua conta com e-mail"}
                       </span>
                     </div>
@@ -709,7 +709,7 @@ export default function Auth() {
                 </div>
               )}
 
-              <TabsContent value="login" className="mt-3.5 space-y-3.5">
+              <TabsContent value="login" className="mt-3.5 space-y-3.5 lg:flex-1 lg:min-h-0">
                 {loginStep === "email" ? (
                   <form onSubmit={handleEmailContinue} className="space-y-3">
                     <div className="space-y-1.5">
@@ -780,7 +780,7 @@ export default function Auth() {
                 )}
               </TabsContent>
 
-              <TabsContent value="signup" className="mt-3.5 space-y-3.5">
+              <TabsContent value="signup" className="mt-3.5 space-y-3.5 lg:flex-1 lg:min-h-0">
                 {signupSuccessEmail ? (
                   <div className="space-y-4 py-2">
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
@@ -822,15 +822,15 @@ export default function Auth() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-3.5 lg:max-h-[calc(100dvh-540px)] lg:overflow-y-auto lg:pr-1 lg:-mr-1">
-                    <div className="flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-[12px] text-foreground/85">
+                  <div className="space-y-3.5 lg:h-full lg:min-h-0 lg:flex lg:flex-col">
+                    <div className="flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-[12px] text-foreground/85 lg:shrink-0">
                       <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                       <span>
                         Após cadastrar, enviaremos um <span className="font-medium">link de confirmação</span> por e-mail. Você só conseguirá entrar depois de confirmar.
                       </span>
                     </div>
 
-                    <form onSubmit={handleSignup} className="space-y-3">
+                    <form onSubmit={handleSignup} className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1 lg:-mr-1">
                       {/* Nome */}
                       <div className="space-y-1.5">
                         <Label htmlFor="signup-name" className="text-[12px] font-medium text-foreground/70">{t("auth.fullName")}</Label>
@@ -1133,7 +1133,7 @@ export default function Auth() {
               </DialogContent>
             </Dialog>
 
-            <p className="text-center text-[11px] text-muted-foreground/80 mt-6 leading-relaxed">
+            <p className="text-center text-[11px] text-muted-foreground/80 mt-6 leading-relaxed lg:shrink-0">
               Ao continuar, você concorda com nossa{" "}
               <a href="/privacy-policy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>{" "}
               e{" "}
