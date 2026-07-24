@@ -322,6 +322,53 @@ async function waitForExpectedActive(
   });
 }
 
+async function cleanupStaleFcmRegistrations(expectedScriptHref: string): Promise<void> {
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      regs.map(async (reg) => {
+        const script =
+          reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "";
+        if (!script) return;
+        if (!script.includes("firebase-messaging-sw.js")) return;
+        if (script === expectedScriptHref) return;
+        try {
+          await reg.unregister();
+          console.log("[FCM] unregistered stale SW", script);
+        } catch (err) {
+          console.warn("[FCM] failed to unregister stale SW", (err as Error)?.message);
+        }
+      }),
+    );
+  } catch (err) {
+    console.warn("[FCM] cleanup stale registrations failed", (err as Error)?.message);
+  }
+}
+
+async function resetPushSubscription(
+  registration: ServiceWorkerRegistration | null,
+): Promise<void> {
+  if (registration) {
+    try {
+      const sub = await registration.pushManager.getSubscription();
+      if (sub) {
+        await sub.unsubscribe();
+        console.log("[FCM] unsubscribed stale PushSubscription");
+      }
+    } catch (err) {
+      console.warn("[FCM] unsubscribe failed", (err as Error)?.message);
+    }
+  }
+  try {
+    const messaging = await getFirebaseMessaging();
+    if (messaging) {
+      await deleteToken(messaging).catch(() => false);
+    }
+  } catch (err) {
+    console.warn("[FCM] deleteToken during reset failed", (err as Error)?.message);
+  }
+}
+
 async function getOrRegisterFcmSw(
   config: FirebasePublicConfig,
 ): Promise<ServiceWorkerRegistration> {
@@ -329,6 +376,7 @@ async function getOrRegisterFcmSw(
   // initialize synchronously even when Lovable did not inject Firebase vars at build time.
   const scriptUrl = buildFcmServiceWorkerUrl(config);
   const expected = new URL(scriptUrl, window.location.origin).href;
+  await cleanupStaleFcmRegistrations(expected);
   const existing = await navigator.serviceWorker.getRegistration(FCM_SW_SCOPE);
   if (existing?.active?.scriptURL === expected) return existing;
 
@@ -338,6 +386,37 @@ async function getOrRegisterFcmSw(
   });
   await waitForExpectedActive(registration, expected);
   return registration;
+}
+
+/**
+ * Hard-reset the FCM push registration for this browser:
+ *  - unsubscribe the browser PushSubscription
+ *  - delete the Firebase Messaging token from IndexedDB
+ *  - unregister the firebase-messaging-sw.js service worker
+ *
+ * Safe to call even when nothing is registered. Use this to recover from a
+ * stale subscription bound to an old VAPID key.
+ */
+export async function resetPushRegistration(): Promise<void> {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const reg of regs) {
+      const script =
+        reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "";
+      if (!script.includes("firebase-messaging-sw.js")) continue;
+      await resetPushSubscription(reg);
+      try {
+        await reg.unregister();
+      } catch (err) {
+        console.warn("[FCM] reset unregister failed", (err as Error)?.message);
+      }
+    }
+  } catch (err) {
+    console.warn("[FCM] resetPushRegistration failed", (err as Error)?.message);
+  } finally {
+    cachedMessaging = null;
+  }
 }
 
 function shortToken(token: string): string {
@@ -380,11 +459,32 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
   const messaging = await getFirebaseMessaging(runtime);
   if (!messaging) return { ok: false, reason: "unsupported" };
 
-  try {
-    const token = await getToken(messaging, {
-      vapidKey: runtime.vapidKey,
+  // Defensive: proactively clear any stale PushSubscription (e.g. bound to a
+  // previous VAPID key) before requesting a new token. The push service rejects
+  // re-subscription with a different applicationServerKey until the previous
+  // subscription is unsubscribed.
+  await resetPushSubscription(registration);
+
+  const tryGetToken = () =>
+    getToken(messaging, {
+      vapidKey: runtime.vapidKey!,
       serviceWorkerRegistration: registration,
     });
+
+  const isSubscribeError = (msg: string) =>
+    /token-subscribe-failed|push service|Registration failed|AbortError/i.test(msg);
+
+  try {
+    let token: string | null = null;
+    try {
+      token = await tryGetToken();
+    } catch (err) {
+      const msg = (err as Error)?.message || "";
+      if (!isSubscribeError(msg)) throw err;
+      console.warn("[FCM] first getToken failed, resetting and retrying", msg);
+      await resetPushSubscription(registration);
+      token = await tryGetToken();
+    }
     if (!token) return { ok: false, reason: "token-error", error: "empty token" };
     console.log("[FCM] token obtained", shortToken(token));
     return { ok: true, token, registration };

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, BellRing, Loader2, RefreshCw, Send, Stethoscope } from "lucide-react";
+import { AlertTriangle, BellRing, Loader2, RefreshCw, RotateCcw, Send, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -33,6 +33,7 @@ export default function AdminPushTest() {
   const [scenario, setScenario] = useState<Scenario>("generic");
   const [sending, setSending] = useState(false);
   const [enabling, setEnabling] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const handleEnable = async () => {
     setEnabling(true);
@@ -40,6 +41,16 @@ export default function AdminPushTest() {
       await push.enablePushNotifications();
     } finally {
       setEnabling(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      await push.resetPushRegistration();
+      await push.refreshConfigStatus();
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -140,9 +151,13 @@ export default function AdminPushTest() {
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleEnable} disabled={enabling || push.isLoading}>
+            <Button onClick={handleEnable} disabled={enabling || push.isLoading || resetting}>
               {(enabling || push.isLoading) ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <BellRing className="h-4 w-4 mr-2" />}
               Ativar notificações neste dispositivo
+            </Button>
+            <Button variant="outline" onClick={handleReset} disabled={resetting || enabling || push.isLoading}>
+              {resetting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+              Resetar registro FCM
             </Button>
             <Button variant="outline" onClick={() => push.refreshConfigStatus()}>
               <RefreshCw className="h-4 w-4 mr-2" /> Rechecar config
@@ -153,8 +168,12 @@ export default function AdminPushTest() {
               </Button>
             )}
           </div>
+          <p className="text-xs text-muted-foreground">
+            Se aparecer <span className="font-mono">token-error</span> com "Registration failed", clique em "Resetar registro FCM" e tente ativar novamente — isso limpa PushSubscription/service worker antigos vinculados a uma VAPID key anterior.
+          </p>
         </CardContent>
       </Card>
+
 
 
       <Card>

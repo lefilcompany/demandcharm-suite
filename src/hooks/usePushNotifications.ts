@@ -7,6 +7,7 @@ import {
   checkFirebasePushConfig,
   getCurrentFcmToken,
   requestNotificationPermission,
+  resetPushRegistration as resetPushRegistrationLib,
 } from "@/lib/firebase";
 
 const DEVICE_ID_KEY = "soma:fcm_device_id";
@@ -268,6 +269,31 @@ export function usePushNotifications() {
     }
   }, [user?.id]);
 
+  const resetPushRegistration = useCallback(async () => {
+    const deviceId = deviceIdRef.current || getOrCreateDeviceId();
+    try {
+      await resetPushRegistrationLib();
+      if (user?.id) {
+        const { error } = await supabase
+          .from("fcm_tokens")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("device_id", deviceId);
+        if (error) console.warn("[push] reset db delete failed", error.message);
+      }
+      setFcmToken(null);
+      setLastError(null);
+      setPermissionStatus(
+        typeof Notification !== "undefined" ? Notification.permission : null,
+      );
+      toast.success("Registro FCM resetado neste dispositivo. Tente ativar novamente.");
+    } catch (err) {
+      const message = (err as Error)?.message || String(err);
+      console.error("[push] reset error", err);
+      toast.error(`Falha ao resetar registro FCM: ${message}`);
+    }
+  }, [user?.id]);
+
   return {
     fcmToken,
     isSupported,
@@ -281,5 +307,6 @@ export function usePushNotifications() {
     refreshConfigStatus,
     enablePushNotifications,
     disablePushNotifications,
+    resetPushRegistration,
   };
 }
