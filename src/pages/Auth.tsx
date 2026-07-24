@@ -768,7 +768,7 @@ export default function Auth() {
                 )}
               </TabsContent>
 
-              <TabsContent value="signup" className="mt-0 space-y-3.5 lg:max-h-[calc(100dvh-220px)] lg:overflow-y-auto lg:pr-1 lg:-mr-1">
+              <TabsContent value="signup" className="mt-0 space-y-3.5">
                 {signupSuccessEmail ? (
                   <div className="space-y-4 py-2">
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
