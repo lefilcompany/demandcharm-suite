@@ -16,6 +16,36 @@ const PUBLIC_FIREBASE_FIELDS = {
 
 type PublicFirebaseField = keyof typeof PUBLIC_FIREBASE_FIELDS;
 
+function readServiceAccountDiagnostics(configProjectId: string): {
+  serviceAccountProjectConfigured: boolean;
+  serviceAccountProjectMatchesConfig: boolean | null;
+} {
+  const raw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT")?.trim();
+  if (!raw) {
+    return {
+      serviceAccountProjectConfigured: false,
+      serviceAccountProjectMatchesConfig: null,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as { project_id?: unknown };
+    const serviceAccountProjectId =
+      typeof parsed.project_id === "string" ? parsed.project_id.trim() : "";
+    return {
+      serviceAccountProjectConfigured: serviceAccountProjectId.length > 0,
+      serviceAccountProjectMatchesConfig: serviceAccountProjectId
+        ? serviceAccountProjectId === configProjectId
+        : null,
+    };
+  } catch {
+    return {
+      serviceAccountProjectConfigured: false,
+      serviceAccountProjectMatchesConfig: null,
+    };
+  }
+}
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -66,5 +96,8 @@ Deno.serve((req: Request) => {
 
   // Every value returned here is part of the Firebase Web App public config.
   // Service account JSON, private keys and cron credentials are never exposed.
-  return jsonResponse(config);
+  return jsonResponse({
+    ...config,
+    diagnostics: readServiceAccountDiagnostics(config.projectId ?? ""),
+  });
 });

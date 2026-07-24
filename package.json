@@ -11,10 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview",
-    "generate:firebase-config": "node scripts/generate-firebase-config.mjs",
-    "predev": "node scripts/generate-firebase-config.mjs development",
-    "prebuild": "node scripts/generate-firebase-config.mjs production"
+    "preview": "vite preview"
   },
   "overrides": {
     "smob": "1.4.0",

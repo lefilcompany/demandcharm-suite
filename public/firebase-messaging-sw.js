@@ -1,15 +1,7 @@
 // Firebase Messaging Service Worker for SoMA
 // Loaded at /firebase-messaging-sw.js under scope /firebase-cloud-messaging-push-scope/.
-// Prefer the config embedded in the service-worker script URL. It is the exact
-// runtime config used by getToken(). The generated asset is a fallback for any
-// browser path that registers this worker without query params.
-
-try {
-  importScripts("/firebase-config.generated.js");
-} catch (error) {
-  console.warn("[FCM SW] Generated Firebase config asset unavailable", error?.message);
-  self.__FIREBASE_CONFIG__ = null;
-}
+// The app registers this worker with the Firebase public runtime config in the
+// script URL. No build-time generated Firebase file is used in production.
 
 function readConfigFromScriptUrl() {
   try {
@@ -28,27 +20,11 @@ function readConfigFromScriptUrl() {
   }
 }
 
-function sanitizeFirebaseConfig(value) {
-  if (!value || typeof value !== "object") return null;
-  const config = {
-    apiKey: typeof value.apiKey === "string" ? value.apiKey : "",
-    authDomain: typeof value.authDomain === "string" ? value.authDomain : "",
-    projectId: typeof value.projectId === "string" ? value.projectId : "",
-    storageBucket: typeof value.storageBucket === "string" ? value.storageBucket : "",
-    messagingSenderId:
-      typeof value.messagingSenderId === "string" ? value.messagingSenderId : "",
-    appId: typeof value.appId === "string" ? value.appId : "",
-  };
-  return Object.values(config).every((entry) => entry.length > 0) ? config : null;
-}
-
-const urlConfig = readConfigFromScriptUrl();
-const generatedConfig = sanitizeFirebaseConfig(self.__FIREBASE_CONFIG__);
-const firebaseConfig = urlConfig || generatedConfig;
-self.__FCM_CONFIG_SOURCE__ = urlConfig ? "script-url" : generatedConfig ? "generated" : "missing";
+const firebaseConfig = readConfigFromScriptUrl();
+self.__FCM_CONFIG_SOURCE__ = firebaseConfig ? "script-url" : "missing";
 
 if (!firebaseConfig) {
-  console.log("[FCM SW] Missing Firebase config; messaging disabled.", {
+  console.warn("[FCM SW] Missing Firebase config in script URL; messaging disabled.", {
     hasScriptParams: new URL(self.location.href).searchParams.size > 0,
   });
 } else {

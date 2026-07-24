@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { deleteApp, initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import {
   deleteToken,
   getMessaging,
@@ -12,6 +12,19 @@ import {
 const FCM_SW_URL = "/firebase-messaging-sw.js";
 const FCM_SW_SCOPE = "/firebase-cloud-messaging-push-scope/";
 const FIREBASE_PUBLIC_CONFIG_FUNCTION = "firebase-public-config";
+const FCM_APP_NAME = "soma-fcm";
+
+export type PushRegistrationErrorReason =
+  | "unsupported"
+  | "insecure-context"
+  | "permission-denied"
+  | "missing-config"
+  | "service-worker-failed"
+  | "push-subscribe-failed"
+  | "vapid-invalid"
+  | "firebase-registration-failed"
+  | "api-key-rejected"
+  | "token-error";
 
 export type PushRegistrationResult =
   | {
@@ -21,13 +34,7 @@ export type PushRegistrationResult =
     }
   | {
       ok: false;
-      reason:
-        | "unsupported"
-        | "insecure-context"
-        | "permission-denied"
-        | "missing-config"
-        | "service-worker-error"
-        | "token-error";
+      reason: PushRegistrationErrorReason;
       error?: string;
     };
 
@@ -43,14 +50,29 @@ interface FirebasePublicConfig {
 type FirebaseConfigCandidate = {
   config: Partial<FirebasePublicConfig>;
   vapidKey: string | null;
-  source: "inline" | "generated" | "runtime";
+  diagnostics?: FirebaseBackendDiagnostics;
 };
 
 type FirebaseRuntimeConfig = {
   config: FirebasePublicConfig | null;
   vapidKey: string | null;
   missing: string[];
-  source: string;
+  source: "runtime" | "none";
+  diagnostics?: FirebaseBackendDiagnostics;
+};
+
+export type FirebaseConfigDiagnostics = {
+  projectId: string;
+  messagingSenderIdSuffix: string;
+  appIdPrefix: string;
+  vapidKeyHash: string;
+  serviceAccountProjectConfigured: boolean | null;
+  serviceAccountProjectMatchesConfig: boolean | null;
+};
+
+type FirebaseBackendDiagnostics = {
+  serviceAccountProjectConfigured?: boolean;
+  serviceAccountProjectMatchesConfig?: boolean | null;
 };
 
 const CONFIG_FIELDS = [
@@ -66,27 +88,13 @@ function stringValue(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function readInlineCandidate(): FirebaseConfigCandidate {
-  const env = import.meta.env;
-  return {
-    config: {
-      apiKey: stringValue(env.VITE_FIREBASE_API_KEY),
-      authDomain: stringValue(env.VITE_FIREBASE_AUTH_DOMAIN),
-      projectId: stringValue(env.VITE_FIREBASE_PROJECT_ID),
-      storageBucket: stringValue(env.VITE_FIREBASE_STORAGE_BUCKET),
-      messagingSenderId: stringValue(env.VITE_FIREBASE_MESSAGING_SENDER_ID),
-      appId: stringValue(env.VITE_FIREBASE_APP_ID),
-    },
-    vapidKey: stringValue(env.VITE_FIREBASE_VAPID_KEY) || null,
-    source: "inline",
-  };
-}
-
-function normalizeCandidate(
-  value: unknown,
-  source: FirebaseConfigCandidate["source"],
-): FirebaseConfigCandidate {
+function normalizeCandidate(value: unknown): FirebaseConfigCandidate {
   const record = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const diagnosticsRecord =
+    record.diagnostics && typeof record.diagnostics === "object"
+      ? (record.diagnostics as Record<string, unknown>)
+      : null;
+
   return {
     config: {
       apiKey: stringValue(record.apiKey),
@@ -97,88 +105,54 @@ function normalizeCandidate(
       appId: stringValue(record.appId),
     },
     vapidKey: stringValue(record.vapidKey) || null,
-    source,
+    diagnostics: diagnosticsRecord
+      ? {
+          serviceAccountProjectConfigured:
+            typeof diagnosticsRecord.serviceAccountProjectConfigured === "boolean"
+              ? diagnosticsRecord.serviceAccountProjectConfigured
+              : undefined,
+          serviceAccountProjectMatchesConfig:
+            typeof diagnosticsRecord.serviceAccountProjectMatchesConfig === "boolean"
+              ? diagnosticsRecord.serviceAccountProjectMatchesConfig
+              : diagnosticsRecord.serviceAccountProjectMatchesConfig === null
+                ? null
+                : undefined,
+        }
+      : undefined,
   };
 }
 
-function mergeCandidates(candidates: FirebaseConfigCandidate[]): FirebaseRuntimeConfig {
-  const merged: Partial<FirebasePublicConfig> = {};
-  const usedSources = new Set<string>();
-
-  for (const field of CONFIG_FIELDS) {
-    for (const candidate of candidates) {
-      const value = stringValue(candidate.config[field]);
-      if (!value) continue;
-      merged[field] = value;
-      usedSources.add(candidate.source);
-      break;
-    }
-  }
-
-  let vapidKey: string | null = null;
-  for (const candidate of candidates) {
-    if (!candidate.vapidKey) continue;
-    vapidKey = candidate.vapidKey;
-    usedSources.add(candidate.source);
-    break;
-  }
-
+function buildRuntimeConfig(candidate: FirebaseConfigCandidate): FirebaseRuntimeConfig {
   const missing: string[] = [];
   for (const field of CONFIG_FIELDS) {
-    if (!stringValue(merged[field])) missing.push(field);
+    if (!stringValue(candidate.config[field])) missing.push(field);
   }
-  if (!vapidKey) missing.push("vapidKey");
+  if (!candidate.vapidKey) missing.push("vapidKey");
 
   return {
     config: missing.some((field) => field !== "vapidKey")
       ? null
-      : (merged as FirebasePublicConfig),
-    vapidKey,
+      : (candidate.config as FirebasePublicConfig),
+    vapidKey: candidate.vapidKey,
     missing,
-    source: usedSources.size > 0 ? [...usedSources].join("+") : "none",
+    source: missing.length === 0 ? "runtime" : "none",
+    diagnostics: candidate.diagnostics,
   };
 }
 
-function parseGeneratedAssignment(text: string): unknown {
-  const match = text.match(/self\.__FIREBASE_CONFIG__\s*=\s*([\s\S]*?);\s*$/m);
-  if (!match?.[1] || match[1].trim() === "null") return null;
-  try {
-    return JSON.parse(match[1]);
-  } catch (err) {
-    console.error("[FCM] generated config parse failed", (err as Error)?.message);
-    return null;
-  }
-}
-
-let generatedConfigPromise: Promise<FirebaseConfigCandidate> | null = null;
 let runtimeConfigPromise: Promise<FirebaseConfigCandidate> | null = null;
 
-async function loadGeneratedCandidate(cacheBust = false): Promise<FirebaseConfigCandidate> {
-  if (typeof window === "undefined") return normalizeCandidate(null, "generated");
-  try {
-    const suffix = cacheBust ? `?t=${Date.now()}` : "";
-    const response = await fetch(`/firebase-config.generated.js${suffix}`, {
-      cache: "no-store",
-      credentials: "same-origin",
-    });
-    if (!response.ok) return normalizeCandidate(null, "generated");
-    return normalizeCandidate(parseGeneratedAssignment(await response.text()), "generated");
-  } catch (err) {
-    console.error("[FCM] generated config load failed", (err as Error)?.message);
-    return normalizeCandidate(null, "generated");
-  }
-}
-
 async function loadRuntimeCandidate(): Promise<FirebaseConfigCandidate> {
-  const supabaseUrl = stringValue(import.meta.env.VITE_SUPABASE_URL).replace(/\/$/, "");
+  const cloudUrl = stringValue(import.meta.env.VITE_SUPABASE_URL).replace(/\/$/, "");
   const publishableKey = stringValue(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-  if (!supabaseUrl) return normalizeCandidate(null, "runtime");
+  if (!cloudUrl) return normalizeCandidate(null);
 
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 8000);
+
   try {
     const response = await fetch(
-      `${supabaseUrl}/functions/v1/${FIREBASE_PUBLIC_CONFIG_FUNCTION}`,
+      `${cloudUrl}/functions/v1/${FIREBASE_PUBLIC_CONFIG_FUNCTION}`,
       {
         method: "GET",
         cache: "no-store",
@@ -186,58 +160,80 @@ async function loadRuntimeCandidate(): Promise<FirebaseConfigCandidate> {
         signal: controller.signal,
       },
     );
+
     if (!response.ok) {
       console.warn("[FCM] runtime config endpoint unavailable", response.status);
-      return normalizeCandidate(null, "runtime");
+      return normalizeCandidate(null);
     }
-    return normalizeCandidate(await response.json(), "runtime");
+
+    return normalizeCandidate(await response.json());
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown error";
     console.warn("[FCM] runtime config load failed", message);
-    return normalizeCandidate(null, "runtime");
+    return normalizeCandidate(null);
   } finally {
     window.clearTimeout(timeout);
   }
 }
 
 async function resolveRuntimeConfig(forceRefresh = false): Promise<FirebaseRuntimeConfig> {
-  if (forceRefresh) {
-    generatedConfigPromise = null;
-    runtimeConfigPromise = null;
-  }
-
-  const inline = readInlineCandidate();
-  if (!generatedConfigPromise) {
-    generatedConfigPromise = loadGeneratedCandidate(forceRefresh);
-  }
-  const generated = await generatedConfigPromise;
-  const localRuntime = mergeCandidates([inline, generated]);
-  if (localRuntime.missing.length === 0) return localRuntime;
-
+  if (forceRefresh) runtimeConfigPromise = null;
   if (!runtimeConfigPromise) runtimeConfigPromise = loadRuntimeCandidate();
-  const remote = await runtimeConfigPromise;
-  const runtime = mergeCandidates([inline, generated, remote]);
 
-  // Do not permanently cache an incomplete/error response. A later retry can
-  // succeed immediately after the Edge Function or its secrets are deployed.
+  const runtime = buildRuntimeConfig(await runtimeConfigPromise);
   if (runtime.missing.length > 0) runtimeConfigPromise = null;
   return runtime;
+}
+
+async function shortSha256(value: string): Promise<string> {
+  try {
+    const bytes = new TextEncoder().encode(value);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return Array.from(new Uint8Array(digest))
+      .slice(0, 6)
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+  } catch {
+    return "indisponível";
+  }
 }
 
 export async function checkFirebasePushConfig(): Promise<{
   ready: boolean;
   missing: string[];
   source: string;
+  diagnostics: FirebaseConfigDiagnostics | null;
 }> {
   const runtime = await resolveRuntimeConfig(true);
+  const diagnostics =
+    runtime.config && runtime.vapidKey
+      ? {
+          projectId: runtime.config.projectId,
+          messagingSenderIdSuffix: runtime.config.messagingSenderId.slice(-4),
+          appIdPrefix: runtime.config.appId.slice(0, 12),
+          vapidKeyHash: await shortSha256(runtime.vapidKey),
+          serviceAccountProjectConfigured:
+            typeof runtime.diagnostics?.serviceAccountProjectConfigured === "boolean"
+              ? runtime.diagnostics.serviceAccountProjectConfigured
+              : null,
+          serviceAccountProjectMatchesConfig:
+            typeof runtime.diagnostics?.serviceAccountProjectMatchesConfig === "boolean" ||
+            runtime.diagnostics?.serviceAccountProjectMatchesConfig === null
+              ? runtime.diagnostics.serviceAccountProjectMatchesConfig
+              : null,
+        }
+      : null;
+
   return {
     ready: runtime.missing.length === 0,
     missing: runtime.missing,
     source: runtime.source,
+    diagnostics,
   };
 }
 
 let cachedApp: FirebaseApp | null = null;
+let cachedAppKey = "";
 let cachedMessaging: Messaging | null = null;
 let messagingSupportedPromise: Promise<boolean> | null = null;
 
@@ -245,21 +241,32 @@ function clearCachedMessaging(): void {
   cachedMessaging = null;
 }
 
-function getFirebaseApp(cfg: FirebasePublicConfig | null): FirebaseApp | null {
+async function getFirebaseApp(cfg: FirebasePublicConfig | null): Promise<FirebaseApp | null> {
   if (!cfg) return null;
-  if (cachedApp) return cachedApp;
-  cachedApp = getApps().length ? getApp() : initializeApp(cfg);
+  const appKey = `${cfg.projectId}:${cfg.appId}:${cfg.messagingSenderId}`;
+  if (cachedApp && cachedAppKey === appKey) return cachedApp;
+
+  const existing = getApps().find((app) => app.name === FCM_APP_NAME);
+  if (existing && cachedAppKey !== appKey) {
+    await deleteApp(existing).catch(() => undefined);
+    clearCachedMessaging();
+  }
+
+  cachedApp = getApps().find((app) => app.name === FCM_APP_NAME) ?? initializeApp(cfg, FCM_APP_NAME);
+  cachedAppKey = appKey;
   return cachedApp;
 }
 
 async function getFirebaseMessaging(runtime?: FirebaseRuntimeConfig): Promise<Messaging | null> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
   const resolved = runtime ?? (await resolveRuntimeConfig());
-  const app = getFirebaseApp(resolved.config);
+  const app = await getFirebaseApp(resolved.config);
   if (!app) return null;
+
   if (!messagingSupportedPromise) messagingSupportedPromise = isSupported().catch(() => false);
   const supported = await messagingSupportedPromise;
   if (!supported) return null;
+
   if (!cachedMessaging) {
     try {
       cachedMessaging = getMessaging(app);
@@ -268,6 +275,7 @@ async function getFirebaseMessaging(runtime?: FirebaseRuntimeConfig): Promise<Me
       return null;
     }
   }
+
   return cachedMessaging;
 }
 
@@ -275,6 +283,24 @@ function buildFcmServiceWorkerUrl(config: FirebasePublicConfig): string {
   const url = new URL(FCM_SW_URL, window.location.origin);
   for (const field of CONFIG_FIELDS) url.searchParams.set(field, config[field]);
   return `${url.pathname}${url.search}`;
+}
+
+function getRegistrationScriptUrl(registration: ServiceWorkerRegistration): string {
+  return (
+    registration.active?.scriptURL ||
+    registration.waiting?.scriptURL ||
+    registration.installing?.scriptURL ||
+    ""
+  );
+}
+
+function isFcmRegistration(registration: ServiceWorkerRegistration): boolean {
+  const script = getRegistrationScriptUrl(registration);
+  return script.includes("firebase-messaging-sw.js");
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 async function waitForExpectedActive(
@@ -331,14 +357,20 @@ async function cleanupStaleFcmRegistrations(expectedScriptHref: string): Promise
     const regs = await navigator.serviceWorker.getRegistrations();
     await Promise.all(
       regs.map(async (reg) => {
-        const script =
-          reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "";
-        if (!script) return;
-        if (!script.includes("firebase-messaging-sw.js")) return;
-        if (script === expectedScriptHref) return;
+        if (!isFcmRegistration(reg)) return;
+        const script = getRegistrationScriptUrl(reg);
+        const isExpectedScript = script === expectedScriptHref;
+        const isExpectedScope = new URL(reg.scope).pathname === FCM_SW_SCOPE;
+        const hasRuntimeConfig = new URL(script).searchParams.size > 0;
+
+        if (isExpectedScript && isExpectedScope && hasRuntimeConfig) return;
+
         try {
           await reg.unregister();
-          console.log("[FCM] unregistered stale SW", script);
+          console.log("[FCM] unregistered stale SW", {
+            scope: reg.scope,
+            hasRuntimeConfig,
+          });
         } catch (err) {
           console.warn("[FCM] failed to unregister stale SW", (err as Error)?.message);
         }
@@ -349,42 +381,13 @@ async function cleanupStaleFcmRegistrations(expectedScriptHref: string): Promise
   }
 }
 
-async function resetPushSubscription(
-  registration: ServiceWorkerRegistration | null,
-  options: { deleteBrowserToken?: boolean } = {},
-): Promise<void> {
-  if (registration) {
-    try {
-      const sub = await registration.pushManager.getSubscription();
-      if (sub) {
-        await sub.unsubscribe();
-        console.log("[FCM] unsubscribed stale PushSubscription");
-      }
-    } catch (err) {
-      console.warn("[FCM] unsubscribe failed", (err as Error)?.message);
-    }
-  }
-  if (options.deleteBrowserToken) {
-    try {
-      const messaging = await getFirebaseMessaging();
-      if (messaging) {
-        await deleteToken(messaging).catch(() => false);
-        clearCachedMessaging();
-      }
-    } catch (err) {
-      console.warn("[FCM] deleteToken during reset failed", (err as Error)?.message);
-    }
-  }
-}
-
 async function getOrRegisterFcmSw(
   config: FirebasePublicConfig,
 ): Promise<ServiceWorkerRegistration> {
-  // The public config is included in the script URL so the classic worker can
-  // initialize synchronously even when Lovable did not inject Firebase vars at build time.
   const scriptUrl = buildFcmServiceWorkerUrl(config);
   const expected = new URL(scriptUrl, window.location.origin).href;
   await cleanupStaleFcmRegistrations(expected);
+
   const existing = await navigator.serviceWorker.getRegistration(FCM_SW_SCOPE);
   if (existing?.active?.scriptURL === expected) return existing;
 
@@ -396,24 +399,42 @@ async function getOrRegisterFcmSw(
   return registration;
 }
 
-/**
- * Hard-reset the FCM push registration for this browser:
- *  - unsubscribe the browser PushSubscription
- *  - delete the Firebase Messaging token from IndexedDB
- *  - unregister the firebase-messaging-sw.js service worker
- *
- * Safe to call even when nothing is registered. Use this to recover from a
- * stale subscription bound to an old VAPID key.
- */
-export async function resetPushRegistration(): Promise<void> {
+async function deleteBrowserFcmToken(runtime?: FirebaseRuntimeConfig): Promise<void> {
+  try {
+    const messaging = await getFirebaseMessaging(runtime);
+    if (!messaging) return;
+    await deleteToken(messaging).catch(() => false);
+  } catch (err) {
+    console.warn("[FCM] deleteToken during reset failed", (err as Error)?.message);
+  } finally {
+    clearCachedMessaging();
+  }
+}
+
+async function unsubscribePushSubscription(
+  registration: ServiceWorkerRegistration | null,
+): Promise<void> {
+  if (!registration) return;
+  try {
+    const sub = await registration.pushManager.getSubscription();
+    if (!sub) return;
+    await sub.unsubscribe();
+    console.log("[FCM] unsubscribed stale PushSubscription");
+  } catch (err) {
+    console.warn("[FCM] unsubscribe failed", (err as Error)?.message);
+  }
+}
+
+async function hardResetFcmRegistrations(runtime?: FirebaseRuntimeConfig): Promise<void> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+  await deleteBrowserFcmToken(runtime);
+
   try {
     const regs = await navigator.serviceWorker.getRegistrations();
     for (const reg of regs) {
-      const script =
-        reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "";
-      if (!script.includes("firebase-messaging-sw.js")) continue;
-      await resetPushSubscription(reg, { deleteBrowserToken: true });
+      if (!isFcmRegistration(reg)) continue;
+      await unsubscribePushSubscription(reg);
       try {
         await reg.unregister();
       } catch (err) {
@@ -421,14 +442,62 @@ export async function resetPushRegistration(): Promise<void> {
       }
     }
   } catch (err) {
-    console.warn("[FCM] resetPushRegistration failed", (err as Error)?.message);
+    console.warn("[FCM] reset registrations failed", (err as Error)?.message);
   } finally {
     clearCachedMessaging();
+    await delay(400);
   }
+}
+
+/**
+ * Hard-reset the FCM push registration for this browser. This is intentionally
+ * reserved for manual recovery or for one retry after a real subscribe failure.
+ */
+export async function resetPushRegistration(): Promise<void> {
+  const runtime = await resolveRuntimeConfig(true).catch(() => undefined);
+  await hardResetFcmRegistrations(runtime);
 }
 
 function shortToken(token: string): string {
   return `${token.slice(0, 6)}…`;
+}
+
+function classifyTokenError(err: unknown): PushRegistrationErrorReason {
+  const error = err as { code?: string; message?: string };
+  const code = error?.code || "";
+  const message = error?.message || "";
+  const combined = `${code} ${message}`;
+
+  if (/vapid|applicationServerKey/i.test(combined)) return "vapid-invalid";
+  if (/api-key-not-valid|api key|auth credential/i.test(combined)) return "api-key-rejected";
+  if (/failed-service-worker-registration|service worker|sw registration/i.test(combined)) {
+    return "service-worker-failed";
+  }
+  if (/token-subscribe-failed|push service|Registration failed|AbortError|subscribe/i.test(combined)) {
+    return "push-subscribe-failed";
+  }
+  if (/registration|firebase/i.test(combined)) return "firebase-registration-failed";
+  return "token-error";
+}
+
+function shouldRecoverFromTokenError(reason: PushRegistrationErrorReason): boolean {
+  return reason === "push-subscribe-failed" || reason === "firebase-registration-failed";
+}
+
+async function getFcmToken(
+  runtime: FirebaseRuntimeConfig,
+  registration: ServiceWorkerRegistration,
+): Promise<string> {
+  if (!runtime.vapidKey) throw new Error("missing VAPID public key");
+  const messaging = await getFirebaseMessaging(runtime);
+  if (!messaging) throw new Error("messaging unsupported");
+
+  const token = await getToken(messaging, {
+    vapidKey: runtime.vapidKey,
+    serviceWorkerRegistration: registration,
+  });
+  if (!token) throw new Error("empty token");
+  return token;
 }
 
 export async function requestNotificationPermission(): Promise<PushRegistrationResult> {
@@ -459,52 +528,37 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
   } catch (err) {
     return {
       ok: false,
-      reason: "service-worker-error",
+      reason: "service-worker-failed",
       error: (err as Error)?.message,
     };
   }
 
-  // Defensive: proactively clear any stale PushSubscription (e.g. bound to a
-  // previous VAPID key) before requesting a new token. The push service rejects
-  // re-subscription with a different applicationServerKey until the previous
-  // subscription is unsubscribed.
-  await resetPushSubscription(registration, { deleteBrowserToken: true });
-  clearCachedMessaging();
-
-  const tryGetToken = async () => {
-    if (!runtime.vapidKey) throw new Error("missing VAPID public key");
-    const messaging = await getFirebaseMessaging(runtime);
-    if (!messaging) throw new Error("messaging unsupported after reset");
-    return getToken(messaging, {
-      vapidKey: runtime.vapidKey,
-      serviceWorkerRegistration: registration,
-    });
-  };
-
-  const isSubscribeError = (msg: string) =>
-    /token-subscribe-failed|push service|Registration failed|AbortError/i.test(msg);
-
   try {
-    let token: string | null = null;
-    try {
-      token = await tryGetToken();
-    } catch (err) {
-      const msg = (err as Error)?.message || "";
-      if (!isSubscribeError(msg)) throw err;
-      console.warn("[FCM] first getToken failed, resetting and retrying", msg);
-      await resetPushSubscription(registration, { deleteBrowserToken: true });
-      clearCachedMessaging();
-      token = await tryGetToken();
-    }
-    if (!token) return { ok: false, reason: "token-error", error: "empty token" };
+    const token = await getFcmToken(runtime, registration);
     console.log("[FCM] token obtained", shortToken(token));
     return { ok: true, token, registration };
   } catch (err) {
-    return {
-      ok: false,
-      reason: "token-error",
-      error: (err as Error)?.message,
-    };
+    const firstReason = classifyTokenError(err);
+    const firstMessage = (err as Error)?.message || firstReason;
+    if (!shouldRecoverFromTokenError(firstReason)) {
+      return { ok: false, reason: firstReason, error: firstMessage };
+    }
+
+    console.warn("[FCM] getToken failed; resetting FCM registration once", firstMessage);
+    try {
+      await hardResetFcmRegistrations(runtime);
+      const retryRegistration = await getOrRegisterFcmSw(runtime.config);
+      const token = await getFcmToken(runtime, retryRegistration);
+      console.log("[FCM] token obtained after recovery", shortToken(token));
+      return { ok: true, token, registration: retryRegistration };
+    } catch (retryErr) {
+      const retryReason = classifyTokenError(retryErr);
+      return {
+        ok: false,
+        reason: retryReason,
+        error: (retryErr as Error)?.message || firstMessage,
+      };
+    }
   }
 }
 
@@ -512,17 +566,13 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
 export async function getCurrentFcmToken(): Promise<string | null> {
   if (typeof window === "undefined" || !("Notification" in window)) return null;
   if (Notification.permission !== "granted") return null;
+
   const runtime = await resolveRuntimeConfig();
   if (!runtime.config || !runtime.vapidKey || runtime.missing.length > 0) return null;
+
   try {
     const registration = await getOrRegisterFcmSw(runtime.config);
-    const messaging = await getFirebaseMessaging(runtime);
-    if (!messaging) return null;
-    const token = await getToken(messaging, {
-      vapidKey: runtime.vapidKey,
-      serviceWorkerRegistration: registration,
-    });
-    return token || null;
+    return await getFcmToken(runtime, registration);
   } catch (err) {
     console.error("[FCM] getCurrentFcmToken error", (err as Error)?.message);
     return null;
@@ -534,6 +584,7 @@ export async function subscribeToForegroundMessages(
 ): Promise<() => void> {
   const messaging = await getFirebaseMessaging();
   if (!messaging) return () => {};
+
   return onMessage(messaging, (payload) => {
     try {
       callback(payload);
@@ -546,8 +597,11 @@ export async function subscribeToForegroundMessages(
 export async function deleteFcmToken(): Promise<boolean> {
   const messaging = await getFirebaseMessaging();
   if (!messaging) return false;
+
   try {
-    return await deleteToken(messaging);
+    const deleted = await deleteToken(messaging);
+    clearCachedMessaging();
+    return deleted;
   } catch (err) {
     console.error("[FCM] deleteToken error", (err as Error)?.message);
     return false;

@@ -18,6 +18,14 @@ import { SEOHead } from "@/components/SEOHead";
 
 type Scenario = "creation" | "deadline" | "mention" | "generic";
 
+type FcmSwDiagnostic = {
+  scope: string;
+  scriptPath: string;
+  hasRuntimeConfig: boolean;
+  state: string;
+  hasPushSubscription: boolean | null;
+};
+
 const SCENARIO_LABEL: Record<Scenario, string> = {
   creation: "Criação de demanda",
   deadline: "Vencimento próximo",
@@ -34,7 +42,8 @@ export default function AdminPushTest() {
   const [sending, setSending] = useState(false);
   const [enabling, setEnabling] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [fcmSwRegistrations, setFcmSwRegistrations] = useState("checando...");
+  const [fcmSwRegistrations, setFcmSwRegistrations] = useState<FcmSwDiagnostic[]>([]);
+  const [fcmSwStatus, setFcmSwStatus] = useState("checando...");
 
   const handleEnable = async () => {
     setEnabling(true);
@@ -60,21 +69,42 @@ export default function AdminPushTest() {
 
     const refresh = async () => {
       if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
-        if (!cancelled) setFcmSwRegistrations("indisponível");
+        if (!cancelled) setFcmSwStatus("indisponível");
         return;
       }
       try {
         const regs = await navigator.serviceWorker.getRegistrations();
-        const fcmRegs = regs
-          .map((reg) => reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "")
-          .filter((script) => script.includes("firebase-messaging-sw.js"))
-          .map((script) => {
-            const url = new URL(script);
-            return `${url.pathname}${url.search ? "?config=sim" : "?config=não"}`;
-          });
-        if (!cancelled) setFcmSwRegistrations(fcmRegs.length ? fcmRegs.join(" | ") : "nenhum");
+        const fcmRegs = await Promise.all(
+          regs
+            .filter((reg) => {
+              const script = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "";
+              return script.includes("firebase-messaging-sw.js");
+            })
+            .map(async (reg) => {
+              const worker = reg.active || reg.waiting || reg.installing;
+              const script = worker?.scriptURL || "";
+              const url = script ? new URL(script) : null;
+              let hasPushSubscription: boolean | null = null;
+              try {
+                hasPushSubscription = Boolean(await reg.pushManager.getSubscription());
+              } catch {
+                hasPushSubscription = null;
+              }
+              return {
+                scope: new URL(reg.scope).pathname,
+                scriptPath: url ? url.pathname : "—",
+                hasRuntimeConfig: Boolean(url && url.searchParams.size > 0),
+                state: worker?.state ?? "sem worker",
+                hasPushSubscription,
+              };
+            }),
+        );
+        if (!cancelled) {
+          setFcmSwRegistrations(fcmRegs);
+          setFcmSwStatus(fcmRegs.length ? `${fcmRegs.length} registro(s)` : "nenhum");
+        }
       } catch (err) {
-        if (!cancelled) setFcmSwRegistrations((err as Error)?.message || "erro ao ler SW");
+        if (!cancelled) setFcmSwStatus((err as Error)?.message || "erro ao ler SW");
       }
     };
 
@@ -172,10 +202,50 @@ export default function AdminPushTest() {
             <DiagRow label="Config FCM" value={push.configStatus} />
             <DiagRow label="Origem da config" value={push.configSource} />
             <DiagRow label="Campos faltando" value={push.configMissing.length ? push.configMissing.join(", ") : "nenhum"} />
+            <DiagRow label="Firebase projectId" value={push.configDiagnostics?.projectId ?? "—"} />
+            <DiagRow label="Sender ID final" value={push.configDiagnostics?.messagingSenderIdSuffix ?? "—"} />
+            <DiagRow label="App ID início" value={push.configDiagnostics?.appIdPrefix ?? "—"} />
+            <DiagRow label="VAPID fingerprint" value={push.configDiagnostics?.vapidKeyHash ?? "—"} />
+            <DiagRow
+              label="Service account configurada"
+              value={String(push.configDiagnostics?.serviceAccountProjectConfigured ?? "—")}
+            />
+            <DiagRow
+              label="Service account compatível"
+              value={String(push.configDiagnostics?.serviceAccountProjectMatchesConfig ?? "—")}
+            />
             <DiagRow label="Token FCM ativo" value={push.fcmToken ? `${push.fcmToken.slice(0, 12)}…` : "—"} />
             <DiagRow label="SW controlador" value={swScriptUrl} />
-            <DiagRow label="SW FCM registrados" value={fcmSwRegistrations} />
+            <DiagRow label="SW FCM registrados" value={fcmSwStatus} />
           </div>
+          {fcmSwRegistrations.length > 0 && (
+            <div className="overflow-x-auto rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Scope</TableHead>
+                    <TableHead>Script</TableHead>
+                    <TableHead>Config runtime</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>PushSubscription</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {fcmSwRegistrations.map((reg) => (
+                    <TableRow key={`${reg.scope}-${reg.scriptPath}`}>
+                      <TableCell className="font-mono text-xs">{reg.scope}</TableCell>
+                      <TableCell className="font-mono text-xs">{reg.scriptPath}</TableCell>
+                      <TableCell className="text-xs">{reg.hasRuntimeConfig ? "sim" : "não"}</TableCell>
+                      <TableCell className="text-xs">{reg.state}</TableCell>
+                      <TableCell className="text-xs">
+                        {reg.hasPushSubscription === null ? "indisponível" : reg.hasPushSubscription ? "sim" : "não"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
           {push.lastError && (
             <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
               <p className="font-medium text-destructive">Último erro capturado</p>
@@ -202,7 +272,7 @@ export default function AdminPushTest() {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Se aparecer <span className="font-mono">token-error</span> com "Registration failed", clique em "Resetar registro FCM" e tente ativar novamente — isso limpa PushSubscription/service worker antigos vinculados a uma VAPID key anterior.
+            Se aparecer <span className="font-mono">push-subscribe-failed</span>, clique em "Resetar registro FCM" e tente ativar novamente — isso limpa apenas registros FCM antigos vinculados a uma VAPID key anterior.
           </p>
         </CardContent>
       </Card>
