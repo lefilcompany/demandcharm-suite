@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, BellRing, Loader2, RefreshCw, Send } from "lucide-react";
+import { AlertTriangle, BellRing, Loader2, RefreshCw, Send, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -27,9 +28,26 @@ const SCENARIO_LABEL: Record<Scenario, string> = {
 export default function AdminPushTest() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const push = usePushNotifications();
   const [targetEmail, setTargetEmail] = useState(user?.email ?? "");
   const [scenario, setScenario] = useState<Scenario>("generic");
   const [sending, setSending] = useState(false);
+  const [enabling, setEnabling] = useState(false);
+
+  const handleEnable = async () => {
+    setEnabling(true);
+    try {
+      await push.enablePushNotifications();
+    } finally {
+      setEnabling(false);
+    }
+  };
+
+  const swScriptUrl = typeof navigator !== "undefined"
+    ? navigator.serviceWorker?.controller?.scriptURL ?? "—"
+    : "—";
+  const secureCtx = typeof window !== "undefined" ? String(window.isSecureContext) : "—";
+  const notifPermission = typeof Notification !== "undefined" ? Notification.permission : "—";
 
   const { data: logs, isLoading, refetch } = useQuery({
     queryKey: ["test-push-log"],
@@ -93,6 +111,51 @@ export default function AdminPushTest() {
           Dispare uma notificação push de prova e valide se o FCM está entregando corretamente ao dispositivo.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5 text-primary" /> Diagnóstico deste dispositivo
+          </CardTitle>
+          <CardDescription>
+            Estado atual da configuração FCM neste navegador. Use "Ativar notificações" para reproduzir o erro e ver a causa exata.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-2 text-sm md:grid-cols-2">
+            <DiagRow label="Suportado pelo navegador" value={String(push.isSupported)} />
+            <DiagRow label="Contexto seguro (HTTPS)" value={secureCtx} />
+            <DiagRow label="Permissão Notification" value={String(push.permissionStatus ?? notifPermission)} />
+            <DiagRow label="Config FCM" value={push.configStatus} />
+            <DiagRow label="Origem da config" value={push.configSource} />
+            <DiagRow label="Campos faltando" value={push.configMissing.length ? push.configMissing.join(", ") : "nenhum"} />
+            <DiagRow label="Token FCM ativo" value={push.fcmToken ? `${push.fcmToken.slice(0, 12)}…` : "—"} />
+            <DiagRow label="SW controlador" value={swScriptUrl} />
+          </div>
+          {push.lastError && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              <p className="font-medium text-destructive">Último erro capturado</p>
+              <p className="mt-1"><span className="font-mono text-xs">reason:</span> {push.lastError.reason}</p>
+              <p className="break-all"><span className="font-mono text-xs">error:</span> {push.lastError.message}</p>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={handleEnable} disabled={enabling || push.isLoading}>
+              {(enabling || push.isLoading) ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <BellRing className="h-4 w-4 mr-2" />}
+              Ativar notificações neste dispositivo
+            </Button>
+            <Button variant="outline" onClick={() => push.refreshConfigStatus()}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Rechecar config
+            </Button>
+            {push.isEnabled && (
+              <Button variant="ghost" onClick={() => push.disablePushNotifications()}>
+                Desativar
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader>
@@ -210,6 +273,15 @@ export default function AdminPushTest() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function DiagRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-mono text-xs text-right break-all">{value}</span>
     </div>
   );
 }
