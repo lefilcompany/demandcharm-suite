@@ -953,7 +953,9 @@ export default function Auth() {
                 </form>
                 )}
               </TabsContent>
-            </Tabs>
+            </div>
+          </Tabs>
+
 
             {/* Password Reset Dialog - 3 steps: email -> 6-digit code -> new password */}
             <Dialog
