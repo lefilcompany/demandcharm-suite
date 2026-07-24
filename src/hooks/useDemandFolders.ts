@@ -110,13 +110,13 @@ export function useCreateFolder() {
         .from("projects")
         .insert(params)
         .select()
-        .single();
+        .maybeSingle();
       if (error && shouldFallbackToLegacyFolders(error)) {
         const legacy = await (supabase as any)
           .from("demand_folders")
           .insert(params)
           .select()
-          .single();
+          .maybeSingle();
         if (legacy.error) throw legacy.error;
         return legacy.data;
       }
@@ -141,14 +141,14 @@ export function useUpdateFolder() {
         .update(updates)
         .eq("id", id)
         .select()
-        .single();
+        .maybeSingle();
       if (error && shouldFallbackToLegacyFolders(error)) {
         const legacy = await (supabase as any)
           .from("demand_folders")
           .update(updates)
           .eq("id", id)
           .select()
-          .single();
+          .maybeSingle();
         if (legacy.error) throw legacy.error;
         return legacy.data;
       }

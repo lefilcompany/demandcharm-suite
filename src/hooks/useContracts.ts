@@ -58,7 +58,7 @@ export function useCreateContract() {
           uploaded_by: user?.id,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (insertError) throw insertError;
 

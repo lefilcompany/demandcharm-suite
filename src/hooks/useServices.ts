@@ -177,7 +177,7 @@ export function useCreateService() {
           created_by: userId,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return service;
@@ -224,7 +224,7 @@ export function useUpdateService() {
         .update(finalUpdateData)
         .eq("id", validatedId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return service;

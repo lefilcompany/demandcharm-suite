@@ -158,7 +158,7 @@ export function useShareNoteWithUser() {
           permission,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (error.code === "23505") {

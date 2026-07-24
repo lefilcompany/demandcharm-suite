@@ -186,7 +186,7 @@ export function useCreateSubscription() {
           status: "active",
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -222,7 +222,7 @@ export function useUpdateSubscription() {
         .update(updates as never)
         .eq("id", subscriptionId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -246,7 +246,7 @@ export function useCancelSubscription() {
         })
         .eq("id", subscriptionId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;

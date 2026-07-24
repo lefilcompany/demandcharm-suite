@@ -154,7 +154,7 @@ export function useAddBoardMember() {
           role: role,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -227,7 +227,7 @@ export function useUpdateBoardMemberRole() {
         .update({ role: newRole })
         .eq("id", memberId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 

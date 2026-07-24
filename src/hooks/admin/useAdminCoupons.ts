@@ -46,7 +46,7 @@ export function useCreateCoupon() {
         .from("trial_coupons" as any)
         .insert({ ...coupon, created_by: user?.id })
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },

@@ -98,7 +98,7 @@ export function useCreateTeam() {
           created_by: userId,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (teamError) throw teamError;
 

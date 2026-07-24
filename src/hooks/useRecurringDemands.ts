@@ -75,7 +75,7 @@ export function useCreateRecurringDemand() {
           next_run_date: nextRunDate,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -129,7 +129,7 @@ export function useUpdateRecurringDemand() {
         .update(updateData as never)
         .eq("id", id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;

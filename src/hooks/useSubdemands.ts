@@ -246,7 +246,7 @@ export function useAddSubdemand() {
           service_id: serviceId || null,
         })
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },

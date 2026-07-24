@@ -52,7 +52,7 @@ export function useCreateNoteTag() {
           color: data.color || "#6366f1",
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (error.code === "23505") {

@@ -89,7 +89,7 @@ export function useUploadRequestAttachment() {
           subdemand_index: subdemandIndex ?? null,
         } as any)
         .select()
-        .single();
+        .maybeSingle();
 
       if (dbError) throw dbError;
       return data;

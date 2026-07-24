@@ -238,7 +238,7 @@ export function useCreateDemandRequest() {
           subdemands_plan: subdemands_plan as any,
         } as any)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -354,7 +354,7 @@ export function useUpdateDemandRequest() {
         .update(patch as any)
         .eq("id", id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return result;

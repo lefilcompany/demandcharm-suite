@@ -34,7 +34,7 @@ export function useSyncManager() {
             .from(table as 'demands')
             .insert(insertData as any)
             .select()
-            .single();
+            .maybeSingle();
           
           if (error) throw error;
           

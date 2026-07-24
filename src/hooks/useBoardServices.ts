@@ -147,7 +147,7 @@ export function useUpdateBoardServiceLimit() {
         .update({ monthly_limit: monthlyLimit })
         .eq("id", id)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;

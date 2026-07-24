@@ -115,7 +115,7 @@ export function useAddAssignee() {
           user_id: userId,
         })
         .select("is_primary")
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return { demandId, userId, isPrimary: !!(data as { is_primary?: boolean })?.is_primary };
