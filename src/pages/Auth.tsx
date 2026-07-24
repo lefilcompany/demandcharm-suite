@@ -666,7 +666,7 @@ export default function Auth() {
               {/* Shared fixed header: title + Google button + divider.
                   Hidden when the signup success screen is showing so it can render its own layout. */}
               {!(activeTab === "signup" && signupSuccessEmail) && (
-                <div className="space-y-3.5 lg:shrink-0">
+                <div className="space-y-3.5 lg:h-[154px] lg:shrink-0 lg:overflow-hidden">
                   <div className="text-center space-y-1.5 h-[58px] flex flex-col items-center justify-center">
                     <h1 className="text-[26px] leading-tight font-semibold tracking-tight text-foreground">
                       {activeTab === "login" ? "Entrar na sua conta" : "Criar sua conta"}
@@ -701,7 +701,7 @@ export default function Auth() {
                       <span className="w-full border-t border-border/50" />
                     </div>
                     <div className="relative flex justify-center text-[11px]">
-                      <span className="bg-background px-3 text-muted-foreground/80">
+                      <span className="w-[180px] bg-background px-3 text-center text-muted-foreground/80">
                         {activeTab === "login" ? "ou entre com seu e-mail" : "ou crie sua conta com e-mail"}
                       </span>
                     </div>
@@ -709,7 +709,7 @@ export default function Auth() {
                 </div>
               )}
 
-              <TabsContent value="login" className="mt-3.5 space-y-3.5">
+              <TabsContent value="login" className="mt-3.5 space-y-3.5 lg:flex-1 lg:min-h-0">
                 {loginStep === "email" ? (
                   <form onSubmit={handleEmailContinue} className="space-y-3">
                     <div className="space-y-1.5">
@@ -1133,7 +1133,7 @@ export default function Auth() {
               </DialogContent>
             </Dialog>
 
-            <p className="text-center text-[11px] text-muted-foreground/80 mt-6 leading-relaxed">
+            <p className="text-center text-[11px] text-muted-foreground/80 mt-6 leading-relaxed lg:shrink-0">
               Ao continuar, você concorda com nossa{" "}
               <a href="/privacy-policy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>{" "}
               e{" "}
