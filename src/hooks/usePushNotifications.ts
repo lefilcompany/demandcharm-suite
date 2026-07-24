@@ -185,26 +185,34 @@ export function usePushNotifications() {
         setPermissionStatus(
           typeof Notification !== "undefined" ? Notification.permission : null,
         );
+        const techMessage = result.error || "(sem detalhes técnicos)";
+        console.error("[push] enable failed", { reason: result.reason, error: techMessage });
+        setLastError({ reason: result.reason, message: techMessage });
         switch (result.reason) {
           case "permission-denied":
-            toast.error("Permissão negada. Habilite nas configurações do navegador.");
+            toast.error("Permissão negada pelo navegador. Abra as configurações do site e permita notificações.");
             break;
           case "insecure-context":
-            toast.error("Push requer HTTPS.");
+            toast.error("Push requer HTTPS. Acesse a versão publicada em vez do preview local.");
             break;
           case "missing-config":
             setConfigStatus("missing");
             setConfigMissing(result.error ? result.error.split(", ") : ["firebase-config"]);
-            toast.error("Configuração FCM incompleta neste ambiente.");
+            toast.error(`Configuração FCM incompleta: ${techMessage}`);
             break;
           case "unsupported":
-            toast.error("Notificações push não suportadas neste navegador.");
+            toast.error("Este navegador não suporta notificações push (tente Chrome/Edge/Firefox atualizados).");
             break;
           case "service-worker-error":
-            toast.error("Não foi possível ativar o service worker de notificações.");
+            toast.error(`Falha ao registrar o service worker do FCM: ${techMessage}`);
+            break;
+          case "token-error":
+            toast.error(
+              `FCM recusou emitir o token (${techMessage}). Verifique restrições da API key no Google Cloud.`,
+            );
             break;
           default:
-            toast.error("Erro ao ativar notificações push");
+            toast.error(`Erro ao ativar notificações push: ${result.reason} — ${techMessage}`);
         }
         return null;
       }
@@ -212,9 +220,12 @@ export function usePushNotifications() {
       const registration = await registerToken(result.token, deviceId, navigator.userAgent);
       if (!registration.ok) {
         console.error("[push] server registration failed", registration.error);
-        toast.error("Não foi possível registrar o dispositivo. Tente novamente.");
+        setLastError({ reason: "server-registration", message: registration.error || "erro desconhecido" });
+        toast.error(`Não foi possível registrar o dispositivo no servidor: ${registration.error || "erro desconhecido"}`);
         return null;
       }
+
+      setLastError(null);
 
       setFcmToken(result.token);
       setPermissionStatus("granted");
