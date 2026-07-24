@@ -199,11 +199,15 @@ export function useUpdateBoard() {
         .update(updateData as never)
         .eq("id", input.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Erro ao atualizar quadro:", error);
         throw new Error(error.message || "Erro ao atualizar quadro");
+      }
+
+      if (!data) {
+        throw new Error("Não foi possível atualizar o quadro. Verifique se você tem permissão.");
       }
 
       return data as Board;
