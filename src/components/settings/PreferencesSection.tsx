@@ -20,8 +20,11 @@ export function PreferencesSection() {
   const handleNotifToggle = (checked: boolean) => {
     const next: NotificationPreferences = {
       ...preferences,
-      emailNotifications: checked,
-      pushNotifications: checked,
+      channels: {
+        email: { ...preferences.channels.email, enabled: checked },
+        push: { ...preferences.channels.push, enabled: checked },
+        inapp: { ...preferences.channels.inapp, enabled: checked },
+      },
     };
     updatePreferences(next);
     toast.success(t("toast.settingsSaved"));
@@ -33,7 +36,10 @@ export function PreferencesSection() {
     toast.success(t("toast.languageUpdated"));
   };
 
-  const notifEnabled = preferences.emailNotifications || preferences.pushNotifications;
+  const notifEnabled =
+    preferences.channels.email.enabled ||
+    preferences.channels.push.enabled ||
+    preferences.channels.inapp.enabled;
 
   return (
     <SectionShell icon={Palette} title="Aparência e Idioma" description="Personalize sua experiência">

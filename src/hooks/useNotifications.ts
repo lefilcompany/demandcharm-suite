@@ -86,7 +86,7 @@ export function useNotifications() {
   const isInitialMount = useRef(true);
   const channelInstanceId = useRef(createRealtimeInstanceId());
   const { preferences } = useNotificationPreferences();
-  const pushEnabled = preferences.pushNotifications !== false;
+  const pushEnabled = preferences.channels.inapp.enabled !== false;
 
   // Request permission on mount
   useEffect(() => {

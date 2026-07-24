@@ -22,6 +22,7 @@ import { extractMentionedUserIds } from "@/lib/mentionUtils";
 import { buildPublicDemandUrl } from "@/lib/demandShareUtils";
 import { sendCommentPushNotification, sendMentionPushNotification } from "@/hooks/useSendPushNotification";
 import { useSendEmail } from "@/hooks/useSendEmail";
+import { filterRecipientsByChannel } from "@/lib/notificationDispatch";
 
 interface DemandChatProps {
   demandId: string;
@@ -256,35 +257,49 @@ export function DemandChat({
       const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
       const name = profile?.full_name || "Alguém";
 
-      const notifications = notifyIds.map((uid) => ({
-        user_id: uid,
-        title: "Nova mensagem",
-        message: `${name} enviou uma mensagem na demanda "${demandTitle}"`,
-        type: "info",
-        link: `/demands/${demandId}`,
-      }));
-      await supabase.from("notifications").insert(notifications);
+      // Filtra por canal + escopo do quadro (assignees ganham prioridade)
+      const filtered = await filterRecipientsByChannel({
+        recipientIds: notifyIds,
+        type: "demandComment",
+        boardId,
+        demandId,
+      });
 
-      sendCommentPushNotification({
-        userIds: notifyIds, demandId, demandTitle, commenterName: name, commentPreview: content,
-      }).catch(console.error);
+      if (filtered.inapp.length > 0) {
+        const notifications = filtered.inapp.map((uid) => ({
+          user_id: uid,
+          title: "Nova mensagem",
+          message: `${name} enviou uma mensagem na demanda "${demandTitle}"`,
+          type: "info",
+          link: `/demands/${demandId}`,
+        }));
+        await supabase.from("notifications").insert(notifications);
+      }
 
-      const publicUrl = await buildPublicDemandUrl(demandId, user.id);
-      for (const uid of notifyIds) {
-        sendEmail.mutate({
-          to: uid,
-          subject: `💬 Nova mensagem em "${demandTitle}"`,
-          template: "notification",
-          templateData: {
-            title: "Nova mensagem na demanda",
-            message: `${name} enviou uma mensagem na demanda "${demandTitle}":\n\n"${content.substring(0, 200)}"`,
-            actionUrl: publicUrl, actionText: "Ver demanda", type: "info",
-          },
-        });
+      if (filtered.push.length > 0) {
+        sendCommentPushNotification({
+          userIds: filtered.push, demandId, demandTitle, commenterName: name, commentPreview: content,
+        }).catch(console.error);
+      }
+
+      if (filtered.email.length > 0) {
+        const publicUrl = await buildPublicDemandUrl(demandId, user.id);
+        for (const uid of filtered.email) {
+          sendEmail.mutate({
+            to: uid,
+            subject: `💬 Nova mensagem em "${demandTitle}"`,
+            template: "notification",
+            templateData: {
+              title: "Nova mensagem na demanda",
+              message: `${name} enviou uma mensagem na demanda "${demandTitle}":\n\n"${content.substring(0, 200)}"`,
+              actionUrl: publicUrl, actionText: "Ver demanda", type: "info",
+            },
+          });
+        }
       }
     }
 
-    // Mentions - in-app notification + push + email
+    // Mentions - always high-priority: filtramos apenas por canal/tipo, sem escopo de quadro
     const mentionedIds = extractMentionedUserIds(content).filter((id) => id !== user.id);
     if (mentionedIds.length > 0) {
       const { data: p } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
@@ -302,42 +317,45 @@ export function DemandChat({
       }
 
       const eligibleMentionIds = Array.from(new Set((eligibleMembers || []).map((member) => member.user_id)));
+      if (eligibleMentionIds.length === 0) return;
 
-      if (eligibleMentionIds.length === 0) {
-        return;
+      const filtered = await filterRecipientsByChannel({
+        recipientIds: eligibleMentionIds,
+        type: "demandMention",
+        boardId,
+        demandId,
+      });
+
+      if (filtered.inapp.length > 0) {
+        const mentionNotifications = filtered.inapp.map((uid) => ({
+          user_id: uid,
+          title: "Você foi mencionado",
+          message: `${mName} mencionou você na demanda "${demandTitle.substring(0, 100)}"`,
+          type: "info",
+          link: `/demands/${demandId}`,
+        }));
+        const { error: mentionInsertError } = await supabase.from("notifications").insert(mentionNotifications);
+        if (mentionInsertError) console.error("Erro ao criar notificações de menção:", mentionInsertError);
       }
 
-      const mentionNotifications = eligibleMentionIds.map((uid) => ({
-        user_id: uid,
-        title: "Você foi mencionado",
-        message: `${mName} mencionou você na demanda "${demandTitle.substring(0, 100)}"`,
-        type: "info",
-        link: `/demands/${demandId}`,
-      }));
-
-      const { error: mentionInsertError } = await supabase.from("notifications").insert(mentionNotifications);
-      if (mentionInsertError) {
-        console.error("Erro ao criar notificações de menção:", mentionInsertError);
-      }
-
-      // FCM push for mentions
-      for (const uid of eligibleMentionIds) {
+      for (const uid of filtered.push) {
         sendMentionPushNotification({ mentionedUserId: uid, demandId, demandTitle, mentionerName: mName, boardName }).catch(console.error);
       }
 
-      // Send email to mentioned users
-      const publicUrl = await buildPublicDemandUrl(demandId, user.id);
-      for (const uid of eligibleMentionIds) {
-        sendEmail.mutate({
-          to: uid,
-          subject: `💬 Você foi mencionado em "${demandTitle}"`,
-          template: "notification",
-          templateData: {
-            title: "Você foi mencionado",
-            message: `${mName} mencionou você na demanda "${demandTitle}":\n\n"${content.substring(0, 200)}"`,
-            actionUrl: publicUrl, actionText: "Ver demanda", type: "info",
-          },
-        });
+      if (filtered.email.length > 0) {
+        const publicUrl = await buildPublicDemandUrl(demandId, user.id);
+        for (const uid of filtered.email) {
+          sendEmail.mutate({
+            to: uid,
+            subject: `💬 Você foi mencionado em "${demandTitle}"`,
+            template: "notification",
+            templateData: {
+              title: "Você foi mencionado",
+              message: `${mName} mencionou você na demanda "${demandTitle}":\n\n"${content.substring(0, 200)}"`,
+              actionUrl: publicUrl, actionText: "Ver demanda", type: "info",
+            },
+          });
+        }
       }
     }
   };

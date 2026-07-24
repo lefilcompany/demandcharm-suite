@@ -34,6 +34,7 @@ import { KanbanAdjustmentDialog } from "@/components/KanbanAdjustmentDialog";
 import { ApprovalNotifyDialog } from "@/components/ApprovalNotifyDialog";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import { notifyApproval, approvalKindFromStatusName } from "@/lib/approvalNotifications";
+import { fetchPreferencesForUsers, shouldNotifyUser, filterRecipientsByChannel } from "@/lib/notificationDispatch";
 import { useBoardMembers } from "@/hooks/useBoardMembers";
 import { toast } from "sonner";
 import { useAdjustmentCounts, AdjustmentInfo } from "@/hooks/useAdjustmentCount";
@@ -1024,22 +1025,31 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
             const importantStatuses = ["Entregue", "Aprovação do Cliente", "Em Ajuste"];
             if (importantStatuses.includes(columnKey) && demand.created_by && demand.created_by !== user?.id) {
               try {
-                const statusEmoji = columnKey === "Entregue" ? "✅" : columnKey === "Em Ajuste" ? "🔧" : "📋";
-                const publicUrl = await buildPublicDemandUrl(demand.id, user?.id || "");
-                await supabase.functions.invoke("send-email", {
-                  body: {
-                    to: demand.created_by,
-                    subject: `${statusEmoji} Status atualizado: ${demand.title}`,
-                    template: "notification",
-                    templateData: {
-                      title: "Status da Demanda Atualizado",
-                      message: `A demanda "${demand.title}" mudou de "${previousStatusName}" para "${columnKey}".`,
-                      actionUrl: publicUrl,
-                      actionText: "Ver Demanda",
-                      type: columnKey === "Entregue" ? "success" : columnKey === "Em Ajuste" ? "warning" : "info",
-                    },
-                  },
+                const creatorId = demand.created_by;
+                const isCreatorAssigned = (demand.demand_assignees || []).some((a: any) => a.user_id === creatorId);
+                const prefsMap = await fetchPreferencesForUsers([creatorId]);
+                const prefs = prefsMap.get(creatorId)!;
+                const wantEmail = shouldNotifyUser(prefs, {
+                  channel: "email", type: "demandStatusChanged", boardId, isUserAssigned: isCreatorAssigned,
                 });
+                if (wantEmail) {
+                  const statusEmoji = columnKey === "Entregue" ? "✅" : columnKey === "Em Ajuste" ? "🔧" : "📋";
+                  const publicUrl = await buildPublicDemandUrl(demand.id, user?.id || "");
+                  await supabase.functions.invoke("send-email", {
+                    body: {
+                      to: creatorId,
+                      subject: `${statusEmoji} Status atualizado: ${demand.title}`,
+                      template: "notification",
+                      templateData: {
+                        title: "Status da Demanda Atualizado",
+                        message: `A demanda "${demand.title}" mudou de "${previousStatusName}" para "${columnKey}".`,
+                        actionUrl: publicUrl,
+                        actionText: "Ver Demanda",
+                        type: columnKey === "Entregue" ? "success" : columnKey === "Em Ajuste" ? "warning" : "info",
+                      },
+                    },
+                  });
+                }
               } catch (emailError) {
                 console.error("Erro ao enviar email de status:", emailError);
               }
@@ -1236,22 +1246,31 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
             const importantStatuses = ["Entregue", "Aprovação do Cliente", "Em Ajuste"];
             if (importantStatuses.includes(newStatusKey) && demand.created_by && demand.created_by !== user?.id) {
               try {
-                const statusEmoji = newStatusKey === "Entregue" ? "✅" : newStatusKey === "Em Ajuste" ? "🔧" : "📋";
-                const publicUrl = await buildPublicDemandUrl(demand.id, user?.id || "");
-                await supabase.functions.invoke("send-email", {
-                  body: {
-                    to: demand.created_by,
-                    subject: `${statusEmoji} Status atualizado: ${demand.title}`,
-                    template: "notification",
-                    templateData: {
-                      title: "Status da Demanda Atualizado",
-                      message: `A demanda "${demand.title}" mudou de "${previousStatusName}" para "${newStatusKey}".`,
-                      actionUrl: publicUrl,
-                      actionText: "Ver Demanda",
-                      type: newStatusKey === "Entregue" ? "success" : newStatusKey === "Em Ajuste" ? "warning" : "info",
-                    },
-                  },
+                const creatorId = demand.created_by;
+                const isCreatorAssigned = (demand.demand_assignees || []).some((a: any) => a.user_id === creatorId);
+                const prefsMap = await fetchPreferencesForUsers([creatorId]);
+                const prefs = prefsMap.get(creatorId)!;
+                const wantEmail = shouldNotifyUser(prefs, {
+                  channel: "email", type: "demandStatusChanged", boardId, isUserAssigned: isCreatorAssigned,
                 });
+                if (wantEmail) {
+                  const statusEmoji = newStatusKey === "Entregue" ? "✅" : newStatusKey === "Em Ajuste" ? "🔧" : "📋";
+                  const publicUrl = await buildPublicDemandUrl(demand.id, user?.id || "");
+                  await supabase.functions.invoke("send-email", {
+                    body: {
+                      to: creatorId,
+                      subject: `${statusEmoji} Status atualizado: ${demand.title}`,
+                      template: "notification",
+                      templateData: {
+                        title: "Status da Demanda Atualizado",
+                        message: `A demanda "${demand.title}" mudou de "${previousStatusName}" para "${newStatusKey}".`,
+                        actionUrl: publicUrl,
+                        actionText: "Ver Demanda",
+                        type: newStatusKey === "Entregue" ? "success" : newStatusKey === "Em Ajuste" ? "warning" : "info",
+                      },
+                    },
+                  });
+                }
               } catch (emailError) {
                 console.error("Erro ao enviar email de status:", emailError);
               }
@@ -1395,17 +1414,23 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
           
           // Notify assignees about completion
           if (!isOffline && demand) {
-            const assigneeIds = demand.demand_assignees?.map(a => a.user_id) || [];
+            const assigneeIds = (demand.demand_assignees?.map(a => a.user_id) || []).filter(id => id !== user?.id);
             if (assigneeIds.length > 0) {
-              const notifications = assigneeIds.filter(id => id !== user?.id).map((userId) => ({
-                user_id: userId,
-                title: `Demanda concluída: ${demand.title}`,
-                message: `O cliente marcou a demanda "${demand.title}" como concluída.`,
-                type: "success",
-                link: `/demands/${demandId}`,
-              }));
-              
-              if (notifications.length > 0) {
+              // Assignees são por definição os próprios responsáveis -> isUserAssigned true
+              const filtered = await filterRecipientsByChannel({
+                recipientIds: assigneeIds,
+                type: "demandStatusChanged",
+                boardId,
+                demandId,
+              });
+              if (filtered.inapp.length > 0) {
+                const notifications = filtered.inapp.map((userId) => ({
+                  user_id: userId,
+                  title: `Demanda concluída: ${demand.title}`,
+                  message: `O cliente marcou a demanda "${demand.title}" como concluída.`,
+                  type: "success",
+                  link: `/demands/${demandId}`,
+                }));
                 await supabase.from("notifications").insert(notifications);
               }
             }
