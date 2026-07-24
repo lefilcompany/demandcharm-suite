@@ -644,15 +644,15 @@ export default function Auth() {
 
       {/* Form Section - Scrollable on mobile */}
       <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background overflow-y-auto lg:h-screen lg:overflow-hidden">
-        <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-8 py-8 lg:px-10 lg:py-10 lg:min-h-0">
-          <div className="w-full max-w-[380px] lg:h-[min(620px,calc(100dvh-5rem))] lg:min-h-0 lg:flex lg:flex-col">
+        <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-8 py-8 lg:px-10 lg:py-5 lg:min-h-0">
+          <div className="w-full max-w-[380px] lg:h-[min(760px,calc(100dvh-3.5rem))] lg:min-h-0 lg:flex lg:flex-col">
             {/* Logo */}
-            <div className="flex justify-center mb-5 lg:shrink-0">
+            <div className="flex justify-center mb-2.5 lg:shrink-0">
               <img alt="SoMA+" src="/lovable-uploads/9889f524-0819-424e-9185-2cc441526116.png" className="h-14 w-auto" />
             </div>
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")} className="w-full lg:min-h-0 lg:flex-1 lg:flex lg:flex-col">
-              <div className="flex justify-center mb-4 lg:shrink-0">
+              <div className="flex justify-center mb-2.5 lg:shrink-0">
                 <TabsList className="inline-flex h-9 bg-muted/70 p-1 rounded-full gap-0.5">
                   <TabsTrigger value="login" className="text-[13px] font-medium rounded-full px-5 h-7 data-[state=active]:bg-background data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.06)] data-[state=active]:text-foreground text-muted-foreground transition-all">
                     Entrar
@@ -666,8 +666,8 @@ export default function Auth() {
               {/* Shared fixed header: title + Google button + divider.
                   Hidden when the signup success screen is showing so it can render its own layout. */}
               {!(activeTab === "signup" && signupSuccessEmail) && (
-                <div className="space-y-3.5 lg:h-[154px] lg:shrink-0 lg:overflow-hidden">
-                  <div className="text-center space-y-1.5 h-[58px] flex flex-col items-center justify-center">
+                <div className="space-y-2.5 lg:h-[132px] lg:shrink-0 lg:overflow-hidden">
+                  <div className="text-center space-y-1 h-[50px] flex flex-col items-center justify-center">
                     <h1 className="text-[26px] leading-tight font-semibold tracking-tight text-foreground">
                       {activeTab === "login" ? "Entrar na sua conta" : "Criar sua conta"}
                     </h1>
