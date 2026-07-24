@@ -277,6 +277,7 @@ export function usePushNotifications() {
     configSource,
     permissionStatus,
     isEnabled: permissionStatus === "granted" && !!fcmToken,
+    lastError,
     refreshConfigStatus,
     enablePushNotifications,
     disablePushNotifications,
