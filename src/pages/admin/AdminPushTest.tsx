@@ -106,6 +106,116 @@ export default function AdminPushTest() {
   const [resetting, setResetting] = useState(false);
   const [fcmSwRegistrations, setFcmSwRegistrations] = useState<FcmSwDiagnostic[]>([]);
   const [fcmSwStatus, setFcmSwStatus] = useState("checando...");
+  const [expectedVapid, setExpectedVapid] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem(EXPECTED_VAPID_STORAGE_KEY) ?? "";
+  });
+  const [vapidValidation, setVapidValidation] = useState<VapidValidation>({ running: false });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (expectedVapid) window.localStorage.setItem(EXPECTED_VAPID_STORAGE_KEY, expectedVapid);
+    else window.localStorage.removeItem(EXPECTED_VAPID_STORAGE_KEY);
+  }, [expectedVapid]);
+
+  const runVapidValidation = async () => {
+    setVapidValidation({ running: true });
+    try {
+      const { data, error } = await supabase.functions.invoke("firebase-public-config");
+      if (error) throw error;
+      const configuredKey = String((data as any)?.vapidKey ?? "").trim();
+      if (!configuredKey) {
+        setVapidValidation({ running: false, configError: "FIREBASE_VAPID_KEY não retornada pela função firebase-public-config." });
+        return;
+      }
+      const configuredFingerprint = (await sha256Hex(configuredKey)).slice(0, 16);
+      const configuredFormat = checkVapidFormat(configuredKey);
+      const expected = expectedVapid.trim();
+      if (!expected) {
+        setVapidValidation({
+          running: false,
+          configured: { key: configuredKey, fingerprint: configuredFingerprint, format: configuredFormat },
+        });
+        return;
+      }
+      const expectedFingerprint = (await sha256Hex(expected)).slice(0, 16);
+      const expectedFormat = checkVapidFormat(expected);
+      setVapidValidation({
+        running: false,
+        configured: { key: configuredKey, fingerprint: configuredFingerprint, format: configuredFormat },
+        expected: { fingerprint: expectedFingerprint, format: expectedFormat },
+        matches: configuredFingerprint === expectedFingerprint,
+      });
+    } catch (err) {
+      setVapidValidation({ running: false, configError: (err as Error)?.message ?? "Falha ao buscar config" });
+    }
+  };
+
+  const vapidBlocksSubscribe =
+    (vapidValidation.configured && !vapidValidation.configured.format.lengthOk) ||
+    (vapidValidation.configured && !vapidValidation.configured.format.ecPrefixOk) ||
+    (vapidValidation.expected && vapidValidation.matches === false);
+
+  const handleEnableGuarded = async () => {
+    if (vapidBlocksSubscribe) {
+      toast.error("VAPID inválida ou não bate com a chave esperada — corrija antes de assinar o push.");
+      return;
+    }
+    await handleEnable();
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const refresh = async () => {
+      if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+        if (!cancelled) setFcmSwStatus("indisponível");
+        return;
+      }
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        const fcmRegs = await Promise.all(
+          regs
+            .filter((reg) => {
+              const script = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "";
+              return script.includes("firebase-messaging-sw.js");
+            })
+            .map(async (reg) => {
+              const worker = reg.active || reg.waiting || reg.installing;
+              const script = worker?.scriptURL || "";
+              const url = script ? new URL(script) : null;
+              let hasPushSubscription: boolean | null = null;
+              try {
+                hasPushSubscription = Boolean(await reg.pushManager.getSubscription());
+              } catch {
+                hasPushSubscription = null;
+              }
+              return {
+                scope: new URL(reg.scope).pathname,
+                scriptPath: url ? url.pathname : "—",
+                hasRuntimeConfig: Boolean(url && url.searchParams.size > 0),
+                state: worker?.state ?? "sem worker",
+                hasPushSubscription,
+              };
+            }),
+        );
+        if (!cancelled) {
+          setFcmSwRegistrations(fcmRegs);
+          setFcmSwStatus(fcmRegs.length ? `${fcmRegs.length} registro(s)` : "nenhum");
+        }
+      } catch (err) {
+        if (!cancelled) setFcmSwStatus((err as Error)?.message || "erro ao ler SW");
+      }
+    };
+
+    void refresh();
+    const interval = window.setInterval(refresh, 3000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
+
 
   const handleEnable = async () => {
     setEnabling(true);
