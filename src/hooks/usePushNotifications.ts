@@ -59,6 +59,7 @@ export function usePushNotifications() {
   const [configSource, setConfigSource] = useState("none");
   const [permissionStatus, setPermissionStatus] =
     useState<NotificationPermission | null>(null);
+  const [lastError, setLastError] = useState<{ reason: string; message: string } | null>(null);
   const deviceIdRef = useRef<string>("");
 
   useEffect(() => {
