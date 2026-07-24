@@ -643,25 +643,30 @@ export default function Auth() {
       </div>
 
       {/* Form Section - Scrollable on mobile */}
-      <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background overflow-y-auto">
-        <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-8 py-8 lg:px-10 lg:py-10">
-          <div className="w-full max-w-[380px]">
-            {/* Logo */}
+      <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background min-h-0 lg:h-screen lg:overflow-hidden">
+        <div className="w-full max-w-[380px] mx-auto flex-1 min-h-0 flex flex-col px-5 sm:px-8 lg:px-10">
+          {/* Fixed top: Logo + Tabs (do not scroll) */}
+          <div className="flex-shrink-0 pt-8 lg:pt-10">
             <div className="flex justify-center mb-5">
               <img alt="SoMA+" src="/lovable-uploads/9889f524-0819-424e-9185-2cc441526116.png" className="h-14 w-auto" />
             </div>
+          </div>
 
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")} className="w-full">
-              <div className="flex justify-center mb-4">
-                <TabsList className="inline-flex h-9 bg-muted/70 p-1 rounded-full gap-0.5">
-                  <TabsTrigger value="login" className="text-[13px] font-medium rounded-full px-5 h-7 data-[state=active]:bg-background data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.06)] data-[state=active]:text-foreground text-muted-foreground transition-all">
-                    Entrar
-                  </TabsTrigger>
-                  <TabsTrigger value="signup" className="text-[13px] font-medium rounded-full px-5 h-7 data-[state=active]:bg-background data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.06)] data-[state=active]:text-foreground text-muted-foreground transition-all">
-                    Cadastrar
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")} className="w-full flex-1 min-h-0 flex flex-col">
+            <div className="flex-shrink-0 flex justify-center mb-4">
+              <TabsList className="inline-flex h-9 bg-muted/70 p-1 rounded-full gap-0.5">
+                <TabsTrigger value="login" className="text-[13px] font-medium rounded-full px-5 h-7 data-[state=active]:bg-background data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.06)] data-[state=active]:text-foreground text-muted-foreground transition-all">
+                  Entrar
+                </TabsTrigger>
+                <TabsTrigger value="signup" className="text-[13px] font-medium rounded-full px-5 h-7 data-[state=active]:bg-background data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.06)] data-[state=active]:text-foreground text-muted-foreground transition-all">
+                  Cadastrar
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* Scrollable content area */}
+            <div className="flex-1 min-h-0 overflow-y-auto pb-8 -mx-1 px-1">
+
 
               {/* Shared header (logo/tabs are above; heading + Google + divider fixed across tabs) */}
               {!(activeTab === "signup" && signupSuccessEmail) && (
@@ -948,7 +953,9 @@ export default function Auth() {
                 </form>
                 )}
               </TabsContent>
-            </Tabs>
+            </div>
+          </Tabs>
+
 
             {/* Password Reset Dialog - 3 steps: email -> 6-digit code -> new password */}
             <Dialog
@@ -1141,6 +1148,6 @@ export default function Auth() {
           </div>
         </div>
       </div>
-    </div>
+
   </>;
 }
