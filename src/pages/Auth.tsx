@@ -643,7 +643,7 @@ export default function Auth() {
       </div>
 
       {/* Form Section - Scrollable on mobile */}
-      <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background min-h-0 lg:h-screen overflow-hidden">
+      <div className="flex-1 lg:w-1/2 xl:w-2/5 flex flex-col bg-background min-h-0 lg:h-screen lg:overflow-hidden">
         <div className="w-full max-w-[380px] mx-auto flex-1 min-h-0 flex flex-col px-5 sm:px-8 lg:px-10">
           {/* Fixed top: Logo + Tabs (do not scroll) */}
           <div className="flex-shrink-0 pt-8 lg:pt-10">
