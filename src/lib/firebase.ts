@@ -43,7 +43,7 @@ interface FirebasePublicConfig {
 type FirebaseConfigCandidate = {
   config: Partial<FirebasePublicConfig>;
   vapidKey: string | null;
-  source: "inline" | "generated" | "supabase";
+  source: "inline" | "generated" | "runtime";
 };
 
 type FirebaseRuntimeConfig = {
@@ -151,7 +151,7 @@ function parseGeneratedAssignment(text: string): unknown {
 }
 
 let generatedConfigPromise: Promise<FirebaseConfigCandidate> | null = null;
-let supabaseConfigPromise: Promise<FirebaseConfigCandidate> | null = null;
+let runtimeConfigPromise: Promise<FirebaseConfigCandidate> | null = null;
 
 async function loadGeneratedCandidate(cacheBust = false): Promise<FirebaseConfigCandidate> {
   if (typeof window === "undefined") return normalizeCandidate(null, "generated");
@@ -169,10 +169,10 @@ async function loadGeneratedCandidate(cacheBust = false): Promise<FirebaseConfig
   }
 }
 
-async function loadSupabaseCandidate(): Promise<FirebaseConfigCandidate> {
+async function loadRuntimeCandidate(): Promise<FirebaseConfigCandidate> {
   const supabaseUrl = stringValue(import.meta.env.VITE_SUPABASE_URL).replace(/\/$/, "");
   const publishableKey = stringValue(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-  if (!supabaseUrl) return normalizeCandidate(null, "supabase");
+  if (!supabaseUrl) return normalizeCandidate(null, "runtime");
 
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 8000);
@@ -188,13 +188,13 @@ async function loadSupabaseCandidate(): Promise<FirebaseConfigCandidate> {
     );
     if (!response.ok) {
       console.warn("[FCM] runtime config endpoint unavailable", response.status);
-      return normalizeCandidate(null, "supabase");
+      return normalizeCandidate(null, "runtime");
     }
-    return normalizeCandidate(await response.json(), "supabase");
+    return normalizeCandidate(await response.json(), "runtime");
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown error";
     console.warn("[FCM] runtime config load failed", message);
-    return normalizeCandidate(null, "supabase");
+    return normalizeCandidate(null, "runtime");
   } finally {
     window.clearTimeout(timeout);
   }
@@ -203,7 +203,7 @@ async function loadSupabaseCandidate(): Promise<FirebaseConfigCandidate> {
 async function resolveRuntimeConfig(forceRefresh = false): Promise<FirebaseRuntimeConfig> {
   if (forceRefresh) {
     generatedConfigPromise = null;
-    supabaseConfigPromise = null;
+    runtimeConfigPromise = null;
   }
 
   const inline = readInlineCandidate();
@@ -214,13 +214,13 @@ async function resolveRuntimeConfig(forceRefresh = false): Promise<FirebaseRunti
   const localRuntime = mergeCandidates([inline, generated]);
   if (localRuntime.missing.length === 0) return localRuntime;
 
-  if (!supabaseConfigPromise) supabaseConfigPromise = loadSupabaseCandidate();
-  const remote = await supabaseConfigPromise;
+  if (!runtimeConfigPromise) runtimeConfigPromise = loadRuntimeCandidate();
+  const remote = await runtimeConfigPromise;
   const runtime = mergeCandidates([inline, generated, remote]);
 
   // Do not permanently cache an incomplete/error response. A later retry can
   // succeed immediately after the Edge Function or its secrets are deployed.
-  if (runtime.missing.length > 0) supabaseConfigPromise = null;
+  if (runtime.missing.length > 0) runtimeConfigPromise = null;
   return runtime;
 }
 
@@ -240,6 +240,10 @@ export async function checkFirebasePushConfig(): Promise<{
 let cachedApp: FirebaseApp | null = null;
 let cachedMessaging: Messaging | null = null;
 let messagingSupportedPromise: Promise<boolean> | null = null;
+
+function clearCachedMessaging(): void {
+  cachedMessaging = null;
+}
 
 function getFirebaseApp(cfg: FirebasePublicConfig | null): FirebaseApp | null {
   if (!cfg) return null;
@@ -347,6 +351,7 @@ async function cleanupStaleFcmRegistrations(expectedScriptHref: string): Promise
 
 async function resetPushSubscription(
   registration: ServiceWorkerRegistration | null,
+  options: { deleteBrowserToken?: boolean } = {},
 ): Promise<void> {
   if (registration) {
     try {
@@ -359,13 +364,16 @@ async function resetPushSubscription(
       console.warn("[FCM] unsubscribe failed", (err as Error)?.message);
     }
   }
-  try {
-    const messaging = await getFirebaseMessaging();
-    if (messaging) {
-      await deleteToken(messaging).catch(() => false);
+  if (options.deleteBrowserToken) {
+    try {
+      const messaging = await getFirebaseMessaging();
+      if (messaging) {
+        await deleteToken(messaging).catch(() => false);
+        clearCachedMessaging();
+      }
+    } catch (err) {
+      console.warn("[FCM] deleteToken during reset failed", (err as Error)?.message);
     }
-  } catch (err) {
-    console.warn("[FCM] deleteToken during reset failed", (err as Error)?.message);
   }
 }
 
@@ -405,7 +413,7 @@ export async function resetPushRegistration(): Promise<void> {
       const script =
         reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "";
       if (!script.includes("firebase-messaging-sw.js")) continue;
-      await resetPushSubscription(reg);
+      await resetPushSubscription(reg, { deleteBrowserToken: true });
       try {
         await reg.unregister();
       } catch (err) {
@@ -415,7 +423,7 @@ export async function resetPushRegistration(): Promise<void> {
   } catch (err) {
     console.warn("[FCM] resetPushRegistration failed", (err as Error)?.message);
   } finally {
-    cachedMessaging = null;
+    clearCachedMessaging();
   }
 }
 
@@ -456,20 +464,22 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
     };
   }
 
-  const messaging = await getFirebaseMessaging(runtime);
-  if (!messaging) return { ok: false, reason: "unsupported" };
-
   // Defensive: proactively clear any stale PushSubscription (e.g. bound to a
   // previous VAPID key) before requesting a new token. The push service rejects
   // re-subscription with a different applicationServerKey until the previous
   // subscription is unsubscribed.
   await resetPushSubscription(registration);
+  clearCachedMessaging();
 
-  const tryGetToken = () =>
-    getToken(messaging, {
-      vapidKey: runtime.vapidKey!,
+  const tryGetToken = async () => {
+    if (!runtime.vapidKey) throw new Error("missing VAPID public key");
+    const messaging = await getFirebaseMessaging(runtime);
+    if (!messaging) throw new Error("messaging unsupported after reset");
+    return getToken(messaging, {
+      vapidKey: runtime.vapidKey,
       serviceWorkerRegistration: registration,
     });
+  };
 
   const isSubscribeError = (msg: string) =>
     /token-subscribe-failed|push service|Registration failed|AbortError/i.test(msg);
@@ -483,6 +493,7 @@ export async function requestNotificationPermission(): Promise<PushRegistrationR
       if (!isSubscribeError(msg)) throw err;
       console.warn("[FCM] first getToken failed, resetting and retrying", msg);
       await resetPushSubscription(registration);
+      clearCachedMessaging();
       token = await tryGetToken();
     }
     if (!token) return { ok: false, reason: "token-error", error: "empty token" };
