@@ -16,6 +16,14 @@ type ConfigCheckResult = {
   ready: boolean;
   missing: string[];
   source: string;
+  diagnostics?: {
+    projectId: string;
+    messagingSenderIdSuffix: string;
+    appIdPrefix: string;
+    vapidKeyHash: string;
+    serviceAccountProjectConfigured: boolean | null;
+    serviceAccountProjectMatchesConfig: boolean | null;
+  } | null;
 };
 
 function getOrCreateDeviceId(): string {
@@ -58,6 +66,8 @@ export function usePushNotifications() {
   );
   const [configMissing, setConfigMissing] = useState<string[]>([]);
   const [configSource, setConfigSource] = useState("none");
+  const [configDiagnostics, setConfigDiagnostics] =
+    useState<ConfigCheckResult["diagnostics"]>(null);
   const [permissionStatus, setPermissionStatus] =
     useState<NotificationPermission | null>(null);
   const [lastError, setLastError] = useState<{ reason: string; message: string } | null>(null);
@@ -81,6 +91,7 @@ export function usePushNotifications() {
       setConfigStatus("missing");
       setConfigMissing(result.missing);
       setConfigSource(result.source);
+      setConfigDiagnostics(null);
       return result;
     }
 
@@ -90,6 +101,7 @@ export function usePushNotifications() {
       setConfigStatus(result.ready ? "ready" : "missing");
       setConfigMissing(result.missing);
       setConfigSource(result.source);
+      setConfigDiagnostics(result.diagnostics);
       return result;
     } catch (err) {
       console.error("[push] config check failed", (err as Error)?.message);
@@ -101,6 +113,7 @@ export function usePushNotifications() {
       setConfigStatus("missing");
       setConfigMissing(result.missing);
       setConfigSource(result.source);
+      setConfigDiagnostics(null);
       return result;
     }
   }, [isSupported]);
@@ -204,13 +217,25 @@ export function usePushNotifications() {
           case "unsupported":
             toast.error("Este navegador não suporta notificações push (tente Chrome/Edge/Firefox atualizados).");
             break;
-          case "service-worker-error":
+          case "service-worker-failed":
             toast.error(`Falha ao registrar o service worker do FCM: ${techMessage}`);
             break;
-          case "token-error":
+          case "push-subscribe-failed":
             toast.error(
-              `FCM recusou emitir o token (${techMessage}). Verifique restrições da API key no Google Cloud.`,
+              `O navegador recusou criar a inscrição push (${techMessage}). Use “Resetar registro FCM” e tente novamente.`,
             );
+            break;
+          case "vapid-invalid":
+            toast.error(`Chave VAPID incompatível com este projeto Firebase: ${techMessage}`);
+            break;
+          case "api-key-rejected":
+            toast.error(`Firebase recusou a API key pública: ${techMessage}`);
+            break;
+          case "firebase-registration-failed":
+            toast.error(`Falha no registro do Firebase Messaging: ${techMessage}`);
+            break;
+          case "token-error":
+            toast.error(`FCM recusou emitir o token: ${techMessage}`);
             break;
           default:
             toast.error(`Erro ao ativar notificações push: ${result.reason} — ${techMessage}`);
@@ -232,6 +257,7 @@ export function usePushNotifications() {
       setPermissionStatus("granted");
       setConfigStatus("ready");
       setConfigMissing([]);
+      void refreshConfigStatus();
       toast.success("Notificações push ativadas com sucesso!");
       return result.token;
     } catch (err) {
@@ -301,6 +327,7 @@ export function usePushNotifications() {
     configStatus,
     configMissing,
     configSource,
+    configDiagnostics,
     permissionStatus,
     isEnabled: permissionStatus === "granted" && !!fcmToken,
     lastError,
