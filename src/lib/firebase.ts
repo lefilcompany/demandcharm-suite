@@ -111,10 +111,11 @@ function normalizeCandidate(value: unknown): FirebaseConfigCandidate {
               ? diagnosticsRecord.serviceAccountProjectConfigured
               : undefined,
           serviceAccountProjectMatchesConfig:
-            typeof diagnosticsRecord.serviceAccountProjectMatchesConfig === "boolean" ||
-            diagnosticsRecord.serviceAccountProjectMatchesConfig === null
+            typeof diagnosticsRecord.serviceAccountProjectMatchesConfig === "boolean"
               ? diagnosticsRecord.serviceAccountProjectMatchesConfig
-              : undefined,
+              : diagnosticsRecord.serviceAccountProjectMatchesConfig === null
+                ? null
+                : undefined,
         }
       : undefined,
   };
