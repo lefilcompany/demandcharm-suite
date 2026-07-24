@@ -1,27 +1,54 @@
-## Problema
+## Objetivo
+Fazer o push FCM funcionar de forma estável, seguindo a lógica simples do projeto original SOMA+: registrar/reutilizar o service worker, chamar `getToken()` sem reset obrigatório e usar reset apenas como recuperação quando houver erro real de inscrição.
 
-O quadro **CLIENTE: COMUNIDADE - Magalu** (`9fb1cdaf-b0ca-4271-80ae-1e12304c9007`) está usando 6 status "globais" antigos (registros em `demand_statuses` com `board_id = NULL`), enquanto o resto do sistema já migrou para status escopados por quadro (com `board_id` preenchido). O frontend filtra os status pelo `board_id` do quadro atual — como esses status não têm `board_id`, o Kanban não encontra nenhuma coluna válida e todas as demandas do quadro (inclusive a #284 "Novas regras de pontuação da mais engajada do mês") ficam invisíveis.
+## Plano de implementação
 
-Confirmado no banco:
-- Demanda 284 existe, `archived = false`, `status_id = A Iniciar (global)`.
-- Todos os 6 status ligados a esse quadro via `board_statuses` têm `board_id = NULL`.
-- Existem 281 demandas ativas no quadro, todas apontando para status globais.
-- Uma demanda extra aponta para um status "Entregue" órfão (`3f9b29d9…`) que nem está em `board_statuses` deste quadro.
+1. **Simplificar a fonte de configuração Firebase**
+   - Manter a configuração pública vindo da função `firebase-public-config` em runtime.
+   - Remover do fluxo normal a dependência de `VITE_FIREBASE_*`, `firebase-config.generated.js`, script gerador e plugin Vite de Firebase.
+   - Atualizar a documentação para refletir que não é necessário duplicar secrets como variáveis Vite.
 
-## Solução (uma migration)
+2. **Corrigir o service worker FCM**
+   - Ajustar `public/firebase-messaging-sw.js` para usar somente a configuração passada pela query string do registro dedicado.
+   - Remover o fallback para `/firebase-config.generated.js`, que hoje pode gerar o log conflitante `Missing Firebase config`.
+   - Manter o FCM worker separado do PWA worker no escopo `/firebase-cloud-messaging-push-scope/`.
 
-1. Criar 6 novos `demand_statuses` com `board_id = 9fb1cdaf…`, replicando nome/cor/posição dos globais atuais:
-   - A Iniciar, Fazendo, Em Ajuste, Aprovação Interna, Aprovação do Cliente, Entregue.
-2. Atualizar `board_statuses` do quadro para apontar para os novos IDs (mantendo posição e `is_active`).
-3. Atualizar `demands.status_id` de todas as demandas do quadro para o novo status equivalente (mapeamento por nome).
-4. Mapear a demanda órfã com status `3f9b29d9…` para o novo "Entregue" do quadro.
-5. Não excluir os status globais antigos — outros quadros legados podem depender deles; apenas desvincular deste quadro.
+3. **Corrigir o fluxo de geração do token**
+   - Em `src/lib/firebase.ts`, remover o reset automático antes da primeira chamada a `getToken()`.
+   - Fluxo normal: carregar config runtime → registrar/reutilizar SW FCM → chamar `getToken()` uma vez → salvar token.
+   - Se a primeira tentativa falhar por erro de inscrição push, executar um hard reset controlado e tentar somente mais uma vez.
+   - Fazer o reset controlar ordem e espera: `deleteToken()` quando possível, `PushSubscription.unsubscribe()` como fallback, unregister apenas de workers FCM antigos/inválidos e pequeno aguardo antes do novo registro.
 
-Após a migration, a demanda 284 e as demais reaparecem no Kanban com seus status corretos, sem alteração de dados de negócio (título, atribuições, prazos, histórico permanecem intactos).
+4. **Garantir apenas um FCM worker válido**
+   - Remover registros antigos de `firebase-messaging-sw.js` com escopo `/`.
+   - Remover registros FCM sem query string de configuração.
+   - Não tocar no service worker principal da PWA.
+   - Preservar o botão manual “Resetar registro FCM” para recuperação explícita.
 
-## Verificação
+5. **Melhorar diagnóstico e mensagens de erro**
+   - Trocar o erro genérico “Verifique restrições da API key” por razões específicas: `push-subscribe-failed`, `vapid-invalid`, `firebase-registration-failed`, `api-key-rejected`, `service-worker-failed`, etc.
+   - Melhorar `/admin/push-test` para exibir por registro: `scope`, `scriptURL`, se possui query config, estado (`installing/waiting/active`) e se existe `PushSubscription`.
+   - Exibir fingerprints seguros da config pública, sem revelar secrets: `projectId`, últimos 4 dígitos do sender ID, prefixo do appId e hash curto da VAPID.
 
-Após aplicar:
-- `SELECT count(*) FROM demands WHERE board_id = '9fb1cdaf…' AND archived = false` continua 281.
-- Todos os `status_id` das demandas do quadro passam a existir em `demand_statuses` com o `board_id` do quadro.
-- A demanda 284 aparece na coluna "A Iniciar".
+6. **Validação backend sem expor segredos**
+   - Conferir o que a função `send-push-notification` já valida e, se necessário, expor no diagnóstico administrativo apenas um status sanitizado de compatibilidade entre `FIREBASE_PROJECT_ID` e o `project_id` da service account.
+   - Não revelar service account, chaves privadas ou valores completos de secrets.
+
+7. **Testes de aceite**
+   - Confirmar que `firebase-public-config` responde 200.
+   - Confirmar que não aparece mais `Missing Firebase config` no fluxo correto.
+   - Confirmar que existe apenas um FCM worker dedicado.
+   - Confirmar que a primeira ativação gera token sem reset prévio.
+   - Confirmar que uma segunda ativação reutiliza/renova token sem cancelar a inscrição válida.
+   - Confirmar que o token é salvo em `fcm_tokens` e que o teste em `/admin/push-test` retorna `sent: 1` quando há dispositivo elegível.
+
+## Arquivos previstos
+- `src/lib/firebase.ts`
+- `public/firebase-messaging-sw.js`
+- `src/hooks/usePushNotifications.ts`
+- `src/pages/admin/AdminPushTest.tsx`
+- `vite.config.ts`
+- `package.json`
+- `.env.example`
+- `docs/firebase-fcm.md`
+- Possivelmente `supabase/functions/firebase-public-config/index.ts` ou `send-push-notification/index.ts` apenas para diagnóstico sanitizado, se necessário.
