@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { deleteApp, initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import {
   deleteToken,
   getMessaging,
@@ -12,6 +12,7 @@ import {
 const FCM_SW_URL = "/firebase-messaging-sw.js";
 const FCM_SW_SCOPE = "/firebase-cloud-messaging-push-scope/";
 const FIREBASE_PUBLIC_CONFIG_FUNCTION = "firebase-public-config";
+const FCM_APP_NAME = "soma-fcm";
 
 export type PushRegistrationErrorReason =
   | "unsupported"
@@ -232,6 +233,7 @@ export async function checkFirebasePushConfig(): Promise<{
 }
 
 let cachedApp: FirebaseApp | null = null;
+let cachedAppKey = "";
 let cachedMessaging: Messaging | null = null;
 let messagingSupportedPromise: Promise<boolean> | null = null;
 
@@ -239,17 +241,26 @@ function clearCachedMessaging(): void {
   cachedMessaging = null;
 }
 
-function getFirebaseApp(cfg: FirebasePublicConfig | null): FirebaseApp | null {
+async function getFirebaseApp(cfg: FirebasePublicConfig | null): Promise<FirebaseApp | null> {
   if (!cfg) return null;
-  if (cachedApp) return cachedApp;
-  cachedApp = getApps().length ? getApp() : initializeApp(cfg);
+  const appKey = `${cfg.projectId}:${cfg.appId}:${cfg.messagingSenderId}`;
+  if (cachedApp && cachedAppKey === appKey) return cachedApp;
+
+  const existing = getApps().find((app) => app.name === FCM_APP_NAME);
+  if (existing && cachedAppKey !== appKey) {
+    await deleteApp(existing).catch(() => undefined);
+    clearCachedMessaging();
+  }
+
+  cachedApp = getApps().find((app) => app.name === FCM_APP_NAME) ?? initializeApp(cfg, FCM_APP_NAME);
+  cachedAppKey = appKey;
   return cachedApp;
 }
 
 async function getFirebaseMessaging(runtime?: FirebaseRuntimeConfig): Promise<Messaging | null> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
   const resolved = runtime ?? (await resolveRuntimeConfig());
-  const app = getFirebaseApp(resolved.config);
+  const app = await getFirebaseApp(resolved.config);
   if (!app) return null;
 
   if (!messagingSupportedPromise) messagingSupportedPromise = isSupported().catch(() => false);
