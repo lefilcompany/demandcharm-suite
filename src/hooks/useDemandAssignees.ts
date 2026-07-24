@@ -114,15 +114,21 @@ export function useAddAssignee() {
           demand_id: demandId,
           user_id: userId,
         })
-        .select()
+        .select("is_primary")
         .single();
 
       if (error) throw error;
-      return data;
+      return { demandId, userId, isPrimary: !!(data as { is_primary?: boolean })?.is_primary };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["demand-assignees", variables.demandId] });
       queryClient.invalidateQueries({ queryKey: ["demands"] });
+      void dispatchAssigneeNotifications(result.demandId, [
+        {
+          userId: result.userId,
+          event: result.isPrimary ? "assigned_primary" : "assigned_follower",
+        },
+      ]);
     },
   });
 }
@@ -139,10 +145,14 @@ export function useRemoveAssignee() {
         .eq("user_id", userId);
 
       if (error) throw error;
+      return { demandId, userId };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["demand-assignees", variables.demandId] });
       queryClient.invalidateQueries({ queryKey: ["demands"] });
+      void dispatchAssigneeNotifications(result.demandId, [
+        { userId: result.userId, event: "unassigned" },
+      ]);
     },
   });
 }
