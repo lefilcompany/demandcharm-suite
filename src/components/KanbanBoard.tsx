@@ -1414,17 +1414,23 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
           
           // Notify assignees about completion
           if (!isOffline && demand) {
-            const assigneeIds = demand.demand_assignees?.map(a => a.user_id) || [];
+            const assigneeIds = (demand.demand_assignees?.map(a => a.user_id) || []).filter(id => id !== user?.id);
             if (assigneeIds.length > 0) {
-              const notifications = assigneeIds.filter(id => id !== user?.id).map((userId) => ({
-                user_id: userId,
-                title: `Demanda concluída: ${demand.title}`,
-                message: `O cliente marcou a demanda "${demand.title}" como concluída.`,
-                type: "success",
-                link: `/demands/${demandId}`,
-              }));
-              
-              if (notifications.length > 0) {
+              // Assignees são por definição os próprios responsáveis -> isUserAssigned true
+              const filtered = await filterRecipientsByChannel({
+                recipientIds: assigneeIds,
+                type: "demandStatusChanged",
+                boardId,
+                demandId,
+              });
+              if (filtered.inapp.length > 0) {
+                const notifications = filtered.inapp.map((userId) => ({
+                  user_id: userId,
+                  title: `Demanda concluída: ${demand.title}`,
+                  message: `O cliente marcou a demanda "${demand.title}" como concluída.`,
+                  type: "success",
+                  link: `/demands/${demandId}`,
+                }));
                 await supabase.from("notifications").insert(notifications);
               }
             }
