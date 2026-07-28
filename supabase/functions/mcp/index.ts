@@ -2097,7 +2097,6 @@ var listCapabilitiesTool = defineTool18({
 });
 
 // src/lib/mcp/index.ts
-var projectRef = "erxhxmetrvkigjwxchbj";
 var mcp_default = defineMcp({
   name: "soma-mcp",
   title: "SoMA+ \u2014 Opera\xE7\xF5es (Marketing OS)",

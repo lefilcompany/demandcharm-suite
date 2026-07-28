@@ -77,8 +77,8 @@ import {
 // Meta
 import { pingTool, getServerVersionTool, listCapabilitiesTool } from "./tools/meta";
 
-// OAuth issuer MUST be the direct Supabase host, not the Lovable Cloud proxy.
-const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unset";
+// Servidor MCP público: sem autenticação.
+
 
 export default defineMcp({
   name: "soma-mcp",
