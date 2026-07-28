@@ -2103,7 +2103,7 @@ var mcp_default = defineMcp({
   version: "2.0.0",
   instructions: [
     "Servidor MCP do SoMA+, o pilar **O \u2014 Opera\xE7\xF5es** da su\xEDte Marketing OS (m\xE9todo AEIOU).",
-    "Toda chamada respeita a identidade do usu\xE1rio conectado e as pol\xEDticas RLS do Supabase.",
+    "Servidor **p\xFAblico** (sem autentica\xE7\xE3o): as chamadas s\xE3o an\xF4nimas e s\xF3 acessam o que as pol\xEDticas RLS liberam para o papel `anon`.",
     "",
     "## Envelope de resposta",
     "Todas as tools devolvem `structuredContent` com:",

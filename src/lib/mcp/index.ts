@@ -86,7 +86,7 @@ export default defineMcp({
   version: "2.0.0",
   instructions: [
     "Servidor MCP do SoMA+, o pilar **O — Operações** da suíte Marketing OS (método AEIOU).",
-    "Toda chamada respeita a identidade do usuário conectado e as políticas RLS do Supabase.",
+    "Servidor **público** (sem autenticação): as chamadas são anônimas e só acessam o que as políticas RLS liberam para o papel `anon`.",
     "",
     "## Envelope de resposta",
     "Todas as tools devolvem `structuredContent` com:",
