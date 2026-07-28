@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 
 import { useDemands, useUpdateDemand } from "@/hooks/useDemands";
 import { useAllTeamDemands } from "@/hooks/useAllTeamDemands";
+import { useBoardStatuses } from "@/hooks/useBoardStatuses";
+import { useHierarchicalServices } from "@/hooks/useServices";
 import { useSelectedBoard } from "@/contexts/BoardContext";
 import { useBoardRole } from "@/hooks/useBoardMembers";
 import { useAuth } from "@/lib/auth";
