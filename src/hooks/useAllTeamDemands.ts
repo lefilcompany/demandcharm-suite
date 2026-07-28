@@ -2,15 +2,26 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 
-export function useAllTeamDemands(teamId: string | null | undefined) {
+interface Options {
+  /** When true, include boards from every team the user belongs to (not just teamId). */
+  allTeams?: boolean;
+  enabled?: boolean;
+}
+
+export function useAllTeamDemands(
+  teamId: string | null | undefined,
+  options: Options = {}
+) {
   const { user } = useAuth();
+  const { allTeams = false, enabled = true } = options;
 
   return useQuery({
-    queryKey: ["all-team-demands", teamId, user?.id],
+    queryKey: ["all-team-demands", allTeams ? "all-teams" : teamId, user?.id],
     queryFn: async () => {
-      if (!teamId || !user) return [];
+      if (!user) return [];
+      if (!allTeams && !teamId) return [];
 
-      // First get the boards the user is a member of in this team
+      // Boards the user is a member of
       const { data: userBoards, error: boardsError } = await supabase
         .from("board_members")
         .select("board_id, boards!inner(id, team_id)")
@@ -18,9 +29,8 @@ export function useAllTeamDemands(teamId: string | null | undefined) {
 
       if (boardsError) throw boardsError;
 
-      // Filter to only boards in this team
       const boardIds = (userBoards || [])
-        .filter((b: any) => b.boards?.team_id === teamId)
+        .filter((b: any) => allTeams || b.boards?.team_id === teamId)
         .map((b: any) => b.board_id);
 
       if (boardIds.length === 0) return [];
@@ -42,12 +52,12 @@ export function useAllTeamDemands(teamId: string | null | undefined) {
         .in("board_id", boardIds)
         .eq("archived", false)
         .order("updated_at", { ascending: false })
-        .limit(1000);
+        .limit(2000);
 
       if (error) throw error;
       return data || [];
     },
-    enabled: !!teamId && !!user,
+    enabled: enabled && !!user && (allTeams || !!teamId),
     staleTime: 30000,
   });
 }
