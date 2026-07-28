@@ -220,6 +220,27 @@ export default function Demands() {
   const activeDemands = showAllBoards ? allTeamDemands : demands;
   const activeIsLoading = showAllBoards ? isLoadingAllTeam : isLoading;
 
+  // Status/serviço são escopados por quadro (IDs diferentes por quadro).
+  // No modo "todos os quadros", comparamos por NOME para não ocultar demandas de outros quadros.
+  const { data: currentBoardStatuses } = useBoardStatuses(selectedBoardId);
+  const statusNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    (currentBoardStatuses || []).forEach((bs: any) => {
+      if (bs?.status?.id) map.set(bs.status.id, bs.status.name);
+    });
+    return map;
+  }, [currentBoardStatuses]);
+
+  const { rawServices: currentBoardServices } = useHierarchicalServices(currentTeamId, selectedBoardId);
+  const serviceNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    (currentBoardServices || []).forEach((s: any) => {
+      if (s?.id) map.set(s.id, s.name);
+    });
+    return map;
+  }, [currentBoardServices]);
+
+
   // Fetch members with selected position for filtering
   const {
     data: membersByPosition
