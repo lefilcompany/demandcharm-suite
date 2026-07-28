@@ -343,11 +343,20 @@ export default function Demands() {
         const isDeliveredLate = isDelivered && d.is_overdue === true;
         const wantsLate = selectedStatuses.includes(DELIVERED_LATE_FILTER_ID);
         const realStatusIds = selectedStatuses.filter(s => s !== DELIVERED_LATE_FILTER_ID);
-        const matchesStatus = realStatusIds.includes(d.status_id);
+        const matchesStatus = showAllBoards
+          ? realStatusIds.some(id => {
+              const name = statusNameById.get(id);
+              return name ? d.demand_statuses?.name === name : d.status_id === id;
+            })
+          : realStatusIds.includes(d.status_id);
         const matchesLate = wantsLate && isDeliveredLate;
         if (!matchesStatus && !matchesLate) return false;
-      } else if (filters.status && d.status_id !== filters.status) {
-        return false;
+      } else if (filters.status) {
+        const statusName = statusNameById.get(filters.status);
+        const ok = showAllBoards && statusName
+          ? d.demand_statuses?.name === statusName
+          : d.status_id === filters.status;
+        if (!ok) return false;
       }
 
       // Priority filter
@@ -362,9 +371,14 @@ export default function Demands() {
       }
 
       // Service filter
-      if (filters.service && d.service_id !== filters.service) {
-        return false;
+      if (filters.service) {
+        const serviceName = serviceNameById.get(filters.service);
+        const ok = showAllBoards && serviceName
+          ? (d.services as any)?.name === serviceName
+          : d.service_id === filters.service;
+        if (!ok) return false;
       }
+
 
       // Position filter - filter by members with selected position
       if (filters.position && membersByPosition) {
