@@ -216,7 +216,7 @@ export default function Demands() {
   // Fetch folder demand IDs for filtering
   const { data: folderDemandIds } = useFolderDemandIds(selectedFolderId);
   // Fetch all team demands when "all boards" mode is active
-  const { data: allTeamDemands, isLoading: isLoadingAllTeam } = useAllTeamDemands(showAllBoards ? currentTeamId : null);
+  const { data: allTeamDemands, isLoading: isLoadingAllTeam } = useAllTeamDemands(currentTeamId, { allTeams: true, enabled: showAllBoards });
 
   // Active demands source based on toggle
   const activeDemands = showAllBoards ? allTeamDemands : demands;
