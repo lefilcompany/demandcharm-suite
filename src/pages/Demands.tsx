@@ -551,7 +551,7 @@ export default function Demands() {
                     <span>Todos os quadros</span>
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>{showAllBoards ? "Exibindo demandas de todos os quadros. Clique para ver apenas o quadro selecionado." : "Clique para ver demandas de todos os quadros ao mesmo tempo."}</TooltipContent>
+                <TooltipContent>{showAllBoards ? "Exibindo demandas de todos os quadros de que você participa (todas as equipes). Combine com \"Minhas\" para ver só o que é seu." : "Clique para ver demandas de todos os quadros de que você participa, em todas as equipes."}</TooltipContent>
               </Tooltip>
 
               {/* Scheduled demands button */}
