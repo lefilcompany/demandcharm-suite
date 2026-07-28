@@ -1,4 +1,4 @@
-import { auth, defineMcp } from "@lovable.dev/mcp-js";
+import { defineMcp } from "@lovable.dev/mcp-js";
 
 // Session
 import { whoamiTool, getProfileTool, updateProfileTool } from "./tools/session";
