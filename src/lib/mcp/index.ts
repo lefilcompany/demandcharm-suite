@@ -1,4 +1,4 @@
-import { auth, defineMcp } from "@lovable.dev/mcp-js";
+import { defineMcp } from "@lovable.dev/mcp-js";
 
 // Session
 import { whoamiTool, getProfileTool, updateProfileTool } from "./tools/session";
@@ -77,8 +77,8 @@ import {
 // Meta
 import { pingTool, getServerVersionTool, listCapabilitiesTool } from "./tools/meta";
 
-// OAuth issuer MUST be the direct Supabase host, not the Lovable Cloud proxy.
-const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unset";
+// Servidor MCP público: sem autenticação.
+
 
 export default defineMcp({
   name: "soma-mcp",
@@ -86,7 +86,7 @@ export default defineMcp({
   version: "2.0.0",
   instructions: [
     "Servidor MCP do SoMA+, o pilar **O — Operações** da suíte Marketing OS (método AEIOU).",
-    "Toda chamada respeita a identidade do usuário conectado e as políticas RLS do Supabase.",
+    "Servidor **público** (sem autenticação): as chamadas são anônimas e só acessam o que as políticas RLS liberam para o papel `anon`.",
     "",
     "## Envelope de resposta",
     "Todas as tools devolvem `structuredContent` com:",
@@ -122,14 +122,8 @@ export default defineMcp({
     "",
     "Documentação completa: /mcp-docs no SoMA+.",
   ].join("\n"),
-  auth: auth.oauth.issuer({
-    issuer: `https://${projectRef}.supabase.co/auth/v1`,
-    acceptedAudiences: "authenticated",
-    // Aceita tanto tokens OAuth (Marketing OS Orchestrator via /.lovable/oauth/consent)
-    // quanto tokens de sessão do próprio app (login em /mcp-docs).
-    // Issuer, JWKS e audience continuam sendo validados pelo Supabase.
-    requireOAuthClientClaim: false,
-  }),
+  // Sem `auth`: servidor público, chamadas anônimas (RLS aplica como `anon`).
+
   tools: [
     // session
     whoamiTool, getProfileTool, updateProfileTool,

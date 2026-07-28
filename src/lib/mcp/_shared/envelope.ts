@@ -108,7 +108,8 @@ export function fromPgError(e: { message?: string; code?: string; details?: stri
   return err("DB_ERROR", msg);
 }
 
-export function requireAuth(ctx: ToolContext) {
-  if (!ctx.isAuthenticated()) return err("AUTH_EXPIRED", "Not authenticated");
+export function requireAuth(_ctx: ToolContext) {
+  // Servidor MCP público: não há autenticação. O acesso aos dados é o que o
+  // papel `anon` já permite via RLS.
   return null;
 }

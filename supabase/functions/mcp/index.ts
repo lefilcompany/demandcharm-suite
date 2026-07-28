@@ -3,7 +3,7 @@
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
 // src/lib/mcp/index.ts
-import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { defineMcp } from "npm:@lovable.dev/mcp-js@0.22.2";
 
 // src/lib/mcp/tools/session/index.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.22.2";
@@ -90,18 +90,16 @@ function fromPgError(e) {
   if (e.code === "23503") return err("VALIDATION", msg, { recovery: ["Verificar refer\xEAncias"] });
   return err("DB_ERROR", msg);
 }
-function requireAuth(ctx) {
-  if (!ctx.isAuthenticated()) return err("AUTH_EXPIRED", "Not authenticated");
+function requireAuth(_ctx) {
   return null;
 }
 
 // src/lib/mcp/_shared/supabase.ts
-function sb(ctx) {
+function sb(_ctx) {
   return createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY,
     {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
       auth: { persistSession: false, autoRefreshToken: false }
     }
   );
@@ -2099,14 +2097,13 @@ var listCapabilitiesTool = defineTool18({
 });
 
 // src/lib/mcp/index.ts
-var projectRef = "erxhxmetrvkigjwxchbj";
 var mcp_default = defineMcp({
   name: "soma-mcp",
   title: "SoMA+ \u2014 Opera\xE7\xF5es (Marketing OS)",
   version: "2.0.0",
   instructions: [
     "Servidor MCP do SoMA+, o pilar **O \u2014 Opera\xE7\xF5es** da su\xEDte Marketing OS (m\xE9todo AEIOU).",
-    "Toda chamada respeita a identidade do usu\xE1rio conectado e as pol\xEDticas RLS do Supabase.",
+    "Servidor **p\xFAblico** (sem autentica\xE7\xE3o): as chamadas s\xE3o an\xF4nimas e s\xF3 acessam o que as pol\xEDticas RLS liberam para o papel `anon`.",
     "",
     "## Envelope de resposta",
     "Todas as tools devolvem `structuredContent` com:",
@@ -2142,14 +2139,7 @@ var mcp_default = defineMcp({
     "",
     "Documenta\xE7\xE3o completa: /mcp-docs no SoMA+."
   ].join("\n"),
-  auth: auth.oauth.issuer({
-    issuer: `https://${projectRef}.supabase.co/auth/v1`,
-    acceptedAudiences: "authenticated",
-    // Aceita tanto tokens OAuth (Marketing OS Orchestrator via /.lovable/oauth/consent)
-    // quanto tokens de sessão do próprio app (login em /mcp-docs).
-    // Issuer, JWKS e audience continuam sendo validados pelo Supabase.
-    requireOAuthClientClaim: false
-  }),
+  // Sem `auth`: servidor público, chamadas anônimas (RLS aplica como `anon`).
   tools: [
     // session
     whoamiTool,
