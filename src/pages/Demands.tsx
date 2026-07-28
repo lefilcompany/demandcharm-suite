@@ -419,7 +419,7 @@ export default function Demands() {
       if (dateB === null) return -1;
       return dateA - dateB;
     });
-  }, [activeDemands, searchQuery, filters, selectedStatuses, hideDelivered, showOnlyMine, user?.id, membersByPosition, selectedFolderId, folderDemandIds]);
+  }, [activeDemands, searchQuery, filters, selectedStatuses, hideDelivered, showOnlyMine, user?.id, membersByPosition, selectedFolderId, folderDemandIds, showAllBoards, statusNameById, serviceNameById]);
 
   // Handle calendar day click — open the standard create demand modal with the chosen date pre-filled
   const handleDayClick = async (date: Date) => {
