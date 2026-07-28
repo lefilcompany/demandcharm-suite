@@ -122,14 +122,8 @@ export default defineMcp({
     "",
     "Documentação completa: /mcp-docs no SoMA+.",
   ].join("\n"),
-  auth: auth.oauth.issuer({
-    issuer: `https://${projectRef}.supabase.co/auth/v1`,
-    acceptedAudiences: "authenticated",
-    // Aceita tanto tokens OAuth (Marketing OS Orchestrator via /.lovable/oauth/consent)
-    // quanto tokens de sessão do próprio app (login em /mcp-docs).
-    // Issuer, JWKS e audience continuam sendo validados pelo Supabase.
-    requireOAuthClientClaim: false,
-  }),
+  // Sem `auth`: servidor público, chamadas anônimas (RLS aplica como `anon`).
+
   tools: [
     // session
     whoamiTool, getProfileTool, updateProfileTool,
