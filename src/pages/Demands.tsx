@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 
 import { useDemands, useUpdateDemand } from "@/hooks/useDemands";
 import { useAllTeamDemands } from "@/hooks/useAllTeamDemands";
+import { useBoardStatuses } from "@/hooks/useBoardStatuses";
+import { useHierarchicalServices } from "@/hooks/useServices";
 import { useSelectedBoard } from "@/contexts/BoardContext";
 import { useBoardRole } from "@/hooks/useBoardMembers";
 import { useAuth } from "@/lib/auth";
@@ -220,6 +222,27 @@ export default function Demands() {
   const activeDemands = showAllBoards ? allTeamDemands : demands;
   const activeIsLoading = showAllBoards ? isLoadingAllTeam : isLoading;
 
+  // Status/serviço são escopados por quadro (IDs diferentes por quadro).
+  // No modo "todos os quadros", comparamos por NOME para não ocultar demandas de outros quadros.
+  const { data: currentBoardStatuses } = useBoardStatuses(selectedBoardId);
+  const statusNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    (currentBoardStatuses || []).forEach((bs: any) => {
+      if (bs?.status?.id) map.set(bs.status.id, bs.status.name);
+    });
+    return map;
+  }, [currentBoardStatuses]);
+
+  const { rawServices: currentBoardServices } = useHierarchicalServices(currentTeamId, selectedBoardId);
+  const serviceNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    (currentBoardServices || []).forEach((s: any) => {
+      if (s?.id) map.set(s.id, s.name);
+    });
+    return map;
+  }, [currentBoardServices]);
+
+
   // Fetch members with selected position for filtering
   const {
     data: membersByPosition
@@ -320,11 +343,20 @@ export default function Demands() {
         const isDeliveredLate = isDelivered && d.is_overdue === true;
         const wantsLate = selectedStatuses.includes(DELIVERED_LATE_FILTER_ID);
         const realStatusIds = selectedStatuses.filter(s => s !== DELIVERED_LATE_FILTER_ID);
-        const matchesStatus = realStatusIds.includes(d.status_id);
+        const matchesStatus = showAllBoards
+          ? realStatusIds.some(id => {
+              const name = statusNameById.get(id);
+              return name ? d.demand_statuses?.name === name : d.status_id === id;
+            })
+          : realStatusIds.includes(d.status_id);
         const matchesLate = wantsLate && isDeliveredLate;
         if (!matchesStatus && !matchesLate) return false;
-      } else if (filters.status && d.status_id !== filters.status) {
-        return false;
+      } else if (filters.status) {
+        const statusName = statusNameById.get(filters.status);
+        const ok = showAllBoards && statusName
+          ? d.demand_statuses?.name === statusName
+          : d.status_id === filters.status;
+        if (!ok) return false;
       }
 
       // Priority filter
@@ -339,9 +371,14 @@ export default function Demands() {
       }
 
       // Service filter
-      if (filters.service && d.service_id !== filters.service) {
-        return false;
+      if (filters.service) {
+        const serviceName = serviceNameById.get(filters.service);
+        const ok = showAllBoards && serviceName
+          ? (d.services as any)?.name === serviceName
+          : d.service_id === filters.service;
+        if (!ok) return false;
       }
+
 
       // Position filter - filter by members with selected position
       if (filters.position && membersByPosition) {
@@ -382,7 +419,7 @@ export default function Demands() {
       if (dateB === null) return -1;
       return dateA - dateB;
     });
-  }, [activeDemands, searchQuery, filters, selectedStatuses, hideDelivered, showOnlyMine, user?.id, membersByPosition, selectedFolderId, folderDemandIds]);
+  }, [activeDemands, searchQuery, filters, selectedStatuses, hideDelivered, showOnlyMine, user?.id, membersByPosition, selectedFolderId, folderDemandIds, showAllBoards, statusNameById, serviceNameById]);
 
   // Handle calendar day click — open the standard create demand modal with the chosen date pre-filled
   const handleDayClick = async (date: Date) => {
