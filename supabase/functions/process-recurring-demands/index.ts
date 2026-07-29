@@ -129,11 +129,13 @@ export const handler = async (req: Request): Promise<Response> => {
         }
 
         if (rd.assignee_ids && rd.assignee_ids.length > 0 && newDemand) {
-          const assigneeInserts = rd.assignee_ids.map((userId: string) => ({
+          const assigneeInserts = rd.assignee_ids.map((userId: string, index: number) => ({
             demand_id: newDemand.id,
             user_id: userId,
+            is_primary: index === 0,
           }));
           const { error: assignError } = await supabase.from("demand_assignees").insert(assigneeInserts);
+
           if (assignError) {
             console.error(`Error adding assignees for recurring demand ${rd.id}:`, assignError);
           }
