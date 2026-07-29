@@ -102,11 +102,13 @@ function requireAuth(ctx) {
 }
 
 // src/lib/mcp/_shared/supabase.ts
-function sb(_ctx) {
+function sb(ctx) {
+  const token = ctx?.getToken?.();
   return createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY,
     {
+      global: token ? { headers: { Authorization: `Bearer ${token}` } } : void 0,
       auth: { persistSession: false, autoRefreshToken: false }
     }
   );
