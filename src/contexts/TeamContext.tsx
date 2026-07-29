@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react";
 import { useTeams } from "@/hooks/useTeams";
 
 interface Team {
@@ -26,7 +26,11 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(() => {
     return localStorage.getItem("selectedTeamId");
   });
-  const { data: teams, isLoading } = useTeams();
+  const { data: rawTeams, isLoading } = useTeams();
+  const teams = useMemo(() => {
+    if (!rawTeams) return rawTeams;
+    return [...rawTeams].sort((a, b) => a.name.localeCompare(b.name));
+  }, [rawTeams]);
 
   useEffect(() => {
     if (selectedTeamId) {
@@ -36,20 +40,23 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     }
   }, [selectedTeamId]);
 
-  // Auto-select first team if none selected
+  // Keep the persisted team selection aligned with teams the current user can actually access.
   useEffect(() => {
-    if (!selectedTeamId && teams && teams.length > 0) {
-      setSelectedTeamId(teams[0].id);
-    }
-  }, [teams, selectedTeamId]);
+    if (!teams) return;
 
-  // Clear selection if selected team no longer exists
-  useEffect(() => {
-    if (selectedTeamId && teams && teams.length > 0) {
-      const teamExists = teams.some(team => team.id === selectedTeamId);
-      if (!teamExists) {
-        setSelectedTeamId(teams[0].id);
+    if (teams.length === 0) {
+      if (selectedTeamId !== null) {
+        setSelectedTeamId(null);
       }
+      return;
+    }
+
+    const selectedTeamExists = selectedTeamId
+      ? teams.some((team) => team.id === selectedTeamId)
+      : false;
+
+    if (!selectedTeamExists) {
+      setSelectedTeamId(teams[0].id);
     }
   }, [teams, selectedTeamId]);
 
