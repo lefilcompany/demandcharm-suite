@@ -1,4 +1,4 @@
-import { defineMcp } from "@lovable.dev/mcp-js";
+import { auth, defineMcp } from "@lovable.dev/mcp-js";
 
 // Session
 import { whoamiTool, getProfileTool, updateProfileTool } from "./tools/session";
@@ -77,7 +77,8 @@ import {
 // Meta
 import { pingTool, getServerVersionTool, listCapabilitiesTool } from "./tools/meta";
 
-// Servidor MCP público: sem autenticação.
+// Servidor MCP autenticado via OAuth 2.1 (Supabase como authorization server).
+const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unset";
 
 
 export default defineMcp({
@@ -86,7 +87,7 @@ export default defineMcp({
   version: "2.0.0",
   instructions: [
     "Servidor MCP do SoMA+, o pilar **O — Operações** da suíte Marketing OS (método AEIOU).",
-    "Servidor **público** (sem autenticação): as chamadas são anônimas e só acessam o que as políticas RLS liberam para o papel `anon`.",
+    "Servidor **autenticado** (OAuth 2.1): cada chamada age como o usuário conectado e respeita as políticas RLS, times e quadros dele.",
     "",
     "## Envelope de resposta",
     "Todas as tools devolvem `structuredContent` com:",
@@ -122,7 +123,10 @@ export default defineMcp({
     "",
     "Documentação completa: /mcp-docs no SoMA+.",
   ].join("\n"),
-  // Sem `auth`: servidor público, chamadas anônimas (RLS aplica como `anon`).
+  auth: auth.oauth.issuer({
+    issuer: `https://${projectRef}.supabase.co/auth/v1`,
+    acceptedAudiences: "authenticated",
+  }),
 
   tools: [
     // session

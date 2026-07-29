@@ -108,8 +108,14 @@ export function fromPgError(e: { message?: string; code?: string; details?: stri
   return err("DB_ERROR", msg);
 }
 
-export function requireAuth(_ctx: ToolContext) {
-  // Servidor MCP público: não há autenticação. O acesso aos dados é o que o
-  // papel `anon` já permite via RLS.
+export function requireAuth(ctx: ToolContext) {
+  // Servidor MCP autenticado (OAuth 2.1). Sem token válido, nada é exposto.
+  if (!ctx?.isAuthenticated?.() || !ctx.getUserId?.()) {
+    return err(
+      "PERMISSION_DENIED",
+      "Autenticação necessária: conecte-se ao SoMA+ via OAuth para usar esta ferramenta.",
+      { recovery: ["Reconectar o cliente MCP e aprovar o acesso na tela de consentimento do SoMA+"] },
+    );
+  }
   return null;
 }

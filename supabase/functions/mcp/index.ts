@@ -3,7 +3,7 @@
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
 // src/lib/mcp/index.ts
-import { defineMcp } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.22.2";
 
 // src/lib/mcp/tools/session/index.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.22.2";
@@ -90,16 +90,25 @@ function fromPgError(e) {
   if (e.code === "23503") return err("VALIDATION", msg, { recovery: ["Verificar refer\xEAncias"] });
   return err("DB_ERROR", msg);
 }
-function requireAuth(_ctx) {
+function requireAuth(ctx) {
+  if (!ctx?.isAuthenticated?.() || !ctx.getUserId?.()) {
+    return err(
+      "PERMISSION_DENIED",
+      "Autentica\xE7\xE3o necess\xE1ria: conecte-se ao SoMA+ via OAuth para usar esta ferramenta.",
+      { recovery: ["Reconectar o cliente MCP e aprovar o acesso na tela de consentimento do SoMA+"] }
+    );
+  }
   return null;
 }
 
 // src/lib/mcp/_shared/supabase.ts
-function sb(_ctx) {
+function sb(ctx) {
+  const token = ctx?.getToken?.();
   return createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY,
     {
+      global: token ? { headers: { Authorization: `Bearer ${token}` } } : void 0,
       auth: { persistSession: false, autoRefreshToken: false }
     }
   );
@@ -2097,13 +2106,14 @@ var listCapabilitiesTool = defineTool18({
 });
 
 // src/lib/mcp/index.ts
+var projectRef = "erxhxmetrvkigjwxchbj";
 var mcp_default = defineMcp({
   name: "soma-mcp",
   title: "SoMA+ \u2014 Opera\xE7\xF5es (Marketing OS)",
   version: "2.0.0",
   instructions: [
     "Servidor MCP do SoMA+, o pilar **O \u2014 Opera\xE7\xF5es** da su\xEDte Marketing OS (m\xE9todo AEIOU).",
-    "Servidor **p\xFAblico** (sem autentica\xE7\xE3o): as chamadas s\xE3o an\xF4nimas e s\xF3 acessam o que as pol\xEDticas RLS liberam para o papel `anon`.",
+    "Servidor **autenticado** (OAuth 2.1): cada chamada age como o usu\xE1rio conectado e respeita as pol\xEDticas RLS, times e quadros dele.",
     "",
     "## Envelope de resposta",
     "Todas as tools devolvem `structuredContent` com:",
@@ -2139,7 +2149,10 @@ var mcp_default = defineMcp({
     "",
     "Documenta\xE7\xE3o completa: /mcp-docs no SoMA+."
   ].join("\n"),
-  // Sem `auth`: servidor público, chamadas anônimas (RLS aplica como `anon`).
+  auth: auth.oauth.issuer({
+    issuer: `https://${projectRef}.supabase.co/auth/v1`,
+    acceptedAudiences: "authenticated"
+  }),
   tools: [
     // session
     whoamiTool,
