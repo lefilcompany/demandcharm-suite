@@ -10,14 +10,22 @@ export function isValidFrequency(value: unknown): value is Frequency {
 
 /**
  * Authorisation check used by the edge function.
- * Returns true only when the incoming Authorization header carries the
- * configured CRON_SECRET as a bearer token. Both arguments must be present.
+ * Accepts either the configured CRON_SECRET env value or the Vault-managed
+ * cron token (used by the pg_cron schedule) as a bearer token.
  */
-export function isAuthorized(authHeader: string | null | undefined, cronSecret: string | undefined): boolean {
-  if (!cronSecret) return false;
+export function isAuthorized(
+  authHeader: string | null | undefined,
+  cronSecret?: string | null,
+  cronToken?: string | null,
+): boolean {
   if (!authHeader) return false;
-  return authHeader === `Bearer ${cronSecret}`;
+  const candidates = [cronSecret, cronToken].filter(
+    (v): v is string => typeof v === "string" && v.length > 0,
+  );
+  if (candidates.length === 0) return false;
+  return candidates.some((v) => authHeader === `Bearer ${v}`);
 }
+
 
 export function formatDate(date: Date): string {
   return date.toISOString().split("T")[0];
