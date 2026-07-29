@@ -90,7 +90,14 @@ function fromPgError(e) {
   if (e.code === "23503") return err("VALIDATION", msg, { recovery: ["Verificar refer\xEAncias"] });
   return err("DB_ERROR", msg);
 }
-function requireAuth(_ctx) {
+function requireAuth(ctx) {
+  if (!ctx?.isAuthenticated?.() || !ctx.getUserId?.()) {
+    return err(
+      "PERMISSION_DENIED",
+      "Autentica\xE7\xE3o necess\xE1ria: conecte-se ao SoMA+ via OAuth para usar esta ferramenta.",
+      { recovery: ["Reconectar o cliente MCP e aprovar o acesso na tela de consentimento do SoMA+"] }
+    );
+  }
   return null;
 }
 
