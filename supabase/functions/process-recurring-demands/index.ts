@@ -19,12 +19,26 @@ export const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     const authHeader = req.headers.get("authorization");
     const cronSecret = Deno.env.get("CRON_SECRET");
-    if (!isAuthorized(authHeader, cronSecret)) {
+
+    let cronToken: string | null = null;
+    try {
+      const { data } = await supabase.rpc("get_recurring_demands_cron_token");
+      if (typeof data === "string") cronToken = data;
+    } catch (_e) {
+      cronToken = null;
+    }
+
+    if (!isAuthorized(authHeader, cronSecret, cronToken)) {
       const prefix = authHeader ? authHeader.slice(0, 10) : "<missing>";
       console.warn("Unauthorized cron invocation", {
         hasSecret: !!cronSecret,
+        hasToken: !!cronToken,
         headerPrefix: prefix,
       });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -33,9 +47,6 @@ export const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const today = new Date().toISOString().split("T")[0];
     console.log("Processing recurring demands for date:", today);
@@ -118,11 +129,13 @@ export const handler = async (req: Request): Promise<Response> => {
         }
 
         if (rd.assignee_ids && rd.assignee_ids.length > 0 && newDemand) {
-          const assigneeInserts = rd.assignee_ids.map((userId: string) => ({
+          const assigneeInserts = rd.assignee_ids.map((userId: string, index: number) => ({
             demand_id: newDemand.id,
             user_id: userId,
+            is_primary: index === 0,
           }));
           const { error: assignError } = await supabase.from("demand_assignees").insert(assigneeInserts);
+
           if (assignError) {
             console.error(`Error adding assignees for recurring demand ${rd.id}:`, assignError);
           }

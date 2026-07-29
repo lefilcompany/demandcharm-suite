@@ -3035,6 +3035,7 @@ export type Database = {
         Args: { _month: number; _team_id: string; _year: number }
         Returns: number
       }
+      get_recurring_demands_cron_token: { Args: never; Returns: string }
       get_shared_board_summary: { Args: { p_token: string }; Returns: Json }
       get_team_active_plan: {
         Args: { _team_id: string }
