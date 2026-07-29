@@ -34,27 +34,29 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     }
   }, [selectedBoardId]);
 
-  // Auto-select default board when team changes or no board selected
+  // Keep the persisted board selection aligned with the selected team and accessible boards.
   useEffect(() => {
-    if (boards && boards.length > 0) {
-      // Check if currently selected board belongs to current team
-      const currentBoardInTeam = boards.find((b) => b.id === selectedBoardId);
-
-      if (!currentBoardInTeam) {
-        const defaultBoard = boards[0];
-        setSelectedBoardId(defaultBoard.id);
+    if (!selectedTeamId) {
+      if (selectedBoardId !== null) {
+        setSelectedBoardId(null);
       }
+      return;
+    }
+
+    if (!boards) return;
+
+    if (boards.length === 0) {
+      if (selectedBoardId !== null) {
+        setSelectedBoardId(null);
+      }
+      return;
+    }
+
+    const currentBoardInTeam = boards.some((board) => board.id === selectedBoardId);
+    if (!currentBoardInTeam) {
+      setSelectedBoardId(boards[0].id);
     }
   }, [boards, selectedBoardId, selectedTeamId]);
-
-  // Clear board selection when team changes
-  useEffect(() => {
-    if (selectedTeamId) {
-      // Will be auto-selected by the effect above
-    } else {
-      setSelectedBoardId(null);
-    }
-  }, [selectedTeamId]);
 
   const currentBoard = boards?.find((b) => b.id === selectedBoardId);
   const currentTeamId = currentBoard?.team_id ?? selectedTeamId;

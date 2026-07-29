@@ -1,20 +1,36 @@
-## Situação atual (verificada no banco)
+## Diagnóstico confirmado
 
-A conta `vinicius.souza.ext@lefil.com.br` está em **11 equipes** (papel `executor` em todas): a, Criative Cloud, DemocraciaOS, Detalhes De Marketing, EAR DEMANDAS, Equipe Teste 2, Ferreira Costa, **LeFil Company**, LIMA TESTES, Maryana Equipe, Teste.
+- A conta `vinicius.souza.ext@lefil.com.br` existe e está apenas na equipe **LeFil Company**.
+- Ela participa de **36 quadros** nessa equipe.
+- Existem demandas ativas nesses quadros; a conta tem demandas próprias/atribuídas e também acesso administrativo aos quadros.
+- As permissões críticas usadas pelas políticas de acesso (`get_user_board_ids`, `get_user_team_ids`, `is_team_member`) já têm execução para usuários autenticados.
+- O problema mais provável está no frontend da tela `/demands`: a tela depende do quadro selecionado salvo/local e de filtros persistidos, mas não faz uma recuperação robusta quando a seleção/filtros ficam incompatíveis com o estado real da conta.
 
-Também é membro de quadros fora da LeFil Company:
-- a (1), EAR DEMANDAS (1), Equipe de Marketing (2), Equipe Teste 2 (2), Ferreira Costa (1), LIMA TESTES (1), Teste (1) — 9 vínculos de quadro
-- LeFil Company: 36 quadros (mantidos)
+## Plano de correção
 
-Atribuições em demandas (`demand_assignees`): 138, **todas na LeFil Company** — nenhuma será afetada.
+1. **Tornar a seleção de equipe/quadro resiliente**
+   - Ajustar `TeamContext` para ordenar equipes de forma estável.
+   - Garantir que a equipe selecionada salva no navegador seja validada contra as equipes reais carregadas.
+   - Ajustar `BoardContext` para limpar/substituir um quadro salvo que não pertence mais à equipe atual ou que não existe mais para o usuário.
 
-## Correção
+2. **Melhorar fallback da tela `/demands`**
+   - Quando não houver quadro selecionado, mas existirem quadros disponíveis, selecionar automaticamente um quadro válido.
+   - Se a tela estiver vazia por causa de filtros salvos, mostrar um estado claro e disponibilizar ação para limpar filtros.
+   - Evitar que filtros persistidos como “Minhas”, “Todos os quadros”, status, pasta ou serviço deixem a tela aparentemente sem demandas sem explicação.
 
-1. Remover os vínculos de quadro (`board_members`) da conta em todos os quadros que não pertencem à LeFil Company — inclusive o quadro da "Equipe de Marketing", onde ele é membro de quadro sem ser membro da equipe.
-2. Remover os vínculos de equipe (`team_members`) de todas as equipes exceto LeFil Company (10 remoções).
-3. Manter intacto: a associação à LeFil Company, os 36 quadros dela e as 138 atribuições de demanda.
-4. Conferir com nova consulta que restam exatamente 1 equipe e apenas quadros da LeFil Company.
+3. **Corrigir o modo “Todos os quadros”**
+   - Garantir que `/demands` consiga buscar todas as demandas acessíveis ao usuário em todos os quadros da equipe/conta sem depender de um quadro atual inválido.
+   - Manter o comportamento já pedido anteriormente: combinar “Todos os quadros” com “Minhas” para ver apenas demandas atribuídas ao usuário.
 
-## Detalhes técnicos
+4. **Adicionar estados de diagnóstico úteis ao usuário**
+   - Diferenciar visualmente:
+     - sem demandas reais;
+     - sem quadro selecionado;
+     - filtros sem resultado;
+     - carregamento/erro de permissão.
+   - Incluir botão “Limpar filtros” quando houver filtros ativos.
 
-Executado com o tool de dados (DELETE), na ordem quadros → equipes, filtrando por `user_id` da conta e `team_id <> '35e8b17c-3550-4e01-a2d3-96bb558a7659'`. Nenhuma mudança de schema ou de código é necessária. Após a remoção, o usuário pode precisar recarregar a página, pois a equipe selecionada fica em cache local.
+5. **Validar**
+   - Rodar a tela com sessão autenticada quando disponível.
+   - Confirmar que a conta consegue ver demandas ao entrar em `/demands`.
+   - Confirmar que “Todos os quadros” e “Minhas” funcionam sem deixar a tela vazia indevidamente.

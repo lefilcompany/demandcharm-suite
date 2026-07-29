@@ -107,7 +107,9 @@ export default function Demands() {
   const {
     selectedBoardId,
     setSelectedBoardId,
-    currentTeamId
+    currentTeamId,
+    boards,
+    isLoading: boardsLoading
   } = useSelectedBoard();
 
   const handleDemandClick = (demandId: string, boardId?: string, viewMode?: string) => {
@@ -195,6 +197,17 @@ export default function Demands() {
     if (f.status || f.priority || f.assignee || f.service || f.position || f.dueDateFrom || f.dueDateTo) return true;
     return false;
   }, [searchQuery, viewMode, selectedStatuses, hideDelivered, showOnlyMine, showAllBoards, selectedFolderId, filters]);
+
+  const hasRestrictiveFilters = useMemo(() => {
+    if (searchQuery.trim() !== "") return true;
+    if (selectedStatuses.length > 0) return true;
+    if (hideDelivered) return true;
+    if (showOnlyMine) return true;
+    if (selectedFolderId) return true;
+    const f = filters;
+    if (f.status || f.priority || f.assignee || f.service || f.position || f.dueDateFrom || f.dueDateTo) return true;
+    return false;
+  }, [searchQuery, selectedStatuses, hideDelivered, showOnlyMine, selectedFolderId, filters]);
 
   const clearAllFilters = () => {
     setSearchQuery(DEFAULT_PERSISTED.searchQuery);
@@ -447,15 +460,24 @@ export default function Demands() {
       return <ListSkeleton rows={8} />;
     }
     if (demandList.length === 0 && effectiveViewMode !== "calendar") {
-      if (searchQuery) {
+      const hasRawDemands = Boolean(activeDemands && (activeDemands as any[]).length > 0);
+      const isFilteredEmpty = hasRawDemands && hasRestrictiveFilters;
+
+      if (isFilteredEmpty) {
         return <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
             <Search className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold text-foreground">
-              {t("common.noResults")}
+              Nenhuma demanda encontrada
             </h3>
             <p className="text-muted-foreground mt-2">
-              {t("common.search")}
+              Existem demandas disponíveis, mas os filtros atuais ocultaram todas.
             </p>
+            <div className="mt-6">
+              <Button variant="outline" onClick={clearAllFilters}>
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Limpar filtros
+              </Button>
+            </div>
           </div>;
       }
       return <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
@@ -464,7 +486,7 @@ export default function Demands() {
             {t("demands.noDemands")}
           </h3>
           <p className="text-muted-foreground mt-2">
-            {isReadOnly ? t("common.noResults") : t("demands.createFirst")}
+            {showAllBoards ? "Nenhuma demanda ativa foi encontrada nos quadros acessíveis." : isReadOnly ? t("common.noResults") : t("demands.createFirst")}
           </p>
           {!isReadOnly && <div className="mt-6">
               <Button onClick={() => openCreateDemand()}>
@@ -713,13 +735,13 @@ export default function Demands() {
         </div>
       </div>
 
-      {!selectedBoardId && !showAllBoards ? <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
+      {boardsLoading && !selectedBoardId && !showAllBoards ? <ListSkeleton rows={6} /> : !selectedBoardId && !showAllBoards ? <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
           <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-semibold text-foreground">
-            {t("teams.title")}
+             {boards && boards.length === 0 ? "Nenhum quadro disponível" : t("teams.title")}
           </h3>
           <p className="text-muted-foreground mt-2">
-            {t("common.noResults")}
+             {boards && boards.length === 0 ? "Você não possui quadros acessíveis nesta equipe." : t("common.noResults")}
           </p>
         </div> : renderDemandList(filteredDemands)}
 

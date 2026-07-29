@@ -35,27 +35,49 @@ export function useAllTeamDemands(
 
       if (boardIds.length === 0) return [];
 
-      const { data, error } = await supabase
-        .from("demands")
-        .select(`
-          *,
-          demand_statuses(id, name, color),
-          services(id, name),
-          profiles!demands_created_by_fkey(id, full_name, avatar_url),
-          assigned_profile:profiles!demands_assigned_to_fkey(id, full_name, avatar_url),
-          boards(id, name),
-          demand_assignees(
-            user_id,
-            profile:profiles(id, full_name, avatar_url)
-          )
-        `)
-        .in("board_id", boardIds)
-        .eq("archived", false)
-        .order("updated_at", { ascending: false })
-        .limit(2000);
+      const pageSize = 1000;
+      const boardChunkSize = 50;
+      const allDemands: any[] = [];
 
-      if (error) throw error;
-      return data || [];
+      for (let i = 0; i < boardIds.length; i += boardChunkSize) {
+        const chunk = boardIds.slice(i, i + boardChunkSize);
+        let from = 0;
+
+        while (true) {
+          const { data, error } = await supabase
+            .from("demands")
+            .select(`
+              *,
+              demand_statuses(id, name, color),
+              services(id, name),
+              profiles!demands_created_by_fkey(id, full_name, avatar_url),
+              assigned_profile:profiles!demands_assigned_to_fkey(id, full_name, avatar_url),
+              boards(id, name),
+              demand_assignees(
+                user_id,
+                profile:profiles(id, full_name, avatar_url)
+              )
+            `)
+            .in("board_id", chunk)
+            .eq("archived", false)
+            .order("updated_at", { ascending: false })
+            .range(from, from + pageSize - 1);
+
+          if (error) throw error;
+
+          const page = data || [];
+          allDemands.push(...page);
+
+          if (page.length < pageSize) break;
+          from += pageSize;
+        }
+      }
+
+      return allDemands.sort((a: any, b: any) => {
+        const aTime = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const bTime = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return bTime - aTime;
+      });
     },
     enabled: enabled && !!user && (allTeams || !!teamId),
     staleTime: 30000,

@@ -9,6 +9,8 @@ export function useTeams() {
   return useQuery({
     queryKey: ["teams", user?.id],
     queryFn: async () => {
+      if (!user) return [];
+
       const { data, error } = await supabase
         .from("teams")
         .select(`
@@ -16,13 +18,13 @@ export function useTeams() {
           team_members!inner(user_id),
           profiles!teams_created_by_fkey(full_name, avatar_url)
         `)
-        .eq("team_members.user_id", user!.id);
+        .eq("team_members.user_id", user.id)
+        .order("name", { ascending: true });
 
       if (error) throw error;
       return data;
     },
     enabled: !!user,
-    placeholderData: (prev) => prev,
     staleTime: 60 * 1000,
   });
 }
