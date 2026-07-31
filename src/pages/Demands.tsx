@@ -544,9 +544,11 @@ export default function Demands() {
           {/* Folder Strip */}
           <DemandFolderStrip
             teamId={currentTeamId}
+            boardId={selectedBoardId}
             selectedFolderId={selectedFolderId}
             onSelectFolder={setSelectedFolderId}
           />
+
 
           {/* Actions Toolbar */}
           <div className="flex items-center gap-2 p-2 bg-muted/40 rounded-xl border border-border/50">
