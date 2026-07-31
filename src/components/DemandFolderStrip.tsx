@@ -219,7 +219,33 @@ export function DemandFolderStrip({ teamId, boardId, selectedFolderId, onSelectF
             {(!folders || folders.length === 0) ? "Criar projeto" : "Novo projeto"}
           </span>
         </button>
+
+        {/* Scope toggle */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={toggleScope}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200 shrink-0",
+                showAllProjects
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border/60 text-muted-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5"
+              )}
+            >
+              {showAllProjects ? <Globe className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+              <span className="text-xs font-medium whitespace-nowrap">
+                {showAllProjects ? "Somente deste quadro" : "Ver todos os projetos"}
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {showAllProjects
+              ? "Voltar a exibir apenas os projetos do quadro atual"
+              : "Exibir os projetos de todos os quadros da equipe"}
+          </TooltipContent>
+        </Tooltip>
       </div>
+
 
       {/* Dialogs */}
       <CreateFolderDialog
