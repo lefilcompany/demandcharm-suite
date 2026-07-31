@@ -34,6 +34,9 @@ export default function Projects() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: projects = [], isLoading } = useDemandFolders(selectedTeamId, user?.id);
+  const { data: projectBoards = [] } = useBoards(selectedTeamId);
+  const boardNameById = new Map(projectBoards.map((b) => [b.id, b.name]));
+
   const { data: teamMembers = [] } = useTeamMembers(selectedTeamId);
   const createMutation = useCreateFolder();
   const updateMutation = useUpdateFolder();
