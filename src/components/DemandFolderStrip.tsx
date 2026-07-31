@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FolderOpen, Plus, MoreVertical, Pencil, Trash2, ListChecks, Users, Share2 } from "lucide-react";
+import { FolderOpen, Plus, MoreVertical, Pencil, Trash2, ListChecks, Users, Share2, LayoutGrid, Globe } from "lucide-react";
 import { useDemandFolders, useCreateFolder, useUpdateFolder, useDeleteFolder, DemandFolder } from "@/hooks/useDemandFolders";
+import { useBoards } from "@/hooks/useBoards";
 import { useAuth } from "@/lib/auth";
 import { CreateFolderDialog } from "@/components/CreateFolderDialog";
 import { FolderDemandManager } from "@/components/FolderDemandManager";
 import { FolderShareDialog } from "@/components/FolderShareDialog";
+import { MoveFolderToBoardDialog } from "@/components/MoveFolderToBoardDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,14 +20,37 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 interface DemandFolderStripProps {
   teamId: string | null;
+  boardId?: string | null;
   selectedFolderId?: string | null;
   onSelectFolder?: (folderId: string | null) => void;
 }
 
-export function DemandFolderStrip({ teamId, selectedFolderId, onSelectFolder }: DemandFolderStripProps) {
+const SCOPE_STORAGE_KEY = "demandFolderStripScope";
+
+export function DemandFolderStrip({ teamId, boardId, selectedFolderId, onSelectFolder }: DemandFolderStripProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: folders } = useDemandFolders(teamId, user?.id);
+
+  // Default: only projects from the currently selected board.
+  const [showAllProjects, setShowAllProjects] = useState<boolean>(() => {
+    return localStorage.getItem(SCOPE_STORAGE_KEY) === "all";
+  });
+
+  const toggleScope = () => {
+    setShowAllProjects((prev) => {
+      const next = !prev;
+      localStorage.setItem(SCOPE_STORAGE_KEY, next ? "all" : "board");
+      return next;
+    });
+  };
+
+  const { data: folders } = useDemandFolders(teamId, user?.id, {
+    scope: showAllProjects ? "all" : "board",
+    boardId: boardId ?? null,
+  });
+  const { data: boards } = useBoards(teamId);
+  const boardNameById = new Map((boards || []).map((b) => [b.id, b.name]));
+
   const createFolder = useCreateFolder();
   const updateFolder = useUpdateFolder();
   const deleteFolder = useDeleteFolder();
@@ -34,11 +59,13 @@ export function DemandFolderStrip({ teamId, selectedFolderId, onSelectFolder }: 
   const [editingFolder, setEditingFolder] = useState<DemandFolder | null>(null);
   const [managingFolder, setManagingFolder] = useState<DemandFolder | null>(null);
   const [sharingFolder, setSharingFolder] = useState<DemandFolder | null>(null);
+  const [movingFolder, setMovingFolder] = useState<DemandFolder | null>(null);
 
   const handleCreate = (name: string, color: string) => {
     if (!teamId || !user?.id) return;
-    createFolder.mutate({ name, color, team_id: teamId, created_by: user.id });
+    createFolder.mutate({ name, color, team_id: teamId, created_by: user.id, board_id: boardId ?? null });
   };
+
 
   const handleEdit = (name: string, color: string) => {
     if (!editingFolder) return;
