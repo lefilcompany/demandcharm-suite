@@ -12,10 +12,12 @@ export interface DemandFolder {
   created_by: string;
   created_at: string;
   updated_at: string;
+  board_id?: string | null;
   item_count?: number;
   is_owner?: boolean;
   shared_with?: { user_id: string; shared_at: string; permission: FolderPermission }[];
 }
+
 
 const shouldFallbackToLegacyFolders = (error: any) => {
   const message = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.toLowerCase();
