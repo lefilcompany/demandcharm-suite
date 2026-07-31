@@ -141,6 +141,7 @@ export default function Projects() {
               <ProjectCard
                 key={project.id}
                 project={project}
+                boardName={project.board_id ? boardNameById.get(project.board_id) : undefined}
                 memberMap={memberMap}
                 ownerProfile={memberMap.get(project.created_by)}
                 onOpen={() => navigate(`/projects/${project.id}`)}
@@ -151,6 +152,7 @@ export default function Projects() {
                 canDelete={canDelete}
                 myAccess={myAccess}
               />
+
             );
           })}
         </div>
