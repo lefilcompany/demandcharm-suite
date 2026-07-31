@@ -285,6 +285,18 @@ export function DemandFolderStrip({ teamId, boardId, selectedFolderId, onSelectF
           sharedWith={sharingFolder.shared_with || []}
         />
       )}
+
+      {movingFolder && (
+        <MoveFolderToBoardDialog
+          open={!!movingFolder}
+          onOpenChange={(open) => !open && setMovingFolder(null)}
+          teamId={teamId}
+          folderId={movingFolder.id}
+          folderName={movingFolder.name}
+          currentBoardId={movingFolder.board_id ?? null}
+        />
+      )}
     </>
+
   );
 }
