@@ -220,6 +220,8 @@ export default function Projects() {
 
 interface ProjectCardProps {
   project: DemandFolder;
+  boardName?: string;
+
   memberMap: Map<string, any>;
   ownerProfile: any;
   onOpen: () => void;
