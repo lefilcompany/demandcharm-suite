@@ -134,9 +134,16 @@ export function DemandFolderStrip({ teamId, boardId, selectedFolderId, onSelectF
                     </Tooltip>
                   )}
                 </div>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[10px] text-muted-foreground truncate">
                   {folder.item_count || 0} {folder.item_count === 1 ? "demanda" : "demandas"}
+                  {showAllProjects && (
+                    <>
+                      {" · "}
+                      {folder.board_id ? boardNameById.get(folder.board_id) || "Outro quadro" : "Sem quadro"}
+                    </>
+                  )}
                 </p>
+
               </div>
 
               {/* Context menu - only for owners, shared users get limited menu */}
