@@ -95,7 +95,7 @@ export const ServiceCreateSchema = z.object({
   team_id: z.string().uuid("ID da equipe inválido"),
   estimated_hours: z.number()
     .int("Horas estimadas deve ser um número inteiro")
-    .min(1, "Horas estimadas deve ser pelo menos 1")
+    .min(0, "Horas estimadas não pode ser negativa")
     .max(8760, "Horas estimadas deve ser no máximo 8760 (1 ano)"),
   price_cents: z.number()
     .int("Preço deve ser um número inteiro")
@@ -115,7 +115,7 @@ export const ServiceUpdateSchema = z.object({
     .nullable(),
   estimated_hours: z.number()
     .int("Horas estimadas deve ser um número inteiro")
-    .min(1, "Horas estimadas deve ser pelo menos 1")
+    .min(0, "Horas estimadas não pode ser negativa")
     .max(8760, "Horas estimadas deve ser no máximo 8760 (1 ano)")
     .optional(),
   price_cents: z.number()
