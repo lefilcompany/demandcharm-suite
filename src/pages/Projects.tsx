@@ -285,6 +285,10 @@ function ProjectCard({ project, boardName, memberMap, ownerProfile, onOpen, onEd
         <Badge variant="secondary" className="font-medium">
           {project.item_count ?? 0} demanda{(project.item_count ?? 0) === 1 ? "" : "s"}
         </Badge>
+        <Badge variant="outline" className="font-medium text-muted-foreground">
+          {boardName || "Sem quadro"}
+        </Badge>
+
         {myAccess === "owner" ? (
           <Badge className="font-medium bg-[#F28705] hover:bg-[#F28705] text-white border-transparent">
             Proprietário
