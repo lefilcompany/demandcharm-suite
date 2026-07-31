@@ -146,21 +146,23 @@ export function useFolderDemandIds(folderId: string | null) {
 export function useCreateFolder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { name: string; color: string; team_id: string; created_by: string }) => {
+    mutationFn: async (params: { name: string; color: string; team_id: string; created_by: string; board_id?: string | null }) => {
+      const { board_id, ...base } = params;
       const { data, error } = await supabase
         .from("projects")
-        .insert(params)
+        .insert({ ...base, board_id: board_id ?? null } as any)
         .select()
         .maybeSingle();
       if (error && shouldFallbackToLegacyFolders(error)) {
         const legacy = await (supabase as any)
           .from("demand_folders")
-          .insert(params)
+          .insert(base)
           .select()
           .maybeSingle();
         if (legacy.error) throw legacy.error;
         return legacy.data;
       }
+
       if (error) throw error;
       return data;
     },
