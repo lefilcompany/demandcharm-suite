@@ -169,6 +169,11 @@ export function DemandFolderStrip({ teamId, boardId, selectedFolderId, onSelectF
                         <Pencil className="h-4 w-4 mr-2" />
                         Renomear
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setMovingFolder(folder); }}>
+                        <LayoutGrid className="h-4 w-4 mr-2" />
+                        Mover para outro quadro
+                      </DropdownMenuItem>
+
                       {isOwner && (
                         <>
                           <DropdownMenuSeparator />
