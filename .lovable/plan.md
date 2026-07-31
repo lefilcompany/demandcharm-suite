@@ -1,36 +1,37 @@
-## Diagnóstico confirmado
+# Organizar projetos por quadro na tela /demands
 
-- A conta `vinicius.souza.ext@lefil.com.br` existe e está apenas na equipe **LeFil Company**.
-- Ela participa de **36 quadros** nessa equipe.
-- Existem demandas ativas nesses quadros; a conta tem demandas próprias/atribuídas e também acesso administrativo aos quadros.
-- As permissões críticas usadas pelas políticas de acesso (`get_user_board_ids`, `get_user_team_ids`, `is_team_member`) já têm execução para usuários autenticados.
-- O problema mais provável está no frontend da tela `/demands`: a tela depende do quadro selecionado salvo/local e de filtros persistidos, mas não faz uma recuperação robusta quando a seleção/filtros ficam incompatíveis com o estado real da conta.
+Hoje os projetos (pastas) são vinculados apenas à equipe (`projects.team_id`) — não existe vínculo com quadro. Por isso a faixa de projetos em /demands mostra todos os projetos da equipe de uma vez.
 
-## Plano de correção
+## Objetivo
 
-1. **Tornar a seleção de equipe/quadro resiliente**
-   - Ajustar `TeamContext` para ordenar equipes de forma estável.
-   - Garantir que a equipe selecionada salva no navegador seja validada contra as equipes reais carregadas.
-   - Ajustar `BoardContext` para limpar/substituir um quadro salvo que não pertence mais à equipe atual ou que não existe mais para o usuário.
+- Por padrão, a faixa mostra **somente os projetos do quadro atualmente selecionado**.
+- Um botão "Ver todos os projetos" alterna para mostrar todos os projetos da equipe (não fica ativo por padrão).
+- Projetos existentes/novos podem ser **movidos de quadro** a qualquer momento.
 
-2. **Melhorar fallback da tela `/demands`**
-   - Quando não houver quadro selecionado, mas existirem quadros disponíveis, selecionar automaticamente um quadro válido.
-   - Se a tela estiver vazia por causa de filtros salvos, mostrar um estado claro e disponibilizar ação para limpar filtros.
-   - Evitar que filtros persistidos como “Minhas”, “Todos os quadros”, status, pasta ou serviço deixem a tela aparentemente sem demandas sem explicação.
+## Comportamento proposto
 
-3. **Corrigir o modo “Todos os quadros”**
-   - Garantir que `/demands` consiga buscar todas as demandas acessíveis ao usuário em todos os quadros da equipe/conta sem depender de um quadro atual inválido.
-   - Manter o comportamento já pedido anteriormente: combinar “Todos os quadros” com “Minhas” para ver apenas demandas atribuídas ao usuário.
+1. Faixa de projetos em /demands
+   - Estado padrão: apenas projetos do quadro selecionado.
+   - Botão de alternância ao lado de "Novo projeto": "Ver todos os projetos" / "Somente deste quadro". Quando ativo, cada card exibe o nome do quadro de origem.
+   - Quando o usuário estiver com "Todos os quadros" ativo nos filtros, a faixa segue a mesma regra do botão (padrão continua sendo o quadro selecionado).
+2. Criação de projeto
+   - O projeto criado em /demands passa a nascer vinculado ao quadro selecionado.
+   - Se nenhum quadro estiver selecionado, o projeto nasce "sem quadro" e aparece apenas no modo "todos".
+3. Reallocação (sim, é possível)
+   - Nova opção no menu do card do projeto: **"Mover para outro quadro"**, com um diálogo listando os quadros da equipe (mais a opção "Sem quadro").
+   - Só o dono do projeto (ou compartilhado com permissão de edição) pode mover.
+   - As demandas já vinculadas ao projeto não são alteradas — apenas o quadro onde o projeto aparece.
 
-4. **Adicionar estados de diagnóstico úteis ao usuário**
-   - Diferenciar visualmente:
-     - sem demandas reais;
-     - sem quadro selecionado;
-     - filtros sem resultado;
-     - carregamento/erro de permissão.
-   - Incluir botão “Limpar filtros” quando houver filtros ativos.
+## Detalhes técnicos
 
-5. **Validar**
-   - Rodar a tela com sessão autenticada quando disponível.
-   - Confirmar que a conta consegue ver demandas ao entrar em `/demands`.
-   - Confirmar que “Todos os quadros” e “Minhas” funcionam sem deixar a tela vazia indevidamente.
+Banco (migração):
+- `ALTER TABLE public.projects ADD COLUMN board_id uuid NULL REFERENCES public.boards(id) ON DELETE SET NULL;` + índice em `(team_id, board_id)`.
+- Backfill: para cada projeto sem `board_id`, atribuir o quadro mais frequente entre as demandas ligadas em `project_demands`; projetos sem demandas ficam `NULL` (visíveis apenas no modo "todos").
+- Coluna é anulável, então as políticas RLS atuais de `projects` continuam válidas; nenhuma nova policy é necessária.
+
+Frontend:
+- `src/hooks/useDemandFolders.ts`: `useDemandFolders(teamId, userId, boardId?, { includeAll })` filtra por `board_id` quando não estiver no modo "todos"; `useCreateFolder` passa a aceitar `board_id`; novo `useMoveFolderToBoard`.
+- `src/components/DemandFolderStrip.tsx`: recebe `boardId`, mantém o estado do toggle (persistido em `localStorage` por usuário), renderiza o botão de alternância, o badge do quadro no modo "todos" e o item de menu "Mover para outro quadro".
+- Novo `src/components/MoveFolderToBoardDialog.tsx` usando os quadros de `useBoards`.
+- `src/pages/Demands.tsx`: repassa `selectedBoardId` para a faixa.
+- `src/pages/Projects.tsx` e `src/pages/FolderDetail.tsx`: exibir o quadro do projeto (somente leitura), sem mudar o comportamento de listagem dessas telas.
