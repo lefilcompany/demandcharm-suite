@@ -12,10 +12,12 @@ export interface DemandFolder {
   created_by: string;
   created_at: string;
   updated_at: string;
+  board_id?: string | null;
   item_count?: number;
   is_owner?: boolean;
   shared_with?: { user_id: string; shared_at: string; permission: FolderPermission }[];
 }
+
 
 const shouldFallbackToLegacyFolders = (error: any) => {
   const message = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.toLowerCase();
@@ -52,16 +54,35 @@ const normalizeProjectRows = (data: any[] | null, userId?: string) =>
 // API (`folder_id` arg names, "demand-folders" query keys) to avoid touching every caller — it just
 // translates to the new schema internally.
 
-export function useDemandFolders(teamId: string | null, userId?: string) {
+export interface DemandFoldersOptions {
+  /** When scope === "board", only projects linked to this board are returned. */
+  boardId?: string | null;
+  scope?: "board" | "all";
+}
+
+export function useDemandFolders(
+  teamId: string | null,
+  userId?: string,
+  options?: DemandFoldersOptions
+) {
+  const scope = options?.scope ?? "all";
+  const boardId = options?.boardId ?? null;
+  const boardScoped = scope === "board";
+
   return useQuery<DemandFolder[]>({
-    queryKey: ["demand-folders", teamId],
+    queryKey: ["demand-folders", teamId, boardScoped ? boardId ?? "no-board" : "all"],
     queryFn: async () => {
       if (!teamId) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from("projects")
         .select("*, project_demands(id), project_shares(user_id, shared_at, permission)")
-        .eq("team_id", teamId)
-        .order("created_at", { ascending: false });
+        .eq("team_id", teamId);
+
+      if (boardScoped) {
+        query = boardId ? (query as any).eq("board_id", boardId) : (query as any).is("board_id", null);
+      }
+
+      const { data, error } = await query.order("created_at", { ascending: false });
       if (!error) return normalizeProjectRows(data, userId);
 
       if (!shouldFallbackToLegacyFolders(error)) throw error;
@@ -77,6 +98,26 @@ export function useDemandFolders(teamId: string | null, userId?: string) {
     enabled: !!teamId,
   });
 }
+
+export function useMoveFolderToBoard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { id: string; board_id: string | null }) => {
+      const { error } = await supabase
+        .from("projects")
+        .update({ board_id: params.board_id } as any)
+        .eq("id", params.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["demand-folders"] });
+      toast.success("Projeto movido de quadro");
+    },
+    onError: () => toast.error("Erro ao mover projeto de quadro"),
+  });
+}
+
+
 
 export function useFolderDemandIds(folderId: string | null) {
   return useQuery<string[]>({
@@ -105,21 +146,23 @@ export function useFolderDemandIds(folderId: string | null) {
 export function useCreateFolder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { name: string; color: string; team_id: string; created_by: string }) => {
+    mutationFn: async (params: { name: string; color: string; team_id: string; created_by: string; board_id?: string | null }) => {
+      const { board_id, ...base } = params;
       const { data, error } = await supabase
         .from("projects")
-        .insert(params)
+        .insert({ ...base, board_id: board_id ?? null } as any)
         .select()
         .maybeSingle();
       if (error && shouldFallbackToLegacyFolders(error)) {
         const legacy = await (supabase as any)
           .from("demand_folders")
-          .insert(params)
+          .insert(base)
           .select()
           .maybeSingle();
         if (legacy.error) throw legacy.error;
         return legacy.data;
       }
+
       if (error) throw error;
       return data;
     },

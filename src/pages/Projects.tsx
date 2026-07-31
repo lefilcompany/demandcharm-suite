@@ -16,6 +16,7 @@ import {
   useDeleteFolder,
   type DemandFolder,
 } from "@/hooks/useDemandFolders";
+import { useBoards } from "@/hooks/useBoards";
 import { CreateFolderDialog } from "@/components/CreateFolderDialog";
 import { FolderShareDialog } from "@/components/FolderShareDialog";
 import {
@@ -34,6 +35,9 @@ export default function Projects() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: projects = [], isLoading } = useDemandFolders(selectedTeamId, user?.id);
+  const { data: projectBoards = [] } = useBoards(selectedTeamId);
+  const boardNameById = new Map(projectBoards.map((b) => [b.id, b.name]));
+
   const { data: teamMembers = [] } = useTeamMembers(selectedTeamId);
   const createMutation = useCreateFolder();
   const updateMutation = useUpdateFolder();
@@ -141,6 +145,7 @@ export default function Projects() {
               <ProjectCard
                 key={project.id}
                 project={project}
+                boardName={project.board_id ? boardNameById.get(project.board_id) : undefined}
                 memberMap={memberMap}
                 ownerProfile={memberMap.get(project.created_by)}
                 onOpen={() => navigate(`/projects/${project.id}`)}
@@ -151,6 +156,7 @@ export default function Projects() {
                 canDelete={canDelete}
                 myAccess={myAccess}
               />
+
             );
           })}
         </div>
@@ -214,6 +220,8 @@ export default function Projects() {
 
 interface ProjectCardProps {
   project: DemandFolder;
+  boardName?: string;
+
   memberMap: Map<string, any>;
   ownerProfile: any;
   onOpen: () => void;
@@ -225,7 +233,7 @@ interface ProjectCardProps {
   myAccess: "owner" | "edit" | "view";
 }
 
-function ProjectCard({ project, memberMap, ownerProfile, onOpen, onEdit, onShare, onDelete, canManage, canDelete, myAccess }: ProjectCardProps) {
+function ProjectCard({ project, boardName, memberMap, ownerProfile, onOpen, onEdit, onShare, onDelete, canManage, canDelete, myAccess }: ProjectCardProps) {
   const sharedUsers = (project.shared_with || []).map((s) => memberMap.get(s.user_id)).filter(Boolean);
   const accessUsers = [ownerProfile, ...sharedUsers].filter(Boolean);
   const visibleAvatars = accessUsers.slice(0, 4);
@@ -277,6 +285,10 @@ function ProjectCard({ project, memberMap, ownerProfile, onOpen, onEdit, onShare
         <Badge variant="secondary" className="font-medium">
           {project.item_count ?? 0} demanda{(project.item_count ?? 0) === 1 ? "" : "s"}
         </Badge>
+        <Badge variant="outline" className="font-medium text-muted-foreground">
+          {boardName || "Sem quadro"}
+        </Badge>
+
         {myAccess === "owner" ? (
           <Badge className="font-medium bg-[#F28705] hover:bg-[#F28705] text-white border-transparent">
             Proprietário

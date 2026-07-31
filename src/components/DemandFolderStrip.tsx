@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FolderOpen, Plus, MoreVertical, Pencil, Trash2, ListChecks, Users, Share2 } from "lucide-react";
+import { FolderOpen, Plus, MoreVertical, Pencil, Trash2, ListChecks, Users, Share2, LayoutGrid, Globe } from "lucide-react";
 import { useDemandFolders, useCreateFolder, useUpdateFolder, useDeleteFolder, DemandFolder } from "@/hooks/useDemandFolders";
+import { useBoards } from "@/hooks/useBoards";
 import { useAuth } from "@/lib/auth";
 import { CreateFolderDialog } from "@/components/CreateFolderDialog";
 import { FolderDemandManager } from "@/components/FolderDemandManager";
 import { FolderShareDialog } from "@/components/FolderShareDialog";
+import { MoveFolderToBoardDialog } from "@/components/MoveFolderToBoardDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,14 +20,37 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 interface DemandFolderStripProps {
   teamId: string | null;
+  boardId?: string | null;
   selectedFolderId?: string | null;
   onSelectFolder?: (folderId: string | null) => void;
 }
 
-export function DemandFolderStrip({ teamId, selectedFolderId, onSelectFolder }: DemandFolderStripProps) {
+const SCOPE_STORAGE_KEY = "demandFolderStripScope";
+
+export function DemandFolderStrip({ teamId, boardId, selectedFolderId, onSelectFolder }: DemandFolderStripProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: folders } = useDemandFolders(teamId, user?.id);
+
+  // Default: only projects from the currently selected board.
+  const [showAllProjects, setShowAllProjects] = useState<boolean>(() => {
+    return localStorage.getItem(SCOPE_STORAGE_KEY) === "all";
+  });
+
+  const toggleScope = () => {
+    setShowAllProjects((prev) => {
+      const next = !prev;
+      localStorage.setItem(SCOPE_STORAGE_KEY, next ? "all" : "board");
+      return next;
+    });
+  };
+
+  const { data: folders } = useDemandFolders(teamId, user?.id, {
+    scope: showAllProjects ? "all" : "board",
+    boardId: boardId ?? null,
+  });
+  const { data: boards } = useBoards(teamId);
+  const boardNameById = new Map((boards || []).map((b) => [b.id, b.name]));
+
   const createFolder = useCreateFolder();
   const updateFolder = useUpdateFolder();
   const deleteFolder = useDeleteFolder();
@@ -34,11 +59,13 @@ export function DemandFolderStrip({ teamId, selectedFolderId, onSelectFolder }: 
   const [editingFolder, setEditingFolder] = useState<DemandFolder | null>(null);
   const [managingFolder, setManagingFolder] = useState<DemandFolder | null>(null);
   const [sharingFolder, setSharingFolder] = useState<DemandFolder | null>(null);
+  const [movingFolder, setMovingFolder] = useState<DemandFolder | null>(null);
 
   const handleCreate = (name: string, color: string) => {
     if (!teamId || !user?.id) return;
-    createFolder.mutate({ name, color, team_id: teamId, created_by: user.id });
+    createFolder.mutate({ name, color, team_id: teamId, created_by: user.id, board_id: boardId ?? null });
   };
+
 
   const handleEdit = (name: string, color: string) => {
     if (!editingFolder) return;
@@ -107,9 +134,16 @@ export function DemandFolderStrip({ teamId, selectedFolderId, onSelectFolder }: 
                     </Tooltip>
                   )}
                 </div>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[10px] text-muted-foreground truncate">
                   {folder.item_count || 0} {folder.item_count === 1 ? "demanda" : "demandas"}
+                  {showAllProjects && (
+                    <>
+                      {" · "}
+                      {folder.board_id ? boardNameById.get(folder.board_id) || "Outro quadro" : "Sem quadro"}
+                    </>
+                  )}
                 </p>
+
               </div>
 
               {/* Context menu - only for owners, shared users get limited menu */}
@@ -135,6 +169,11 @@ export function DemandFolderStrip({ teamId, selectedFolderId, onSelectFolder }: 
                         <Pencil className="h-4 w-4 mr-2" />
                         Renomear
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setMovingFolder(folder); }}>
+                        <LayoutGrid className="h-4 w-4 mr-2" />
+                        Mover para outro quadro
+                      </DropdownMenuItem>
+
                       {isOwner && (
                         <>
                           <DropdownMenuSeparator />
@@ -180,7 +219,33 @@ export function DemandFolderStrip({ teamId, selectedFolderId, onSelectFolder }: 
             {(!folders || folders.length === 0) ? "Criar projeto" : "Novo projeto"}
           </span>
         </button>
+
+        {/* Scope toggle */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={toggleScope}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200 shrink-0",
+                showAllProjects
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border/60 text-muted-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5"
+              )}
+            >
+              {showAllProjects ? <Globe className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+              <span className="text-xs font-medium whitespace-nowrap">
+                {showAllProjects ? "Somente deste quadro" : "Ver todos os projetos"}
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {showAllProjects
+              ? "Voltar a exibir apenas os projetos do quadro atual"
+              : "Exibir os projetos de todos os quadros da equipe"}
+          </TooltipContent>
+        </Tooltip>
       </div>
+
 
       {/* Dialogs */}
       <CreateFolderDialog
@@ -220,6 +285,18 @@ export function DemandFolderStrip({ teamId, selectedFolderId, onSelectFolder }: 
           sharedWith={sharingFolder.shared_with || []}
         />
       )}
+
+      {movingFolder && (
+        <MoveFolderToBoardDialog
+          open={!!movingFolder}
+          onOpenChange={(open) => !open && setMovingFolder(null)}
+          teamId={teamId}
+          folderId={movingFolder.id}
+          folderName={movingFolder.name}
+          currentBoardId={movingFolder.board_id ?? null}
+        />
+      )}
     </>
+
   );
 }
