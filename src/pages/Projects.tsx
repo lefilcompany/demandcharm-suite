@@ -16,6 +16,7 @@ import {
   useDeleteFolder,
   type DemandFolder,
 } from "@/hooks/useDemandFolders";
+import { useBoards } from "@/hooks/useBoards";
 import { CreateFolderDialog } from "@/components/CreateFolderDialog";
 import { FolderShareDialog } from "@/components/FolderShareDialog";
 import {
