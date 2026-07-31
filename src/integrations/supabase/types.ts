@@ -2015,6 +2015,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          board_id: string | null
           color: string
           created_at: string
           created_by: string
@@ -2024,6 +2025,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          board_id?: string | null
           color?: string
           created_at?: string
           created_by: string
@@ -2033,6 +2035,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          board_id?: string | null
           color?: string
           created_at?: string
           created_by?: string
@@ -2042,6 +2045,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_created_by_fkey"
             columns: ["created_by"]
