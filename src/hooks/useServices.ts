@@ -161,6 +161,7 @@ export function useCreateService() {
       estimated_hours: number;
       price_cents?: number;
       parent_id?: string | null;
+      is_folder?: boolean;
     }) => {
       // Validate input data before database operation
       const validatedData = validateData(ServiceCreateSchema, data);
@@ -175,6 +176,7 @@ export function useCreateService() {
           estimated_hours: validatedData.estimated_hours,
           price_cents: validatedData.price_cents || 0,
           parent_id: data.parent_id || null,
+          is_folder: data.is_folder ?? false,
           created_by: userId,
         })
         .select()
