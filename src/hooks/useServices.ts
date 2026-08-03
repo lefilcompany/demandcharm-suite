@@ -211,6 +211,7 @@ export function useUpdateService() {
       estimated_hours?: number;
       price_cents?: number;
       parent_id?: string | null;
+      is_folder?: boolean;
     }) => {
       // Validate input data before database operation
       const validatedData = validateData(ServiceUpdateSchema, { id, team_id, ...data });
@@ -220,6 +221,7 @@ export function useUpdateService() {
       const finalUpdateData = {
         ...updateData,
         ...(data.parent_id !== undefined ? { parent_id: data.parent_id } : {}),
+        ...(data.is_folder !== undefined ? { is_folder: data.is_folder } : {}),
       };
       
       const { data: service, error } = await supabase
