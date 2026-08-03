@@ -16,6 +16,7 @@ export interface Service {
   team_id: string;
   board_id: string | null;
   parent_id: string | null;
+  is_folder: boolean;
   created_by: string;
   created_at: string;
   updated_at: string;
