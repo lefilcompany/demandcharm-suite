@@ -77,7 +77,7 @@ export function useHierarchicalServices(teamId: string | null, boardId?: string 
       
       return children.map(service => {
         const grandchildren = services.filter(s => s.parent_id === service.id);
-        const isCategory = grandchildren.length > 0;
+        const isCategory = !!service.is_folder || grandchildren.length > 0;
         
         return {
           ...service,
@@ -89,7 +89,7 @@ export function useHierarchicalServices(teamId: string | null, boardId?: string 
 
     return rootServices.map(service => {
       const children = services.filter(s => s.parent_id === service.id);
-      const isCategory = children.length > 0;
+      const isCategory = !!service.is_folder || children.length > 0;
       
       return {
         ...service,
