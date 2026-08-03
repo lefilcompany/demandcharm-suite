@@ -209,6 +209,7 @@ export default function ServicesManagement() {
           team_id: id,
           name: folderForm.name.trim(),
           description: folderForm.description.trim() || undefined,
+          is_folder: true,
         },
         {
           onSuccess: () => {
@@ -220,7 +221,7 @@ export default function ServicesManagement() {
         }
       );
     } else {
-      // Create a folder: a service with no parent that will become a category
+      // Create a folder: a root-level service explicitly flagged as folder
       createService.mutate(
         {
           name: folderForm.name.trim(),
@@ -228,6 +229,7 @@ export default function ServicesManagement() {
           team_id: id,
           estimated_hours: 0,
           price_cents: 0,
+          is_folder: true,
         },
         {
           onSuccess: () => {
