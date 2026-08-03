@@ -16,6 +16,7 @@ export interface Service {
   team_id: string;
   board_id: string | null;
   parent_id: string | null;
+  is_folder: boolean;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -76,7 +77,7 @@ export function useHierarchicalServices(teamId: string | null, boardId?: string 
       
       return children.map(service => {
         const grandchildren = services.filter(s => s.parent_id === service.id);
-        const isCategory = grandchildren.length > 0;
+        const isCategory = !!service.is_folder || grandchildren.length > 0;
         
         return {
           ...service,
@@ -88,7 +89,7 @@ export function useHierarchicalServices(teamId: string | null, boardId?: string 
 
     return rootServices.map(service => {
       const children = services.filter(s => s.parent_id === service.id);
-      const isCategory = children.length > 0;
+      const isCategory = !!service.is_folder || children.length > 0;
       
       return {
         ...service,
@@ -160,6 +161,7 @@ export function useCreateService() {
       estimated_hours: number;
       price_cents?: number;
       parent_id?: string | null;
+      is_folder?: boolean;
     }) => {
       // Validate input data before database operation
       const validatedData = validateData(ServiceCreateSchema, data);
@@ -174,6 +176,7 @@ export function useCreateService() {
           estimated_hours: validatedData.estimated_hours,
           price_cents: validatedData.price_cents || 0,
           parent_id: data.parent_id || null,
+          is_folder: data.is_folder ?? false,
           created_by: userId,
         })
         .select()
@@ -208,6 +211,7 @@ export function useUpdateService() {
       estimated_hours?: number;
       price_cents?: number;
       parent_id?: string | null;
+      is_folder?: boolean;
     }) => {
       // Validate input data before database operation
       const validatedData = validateData(ServiceUpdateSchema, { id, team_id, ...data });
@@ -217,6 +221,7 @@ export function useUpdateService() {
       const finalUpdateData = {
         ...updateData,
         ...(data.parent_id !== undefined ? { parent_id: data.parent_id } : {}),
+        ...(data.is_folder !== undefined ? { is_folder: data.is_folder } : {}),
       };
       
       const { data: service, error } = await supabase

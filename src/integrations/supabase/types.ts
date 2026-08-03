@@ -2174,6 +2174,7 @@ export type Database = {
           description: string | null
           estimated_hours: number
           id: string
+          is_folder: boolean
           name: string
           parent_id: string | null
           price_cents: number
@@ -2187,6 +2188,7 @@ export type Database = {
           description?: string | null
           estimated_hours?: number
           id?: string
+          is_folder?: boolean
           name: string
           parent_id?: string | null
           price_cents?: number
@@ -2200,6 +2202,7 @@ export type Database = {
           description?: string | null
           estimated_hours?: number
           id?: string
+          is_folder?: boolean
           name?: string
           parent_id?: string | null
           price_cents?: number
