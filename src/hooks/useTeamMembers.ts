@@ -45,7 +45,7 @@ export function useTeamMembers(teamId: string | null) {
           role,
           joined_at,
           position_id,
-          profiles!team_members_user_id_fkey(full_name, avatar_url),
+          profiles!team_members_user_id_fkey(full_name, email, avatar_url),
           team_positions(id, name, color, text_color)
         `)
         .eq("team_id", teamId)
