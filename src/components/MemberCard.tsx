@@ -240,6 +240,12 @@ export function MemberCard({
           >
             {member.profile.full_name}
           </button>
+
+          {member.profile.email && (
+            <p className="text-xs text-muted-foreground break-all px-1">
+              {member.profile.email}
+            </p>
+          )}
           
           <p className="text-xs text-muted-foreground">
             Entrou em {format(new Date(member.joined_at), "dd/MM/yyyy", { locale: ptBR })}

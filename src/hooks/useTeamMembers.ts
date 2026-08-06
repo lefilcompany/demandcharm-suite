@@ -26,6 +26,7 @@ export interface TeamMember {
   position: TeamMemberPosition | null;
   profile: {
     full_name: string;
+    email: string | null;
     avatar_url: string | null;
   };
 }
@@ -44,7 +45,7 @@ export function useTeamMembers(teamId: string | null) {
           role,
           joined_at,
           position_id,
-          profiles!team_members_user_id_fkey(full_name, avatar_url),
+          profiles!team_members_user_id_fkey(full_name, email, avatar_url),
           team_positions(id, name, color, text_color)
         `)
         .eq("team_id", teamId)
@@ -66,6 +67,7 @@ export function useTeamMembers(teamId: string | null) {
         } : null,
         profile: {
           full_name: (member.profiles as any)?.full_name || "Usuário",
+          email: (member.profiles as any)?.email || null,
           avatar_url: (member.profiles as any)?.avatar_url || null,
         },
       })) as TeamMember[];
