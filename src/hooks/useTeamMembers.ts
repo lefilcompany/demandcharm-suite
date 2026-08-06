@@ -26,6 +26,7 @@ export interface TeamMember {
   position: TeamMemberPosition | null;
   profile: {
     full_name: string;
+    email: string | null;
     avatar_url: string | null;
   };
 }
