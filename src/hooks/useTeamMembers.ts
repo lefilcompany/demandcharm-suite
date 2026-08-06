@@ -120,16 +120,45 @@ export function useRemoveMember() {
 
   return useMutation({
     mutationFn: async (memberId: string) => {
+      const { data: member } = await supabase
+        .from("team_members")
+        .select("user_id, team_id")
+        .eq("id", memberId)
+        .maybeSingle();
+
       const { error } = await supabase
         .from("team_members")
         .delete()
         .eq("id", memberId);
 
       if (error) throw error;
+
+      const { data: authData } = await supabase.auth.getUser();
+      return {
+        removedSelf: !!member && authData.user?.id === member.user_id,
+        teamId: member?.team_id ?? null,
+      };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      // The DB trigger also removes the user from every board of the team,
+      // from project shares and from demand assignments.
       queryClient.invalidateQueries({ queryKey: ["team-members"] });
       queryClient.invalidateQueries({ queryKey: ["teams"] });
+      queryClient.invalidateQueries({ queryKey: ["boards"] });
+      queryClient.invalidateQueries({ queryKey: ["board-members"] });
+      queryClient.invalidateQueries({ queryKey: ["board-role"] });
+      queryClient.invalidateQueries({ queryKey: ["team-role"] });
+      queryClient.invalidateQueries({ queryKey: ["demands"] });
+
+      if (result?.removedSelf) {
+        // User lost all access to this team: clear persisted context and reload
+        if (localStorage.getItem("selectedTeamId") === result.teamId) {
+          localStorage.removeItem("selectedTeamId");
+        }
+        localStorage.removeItem("selectedBoardId");
+        window.location.href = "/";
+      }
     },
   });
 }
+
