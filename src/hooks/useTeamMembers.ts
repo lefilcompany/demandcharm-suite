@@ -67,6 +67,7 @@ export function useTeamMembers(teamId: string | null) {
         } : null,
         profile: {
           full_name: (member.profiles as any)?.full_name || "Usuário",
+          email: (member.profiles as any)?.email || null,
           avatar_url: (member.profiles as any)?.avatar_url || null,
         },
       })) as TeamMember[];
