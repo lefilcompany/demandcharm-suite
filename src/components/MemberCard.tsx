@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Trash2, Crown, User, MoreVertical, ShieldCheck } from "lucide-react";
+import { Trash2, Crown, User, MoreVertical, ShieldCheck, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TeamMember } from "@/hooks/useTeamMembers";
@@ -246,10 +246,45 @@ export function MemberCard({
           </p>
           
           <div className="pt-1 space-y-2">
-            <Badge className={`${config.badgeColor} flex items-center gap-1 justify-center`}>
-              {config.icon}
-              {config.label}
-            </Badge>
+            {canModify && onRoleChange ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={isChangingRole}
+                    className="w-full flex justify-center"
+                    title="Alterar cargo na equipe"
+                  >
+                    <Badge className={`${config.badgeColor} flex items-center gap-1 justify-center cursor-pointer hover:opacity-80 transition-opacity`}>
+                      {config.icon}
+                      {config.label}
+                      <ChevronDown className="h-3 w-3" />
+                    </Badge>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center">
+                  <DropdownMenuItem
+                    disabled={member.role === "owner"}
+                    onClick={() => setPromoteDialogOpen(true)}
+                  >
+                    <Crown className="h-4 w-4 mr-2 text-amber-500" />
+                    Dono
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={member.role === "member"}
+                    onClick={() => setDemoteDialogOpen(true)}
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Membro
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Badge className={`${config.badgeColor} flex items-center gap-1 justify-center`}>
+                {config.icon}
+                {config.label}
+              </Badge>
+            )}
             
             {canManage && positions.length > 0 ? (
               <PositionSelector
