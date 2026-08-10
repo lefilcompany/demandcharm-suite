@@ -50,9 +50,11 @@ export function KanbanTimeDisplay({ demandId, canControl = false, forceShow = fa
   const activeUsersCount = userStats?.filter(u => u.isActive).length || 0;
   const displayTime = currentUserLiveTime || formatTimeDisplay(totalSeconds) || "00:00:00:00";
 
-  if (hideIfHasSubdemands && hasSubdemands) {
+  // Hide on parent demands, but never hide while the current user has a running timer
+  if (hideIfHasSubdemands && hasSubdemands && !isTimerRunning) {
     return null;
   }
+
 
   // Don't show if no time tracked (unless forceShow is true)
   if (!forceShow && totalSeconds === 0 && !isTimerRunning && activeUsersCount === 0) {

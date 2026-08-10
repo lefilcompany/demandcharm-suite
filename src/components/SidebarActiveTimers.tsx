@@ -32,6 +32,7 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
   const handlePause = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (stopTimer.isPending) return;
     stopTimer.mutate(demand.id);
   };
 
@@ -43,10 +44,11 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
         <TooltipTrigger asChild>
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 relative">
           <Button
+            type="button"
             variant="ghost"
             size="icon"
             onClick={handlePause}
-            disabled={stopTimer.isPending}
+            aria-label="Pausar timer"
             className="h-10 w-10 hover:bg-destructive/20"
           >
             <Pause className="h-4 w-4 text-destructive" />
@@ -82,17 +84,20 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
         )}
       </NavLink>
       <Button
+        type="button"
         variant="ghost"
         size="icon"
         onClick={handlePause}
-        disabled={stopTimer.isPending}
-        className="h-7 w-7 shrink-0 hover:bg-destructive/20"
+        aria-label="Pausar timer"
+        title="Pausar timer"
+        className="h-9 w-9 shrink-0 hover:bg-destructive/20"
       >
-        <Pause className="h-3.5 w-3.5 text-destructive" />
+        <Pause className="h-4 w-4 text-destructive" />
       </Button>
     </div>
   );
 }
+
 
 export function SidebarActiveTimers() {
   const { data: activeDemands, isLoading } = useActiveTimerDemands();
