@@ -1100,13 +1100,17 @@ export default function DemandDetail() {
           {/* Time tracking display - prominent position (hidden for board requesters) */}
           {boardRole !== "requester" && (
             !demand.parent_demand_id && subdemands && subdemands.length > 0 ? (
-              <ParentDemandTimeDisplay demandId={demand.id} subdemandIds={subdemands.map(s => s.id)} />
+              <div className="space-y-3">
+                <ParentDemandTimeDisplay demandId={demand.id} subdemandIds={subdemands.map(s => s.id)} />
+                <UserTimeTrackingDisplay demandId={demand.id} variant="detail" showControls={canControlTimer} canControl={canControlTimer} canEdit={boardRole === "admin" || boardRole === "moderator" || boardRole === "executor"} />
+              </div>
             ) : (
               (isInProgress || isInAdjustment || isDelivered) && (
                 <UserTimeTrackingDisplay demandId={demand.id} variant="detail" showControls={canControlTimer} canControl={canControlTimer} canEdit={boardRole === "admin" || boardRole === "moderator" || boardRole === "executor"} />
               )
             )
           )}
+
 
           {demand.description && <div className="w-full overflow-hidden">
               <h3 className="font-semibold mb-2 text-sm md:text-base">Descrição</h3>
