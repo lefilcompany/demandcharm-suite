@@ -277,32 +277,50 @@ export function useStopUserTimer() {
     mutationFn: async (demandId: string) => {
       if (!user?.id) throw new Error("Usuário não autenticado");
 
-      // Find active timer for this user on this demand
-      const { data: activeTimer, error: fetchError } = await supabase
+      // Find ALL active timers for this user on this demand (defensive: there can be more than one)
+      const { data: activeTimers, error: fetchError } = await supabase
         .from("demand_time_entries")
         .select("*")
         .eq("demand_id", demandId)
         .eq("user_id", user.id)
         .is("ended_at", null)
-        .maybeSingle();
+        .order("started_at", { ascending: true });
 
       if (fetchError) throw fetchError;
-      if (!activeTimer) throw new Error("Nenhum timer ativo encontrado");
+      if (!activeTimers || activeTimers.length === 0) {
+        throw new Error("Nenhum timer ativo encontrado");
+      }
 
-      const elapsedMs = Date.now() - new Date(activeTimer.started_at).getTime();
-      const elapsedSeconds = Math.floor(elapsedMs / 1000);
+      const endedAt = new Date().toISOString();
+      let elapsedSeconds = 0;
+      let closed = 0;
 
-      const { error } = await supabase
-        .from("demand_time_entries")
-        .update({
-          ended_at: new Date().toISOString(),
-          duration_seconds: elapsedSeconds,
-        })
-        .eq("id", activeTimer.id);
+      for (const activeTimer of activeTimers) {
+        const seconds = Math.max(
+          0,
+          Math.floor((Date.now() - new Date(activeTimer.started_at).getTime()) / 1000)
+        );
 
-      if (error) throw error;
+        const { data: updated, error } = await supabase
+          .from("demand_time_entries")
+          .update({ ended_at: endedAt, duration_seconds: seconds })
+          .eq("id", activeTimer.id)
+          .select("id");
+
+        if (error) throw error;
+        if (updated && updated.length > 0) {
+          closed += 1;
+          elapsedSeconds += seconds;
+        }
+      }
+
+      if (closed === 0) {
+        throw new Error("Não foi possível pausar o timer (sem permissão para atualizar o registro)");
+      }
+
       return { elapsedSeconds };
     },
+
     onMutate: async (demandId) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["user-demand-time", demandId, user?.id] });
