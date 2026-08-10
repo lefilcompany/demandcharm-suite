@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 
@@ -16,45 +16,57 @@ import logoBlack from "@/assets/logo-soma-black.png";
 const POLL_INTERVAL = 60 * 1000; // 60s
 
 export function UpdateModal() {
+  const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const {
-    needRefresh: [needRefresh],
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
-      if (registration) {
-        setInterval(() => {
-          registration.update();
+      // The preview/dev server does not publish /sw.js. Polling it caused a
+      // rejected update every minute and could repeatedly reopen this modal.
+      if (registration && import.meta.env.PROD) {
+        updateIntervalRef.current = setInterval(() => {
+          registration.update().catch((error) => {
+            console.warn("Não foi possível verificar uma atualização do app:", error);
+          });
         }, POLL_INTERVAL);
       }
     },
+    onRegisterError(error) {
+      console.warn("Não foi possível registrar a atualização do app:", error);
+    },
   });
 
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
+
+  useEffect(() => {
+    if (needRefresh) setOpen(true);
+  }, [needRefresh]);
+
+  useEffect(() => {
+    return () => {
+      if (updateIntervalRef.current) clearInterval(updateIntervalRef.current);
+    };
+  }, []);
 
   const handleUpdate = async () => {
     setUpdating(true);
     try {
-      // 1. Unregister every service worker so no stale worker intercepts the reload.
-      if ("serviceWorker" in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map((r) => r.unregister()));
-      }
-
-      // 2. Clear all Cache Storage entries (app shell, runtime, precache, etc.).
-      // localStorage/sessionStorage are intentionally preserved so the Supabase
-      // auth session survives the update.
-      const cacheKeys = await caches.keys();
-      await Promise.all(cacheKeys.map((k) => caches.delete(k)));
-
-      // 3. Hard reload bypassing browser cache.
-      setTimeout(() => {
-        const url = new URL(window.location.href);
-        url.searchParams.set("_refresh", Date.now().toString());
-        window.location.replace(url.toString());
-      }, 300);
-    } catch {
+      // Let vite-plugin-pwa activate the waiting worker before reloading.
+      // Unregistering it first left the same update permanently pending, which
+      // made the prompt return after every reload.
+      await updateServiceWorker(true);
+    } catch (error) {
+      console.error("Erro ao aplicar atualização:", error);
+      setUpdating(false);
       window.location.reload();
     }
+  };
+
+  const handleDismiss = () => {
+    setOpen(false);
+    setNeedRefresh(false);
   };
 
   if (!needRefresh) return null;
@@ -98,7 +110,7 @@ export function UpdateModal() {
           </Button>
           <Button
             variant="ghost"
-            onClick={() => setOpen(false)}
+            onClick={handleDismiss}
             disabled={updating}
             className="sm:flex-1 h-11 rounded-xl border border-transparent hover:bg-white hover:text-[#F28705] hover:border-[#F28705]"
           >
