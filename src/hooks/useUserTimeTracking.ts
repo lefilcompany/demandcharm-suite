@@ -360,7 +360,8 @@ export function useStopUserTimer() {
         queryClient.setQueryData(["active-timer-demands", user?.id], context.previousActive);
       }
       console.error("Error stopping timer:", error);
-      toast.error("Erro ao pausar o timer");
+      toast.error(error instanceof Error ? error.message : "Erro ao pausar o timer");
+
     },
     onSettled: (_, __, demandId) => {
       queryClient.invalidateQueries({ queryKey: ["demand-time-entries"] });
