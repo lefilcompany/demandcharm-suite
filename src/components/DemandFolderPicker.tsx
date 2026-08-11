@@ -105,7 +105,7 @@ export function DemandFolderPicker({
 
   const folderList = (
     <>
-      <p className="text-xs font-medium text-muted-foreground px-2 pb-2">Vincular a pastas</p>
+      <p className="text-xs font-medium text-muted-foreground px-2 pb-2">Vincular a projetos</p>
       {allFolders && allFolders.length > 0 ? (
         <div className="space-y-0.5 max-h-56 overflow-y-auto">
           {allFolders.map(folder => {
@@ -129,7 +129,7 @@ export function DemandFolderPicker({
           })}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground px-2 py-3 text-center">Nenhuma pasta disponível</p>
+        <p className="text-xs text-muted-foreground px-2 py-3 text-center">Nenhum projeto disponível</p>
       )}
     </>
   );
@@ -141,9 +141,9 @@ export function DemandFolderPicker({
           <DialogTrigger asChild>{dialogTrigger}</DialogTrigger>
         ) : (
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none gap-2">
+          <Button variant="outline" size="sm" className="flex-1 sm:flex-none gap-2">
               <FolderOpen className="h-4 w-4" />
-              Pastas
+              Projetos
               {folderCount > 0 && (
                 <Badge variant="secondary" className="h-5 min-w-5 px-1 text-[10px]">
                   {folderCount}
@@ -154,7 +154,7 @@ export function DemandFolderPicker({
         )}
         <DialogContent className="w-[calc(100vw-2rem)] max-w-sm mx-auto">
           <DialogHeader>
-            <DialogTitle className="text-base">Vincular a pastas</DialogTitle>
+            <DialogTitle className="text-base">Vincular a projetos</DialogTitle>
           </DialogHeader>
           <div className="py-2">{folderList}</div>
         </DialogContent>
@@ -167,7 +167,7 @@ export function DemandFolderPicker({
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="flex-1 sm:flex-none gap-2">
           <FolderOpen className="h-4 w-4" />
-          Pastas
+          Projetos
           {folderCount > 0 && (
             <Badge variant="secondary" className="h-5 min-w-5 px-1 text-[10px]">
               {folderCount}
