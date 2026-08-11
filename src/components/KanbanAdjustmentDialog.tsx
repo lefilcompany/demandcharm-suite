@@ -184,6 +184,7 @@ export const KanbanAdjustmentDialog = React.memo(function KanbanAdjustmentDialog
             reason: reason.trim(),
             isInternal,
             boardName,
+            mirrorEmail: false,
           }).catch(err => console.error("Error sending push notification:", err));
         }
 

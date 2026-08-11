@@ -7,6 +7,12 @@ interface SendPushNotificationParams {
   link?: string;
   data?: Record<string, string>;
   notificationType?: "demandUpdates" | "teamUpdates" | "deadlineReminders" | "adjustmentRequests" | "mentionNotifications";
+  /**
+   * When false, the edge function does NOT mirror this push into an email.
+   * Use it whenever the caller already sends its own (richer) email for the
+   * same event — otherwise the user receives two emails.
+   */
+  mirrorEmail?: boolean;
 }
 
 /**
@@ -20,6 +26,7 @@ export async function sendPushNotification({
   link,
   data,
   notificationType,
+  mirrorEmail,
 }: SendPushNotificationParams): Promise<{ success: boolean; sent?: number; failed?: number; error?: string }> {
   if (userIds.length === 0) {
     console.log("No user IDs provided for push notification");
@@ -37,6 +44,7 @@ export async function sendPushNotification({
           ...data,
           notificationType: notificationType || "demandUpdates",
         },
+        ...(mirrorEmail === false ? { mirrorEmail: false } : {}),
       },
     });
 
@@ -67,6 +75,7 @@ export async function sendAdjustmentPushNotification({
   reason,
   isInternal,
   boardName,
+  mirrorEmail,
 }: {
   assigneeIds: string[];
   demandId: string;
@@ -74,6 +83,7 @@ export async function sendAdjustmentPushNotification({
   reason: string;
   isInternal: boolean;
   boardName?: string;
+  mirrorEmail?: boolean;
 }) {
   const boardPrefix = boardName ? `[${boardName}] ` : "";
   const title = isInternal ? `🔧 ${boardPrefix}Ajuste interno solicitado` : `📋 ${boardPrefix}Ajuste externo solicitado`;
@@ -92,6 +102,7 @@ export async function sendAdjustmentPushNotification({
       boardName: boardName || "",
     },
     notificationType: "adjustmentRequests",
+    mirrorEmail,
   });
 }
 
@@ -105,12 +116,14 @@ export async function sendAdjustmentCompletionPushNotification({
   demandId,
   demandTitle,
   boardName,
+  mirrorEmail,
 }: {
   creatorId: string;
   adminIds?: string[];
   demandId: string;
   demandTitle: string;
   boardName?: string;
+  mirrorEmail?: boolean;
 }) {
   // Deduplicate: creator + admins
   const allIds = new Set([creatorId, ...(adminIds || [])]);
@@ -126,6 +139,7 @@ export async function sendAdjustmentCompletionPushNotification({
       boardName: boardName || "",
     },
     notificationType: "adjustmentRequests",
+    mirrorEmail,
   });
 }
 

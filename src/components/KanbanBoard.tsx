@@ -1074,6 +1074,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                 demandId: demand.id,
                 demandTitle: demand.title,
                 boardName,
+                mirrorEmail: false,
               }).catch(err => console.error("Erro ao enviar push de ajuste concluído:", err));
             }
 
@@ -1293,6 +1294,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                 demandId: demand.id,
                 demandTitle: demand.title,
                 boardName,
+                mirrorEmail: false,
               }).catch(err => console.error("Erro ao enviar push de ajuste concluído:", err));
             }
 

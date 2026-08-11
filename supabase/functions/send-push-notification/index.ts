@@ -12,6 +12,8 @@ interface PushNotificationRequest {
   body: string;
   link?: string;
   data?: Record<string, string>;
+  /** When false, skips the automatic email mirror (caller already sends its own email). */
+  mirrorEmail?: boolean;
 }
 
 interface UserPreferences {
@@ -339,7 +341,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // 2. Validate request
-    const { userId, userIds, title, body, link, data }: PushNotificationRequest = await req.json();
+    const { userId, userIds, title, body, link, data, mirrorEmail }: PushNotificationRequest = await req.json();
     if (!title || !body) return respond(400, { error: "title and body are required" });
     const notificationType = data?.notificationType || "demandUpdates";
 
@@ -503,7 +505,9 @@ Deno.serve(async (req: Request) => {
     let emailsSkipped = 0;
     const emailErrors: { userId: string; code: string }[] = [];
 
-    for (const uid of allowedUserIds) {
+    const shouldMirrorEmail = mirrorEmail !== false;
+
+    for (const uid of shouldMirrorEmail ? allowedUserIds : []) {
       const prefs = userPrefsMap.get(uid) || null;
       if (!shouldSendNotification(prefs, notificationType, "email")) {
         emailsSkipped++;
@@ -533,6 +537,7 @@ Deno.serve(async (req: Request) => {
       blocked,
       errors,
       email: {
+        mirrored: shouldMirrorEmail,
         sent: emailsSent,
         failed: emailsFailed,
         skipped: emailsSkipped,
