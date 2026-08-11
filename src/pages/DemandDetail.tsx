@@ -27,7 +27,7 @@ import { DemandEditForm } from "@/components/DemandEditForm";
 import { SubdemandEditForm } from "@/components/SubdemandEditForm";
 import { DemandFolderPicker } from "@/components/DemandFolderPicker";
 import { AttachmentUploader } from "@/components/AttachmentUploader";
-import { Calendar, Users, Archive, Pencil, Wrench, AlertTriangle, LayoutGrid, List, ChevronDown, Kanban, CalendarDays, LucideIcon, Check, X, ArrowRight, UserCircle, GitBranch, Plus, MoreVertical, ExternalLink, Copy } from "lucide-react";
+import { Calendar, Users, Archive, Pencil, Wrench, AlertTriangle, LayoutGrid, List, ChevronDown, Kanban, CalendarDays, LucideIcon, Check, X, ArrowRight, UserCircle, GitBranch, Plus, MoreVertical, ExternalLink, Copy, FolderOpen } from "lucide-react";
 import { DuplicateDemandDialog } from "@/components/DuplicateDemandDialog";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -1057,15 +1057,19 @@ export default function DemandDetail() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>}
-              {/* Folder picker button */}
-              <DemandFolderPicker
-                demandId={demand.id}
-                teamId={demand.team_id}
-                subdemandIds={!demand.parent_demand_id ? (subdemands || []).map(s => s.id) : undefined}
-                canEdit={canEdit}
-                variant="button"
-              />
-              {/* Three-dot menu — dependency actions */}
+              {/* Duplicate button — visible and easy access */}
+              {canEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 sm:flex-none gap-2"
+                  onClick={() => setShowDuplicateDialog(true)}
+                >
+                  <Copy className="h-4 w-4 text-[#F28705]" />
+                  Duplicar
+                </Button>
+              )}
+              {/* Three-dot menu — folder, dependency and conversion actions */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" aria-label="Mais opções">
@@ -1073,18 +1077,22 @@ export default function DemandDetail() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 bg-popover">
+                  <DemandFolderPicker
+                    demandId={demand.id}
+                    teamId={demand.team_id}
+                    subdemandIds={!demand.parent_demand_id ? (subdemands || []).map(s => s.id) : undefined}
+                    canEdit={canEdit}
+                    variant="dialog"
+                    dialogTrigger={
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-sm">
+                        <FolderOpen className="h-4 w-4 mr-2 text-[#F28705]" />
+                        Pastas
+                      </DropdownMenuItem>
+                    }
+                  />
+                  <DropdownMenuSeparator />
                   <DependencyMenuItems demandId={demand.id} isDelivered={isDelivered} showEmptyHint />
                   {canEdit && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onSelect={() => setShowDuplicateDialog(true)} className="text-sm">
-                        <Copy className="h-4 w-4 mr-2 text-[#F28705]" />
-                        Duplicar demanda
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  {canEdit && (
-
                     <>
                       <DropdownMenuSeparator />
                       {demand.parent_demand_id ? (
