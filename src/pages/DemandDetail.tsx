@@ -1062,10 +1062,10 @@ export default function DemandDetail() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 sm:flex-none gap-2"
+                  className="flex-1 sm:flex-none gap-2 [&_svg]:text-black [&_svg]:hover:text-black"
                   onClick={() => setShowDuplicateDialog(true)}
                 >
-                  <Copy className="h-4 w-4 text-[#F28705]" />
+                  <Copy className="h-4 w-4" />
                   Duplicar
                 </Button>
               )}
