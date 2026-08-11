@@ -16,7 +16,9 @@ interface DemandFolderPickerProps {
   teamId: string;
   subdemandIds?: string[];
   canEdit?: boolean;
-  variant?: "inline" | "button";
+  variant?: "inline" | "button" | "dialog";
+  /** Optional custom trigger element (only used when variant="dialog") */
+  dialogTrigger?: React.ReactNode;
 }
 
 function useDemandFolderLinks(demandId: string | null) {
