@@ -1069,7 +1069,7 @@ export default function DemandDetail() {
                   Duplicar
                 </Button>
               )}
-              {/* Three-dot menu — folder, dependency and conversion actions */}
+              {/* Three-dot menu — dependency, conversion and project actions */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" aria-label="Mais opções">
@@ -1077,20 +1077,6 @@ export default function DemandDetail() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 bg-popover">
-                  <DemandFolderPicker
-                    demandId={demand.id}
-                    teamId={demand.team_id}
-                    subdemandIds={!demand.parent_demand_id ? (subdemands || []).map(s => s.id) : undefined}
-                    canEdit={canEdit}
-                    variant="dialog"
-                    dialogTrigger={
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-sm">
-                        <FolderOpen className="h-4 w-4 mr-2 text-[#F28705]" />
-                        Pastas
-                      </DropdownMenuItem>
-                    }
-                  />
-                  <DropdownMenuSeparator />
                   <DependencyMenuItems demandId={demand.id} isDelivered={isDelivered} showEmptyHint />
                   {canEdit && (
                     <>
@@ -1114,6 +1100,20 @@ export default function DemandDetail() {
                       ) : null}
                     </>
                   )}
+                  <DropdownMenuSeparator />
+                  <DemandFolderPicker
+                    demandId={demand.id}
+                    teamId={demand.team_id}
+                    subdemandIds={!demand.parent_demand_id ? (subdemands || []).map(s => s.id) : undefined}
+                    canEdit={canEdit}
+                    variant="dialog"
+                    dialogTrigger={
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-sm">
+                        <FolderOpen className="h-4 w-4 mr-2 text-[#F28705]" />
+                        Projetos
+                      </DropdownMenuItem>
+                    }
+                  />
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
