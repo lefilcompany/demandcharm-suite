@@ -1651,6 +1651,16 @@ export default function DemandDetail() {
         />
       )}
 
+      {/* Duplicate demand */}
+      {demand && (
+        <DuplicateDemandDialog
+          demandId={demand.id}
+          open={showDuplicateDialog}
+          onOpenChange={setShowDuplicateDialog}
+        />
+      )}
+
+
       {/* Unlink from parent demand */}
       <AlertDialog open={showUnlinkParentDialog} onOpenChange={setShowUnlinkParentDialog}>
         <AlertDialogContent>
