@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button";
 import logoBlack from "@/assets/logo-soma-black.png";
 
 const POLL_INTERVAL = 60 * 1000; // 60s
-const UPDATE_TIMEOUT = 8 * 1000;
+const ACTIVATION_TIMEOUT = 15 * 1000;
+const SESSION_FLAG = "soma-update-prompted";
 
 function delay(ms: number) {
   return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
@@ -24,22 +25,38 @@ async function clearAppCaches() {
   if (!("caches" in window)) return;
 
   const cacheNames = await window.caches.keys();
-  await Promise.allSettled(cacheNames.map((cacheName) => window.caches.delete(cacheName)));
+  // Preserve FCM/messaging caches; only drop app-shell buckets.
+  const appCaches = cacheNames.filter((name) => !/firebase|fcm|onesignal/i.test(name));
+  await Promise.allSettled(appCaches.map((cacheName) => window.caches.delete(cacheName)));
 }
 
-function reloadWithCacheBust() {
+function reload() {
   const url = new URL(window.location.href);
-  url.searchParams.set("soma-update", Date.now().toString());
+  // Remove any legacy cache-bust marker so it does not accumulate.
+  url.searchParams.delete("soma-update");
   window.location.replace(url.toString());
+}
+
+/** Resolves when the new service worker takes control (or after a timeout). */
+function waitForControllerChange(timeout: number) {
+  if (!("serviceWorker" in navigator)) return delay(0);
+  return Promise.race([
+    new Promise<void>((resolve) => {
+      navigator.serviceWorker.addEventListener("controllerchange", () => resolve(), { once: true });
+    }),
+    delay(timeout),
+  ]);
 }
 
 export function UpdateModal() {
   const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
+      registrationRef.current = registration ?? null;
       // The preview/dev server does not publish /sw.js. Polling it caused a
       // rejected update every minute and could repeatedly reopen this modal.
       if (registration && import.meta.env.PROD) {
@@ -59,8 +76,16 @@ export function UpdateModal() {
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    if (needRefresh) setOpen(true);
-  }, [needRefresh]);
+    if (!needRefresh) return;
+    // Only prompt once per browsing session, even if the SW keeps reporting a
+    // waiting worker (e.g. activation was blocked by another open tab).
+    if (sessionStorage.getItem(SESSION_FLAG) === "1") {
+      setNeedRefresh(false);
+      return;
+    }
+    sessionStorage.setItem(SESSION_FLAG, "1");
+    setOpen(true);
+  }, [needRefresh, setNeedRefresh]);
 
   useEffect(() => {
     return () => {
@@ -73,23 +98,24 @@ export function UpdateModal() {
 
     setUpdating(true);
     try {
-      // Some browsers never resolve updateServiceWorker while waiting for the
-      // controllerchange event. The timeout guarantees that the UI cannot stay
-      // stuck on "Atualizando..." forever.
-      await Promise.race([
-        updateServiceWorker(true),
-        delay(UPDATE_TIMEOUT),
-      ]);
+      const registration = registrationRef.current;
+      const waiting = registration?.waiting;
+
+      if (waiting) {
+        // Ask the waiting worker to activate and wait until it controls the page.
+        const controllerChanged = waitForControllerChange(ACTIVATION_TIMEOUT);
+        waiting.postMessage({ type: "SKIP_WAITING" });
+        await controllerChanged;
+      } else {
+        await Promise.race([updateServiceWorker(true), delay(ACTIVATION_TIMEOUT)]);
+      }
     } catch (error) {
       console.error("Erro ao aplicar atualização:", error);
     } finally {
-      // Keep the FCM worker registered, but remove stale app assets before a
-      // cache-busted navigation. This also covers browsers where the PWA
-      // library activated the worker without reloading the page.
       await clearAppCaches().catch((error) => {
         console.warn("Não foi possível limpar o cache do app:", error);
       });
-      reloadWithCacheBust();
+      reload();
     }
   };
 
@@ -99,6 +125,7 @@ export function UpdateModal() {
   };
 
   if (!needRefresh) return null;
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
