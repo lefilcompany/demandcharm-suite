@@ -14,6 +14,24 @@ import { Button } from "@/components/ui/button";
 import logoBlack from "@/assets/logo-soma-black.png";
 
 const POLL_INTERVAL = 60 * 1000; // 60s
+const UPDATE_TIMEOUT = 8 * 1000;
+
+function delay(ms: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function clearAppCaches() {
+  if (!("caches" in window)) return;
+
+  const cacheNames = await window.caches.keys();
+  await Promise.allSettled(cacheNames.map((cacheName) => window.caches.delete(cacheName)));
+}
+
+function reloadWithCacheBust() {
+  const url = new URL(window.location.href);
+  url.searchParams.set("soma-update", Date.now().toString());
+  window.location.replace(url.toString());
+}
 
 export function UpdateModal() {
   const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -51,16 +69,27 @@ export function UpdateModal() {
   }, []);
 
   const handleUpdate = async () => {
+    if (updating) return;
+
     setUpdating(true);
     try {
-      // Let vite-plugin-pwa activate the waiting worker before reloading.
-      // Unregistering it first left the same update permanently pending, which
-      // made the prompt return after every reload.
-      await updateServiceWorker(true);
+      // Some browsers never resolve updateServiceWorker while waiting for the
+      // controllerchange event. The timeout guarantees that the UI cannot stay
+      // stuck on "Atualizando..." forever.
+      await Promise.race([
+        updateServiceWorker(true),
+        delay(UPDATE_TIMEOUT),
+      ]);
     } catch (error) {
       console.error("Erro ao aplicar atualização:", error);
-      setUpdating(false);
-      window.location.reload();
+    } finally {
+      // Keep the FCM worker registered, but remove stale app assets before a
+      // cache-busted navigation. This also covers browsers where the PWA
+      // library activated the worker without reloading the page.
+      await clearAppCaches().catch((error) => {
+        console.warn("Não foi possível limpar o cache do app:", error);
+      });
+      reloadWithCacheBust();
     }
   };
 
