@@ -27,7 +27,9 @@ import { DemandEditForm } from "@/components/DemandEditForm";
 import { SubdemandEditForm } from "@/components/SubdemandEditForm";
 import { DemandFolderPicker } from "@/components/DemandFolderPicker";
 import { AttachmentUploader } from "@/components/AttachmentUploader";
-import { Calendar, Users, Archive, Pencil, Wrench, AlertTriangle, LayoutGrid, List, ChevronDown, Kanban, CalendarDays, LucideIcon, Check, X, ArrowRight, UserCircle, GitBranch, Plus, MoreVertical, ExternalLink } from "lucide-react";
+import { Calendar, Users, Archive, Pencil, Wrench, AlertTriangle, LayoutGrid, List, ChevronDown, Kanban, CalendarDays, LucideIcon, Check, X, ArrowRight, UserCircle, GitBranch, Plus, MoreVertical, ExternalLink, Copy } from "lucide-react";
+import { DuplicateDemandDialog } from "@/components/DuplicateDemandDialog";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { ShareDemandButton } from "@/components/ShareDemandButton";
@@ -183,6 +185,8 @@ export default function DemandDetail() {
   const [dragOverSubId, setDragOverSubId] = useState<string | null>(null);
   const [showLinkParentDialog, setShowLinkParentDialog] = useState(false);
   const [showUnlinkParentDialog, setShowUnlinkParentDialog] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+
   const convertToSubdemand = useConvertToSubdemand();
 
   const handleReorderSubdemand = async (targetId: string) => {
