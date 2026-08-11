@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { MoreVertical, ExternalLink, Share2, FolderOpen, Archive, Pencil, Copy } from "lucide-react";
+import { DuplicateDemandDialog } from "@/components/DuplicateDemandDialog";
+
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -31,6 +33,8 @@ export function KanbanCardMenu({ demandId, teamId, boardId, isDelivered, readOnl
   const updateDemand = useUpdateDemand();
   const [folderOpen, setFolderOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
+
   const { data: allFolders } = useDemandFolders(teamId || null, user?.id);
   const addToFolder = useAddDemandToFolder();
   const removeFromFolder = useRemoveDemandFromFolder();
