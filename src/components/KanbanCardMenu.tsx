@@ -202,6 +202,13 @@ export function KanbanCardMenu({ demandId, teamId, boardId, isDelivered, readOnl
           <ShareDemandDialog demandId={demandId} open={shareOpen} onOpenChange={setShareOpen} />
         </div>
       )}
+
+      {duplicateOpen && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <DuplicateDemandDialog demandId={demandId} open={duplicateOpen} onOpenChange={setDuplicateOpen} />
+        </div>
+      )}
+
     </>
   );
 }
