@@ -3025,6 +3025,14 @@ export type Database = {
         Args: { p_dependencies?: Json; p_parent: Json; p_subdemands?: Json }
         Returns: Json
       }
+      duplicate_demand: {
+        Args: {
+          p_demand_id: string
+          p_new_due_date?: string
+          p_subdemand_due_dates?: Json
+        }
+        Returns: Json
+      }
       email_exists: { Args: { _email: string }; Returns: boolean }
       get_board_role: {
         Args: { _board_id: string; _user_id: string }
