@@ -1073,6 +1073,16 @@ export default function DemandDetail() {
                   {canEdit && (
                     <>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={() => setShowDuplicateDialog(true)} className="text-sm">
+                        <Copy className="h-4 w-4 mr-2 text-[#F28705]" />
+                        Duplicar demanda
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {canEdit && (
+
+                    <>
+                      <DropdownMenuSeparator />
                       {demand.parent_demand_id ? (
                         <DropdownMenuItem
                           onSelect={() => setShowUnlinkParentDialog(true)}
