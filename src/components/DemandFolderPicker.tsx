@@ -41,7 +41,14 @@ function useDemandFolderLinks(demandId: string | null) {
   });
 }
 
-export function DemandFolderPicker({ demandId, teamId, subdemandIds, canEdit = false, variant = "inline" }: DemandFolderPickerProps) {
+export function DemandFolderPicker({
+  demandId,
+  teamId,
+  subdemandIds,
+  canEdit = false,
+  variant = "inline",
+  dialogTrigger,
+}: DemandFolderPickerProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: linkedFolders } = useDemandFolderLinks(demandId);
