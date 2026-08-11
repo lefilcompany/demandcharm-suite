@@ -114,6 +114,13 @@ export function KanbanCardMenu({ demandId, teamId, boardId, isDelivered, readOnl
             <Share2 className="h-4 w-4 mr-2" />
             Compartilhar
           </DropdownMenuItem>
+          {!readOnly && (
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setDuplicateOpen(true); }}>
+              <Copy className="h-4 w-4 mr-2" />
+              Duplicar
+            </DropdownMenuItem>
+          )}
+
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={(e) => {
