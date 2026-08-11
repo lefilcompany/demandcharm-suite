@@ -103,6 +103,65 @@ export function DemandFolderPicker({
 
   const folderCount = linkedFolders?.length || 0;
 
+  const folderList = (
+    <>
+      <p className="text-xs font-medium text-muted-foreground px-2 pb-2">Vincular a pastas</p>
+      {allFolders && allFolders.length > 0 ? (
+        <div className="space-y-0.5 max-h-56 overflow-y-auto">
+          {allFolders.map(folder => {
+            const isLinked = linkedFolderIds.has(folder.id);
+            return (
+              <button
+                key={folder.id}
+                onClick={() => canEdit && handleToggle(folder.id)}
+                disabled={!canEdit}
+                className={cn(
+                  "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm text-left transition-colors",
+                  canEdit ? "hover:bg-muted cursor-pointer" : "opacity-60 cursor-default",
+                  isLinked && "bg-primary/5"
+                )}
+              >
+                <FolderOpen className="h-4 w-4 flex-shrink-0" style={{ color: folder.color }} />
+                <span className="truncate flex-1">{folder.name}</span>
+                {isLinked && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground px-2 py-3 text-center">Nenhuma pasta disponível</p>
+      )}
+    </>
+  );
+
+  if (variant === "dialog") {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        {dialogTrigger ? (
+          <DialogTrigger asChild>{dialogTrigger}</DialogTrigger>
+        ) : (
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none gap-2">
+              <FolderOpen className="h-4 w-4" />
+              Pastas
+              {folderCount > 0 && (
+                <Badge variant="secondary" className="h-5 min-w-5 px-1 text-[10px]">
+                  {folderCount}
+                </Badge>
+              )}
+            </Button>
+          </DialogTrigger>
+        )}
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base">Vincular a pastas</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">{folderList}</div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -117,32 +176,7 @@ export function DemandFolderPicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-2">
-        <p className="text-xs font-medium text-muted-foreground px-2 pb-2">Vincular a pastas</p>
-        {allFolders && allFolders.length > 0 ? (
-          <div className="space-y-0.5 max-h-56 overflow-y-auto">
-            {allFolders.map(folder => {
-              const isLinked = linkedFolderIds.has(folder.id);
-              return (
-                <button
-                  key={folder.id}
-                  onClick={() => canEdit && handleToggle(folder.id)}
-                  disabled={!canEdit}
-                  className={cn(
-                    "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm text-left transition-colors",
-                    canEdit ? "hover:bg-muted cursor-pointer" : "opacity-60 cursor-default",
-                    isLinked && "bg-primary/5"
-                  )}
-                >
-                  <FolderOpen className="h-4 w-4 flex-shrink-0" style={{ color: folder.color }} />
-                  <span className="truncate flex-1">{folder.name}</span>
-                  {isLinked && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground px-2 py-3 text-center">Nenhuma pasta disponível</p>
-        )}
+        {folderList}
       </PopoverContent>
     </Popover>
   );
