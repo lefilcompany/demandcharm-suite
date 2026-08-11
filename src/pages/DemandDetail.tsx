@@ -473,7 +473,8 @@ export default function DemandDetail() {
           demandTitle: demand?.title || "",
           reason: adjustmentReason.trim(),
           isInternal,
-          boardName: currentBoard?.name
+          boardName: currentBoard?.name,
+          mirrorEmail: false
         }).catch(err => console.error("Error sending push notification:", err));
 
         // Send email notifications to each user with public link

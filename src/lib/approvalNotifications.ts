@@ -89,6 +89,8 @@ export async function notifyApproval({
           boardName: boardName || "",
         },
         notificationType: "demandUpdates",
+        // Approval emails are sent below with a richer subject/link — no mirror.
+        mirrorEmail: false,
       });
     } catch (error) {
       console.error("Error sending approval push:", error);

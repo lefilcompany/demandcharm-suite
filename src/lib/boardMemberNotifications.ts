@@ -150,6 +150,8 @@ export async function notifyBoardMemberChange(
           ...(params.oldRole ? { oldRole: params.oldRole } : {}),
         },
         notificationType: "teamUpdates",
+        // This module sends its own rich email below — avoid the automatic mirror.
+        mirrorEmail: false,
       }).catch((err) => {
         console.warn("[boardMemberNotifications] push failed:", err);
       })
