@@ -225,6 +225,13 @@ export function DuplicateDemandDialog({ demandId, open, onOpenChange }: Duplicat
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <DuplicateSuccessModal
+        open={success.open}
+        newDemandId={success.newDemandId}
+        warning={success.warning}
+        onOpenChange={(open) => setSuccess((prev) => ({ ...prev, open }))}
+      />
     </Dialog>
   );
 }
