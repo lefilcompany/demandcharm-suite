@@ -94,7 +94,31 @@ export const KanbanAdjustmentDialog = React.memo(function KanbanAdjustmentDialog
     try {
       const isInternal = adjustmentType === "internal";
       const typeLabel = isInternal ? "Ajuste Interno" : "Ajuste Externo";
-      
+
+      // Capture the origin stage (stage the demand is in right before going to adjustment)
+      let originStatusName: string | null = null;
+      let originAdjustmentType: string = "none";
+      try {
+        const { data: demandRow } = await supabase
+          .from("demands")
+          .select("status_id, board_id, demand_statuses(name)")
+          .eq("id", demandId)
+          .maybeSingle();
+        originStatusName =
+          (demandRow as { demand_statuses?: { name?: string } } | null)?.demand_statuses?.name ?? null;
+        if (demandRow?.status_id && demandRow?.board_id) {
+          const { data: boardStatus } = await supabase
+            .from("board_statuses")
+            .select("adjustment_type")
+            .eq("board_id", demandRow.board_id)
+            .eq("status_id", demandRow.status_id)
+            .maybeSingle();
+          originAdjustmentType = (boardStatus as { adjustment_type?: string } | null)?.adjustment_type || "none";
+        }
+      } catch (originError) {
+        console.warn("Não foi possível determinar a etapa de origem do ajuste:", originError);
+      }
+
       // Criar interação de solicitação de ajuste com metadata do tipo
       const createdInteraction = await new Promise<{ id: string }>((resolve, reject) => {
         createInteraction.mutate(
@@ -102,7 +126,11 @@ export const KanbanAdjustmentDialog = React.memo(function KanbanAdjustmentDialog
             demand_id: demandId,
             interaction_type: "adjustment_request",
             content: reason.trim(),
-            metadata: { adjustment_type: adjustmentType },
+            metadata: {
+              adjustment_type: adjustmentType,
+              origin_status_name: originStatusName,
+              origin_adjustment_type: originAdjustmentType,
+            },
           },
           {
             onSuccess: (data) => resolve(data),
