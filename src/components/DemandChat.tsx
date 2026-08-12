@@ -83,7 +83,32 @@ export function DemandChat({
     staleTime: 60_000,
   });
 
-  const internalOnly = allParticipantsInternal && canSeeInternal;
+  // Origin of the most recent adjustment request.
+  // The internal-only restriction must apply ONLY when the adjustment came
+  // from an internal approval stage. Adjustments coming from external
+  // (client) approval must keep the "Geral" channel available.
+  const { data: lastAdjustmentOrigin = null } = useQuery<string | null>({
+    queryKey: ["demand-last-adjustment-origin", demandId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("demand_interactions")
+        .select("metadata, created_at")
+        .eq("demand_id", demandId)
+        .eq("interaction_type", "adjustment_request")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      const meta = (data as { metadata?: Record<string, unknown> } | null)?.metadata;
+      const origin = meta?.origin_adjustment_type;
+      return typeof origin === "string" ? origin : null;
+    },
+    enabled: !!demandId,
+    staleTime: 30_000,
+  });
+
+  const internalOnly =
+    allParticipantsInternal && canSeeInternal && lastAdjustmentOrigin === "internal";
   const showGeneralTab = !internalOnly;
 
   const [channel, setChannel] = useState<"general" | "internal">(

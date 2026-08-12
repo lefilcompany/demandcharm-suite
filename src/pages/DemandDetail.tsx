@@ -411,6 +411,10 @@ export default function DemandDetail() {
     const determinedAdjustmentType: "internal" | "external" = boardRole === 'requester' ? 'external' : 'internal';
     const isInternal = determinedAdjustmentType === "internal";
     const typeLabel = isInternal ? "Ajuste Interno" : "Ajuste Externo";
+    // Origin stage (the stage the demand was in when the adjustment was requested)
+    const originBoardStatus = boardStatuses?.find(bs => bs.status_id === demand?.status_id);
+    const originStatusName = originBoardStatus?.status?.name ?? null;
+    const originAdjustmentType = originBoardStatus?.adjustment_type ?? 'none';
     try {
       // First create the interaction record with metadata
       await new Promise<void>((resolve, reject) => {
@@ -419,7 +423,9 @@ export default function DemandDetail() {
           interaction_type: "adjustment_request",
           content: `Solicitou ajuste: ${adjustmentReason.trim()}`,
           metadata: {
-            adjustment_type: determinedAdjustmentType
+            adjustment_type: determinedAdjustmentType,
+            origin_status_name: originStatusName,
+            origin_adjustment_type: originAdjustmentType
           }
         }, {
           onSuccess: () => resolve(),
