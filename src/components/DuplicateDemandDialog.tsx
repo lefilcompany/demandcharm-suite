@@ -124,17 +124,15 @@ export function DuplicateDemandDialog({ demandId, open, onOpenChange }: Duplicat
       },
       {
         onSuccess: (res) => {
-          if (res.attachmentsFailed > 0) {
-            toast.warning(`Demanda duplicada, mas ${res.attachmentsFailed} anexo(s) não puderam ser copiados.`);
-          } else {
-            toast.success("Demanda duplicada com sucesso!", {
-              action: {
-                label: "Abrir cópia",
-                onClick: () => navigate(`/demands/${res.newDemandId}`),
-              },
-            });
-          }
           onOpenChange(false);
+          setSuccess({
+            open: true,
+            newDemandId: res.newDemandId,
+            warning:
+              res.attachmentsFailed > 0
+                ? `Demanda duplicada, mas ${res.attachmentsFailed} anexo(s) não puderam ser copiados.`
+                : null,
+          });
         },
         onError: (err) => {
           toast.error(err.message || "Erro ao duplicar demanda");
