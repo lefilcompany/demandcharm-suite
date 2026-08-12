@@ -10,6 +10,7 @@ import { Copy, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useDuplicateDemand } from "@/hooks/useDuplicateDemand";
 import { useNavigate } from "react-router-dom";
+import { DuplicateSuccessModal } from "@/components/DuplicateSuccessModal";
 
 interface DuplicateDemandDialogProps {
   demandId: string;
