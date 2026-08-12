@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Copy, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useDuplicateDemand } from "@/hooks/useDuplicateDemand";
-import { useNavigate } from "react-router-dom";
 import { DuplicateSuccessModal } from "@/components/DuplicateSuccessModal";
 
 interface DuplicateDemandDialogProps {
@@ -41,7 +40,6 @@ function shiftDate(iso: string, days: number): string {
 }
 
 export function DuplicateDemandDialog({ demandId, open, onOpenChange }: DuplicateDemandDialogProps) {
-  const navigate = useNavigate();
   const duplicate = useDuplicateDemand();
   const [withAttachments, setWithAttachments] = useState(false);
   const [newDate, setNewDate] = useState("");
