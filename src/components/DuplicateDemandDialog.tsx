@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Copy, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useDuplicateDemand } from "@/hooks/useDuplicateDemand";
-import { useNavigate } from "react-router-dom";
+import { DuplicateSuccessModal } from "@/components/DuplicateSuccessModal";
 
 interface DuplicateDemandDialogProps {
   demandId: string;
@@ -40,10 +40,14 @@ function shiftDate(iso: string, days: number): string {
 }
 
 export function DuplicateDemandDialog({ demandId, open, onOpenChange }: DuplicateDemandDialogProps) {
-  const navigate = useNavigate();
   const duplicate = useDuplicateDemand();
   const [withAttachments, setWithAttachments] = useState(false);
   const [newDate, setNewDate] = useState("");
+  const [success, setSuccess] = useState<{ open: boolean; newDemandId: string | null; warning: string | null }>({
+    open: false,
+    newDemandId: null,
+    warning: null,
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["duplicate-demand-preview", demandId],
@@ -118,17 +122,15 @@ export function DuplicateDemandDialog({ demandId, open, onOpenChange }: Duplicat
       },
       {
         onSuccess: (res) => {
-          if (res.attachmentsFailed > 0) {
-            toast.warning(`Demanda duplicada, mas ${res.attachmentsFailed} anexo(s) não puderam ser copiados.`);
-          } else {
-            toast.success("Demanda duplicada com sucesso!", {
-              action: {
-                label: "Abrir cópia",
-                onClick: () => navigate(`/demands/${res.newDemandId}`),
-              },
-            });
-          }
           onOpenChange(false);
+          setSuccess({
+            open: true,
+            newDemandId: res.newDemandId,
+            warning:
+              res.attachmentsFailed > 0
+                ? `Demanda duplicada, mas ${res.attachmentsFailed} anexo(s) não puderam ser copiados.`
+                : null,
+          });
         },
         onError: (err) => {
           toast.error(err.message || "Erro ao duplicar demanda");
@@ -221,6 +223,13 @@ export function DuplicateDemandDialog({ demandId, open, onOpenChange }: Duplicat
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <DuplicateSuccessModal
+        open={success.open}
+        newDemandId={success.newDemandId}
+        warning={success.warning}
+        onOpenChange={(open) => setSuccess((prev) => ({ ...prev, open }))}
+      />
     </Dialog>
   );
 }
