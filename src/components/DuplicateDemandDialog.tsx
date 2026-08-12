@@ -45,6 +45,11 @@ export function DuplicateDemandDialog({ demandId, open, onOpenChange }: Duplicat
   const duplicate = useDuplicateDemand();
   const [withAttachments, setWithAttachments] = useState(false);
   const [newDate, setNewDate] = useState("");
+  const [success, setSuccess] = useState<{ open: boolean; newDemandId: string | null; warning: string | null }>({
+    open: false,
+    newDemandId: null,
+    warning: null,
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["duplicate-demand-preview", demandId],
