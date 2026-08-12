@@ -111,6 +111,9 @@ export function DemandChat({
     allParticipantsInternal && canSeeInternal && lastAdjustmentOrigin === "internal";
   const showGeneralTab = !internalOnly;
 
+  const [channel, setChannel] = useState<"general" | "internal">(
+    internalOnly ? "internal" : "general"
+  );
 
   // Force channel to internal when demand becomes internal-only
   useEffect(() => {
