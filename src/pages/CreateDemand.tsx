@@ -877,8 +877,19 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                       />
                     </div>
 
-                    {/* Service + Assignees + Folder */}
-                    <div className={`grid gap-4 grid-cols-1 ${editableFolders.length > 0 && canAssignResponsibles ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+                    {/* Description — moved right below Title */}
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Descrição</Label>
+                      <RichTextEditor
+                        value={description}
+                        onChange={setDescription}
+                        placeholder="Descreva os detalhes da demanda... (cole imagens diretamente)"
+                        minHeight="120px"
+                      />
+                    </div>
+
+                    {/* Service + Folder */}
+                    <div className={`grid gap-4 grid-cols-1 ${editableFolders.length > 0 ? "sm:grid-cols-2" : "grid-cols-1"}`}>
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
                           <Package className="h-4 w-4" />
@@ -899,36 +910,18 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                         </p>
                       </div>
 
-                      {canAssignResponsibles && (
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            Responsável e acompanhantes *
-                          </Label>
-                          <AssigneeSelector
-                            teamId={selectedTeamId}
-                            boardId={activeBoardId}
-                            selectedUserIds={assigneeIds}
-                            onChange={setAssigneeIds}
-                            primaryUserId={primaryAssigneeId}
-                            onPrimaryChange={setPrimaryAssigneeId}
-                            hideIcon
-                          />
-                        </div>
-                      )}
-
                       {editableFolders.length > 0 && (
                         <div className="space-y-2">
                           <Label className="flex items-center gap-2">
                             <FolderOpen className="h-4 w-4" />
-                            Pasta
+                            Projeto
                           </Label>
                           <Select value={selectedFolderId || ""} onValueChange={(v) => setSelectedFolderId(v === "none" ? "" : v)}>
                             <SelectTrigger className="h-8">
-                              <SelectValue placeholder="Selecione uma pasta" />
+                              <SelectValue placeholder="Selecione um projeto" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="none">Nenhuma pasta</SelectItem>
+                              <SelectItem value="none">Nenhum projeto</SelectItem>
                               {editableFolders.map((folder) => (
                                 <SelectItem key={folder.id} value={folder.id}>
                                   <div className="flex items-center gap-2">
@@ -946,7 +939,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                       )}
                     </div>
 
-                    {/* Status + Priority + Due Date */}
+                    {/* Status + Data de Entrega + Prioridade */}
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
                       <div className="space-y-2">
                         <Label htmlFor="status">Status *</Label>
@@ -965,6 +958,18 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                       </div>
 
                       <div className="space-y-2">
+                        <Label htmlFor="dueDate">Data de Entrega *</Label>
+                        <Input
+                          id="dueDate"
+                          type="date"
+                          value={dueDate}
+                          onChange={(e) => setDueDate(e.target.value)}
+                          className="h-8"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
                         <Label htmlFor="priority">Prioridade *</Label>
                         <Select value={priority} onValueChange={setPriority}>
                           <SelectTrigger className="h-8">
@@ -977,19 +982,26 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                           </SelectContent>
                         </Select>
                       </div>
+                    </div>
 
+                    {/* Responsáveis */}
+                    {canAssignResponsibles && (
                       <div className="space-y-2">
-                        <Label htmlFor="dueDate">Data de Entrega *</Label>
-                        <Input
-                          id="dueDate"
-                          type="date"
-                          value={dueDate}
-                          onChange={(e) => setDueDate(e.target.value)}
-                          className="h-8"
-                          required
+                        <Label className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Responsável e acompanhantes *
+                        </Label>
+                        <AssigneeSelector
+                          teamId={selectedTeamId}
+                          boardId={activeBoardId}
+                          selectedUserIds={assigneeIds}
+                          onChange={setAssigneeIds}
+                          primaryUserId={primaryAssigneeId}
+                          onPrimaryChange={setPrimaryAssigneeId}
+                          hideIcon
                         />
                       </div>
-                    </div>
+                    )}
 
                     {/* Subdemand counter + Approval notifications side-by-side */}
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -1003,17 +1015,6 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                           onChangeExternal={setExternalApprovalRecipients}
                         />
                       )}
-                    </div>
-
-                    {/* Description */}
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Descrição</Label>
-                      <RichTextEditor
-                        value={description}
-                        onChange={setDescription}
-                        placeholder="Descreva os detalhes da demanda... (cole imagens diretamente)"
-                        minHeight="120px"
-                      />
                     </div>
 
                     {/* Attachments + Recurrence */}
