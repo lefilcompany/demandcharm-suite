@@ -604,6 +604,11 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                     className="h-8"
                     required
                   />
+                  {originalDueDate && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Prazo inicial (congelado): {formatDateOnlyBR(originalDueDate)}
+                    </p>
+                  )}
                 </div>
               </div>
 
