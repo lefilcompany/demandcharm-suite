@@ -24,6 +24,7 @@ import { AssigneeAvatars } from "@/components/AssigneeAvatars";
 import { AssigneeSelector } from "@/components/AssigneeSelector";
 import { DemandApprovalNotifySection } from "@/components/DemandApprovalNotifySection";
 import { DemandEditForm } from "@/components/DemandEditForm";
+import { DueDateHistory } from "@/components/DueDateHistory";
 import { SubdemandEditForm } from "@/components/SubdemandEditForm";
 import { DemandFolderPicker } from "@/components/DemandFolderPicker";
 import { AttachmentUploader } from "@/components/AttachmentUploader";
@@ -1190,6 +1191,25 @@ export default function DemandDetail() {
                 </span>
               </div>}
 
+            {(demand as any).original_due_date &&
+              (demand as any).original_due_date !== demand.due_date && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground">Prazo inicial:</span>
+                  <span className="font-medium line-through">
+                    {formatDateOnlyBR((demand as any).original_due_date)}
+                  </span>
+                </div>
+              )}
+
+            <div className="pt-2">
+              <DueDateHistory
+                demandId={demand.id}
+                originalDueDate={(demand as any).original_due_date}
+                currentDueDate={demand.due_date}
+              />
+            </div>
+
             {/* Service tag */}
             <div className="flex items-center gap-2 text-sm">
               <Wrench className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -1636,6 +1656,7 @@ export default function DemandDetail() {
                 team_id: demand.team_id,
                 board_id: demand.board_id,
                 created_by: demand.created_by,
+                original_due_date: (demand as any).original_due_date,
               }}
               onClose={() => setIsEditDialogOpen(false)}
               onSuccess={() => setIsEditDialogOpen(false)}
