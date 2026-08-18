@@ -52,7 +52,7 @@ export interface SendEmailPayload {
   to: string;
   eventType: string;
   subject: string;
-  template: "notification";
+  template: "product_update";
   templateData: {
     title: string;
     message: string;
@@ -103,7 +103,7 @@ export function buildSendEmailPayload(
     to: delivery.user_id,
     eventType: "productUpdates",
     subject: `Novidade no SoMA+: ${feature.title}`,
-    template: "notification",
+    template: "product_update",
     templateData: {
       title: feature.title,
       message: feature.email_body || feature.summary,

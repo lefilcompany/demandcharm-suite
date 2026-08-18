@@ -2,6 +2,7 @@ import React from "npm:react@18.3.1";
 import { render } from "npm:@react-email/render@0.0.12";
 import { createClient } from "npm:@supabase/supabase-js@2.110.7";
 import { NotificationEmail } from "../_shared/email-templates/notification.tsx";
+import { ProductUpdateEmail } from "../_shared/email-templates/product-update.tsx";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -153,14 +154,22 @@ Deno.serve(async (req) => {
 
     const renderHtml = () =>
       render(
-        React.createElement(NotificationEmail, {
-          title: cfg.title,
-          message: cfg.message,
-          actionUrl: cfg.actionUrl,
-          actionText: cfg.actionText,
-          userName: "Administrador",
-          type: cfg.type,
-        }),
+        scenario === "product_update"
+          ? React.createElement(ProductUpdateEmail, {
+              title: cfg.title,
+              message: cfg.message,
+              actionUrl: cfg.actionUrl,
+              actionText: cfg.actionText,
+              userName: "Administrador",
+            })
+          : React.createElement(NotificationEmail, {
+              title: cfg.title,
+              message: cfg.message,
+              actionUrl: cfg.actionUrl,
+              actionText: cfg.actionText,
+              userName: "Administrador",
+              type: cfg.type,
+            }),
       );
 
     // Modo prévia: renderiza o MESMO template, sem enviar nem registrar.
