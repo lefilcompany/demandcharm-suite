@@ -392,11 +392,13 @@ export async function sendDemandRequestPushNotification({
   requesterName,
   requestTitle,
   boardName,
+  requestId,
 }: {
   adminIds: string[];
   requesterName: string;
   requestTitle: string;
   boardName?: string;
+  requestId?: string;
 }) {
   const boardPrefix = boardName ? `[${boardName}] ` : "";
   return sendPushNotification({
@@ -409,7 +411,12 @@ export async function sendDemandRequestPushNotification({
       boardName: boardName || "",
     },
     notificationType: "demandUpdates",
+    // notify-demand-request already sends the rich email for this event.
+    mirrorEmail: false,
+    eventType: "demand_request_created",
+    ...(requestId ? { dedupeKey: `demand_request_created:${requestId}` } : {}),
   });
+
 }
 
 /**
