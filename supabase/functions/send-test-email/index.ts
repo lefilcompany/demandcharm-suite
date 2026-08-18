@@ -70,6 +70,30 @@ function validateCtaPath(value: unknown): string {
   return path;
 }
 
+/** Aceita apenas imagens https hospedadas no app ou no storage do projeto. */
+function validateImageUrl(value: unknown): string | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value !== "string") throw new Error("Imagem inválida");
+  const raw = value.trim();
+  if (!raw) return undefined;
+  if (raw.length > 2048) throw new Error("URL da imagem muito longa");
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error("URL da imagem inválida");
+  }
+  const host = parsed.hostname.toLowerCase();
+  const allowed =
+    host === "pla.soma.lefil.com.br" ||
+    /\.lovable\.(app|dev)$/i.test(host) ||
+    /\.supabase\.co$/i.test(host);
+  if (parsed.protocol !== "https:" || !allowed) {
+    throw new Error("A imagem deve estar hospedada em um domínio aprovado");
+  }
+  return parsed.toString();
+}
+
 function boundedString(value: unknown, field: string, max: number, fallback: string): string {
   if (value === undefined || value === null || value === "") return fallback;
   if (typeof value !== "string") throw new Error(`${field} inválido`);
@@ -80,6 +104,7 @@ function boundedString(value: unknown, field: string, max: number, fallback: str
 }
 
 interface ResolvedEmail {
+  imageUrl?: string;
   subject: string;
   title: string;
   message: string;
@@ -105,8 +130,10 @@ function resolveEmail(scenario: Scenario, body: Record<string, unknown>): Resolv
   const message = boundedString(body?.message, "Mensagem", 2000, cfg.message);
   const actionText = boundedString(body?.actionText, "Texto do botão", 80, DEFAULT_PRODUCT_UPDATE.actionText);
   const ctaPath = validateCtaPath(body?.ctaPath);
+  const imageUrl = validateImageUrl(body?.imageUrl);
 
   return {
+    imageUrl,
     subject: `[Teste] Novidade no SoMA+: ${title}`,
     title,
     message,
@@ -161,6 +188,7 @@ Deno.serve(async (req) => {
               actionUrl: cfg.actionUrl,
               actionText: cfg.actionText,
               userName: "Administrador",
+              imageUrl: cfg.imageUrl,
             })
           : React.createElement(NotificationEmail, {
               title: cfg.title,

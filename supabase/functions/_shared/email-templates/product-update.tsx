@@ -20,7 +20,9 @@ export interface ProductUpdateEmailProps {
   actionUrl?: string;
   actionText?: string;
   userName?: string;
+  imageUrl?: string;
 }
+
 
 const BRAND = {
   primary: '#F28705',
@@ -42,7 +44,9 @@ export const ProductUpdateEmail = ({
   actionUrl,
   actionText = 'Conhecer novidade',
   userName,
+  imageUrl,
 }: ProductUpdateEmailProps) => (
+
   <Html>
     <Head />
     <Preview>{title}</Preview>
@@ -75,6 +79,13 @@ export const ProductUpdateEmail = ({
           </table>
 
           <Text style={messageText}>{message}</Text>
+
+          {imageUrl && (
+            <Section style={imageSection}>
+              <Img src={imageUrl} alt={title} width="520" style={featureImage} />
+            </Section>
+          )}
+
 
           {actionUrl && (
             <Section style={buttonSection}>
@@ -258,4 +269,19 @@ const copyright = {
   fontSize: '11px',
   margin: '10px 0 0',
   textAlign: 'center' as const,
+}
+
+const imageSection = {
+  margin: '0 0 24px',
+  textAlign: 'center' as const,
+}
+
+const featureImage = {
+  width: '100%',
+  maxWidth: '520px',
+  height: 'auto' as const,
+  borderRadius: '10px',
+  border: `1px solid ${BRAND.border}`,
+  display: 'block',
+  margin: '0 auto',
 }
