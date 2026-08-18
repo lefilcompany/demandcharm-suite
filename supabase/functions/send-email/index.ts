@@ -319,6 +319,8 @@ const handler = async (req: Request): Promise<Response> => {
     const sourceFunction = payload.sourceFunction || null;
     const relatedEntityType = payload.relatedEntityType || null;
     const relatedEntityId = payload.relatedEntityId || null;
+    const messageId = dedupeKey ? `${dedupeKey}:${crypto.randomUUID().slice(0, 8)}` : crypto.randomUUID();
+
 
 
     let recipientEmail = to;
