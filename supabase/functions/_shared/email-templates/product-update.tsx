@@ -62,39 +62,78 @@ export const ProductUpdateEmail = ({
         <Section style={contentSection}>
           {userName && <Text style={greeting}>Olá, {userName}!</Text>}
 
-          <table
-            role="presentation"
-            cellPadding={0}
-            cellSpacing={0}
-            style={headingTable}
-          >
-            <tbody>
-              <tr>
-                <td style={headingBar} />
-                <td style={headingCell}>
-                  <Heading style={heading}>{title}</Heading>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {imageUrl ? (
+            <table
+              role="presentation"
+              cellPadding={0}
+              cellSpacing={0}
+              width="100%"
+              style={splitTable}
+            >
+              <tbody>
+                <tr>
+                  <td style={imageColumn}>
+                    <Img src={imageUrl} alt={title} width="250" style={featureImage} />
+                  </td>
+                  <td style={textColumn}>
+                    <table
+                      role="presentation"
+                      cellPadding={0}
+                      cellSpacing={0}
+                      style={headingTable}
+                    >
+                      <tbody>
+                        <tr>
+                          <td style={headingBar} />
+                          <td style={headingCell}>
+                            <Heading style={headingCompact}>{title}</Heading>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <Text style={messageTextCompact}>{message}</Text>
+                    {actionUrl && (
+                      <Section style={buttonSection}>
+                        <Button style={button} href={actionUrl}>
+                          {actionText}
+                        </Button>
+                      </Section>
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          ) : (
+            <>
+              <table
+                role="presentation"
+                cellPadding={0}
+                cellSpacing={0}
+                style={headingTable}
+              >
+                <tbody>
+                  <tr>
+                    <td style={headingBar} />
+                    <td style={headingCell}>
+                      <Heading style={heading}>{title}</Heading>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-          <Text style={messageText}>{message}</Text>
+              <Text style={messageText}>{message}</Text>
 
-          {imageUrl && (
-            <Section style={imageSection}>
-              <Img src={imageUrl} alt={title} width="520" style={featureImage} />
-            </Section>
-          )}
-
-
-          {actionUrl && (
-            <Section style={buttonSection}>
-              <Button style={button} href={actionUrl}>
-                {actionText}
-              </Button>
-            </Section>
+              {actionUrl && (
+                <Section style={buttonSection}>
+                  <Button style={button} href={actionUrl}>
+                    {actionText}
+                  </Button>
+                </Section>
+              )}
+            </>
           )}
         </Section>
+
 
         <Section style={logoSection}>
           <Img src={LOGO_URL} alt="SoMA+" width="150" height="auto" style={logo} />
@@ -271,17 +310,42 @@ const copyright = {
   textAlign: 'center' as const,
 }
 
-const imageSection = {
-  margin: '0 0 24px',
-  textAlign: 'center' as const,
+const splitTable = {
+  borderCollapse: 'collapse' as const,
+  width: '100%',
+  margin: '0 0 8px',
+}
+
+const imageColumn = {
+  width: '250px',
+  verticalAlign: 'middle' as const,
+  paddingRight: '20px',
+}
+
+const textColumn = {
+  verticalAlign: 'middle' as const,
 }
 
 const featureImage = {
   width: '100%',
-  maxWidth: '520px',
+  maxWidth: '250px',
   height: 'auto' as const,
-  borderRadius: '10px',
+  borderRadius: '8px',
   border: `1px solid ${BRAND.border}`,
   display: 'block',
-  margin: '0 auto',
+}
+
+const headingCompact = {
+  color: BRAND.ink,
+  fontSize: '22px',
+  fontWeight: '700',
+  lineHeight: '1.25',
+  margin: '0',
+}
+
+const messageTextCompact = {
+  color: BRAND.bodyText,
+  fontSize: '15px',
+  lineHeight: '1.6',
+  margin: '0 0 18px',
 }
