@@ -139,9 +139,35 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const scenario: Scenario = (["creation", "deadline", "generic"] as const).includes(body?.scenario)
+    const scenario: Scenario = (["creation", "deadline", "generic", "product_update"] as const).includes(body?.scenario)
       ? body.scenario
       : "generic";
+    const previewOnly = body?.preview === true;
+
+    let cfg: ResolvedEmail;
+    try {
+      cfg = resolveEmail(scenario, body ?? {});
+    } catch (validationError) {
+      return json({ error: (validationError as Error).message }, 400);
+    }
+
+    const renderHtml = () =>
+      render(
+        React.createElement(NotificationEmail, {
+          title: cfg.title,
+          message: cfg.message,
+          actionUrl: cfg.actionUrl,
+          actionText: cfg.actionText,
+          userName: "Administrador",
+          type: cfg.type,
+        }),
+      );
+
+    // Modo prévia: renderiza o MESMO template, sem enviar nem registrar.
+    if (previewOnly) {
+      return json({ preview: true, subject: cfg.subject, html: await renderHtml() }, 200);
+    }
+
     const recipientEmail: string | undefined = typeof body?.to === "string" ? body.to.trim() : undefined;
 
     if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
@@ -153,24 +179,14 @@ Deno.serve(async (req) => {
         userId,
         recipientEmail,
         scenario,
-        subject: SCENARIOS[scenario].subject,
+        subject: cfg.subject,
         status: "rejected",
         errorMessage: "Missing LOVABLE_API_KEY or RESEND_API_KEY",
       });
       return json({ error: "Configuração de e-mail ausente no servidor" }, 500);
     }
 
-    const cfg = SCENARIOS[scenario];
-    const html = await render(
-      React.createElement(NotificationEmail, {
-        title: cfg.title,
-        message: cfg.message,
-        actionUrl: `${SUPABASE_URL.replace(/\/$/, "")}`,
-        actionText: "Abrir SoMA+",
-        userName: "Administrador",
-        type: cfg.type,
-      }),
-    );
+    const html = await renderHtml();
 
     const res = await fetch(RESEND_GATEWAY_URL, {
       method: "POST",
