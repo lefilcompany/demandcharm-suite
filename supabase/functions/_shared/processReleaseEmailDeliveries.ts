@@ -236,17 +236,35 @@ export function createSupabaseEmailDeliverySource(
         .limit(limit);
       if (error) throw new Error(`[emailDeliveries] select: ${error.message}`);
       const ids = (candidates ?? []).map((r: { id: string }) => r.id);
+
+      // Retryable rows: previously failed with a due next_retry_at and attempts left.
+      if (ids.length < limit) {
+        const { data: retryables, error: retryError } = await client
+          .from("release_deliveries")
+          .select("id")
+          .eq("channel", "email")
+          .eq("status", "failed")
+          .lt("attempts", MAX_EMAIL_DELIVERY_ATTEMPTS)
+          .not("next_retry_at", "is", null)
+          .lte("next_retry_at", nowIso)
+          .order("next_retry_at", { ascending: true })
+          .limit(limit - ids.length);
+        if (retryError) throw new Error(`[emailDeliveries] retry select: ${retryError.message}`);
+        for (const r of retryables ?? []) ids.push((r as { id: string }).id);
+      }
+
       if (ids.length === 0) return [];
 
       const { data: claimed, error: claimError } = await client
         .from("release_deliveries")
         .update({ status: "processing" })
         .in("id", ids)
-        .eq("status", "pending")
+        .in("status", ["pending", "failed"])
         .select("id, release_feature_id, announcement_key, user_id, attempts");
       if (claimError) throw new Error(`[emailDeliveries] claim: ${claimError.message}`);
       return (claimed ?? []) as PendingEmailDelivery[];
     },
+
 
     async getFeatures(featureIds) {
       const map = new Map<string, EmailDeliveryFeature>();
