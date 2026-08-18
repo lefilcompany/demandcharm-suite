@@ -38,17 +38,19 @@ function feature(id: string, key: string): FeatureRow {
   };
 }
 
-function makeDeliverySource(): DeliveryDataSource & { upserted: unknown[] } {
-  const upserted: unknown[] = [];
+function makeDeliverySource(): DeliveryDataSource & { upserted: any[] } {
+  const upserted: any[] = [];
   return {
     upserted,
-    listGlobalUserIds: async () => [U1, U2],
-    listTeamUserIds: async () => [U1],
-    listBoardUserIds: async () => [U1],
+    listGlobalRoleUserIds: async () => [U1, U2],
+    listTeamMemberUserIds: async () => [U1],
+    listBoardMemberUserIds: async () => [U1],
+    filterExistingUserIds: async (ids: string[]) => ids,
     getNotificationPreferences: async () => new Map(),
-    upsertDeliveries: async (rows) => void upserted.push(...rows),
-  } as unknown as DeliveryDataSource & { upserted: unknown[] };
+    upsertDeliveries: async (rows: any[]) => void upserted.push(...rows),
+  } as unknown as DeliveryDataSource & { upserted: any[] };
 }
+
 
 function makeSource(features: FeatureRow[], existing: Set<string> = new Set()) {
   const statuses: Array<[string, string]> = [];
