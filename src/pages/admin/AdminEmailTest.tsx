@@ -9,18 +9,28 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, Loader2, MailCheck, RefreshCw, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertTriangle, Eye, Info, Loader2, MailCheck, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { SEOHead } from "@/components/SEOHead";
 
-type Scenario = "creation" | "deadline" | "generic";
+type Scenario = "creation" | "deadline" | "generic" | "product_update";
 
 const SCENARIO_LABEL: Record<Scenario, string> = {
   creation: "Criação de demanda",
   deadline: "Vencimento de demanda",
   generic: "Verificação genérica",
+  product_update: "Novidade da plataforma",
+};
+
+const PRODUCT_UPDATE_DEFAULTS = {
+  title: "Novo painel de relatórios",
+  message:
+    "Agora ficou mais fácil acompanhar a performance da sua operação. Conheça os novos recursos disponíveis no SoMA+.",
+  actionText: "Conhecer novidade",
+  ctaPath: "/reports",
 };
 
 export default function AdminEmailTest() {
@@ -29,6 +39,11 @@ export default function AdminEmailTest() {
   const [recipient, setRecipient] = useState(user?.email ?? "");
   const [scenario, setScenario] = useState<Scenario>("creation");
   const [sending, setSending] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [fields, setFields] = useState(PRODUCT_UPDATE_DEFAULTS);
+
+  const isProductUpdate = scenario === "product_update";
 
   const { data: logs, isLoading, refetch } = useQuery({
     queryKey: ["test-email-log"],
@@ -43,6 +58,28 @@ export default function AdminEmailTest() {
     },
   });
 
+  const buildBody = (extra: Record<string, unknown>) => ({
+    scenario,
+    ...(isProductUpdate ? fields : {}),
+    ...extra,
+  });
+
+  const handlePreview = async () => {
+    setPreviewing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-test-email", {
+        body: buildBody({ preview: true }),
+      });
+      if (error) throw error;
+      if (!data?.html) throw new Error(data?.error ?? "Não foi possível gerar a prévia");
+      setPreviewHtml(data.html);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Falha ao gerar prévia");
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!recipient) {
       toast.error("Informe um e-mail de destino");
@@ -51,13 +88,13 @@ export default function AdminEmailTest() {
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-test-email", {
-        body: { to: recipient, scenario },
+        body: buildBody({ to: recipient }),
       });
       if (error) throw error;
       if (data?.status === "accepted") {
         toast.success("E-mail aceito pelo provedor. Verifique a caixa de entrada.");
       } else {
-        toast.warning(`E-mail rejeitado: ${data?.error_message ?? "erro desconhecido"}`);
+        toast.warning(`E-mail rejeitado: ${data?.error_message ?? data?.error ?? "erro desconhecido"}`);
       }
       await queryClient.invalidateQueries({ queryKey: ["test-email-log"] });
     } catch (err: any) {
