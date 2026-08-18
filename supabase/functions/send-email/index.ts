@@ -268,7 +268,7 @@ const handler = async (req: Request): Promise<Response> => {
       const to = validateBoundedString(rawPayload.to, "to", 64);
       const subject = validateBoundedString(rawPayload.subject, "subject", 200);
       const template = rawPayload.template;
-      if (template !== "notification" || !isRecord(rawPayload.templateData)) {
+      if ((template !== "notification" && template !== "product_update") || !isRecord(rawPayload.templateData)) {
         throw new Error("A valid notification template is required");
       }
 
@@ -282,7 +282,8 @@ const handler = async (req: Request): Promise<Response> => {
       payload = {
         to: to!,
         subject: subject!,
-        template: "notification",
+        template,
+
         templateData: {
           title: validateBoundedString(rawTemplateData.title, "templateData.title", 200)!,
           message: validateBoundedString(rawTemplateData.message, "templateData.message", 5000)!,
