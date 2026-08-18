@@ -18,7 +18,6 @@ export interface ProductUpdateEmailProps {
   message: string;
   actionUrl?: string;
   actionText?: string;
-  userName?: string;
   imageUrl?: string;
 }
 
@@ -42,7 +41,6 @@ export const ProductUpdateEmail = ({
   message,
   actionUrl,
   actionText = 'Conhecer novidade',
-  userName,
   imageUrl,
 }: ProductUpdateEmailProps) => (
 
@@ -154,10 +152,12 @@ export const ProductUpdateEmail = ({
 
 export default ProductUpdateEmail
 
+const FONT_STACK =
+  "'DM Sans', 'Poppins', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+
 const main = {
   backgroundColor: '#F2F2F2',
-  fontFamily:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
+  fontFamily: FONT_STACK,
   margin: '0',
   padding: '0',
 }
@@ -181,6 +181,7 @@ const kickerSection = {
 }
 
 const kicker = {
+  fontFamily: FONT_STACK,
   color: BRAND.ink,
   fontSize: '17px',
   fontWeight: '500',
@@ -193,12 +194,6 @@ const kicker = {
 
 const contentSection = {
   padding: '20px 40px 8px',
-}
-
-const greeting = {
-  color: BRAND.mutedText,
-  fontSize: '14px',
-  margin: '0 0 12px',
 }
 
 const headingTable = {
@@ -218,6 +213,7 @@ const headingCell = {
 }
 
 const heading = {
+  fontFamily: FONT_STACK,
   color: BRAND.ink,
   fontSize: '28px',
   fontWeight: '700',
@@ -226,6 +222,7 @@ const heading = {
 }
 
 const messageText = {
+  fontFamily: FONT_STACK,
   color: BRAND.bodyText,
   fontSize: '16px',
   lineHeight: '1.7',
@@ -256,6 +253,7 @@ const footerSection = {
 }
 
 const footerText = {
+  fontFamily: FONT_STACK,
   color: BRAND.mutedText,
   fontSize: '12px',
   lineHeight: '1.5',
@@ -264,6 +262,7 @@ const footerText = {
 }
 
 const footerLinks = {
+  fontFamily: FONT_STACK,
   color: BRAND.mutedText,
   fontSize: '12px',
   margin: '10px 0 6px',
@@ -277,6 +276,7 @@ const footerLink = {
 }
 
 const copyright = {
+  fontFamily: FONT_STACK,
   color: BRAND.mutedText,
   fontSize: '11px',
   margin: '10px 0 0',
@@ -309,6 +309,7 @@ const featureImage = {
 }
 
 const headingCompact = {
+  fontFamily: FONT_STACK,
   color: BRAND.ink,
   fontSize: '22px',
   fontWeight: '700',
@@ -317,6 +318,7 @@ const headingCompact = {
 }
 
 const messageTextCompact = {
+  fontFamily: FONT_STACK,
   color: BRAND.bodyText,
   fontSize: '15px',
   lineHeight: '1.6',
