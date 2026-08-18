@@ -20,11 +20,22 @@ export function useDueDateHistory(demandId: string | null | undefined) {
       if (!demandId) return [];
       const { data, error } = await supabase
         .from("demand_due_date_changes")
-        .select("*, profile:profiles!demand_due_date_changes_changed_by_fkey(id, full_name, avatar_url)")
+        .select("*")
         .eq("demand_id", demandId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as unknown as DueDateChange[];
+
+      const rows = (data || []) as unknown as DueDateChange[];
+      const userIds = Array.from(new Set(rows.map((r) => r.changed_by).filter(Boolean))) as string[];
+      if (userIds.length === 0) return rows;
+
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .in("id", userIds);
+
+      const map = new Map((profiles || []).map((p: any) => [p.id, p]));
+      return rows.map((r) => ({ ...r, profile: r.changed_by ? map.get(r.changed_by) ?? null : null }));
     },
     enabled: !!demandId,
     staleTime: 30000,
