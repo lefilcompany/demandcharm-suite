@@ -617,6 +617,12 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                 />
               </div>
 
+              {/* Dependência — editar travamento de demandas já criadas */}
+              {canManageAssignees && (
+                <DemandDependencyEditor demandId={demand.id} boardId={demand.board_id} />
+              )}
+
+
               {/* Recurrence — only for managers, creator or responsibles */}
               {canManageAssignees && (
                 <div className="space-y-2">
