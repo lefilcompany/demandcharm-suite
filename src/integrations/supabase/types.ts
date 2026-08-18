@@ -1388,6 +1388,69 @@ export type Database = {
           },
         ]
       }
+      email_send_log: {
+        Row: {
+          created_at: string
+          dedupe_key: string | null
+          error_message: string | null
+          event_type: string
+          http_status: number | null
+          id: string
+          message_id: string | null
+          metadata: Json
+          provider_message_id: string | null
+          recipient_email: string
+          recipient_user_id: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          source_function: string | null
+          status: string
+          subject: string
+          template_name: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key?: string | null
+          error_message?: string | null
+          event_type?: string
+          http_status?: number | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json
+          provider_message_id?: string | null
+          recipient_email: string
+          recipient_user_id?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          source_function?: string | null
+          status: string
+          subject: string
+          template_name?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string | null
+          error_message?: string | null
+          event_type?: string
+          http_status?: number | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json
+          provider_message_id?: string | null
+          recipient_email?: string
+          recipient_user_id?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          source_function?: string | null
+          status?: string
+          subject?: string
+          template_name?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       fcm_tokens: {
         Row: {
           created_at: string
