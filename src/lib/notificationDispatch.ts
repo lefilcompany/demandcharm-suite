@@ -60,6 +60,7 @@ function parsePreferencesValue(value: unknown): NotificationPreferences {
     boardMembership: legacyTeam,
     teamUpdates: legacyTeam,
     requestApproval: legacyDemand,
+    productUpdates: true,
   };
   return {
     channels: {
@@ -86,6 +87,7 @@ const BOARD_SCOPED_TYPES: Record<NotificationEventType, boolean> = {
   boardMembership: false, // é sobre você mesmo
   teamUpdates: false,
   requestApproval: false,
+  productUpdates: false, // anúncio global, não depende de quadro
 };
 
 export interface DispatchContext {
