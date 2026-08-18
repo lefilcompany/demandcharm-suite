@@ -2366,6 +2366,36 @@ export type Database = {
           },
         ]
       }
+      release_detection_log: {
+        Row: {
+          checked_at: string
+          error: string | null
+          id: string
+          prod_url: string | null
+          release_id: string | null
+          release_key: string | null
+          status: string
+        }
+        Insert: {
+          checked_at?: string
+          error?: string | null
+          id?: string
+          prod_url?: string | null
+          release_id?: string | null
+          release_key?: string | null
+          status: string
+        }
+        Update: {
+          checked_at?: string
+          error?: string | null
+          id?: string
+          prod_url?: string | null
+          release_id?: string | null
+          release_key?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       release_features: {
         Row: {
           announcement_key: string
@@ -3337,6 +3367,7 @@ export type Database = {
         Returns: number
       }
       get_recurring_demands_cron_token: { Args: never; Returns: string }
+      get_release_detection_cron_token: { Args: never; Returns: string }
       get_shared_board_summary: { Args: { p_token: string }; Returns: Json }
       get_team_active_plan: {
         Args: { _team_id: string }
