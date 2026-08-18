@@ -591,13 +591,32 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "SoMA+ <soma@lefil.com.br>",
-        to: memberEmails,
+        to: recipients,
         subject: `Nova Solicitação de Demanda: ${title.substring(0, 50)}${title.length > 50 ? "..." : ""}`,
         html: emailHtml,
       }),
     });
 
     const data = await res.json();
+
+    const subjectLine = `Nova Solicitação de Demanda: ${title.substring(0, 50)}${title.length > 50 ? "..." : ""}`;
+    const logRows = recipients.map((email) => ({
+      message_id: `${dedupeKey}:${email}`,
+      template_name: "demand-request",
+      event_type: "demand_request_created",
+      dedupe_key: dedupeKey,
+      recipient_email: email,
+      subject: subjectLine,
+      status: res.ok ? "sent" : "failed",
+      source_function: "notify-demand-request",
+      related_entity_type: "demand_request",
+      related_entity_id: requestId,
+      provider_message_id: res.ok ? (data?.id ?? null) : null,
+      http_status: res.status,
+      error_message: res.ok ? null : JSON.stringify(data).slice(0, 500),
+      metadata: {},
+    }));
+    await supabaseAdmin.from("email_send_log").insert(logRows);
 
     if (!res.ok) {
       console.error(`Resend gateway error [${res.status}]:`, data);
@@ -610,7 +629,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Emails sent successfully:", data);
 
     return new Response(
-      JSON.stringify({ success: true, emailsSent: memberEmails.length, notificationsCreated }),
+      JSON.stringify({ success: true, emailsSent: recipients.length, notificationsCreated }),
+
       {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
