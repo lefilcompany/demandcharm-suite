@@ -150,6 +150,7 @@ Deno.serve(async (req) => {
       emailBody: "Este é um e-mail de teste enviado apenas para membros da equipe selecionada.",
       ctaPath: "/dashboard",
       ctaLabel: "Ir para o painel",
+      ...(imageUrl ? { imageUrl } : {}),
       priority: "normal",
       audience: { scope: "team", globalRoles: [], teamRoles: [], boardRoles: [], teamId, boardId: null },
       channels: { email: true, inapp: true },
