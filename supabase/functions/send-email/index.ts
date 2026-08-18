@@ -291,7 +291,17 @@ const handler = async (req: Request): Promise<Response> => {
           userName: validateBoundedString(rawTemplateData.userName, "templateData.userName", 120, false),
           type: type as NotificationType | undefined,
         },
+        eventType: validateBoundedString(rawPayload.eventType, "eventType", 80, false),
+        dedupeKey: validateBoundedString(rawPayload.dedupeKey, "dedupeKey", 300, false),
+        dedupeWindowMinutes:
+          typeof rawPayload.dedupeWindowMinutes === "number" && rawPayload.dedupeWindowMinutes > 0
+            ? Math.min(rawPayload.dedupeWindowMinutes, 1440)
+            : undefined,
+        sourceFunction: validateBoundedString(rawPayload.sourceFunction, "sourceFunction", 80, false),
+        relatedEntityType: validateBoundedString(rawPayload.relatedEntityType, "relatedEntityType", 60, false),
+        relatedEntityId: validateBoundedString(rawPayload.relatedEntityId, "relatedEntityId", 120, false),
       };
+
     } catch (validationError) {
       return new Response(
         JSON.stringify({ error: validationError instanceof Error ? validationError.message : "Invalid email payload" }),
