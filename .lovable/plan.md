@@ -1,49 +1,34 @@
-# Acabar com e-mails duplicados (1 e-mail por ação)
+# Camada de dados para anúncio automático de novidades (event-driven)
 
-## O que foi verificado agora
+Somente banco de dados nesta etapa. Nenhuma Edge Function, nenhuma tela, nenhum processamento.
 
-Não existe hoje nenhum registro de envios de e-mail no banco (só `test_email_log`), então a duplicidade foi rastreada lendo os caminhos de envio e conferindo as notificações internas gravadas.
+## Reuso do que já existe
 
-### 1. Nova solicitação de demanda — duplicidade confirmada no código
-Ao criar uma solicitação, o app dispara **dois** envios para as mesmas pessoas:
-- a função `notify-demand-request`, que manda o e-mail rico "Nova Solicitação de Demanda" via Resend para todos os admins/moderadores/executores do quadro;
-- logo em seguida, o push (`sendDemandRequestPushNotification`) sem o sinalizador de "não espelhar", e a função de push **gera um segundo e-mail** (espelho) para cada usuário.
+- Permissão de administrador global: função `has_role(auth.uid(), 'admin')` sobre `user_roles` — nenhum sistema novo de permissão.
+- Notificações internas: a tabela `notifications` atual será a saída do canal in-app quando o processamento for implementado; nada é duplicado agora.
+- E-mail: as funções de e-mail existentes continuarão sendo o transporte; as novas tabelas apenas registram o que deve ser enviado e o que já foi enviado.
 
-Resultado: 2 e-mails por solicitação, por destinatário.
+## Tabelas criadas
 
-### 2. Aprovação do cliente / ajuste — duplicidade confirmada no código
-Na mudança de status pelo Kanban, o criador da demanda recebe o e-mail "Status atualizado" sempre que o novo status é `Entregue`, `Aprovação do Cliente` ou `Em Ajuste`. Logo depois, o mesmo evento dispara o e-mail de aprovação (`notifyApproval`) ou o de ajuste — para o mesmo criador. São 2 e-mails para a mesma ação.
+1. `platform_releases` — um registro por publicação detectada (chave única `release_key`, mais `deployment_id`, `commit_sha`, `source`, `status`, datas).
+2. `release_features` — as novidades de cada release, com `announcement_key` único global (garante que a mesma novidade nunca é anunciada de novo em publicações seguintes), textos do anúncio, CTA, prioridade, público-alvo (global/equipe/quadro), listas de papéis, e ativação por canal.
+3. `platform_events` — fila de eventos genérica com tentativas, próximo retry e erro, para o processamento assíncrono futuro.
+4. `release_deliveries` — uma linha por usuário/canal, com `UNIQUE (announcement_key, user_id, channel)` garantindo idempotência: cada pessoa recebe cada novidade no máximo uma vez por canal.
 
-### 3. Aprovação interna e responsável principal — diagnóstico ainda não fechado
-As notificações internas repetidas de "Aprovação interna pendente" que existem no banco estão separadas por mais de uma hora, ou seja, são transições diferentes, não um envio duplo. Para responsável/atribuição, o que está comprovadamente duplicado é a **notificação interna**: o app insere a notificação e, além disso, gatilhos antigos do banco (`notify_assignee_added`, `notify_demand_assigned`, `notify_demand_request_created`) inserem outra com texto diferente. Isso não gera e-mail, mas dá a sensação de repetição.
-Para o e-mail desses dois casos, ainda falta prova — por isso o plano inclui registro de envios antes de qualquer conclusão adicional.
+Cada campo de status usa restrição de valores permitidos exatamente como especificado, e `updated_at` é mantido por gatilho onde a coluna existe.
 
-## Correção proposta
+## Segurança
 
-### Etapa 1 — Blindagem central (resolve qualquer duplicidade, inclusive as não mapeadas)
-- Criar a tabela `email_send_log` (destinatário, assunto, chave de idempotência, origem, status, data) com RLS restrita a admin.
-- A função `send-email` passa a: calcular uma chave de idempotência (destinatário + tipo de evento + id da demanda/solicitação + status), **recusar reenvio** de uma chave já registrada nos últimos 10 minutos e gravar todo envio no log.
-- O espelho de e-mail da função de push usa a mesma chave, então o espelho nunca sai se o e-mail rico já saiu — mesmo que algum ponto do app esqueça de marcar "não espelhar".
-
-Com isso, "um e-mail por ação" passa a ser garantido no servidor, e não em cada tela.
-
-### Etapa 2 — Corrigir os dois pontos confirmados
-- Solicitação de demanda: o push deixa de espelhar e-mail (o e-mail rico da função continua sendo o único).
-- Mudança de status: quando o novo status for de aprovação ou ajuste, o e-mail genérico "Status atualizado" deixa de ser enviado, pois o fluxo específico já envia um e-mail melhor.
-
-### Etapa 3 — Limpar as notificações internas duplicadas
-Remover os gatilhos antigos do banco que inserem notificação interna já criada pelo app (atribuição de responsável e nova solicitação), mantendo apenas um registro por evento.
-
-### Etapa 4 — Verificação
-- Executar uma solicitação de teste, uma aprovação interna, uma aprovação de cliente e uma troca de responsável.
-- Consultar `email_send_log` e confirmar exatamente 1 linha por destinatário/evento (e as recusas por idempotência, se houver).
-- Reportar o resultado com os números, para comprovar a queda de consumo no Resend.
+- `platform_releases` e `release_features`: leitura apenas para administradores globais; nenhuma escrita pelo app.
+- `platform_events` e `release_deliveries`: sem acesso pelo app; apenas o service role (Edge Functions futuras) manipula.
+- RLS ativa em todas, com GRANTs coerentes (leitura para `authenticated` só onde há política de leitura admin; `service_role` com acesso total).
 
 ## Detalhes técnicos
 
-- Migração: tabela `email_send_log` (`id`, `recipient_user_id`, `recipient_email`, `subject`, `event_key`, `source`, `status`, `error`, `created_at`), índice único parcial por `event_key`, GRANTs para `authenticated`/`service_role` e política de leitura só para admin do sistema.
-- `supabase/functions/send-email/index.ts`: aceitar `eventKey` opcional no corpo; se ausente, derivar de `to + subject`; checar log antes de chamar o gateway Resend; gravar resultado. Redeploy.
-- `supabase/functions/send-push-notification/index.ts`: `sendMirrorEmail` passa `eventKey` derivado de `type + demandId + userId`. Redeploy.
-- `src/hooks/useDemandRequests.ts`: `sendDemandRequestPushNotification({ ..., mirrorEmail: false })` e repasse do parâmetro no helper em `src/hooks/useSendPushNotification.ts`.
-- `src/components/KanbanBoard.tsx`: remover `"Aprovação do Cliente"` e `"Em Ajuste"` de `importantStatuses` do e-mail de status (mantendo `Entregue`).
-- Migração adicional: `DROP TRIGGER on_assignee_added`, `on_demand_assigned` e `on_demand_request_created` (as notificações equivalentes já são criadas pelo app/edge function).
+- Uma migration única cria os quatro `CREATE TABLE`, seguidos de `GRANT`, `ENABLE ROW LEVEL SECURITY` e políticas, nessa ordem.
+- Validação de valores por `CHECK` em `status`, `priority`, `audience_scope` e `channel` (valores fixos, não dependem de tempo).
+- FKs: `release_features.release_id -> platform_releases(id) ON DELETE CASCADE`; `release_deliveries.release_feature_id -> release_features(id) ON DELETE CASCADE`. `user_id` fica sem FK para `auth.users`, seguindo o padrão do projeto.
+- Índices: `platform_events(status, next_retry_at)`, `platform_events(event_type)`, `platform_events(aggregate_id)`; além de índices de apoio em `release_features(release_id)`, `release_features(status)`, `release_deliveries(release_feature_id)`, `release_deliveries(status, next_retry_at)` e `release_deliveries(user_id)`.
+- Gatilhos `handle_updated_at` em `platform_releases` e `release_deliveries`.
+- Após a migration: regenerar os tipos do backend usados pelo projeto e rodar o typecheck.
+- Ao final, listo exatamente os arquivos criados/alterados.
