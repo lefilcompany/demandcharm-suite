@@ -47,7 +47,12 @@ export const ProductUpdateEmail = ({
 }: ProductUpdateEmailProps) => (
 
   <Html>
-    <Head />
+    <Head>
+      <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet"
+      />
+    </Head>
     <Preview>{title}</Preview>
     <Body style={main}>
       <Container style={container}>
@@ -59,7 +64,7 @@ export const ProductUpdateEmail = ({
         </Section>
 
         <Section style={contentSection}>
-          {userName && <Text style={greeting}>Olá, {userName}!</Text>}
+
 
           {imageUrl ? (
             <table
