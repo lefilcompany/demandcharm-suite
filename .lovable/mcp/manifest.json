@@ -1240,6 +1240,68 @@
         "outputSchema": null
       },
       {
+        "name": "reschedule_demand",
+        "title": "Reschedule demand deadline",
+        "description": "Change a demand deadline with a mandatory justification. The original (first) deadline stays frozen and every change is logged.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "new_due_date": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 2000,
+              "description": "Why the deadline was renegotiated."
+            }
+          },
+          "required": [
+            "demand_id",
+            "new_due_date",
+            "reason"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "demand_deadline_history",
+        "title": "Demand deadline history",
+        "description": "Original (frozen) deadline, current deadline, how many times it was rescheduled and the reason of each change.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "demand_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "demand_id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
         "name": "list_subtasks",
         "title": "List subtasks",
         "description": "List the checklist subtasks for a demand.",

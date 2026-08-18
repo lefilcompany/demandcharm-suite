@@ -14,7 +14,9 @@ import { useHasBoardServices } from "@/hooks/useBoardServices";
 import { UnsavedChangesDialog } from "@/components/UnsavedChangesDialog";
 import { useFormDraft } from "@/hooks/useFormDraft";
 import { useNavigationBlock } from "@/hooks/useNavigationBlock";
-import { calculateBusinessDueDate, formatDueDateForInput, toDateOnly } from "@/lib/dateUtils";
+import { Textarea } from "@/components/ui/textarea";
+import { calculateBusinessDueDate, formatDueDateForInput, toDateOnly, formatDateOnlyBR } from "@/lib/dateUtils";
+import { useRescheduleDemand } from "@/hooks/useDueDateHistory";
 import { RecurrenceConfig, RecurrenceData, defaultRecurrenceData } from "@/components/RecurrenceConfig";
 import { useRecurringDemands, useCreateRecurringDemand, useUpdateRecurringDemand, useDeleteRecurringDemand } from "@/hooks/useRecurringDemands";
 import { useAddSubdemand } from "@/hooks/useSubdemands";
@@ -41,6 +43,7 @@ interface DemandEditFormProps {
     team_id: string;
     board_id: string;
     created_by?: string | null;
+    original_due_date?: string | null;
   };
   onClose: () => void;
   onSuccess: () => void;
@@ -77,6 +80,11 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
   const [priority, setPriority] = useState(demand.priority || "média");
   const [dueDate, setDueDate] = useState(toDateOnly(demand.due_date) || "");
   const [serviceId, setServiceId] = useState(demand.service_id || "");
+  const originalDueDate = demand.original_due_date || demand.due_date || null;
+  const initialDueDate = toDateOnly(demand.due_date) || "";
+  const dueDateChanged = !!initialDueDate && dueDate !== initialDueDate;
+  const [rescheduleReason, setRescheduleReason] = useState("");
+  const rescheduleDemand = useRescheduleDemand();
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [primaryAssignee, setPrimaryAssignee] = useState<string | null>(null);
   const [recurrence, setRecurrence] = useState<RecurrenceData>(defaultRecurrenceData);
@@ -310,6 +318,11 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
       setCurrentStep(0);
       return;
     }
+    if (dueDateChanged && rescheduleReason.trim().length < 3) {
+      toast.error("Justifique a mudança do prazo de entrega");
+      setCurrentStep(0);
+      return;
+    }
     if (canAssignResponsibles && selectedAssignees.length === 0) {
       toast.error("Selecione pelo menos um responsável");
       setCurrentStep(0);
@@ -339,13 +352,22 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
     }
 
     try {
+      // Deadline changes go through the RPC so the justification is recorded
+      if (dueDateChanged) {
+        await rescheduleDemand.mutateAsync({
+          demandId: demand.id,
+          newDueDate: dueDate,
+          reason: rescheduleReason.trim(),
+        });
+      }
+
       await updateDemand.mutateAsync({
         id: demand.id,
         title: title.trim(),
         description: description.trim() || null,
         status_id: statusId,
         priority,
-        due_date: dueDate,
+        ...(dueDateChanged ? {} : { due_date: dueDate }),
         service_id: serviceId && serviceId !== "none" ? serviceId : null,
       });
 
@@ -604,7 +626,27 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                     className="h-8"
                     required
                   />
+                  {originalDueDate && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Prazo inicial (congelado): {formatDateOnlyBR(originalDueDate)}
+                    </p>
+                  )}
                 </div>
+
+                {dueDateChanged && (
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="edit-reschedule-reason">
+                      Motivo da mudança de prazo <span className="text-destructive">*</span>
+                    </Label>
+                    <Textarea
+                      id="edit-reschedule-reason"
+                      value={rescheduleReason}
+                      onChange={(e) => setRescheduleReason(e.target.value)}
+                      placeholder="Explique por que o prazo foi renegociado..."
+                      className="min-h-[70px]"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Description */}

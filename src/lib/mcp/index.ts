@@ -18,6 +18,7 @@ import {
   listDemandsTool, searchDemandsTool, getDemandTool, createDemandTool, updateDemandTool,
   moveDemandTool, assignDemandTool, addFollowerTool, removeFollowerTool, addDependencyTool,
   archiveDemandTool, deleteDemandTool, createDemandWithSubdemandsTool,
+  rescheduleDemandTool, demandDeadlineHistoryTool,
 } from "./tools/demands";
 // Subtasks
 import {
@@ -109,7 +110,7 @@ export default defineMcp({
     "5. `get_operational_snapshot` para leitura executiva, ou operar demandas.",
     "",
     "## Tools por intenção (§21.1 do descritivo SoMA+)",
-    "- **Consultar operação:** `get_operational_snapshot`, `board_summary_stats`, `overdue_demands`, `due_soon_demands`, `risk_of_delay`.",
+    "- **Consultar operação:** `get_operational_snapshot`, `board_summary_stats`, `overdue_demands` (inclui prazo inicial, nº de reagendamentos e motivos), `demand_deadline_history`, `due_soon_demands`, `risk_of_delay`.",
     "- **Criar quadro:** `list_boards`, `create_board`, `add_board_member`, `attach_service_to_board`.",
     "- **Criar demanda:** `list_board_statuses`, `list_board_services`, `list_board_members`, `create_demand`, `create_demand_with_subdemands`.",
     "- **Trabalhar em demanda:** `get_demand`, `move_demand`, `post_comment`, `start_demand_timer`, `stop_demand_timer`.",
@@ -141,6 +142,7 @@ export default defineMcp({
     listDemandsTool, searchDemandsTool, getDemandTool, createDemandTool, updateDemandTool,
     moveDemandTool, assignDemandTool, addFollowerTool, removeFollowerTool, addDependencyTool,
     archiveDemandTool, deleteDemandTool, createDemandWithSubdemandsTool,
+    rescheduleDemandTool, demandDeadlineHistoryTool,
     // subtasks
     listSubtasksTool, createSubtaskTool, toggleSubtaskTool, updateSubtaskTool, deleteSubtaskTool,
     // comments

@@ -49,14 +49,41 @@ export const overdueDemandsTool = defineTool({
   handler: async ({ board_id, team_id, limit }, ctx) => {
     const a = requireAuth(ctx); if (a) return a;
     let q = sb(ctx).from("demands")
-      .select("id, title, board_id, team_id, due_date, priority, status_id, is_overdue")
+      .select("id, title, board_id, team_id, due_date, original_due_date, priority, status_id, is_overdue")
       .eq("is_overdue", true).eq("archived", false).is("delivered_at", null)
       .order("due_date", { ascending: true }).limit(limit ?? 50);
     if (board_id) q = q.eq("board_id", board_id);
     if (team_id) q = q.eq("team_id", team_id);
     const { data, error } = await q;
     if (error) return fromPgError(error);
-    return okList("overdue", data ?? []);
+
+    const rows = data ?? [];
+    if (rows.length === 0) return okList("overdue", rows);
+
+    // Enrich with reschedule count + reasons
+    const { data: changes } = await sb(ctx).from("demand_due_date_changes")
+      .select("demand_id, previous_due_date, new_due_date, reason, created_at")
+      .in("demand_id", rows.map((r: any) => r.id))
+      .order("created_at", { ascending: true });
+
+    const byDemand = new Map<string, any[]>();
+    for (const c of changes ?? []) {
+      const list = byDemand.get((c as any).demand_id) ?? [];
+      list.push(c);
+      byDemand.set((c as any).demand_id, list);
+    }
+
+    const enriched = rows.map((r: any) => {
+      const list = byDemand.get(r.id) ?? [];
+      return {
+        ...r,
+        reschedule_count: list.length,
+        reschedule_reasons: list.map((c) => c.reason ?? "Sem justificativa registrada"),
+        deadline_changes: list,
+      };
+    });
+
+    return okList("overdue", enriched);
   },
 });
 
