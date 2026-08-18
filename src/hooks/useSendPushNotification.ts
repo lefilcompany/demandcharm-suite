@@ -32,6 +32,8 @@ export async function sendPushNotification({
   data,
   notificationType,
   mirrorEmail,
+  eventType,
+  dedupeKey,
 }: SendPushNotificationParams): Promise<{ success: boolean; sent?: number; failed?: number; error?: string }> {
   if (userIds.length === 0) {
     console.log("No user IDs provided for push notification");
@@ -50,7 +52,10 @@ export async function sendPushNotification({
           notificationType: notificationType || "demandUpdates",
         },
         ...(mirrorEmail === false ? { mirrorEmail: false } : {}),
+        ...(eventType ? { eventType } : {}),
+        ...(dedupeKey ? { dedupeKey } : {}),
       },
+
     });
 
     if (error) {
