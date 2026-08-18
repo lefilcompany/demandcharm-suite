@@ -77,6 +77,7 @@ const AdminEmailTest = lazy(() => import("./pages/admin/AdminEmailTest"));
 const AdminPushTest = lazy(() => import("./pages/admin/AdminPushTest"));
 const AdminEmailLogs = lazy(() => import("./pages/admin/AdminEmailLogs"));
 const AdminReleaseTest = lazy(() => import("./pages/admin/AdminReleaseTest"));
+const AdminReleases = lazy(() => import("./pages/admin/AdminReleases"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const McpDocs = lazy(() => import("./pages/McpDocs"));
 
@@ -159,6 +160,7 @@ const App = () => {
                                 <Route path="push-test" element={<AdminPushTest />} />
                                 <Route path="email-logs" element={<AdminEmailLogs />} />
                                 <Route path="release-test" element={<AdminReleaseTest />} />
+                                <Route path="releases" element={<AdminReleases />} />
                               </Route>
 
                               <Route path="/welcome" element={<RequireAuth><Welcome /></RequireAuth>} />

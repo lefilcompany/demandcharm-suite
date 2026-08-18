@@ -24,6 +24,7 @@ const navItems = [
   { to: "/admin/email-test", icon: MailCheck, label: "Teste de e-mail" },
   { to: "/admin/push-test", icon: BellRing, label: "Teste de push" },
   { to: "/admin/email-logs", icon: ScrollText, label: "Logs de e-mail" },
+  { to: "/admin/releases", icon: Rocket, label: "Aprovar novidades" },
   { to: "/admin/release-test", icon: Rocket, label: "Teste de Release" },
 ];
 
