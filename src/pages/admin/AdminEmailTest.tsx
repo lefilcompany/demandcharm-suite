@@ -155,13 +155,79 @@ export default function AdminEmailTest() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end">
-              <Button onClick={handleSend} disabled={sending} className="w-full md:w-auto">
+            <div className="flex items-end gap-2">
+              <Button variant="outline" onClick={handlePreview} disabled={previewing}>
+                {previewing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
+                Visualizar e-mail
+              </Button>
+              <Button onClick={handleSend} disabled={sending}>
                 {sending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                 Enviar teste
               </Button>
             </div>
           </div>
+
+          {isProductUpdate && (
+            <div className="grid gap-4 rounded-lg border p-4 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="pu-title">Título</Label>
+                <Input
+                  id="pu-title"
+                  maxLength={200}
+                  value={fields.title}
+                  onChange={(e) => setFields((f) => ({ ...f, title: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="pu-message">Resumo / mensagem</Label>
+                <Textarea
+                  id="pu-message"
+                  rows={3}
+                  maxLength={2000}
+                  value={fields.message}
+                  onChange={(e) => setFields((f) => ({ ...f, message: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pu-action">Texto do botão</Label>
+                <Input
+                  id="pu-action"
+                  maxLength={80}
+                  value={fields.actionText}
+                  onChange={(e) => setFields((f) => ({ ...f, actionText: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pu-cta">Caminho do CTA</Label>
+                <Input
+                  id="pu-cta"
+                  placeholder="/reports"
+                  maxLength={200}
+                  value={fields.ctaPath}
+                  onChange={(e) => setFields((f) => ({ ...f, ctaPath: e.target.value }))}
+                />
+                <p className="text-xs text-muted-foreground">Somente rotas internas iniciando com “/”.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Info className="h-3.5 w-3.5" />
+            Esta prévia utiliza o mesmo template do envio de produção.
+          </div>
+
+          {previewHtml && (
+            <div className="rounded-lg border bg-muted/30 p-4">
+              <div className="mx-auto w-full max-w-[600px] overflow-hidden rounded-md bg-white">
+                <iframe
+                  title="Prévia do e-mail"
+                  srcDoc={previewHtml}
+                  sandbox=""
+                  className="h-[720px] w-full border-0"
+                />
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
