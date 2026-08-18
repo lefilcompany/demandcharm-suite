@@ -129,7 +129,13 @@ export async function notifyApproval({
                   userName: profile?.full_name || "Usuário",
                   type: "info" as const,
                 },
+                eventType: `demand_approval_${approvalType}`,
+                dedupeKey: `demand_approval_${approvalType}:${demandId}:${userId}`,
+                sourceFunction: "approvalNotifications",
+                relatedEntityType: "demand",
+                relatedEntityId: demandId,
               },
+
             });
           } catch (emailError) {
             console.error("Error sending approval email:", emailError);
