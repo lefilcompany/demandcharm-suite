@@ -317,6 +317,11 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
       setCurrentStep(0);
       return;
     }
+    if (dueDateChanged && rescheduleReason.trim().length < 3) {
+      toast.error("Justifique a mudança do prazo de entrega");
+      setCurrentStep(0);
+      return;
+    }
     if (canAssignResponsibles && selectedAssignees.length === 0) {
       toast.error("Selecione pelo menos um responsável");
       setCurrentStep(0);
@@ -346,13 +351,22 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
     }
 
     try {
+      // Deadline changes go through the RPC so the justification is recorded
+      if (dueDateChanged) {
+        await rescheduleDemand.mutateAsync({
+          demandId: demand.id,
+          newDueDate: dueDate,
+          reason: rescheduleReason.trim(),
+        });
+      }
+
       await updateDemand.mutateAsync({
         id: demand.id,
         title: title.trim(),
         description: description.trim() || null,
         status_id: statusId,
         priority,
-        due_date: dueDate,
+        ...(dueDateChanged ? {} : { due_date: dueDate }),
         service_id: serviceId && serviceId !== "none" ? serviceId : null,
       });
 
@@ -617,6 +631,21 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                     </p>
                   )}
                 </div>
+
+                {dueDateChanged && (
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="edit-reschedule-reason">
+                      Motivo da mudança de prazo <span className="text-destructive">*</span>
+                    </Label>
+                    <Textarea
+                      id="edit-reschedule-reason"
+                      value={rescheduleReason}
+                      onChange={(e) => setRescheduleReason(e.target.value)}
+                      placeholder="Explique por que o prazo foi renegociado..."
+                      className="min-h-[70px]"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Description */}
