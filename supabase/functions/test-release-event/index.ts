@@ -13,6 +13,7 @@
  */
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { isValidReleaseImageUrl } from "../_shared/releaseManifest.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -120,6 +121,7 @@ Deno.serve(async (req) => {
         "Este é um e-mail de teste do pipeline de novidades da plataforma. Somente administradores globais recebem esta feature.",
       ctaPath: "/admin/release-test",
       ctaLabel: "Abrir teste de release",
+      ...(imageUrl ? { imageUrl } : {}),
       priority: "high",
       audience: { scope: "global", globalRoles: ["admin"], teamRoles: [], boardRoles: [], teamId: null, boardId: null },
       channels: { email: true, inapp: true },
