@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "features": [
+    {
+      "announcementKey": "advanced-reports-v1",
+      "featureKey": "advanced-reports",
+      "title": "Novo painel de relatórios",
+      "summary": "Agora ficou mais fácil acompanhar a performance da sua operação.",
+      "emailBody": "O novo painel de relatórios reúne indicadores de entrega, prazo e produtividade em uma única tela, com filtros por quadro e período.",
+      "ctaPath": "/admin",
+      "ctaLabel": "Conhecer novidade",
+      "priority": "high",
+      "audience": {
+        "scope": "global",
+        "globalRoles": ["admin"],
+        "teamRoles": [],
+        "boardRoles": [],
+        "teamId": null,
+        "boardId": null
+      },
+      "channels": {
+        "email": true,
+        "inapp": true
+      }
+    },
+    {
+      "announcementKey": "team-capacity-planner-v1",
+      "featureKey": "team-capacity-planner",
+      "title": "Planejamento de capacidade da equipe",
+      "summary": "Veja a carga de trabalho de cada membro antes de distribuir novas demandas.",
+      "ctaPath": "/team",
+      "ctaLabel": "Ver capacidade",
+      "priority": "normal",
+      "audience": {
+        "scope": "team",
+        "globalRoles": [],
+        "teamRoles": ["admin", "moderator"],
+        "boardRoles": [],
+        "teamId": "00000000-0000-0000-0000-000000000001",
+        "boardId": null
+      },
+      "channels": {
+        "email": true,
+        "inapp": true
+      }
+    },
+    {
+      "announcementKey": "board-quick-filters-v1",
+      "featureKey": "board-quick-filters",
+      "title": "Filtros rápidos no quadro",
+      "summary": "Filtre demandas por serviço, prazo e responsável com um clique.",
+      "emailBody": "Os filtros rápidos ficam no topo do quadro e podem ser combinados com a busca por código da demanda.",
+      "ctaPath": "/demands",
+      "ctaLabel": "Testar filtros",
+      "priority": "low",
+      "audience": {
+        "scope": "board",
+        "globalRoles": [],
+        "teamRoles": [],
+        "boardRoles": ["admin", "moderator", "executor", "requester"],
+        "teamId": null,
+        "boardId": "00000000-0000-0000-0000-000000000002"
+      },
+      "channels": {
+        "email": false,
+        "inapp": true
+      }
+    }
+  ]
+}
