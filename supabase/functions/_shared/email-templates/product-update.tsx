@@ -310,17 +310,42 @@ const copyright = {
   textAlign: 'center' as const,
 }
 
-const imageSection = {
-  margin: '0 0 24px',
-  textAlign: 'center' as const,
+const splitTable = {
+  borderCollapse: 'collapse' as const,
+  width: '100%',
+  margin: '0 0 8px',
+}
+
+const imageColumn = {
+  width: '250px',
+  verticalAlign: 'middle' as const,
+  paddingRight: '20px',
+}
+
+const textColumn = {
+  verticalAlign: 'middle' as const,
 }
 
 const featureImage = {
   width: '100%',
-  maxWidth: '520px',
+  maxWidth: '250px',
   height: 'auto' as const,
-  borderRadius: '10px',
+  borderRadius: '8px',
   border: `1px solid ${BRAND.border}`,
   display: 'block',
-  margin: '0 auto',
+}
+
+const headingCompact = {
+  color: BRAND.ink,
+  fontSize: '22px',
+  fontWeight: '700',
+  lineHeight: '1.25',
+  margin: '0',
+}
+
+const messageTextCompact = {
+  color: BRAND.bodyText,
+  fontSize: '15px',
+  lineHeight: '1.6',
+  margin: '0 0 18px',
 }
