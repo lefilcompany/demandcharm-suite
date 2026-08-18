@@ -172,6 +172,11 @@ export async function notifyDemandAssigneeChange(
               actionText: "Abrir demanda",
               type: msg.inAppType,
             },
+            eventType: `demand_assignee_${params.event}`,
+            dedupeKey: `demand_assignee_${params.event}:${params.demandId}:${params.userId}`,
+            sourceFunction: "demandAssigneeNotifications",
+            relatedEntityType: "demand",
+            relatedEntityId: params.demandId,
           },
         })
         .then((res) => {

@@ -523,7 +523,47 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log(`Sending emails to ${memberEmails.length} board members:`, memberEmails);
+    // ---- Deduplication: skip recipients already emailed for this request ----
+    const dedupeKey = `demand_request_created:${requestId}`;
+    let recipients = memberEmails;
+    try {
+      const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+      const { data: alreadySent } = await supabaseAdmin
+        .from("email_send_log")
+        .select("recipient_email")
+        .eq("dedupe_key", dedupeKey)
+        .eq("status", "sent")
+        .gte("created_at", since);
+      const sentSet = new Set((alreadySent || []).map((r: any) => r.recipient_email));
+      recipients = memberEmails.filter((e) => !sentSet.has(e));
+      for (const skipped of memberEmails.filter((e) => sentSet.has(e))) {
+        await supabaseAdmin.from("email_send_log").insert({
+          template_name: "demand-request",
+          event_type: "demand_request_created",
+          dedupe_key: dedupeKey,
+          recipient_email: skipped,
+          subject: `Nova Solicitação de Demanda: ${title}`,
+          status: "skipped_duplicate",
+          source_function: "notify-demand-request",
+          related_entity_type: "demand_request",
+          related_entity_id: requestId,
+          metadata: {},
+        });
+      }
+    } catch (err) {
+      console.warn("Dedupe check failed, proceeding:", err);
+    }
+
+    if (recipients.length === 0) {
+      console.log("All recipients already notified for this request");
+      return new Response(JSON.stringify({ success: true, emailsSent: 0, notificationsCreated, deduplicated: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    console.log(`Sending emails to ${recipients.length} board members:`, recipients);
+
 
     // Generate the action URL
     const appUrl = "https://pla.soma.lefil.com.br"; // Production URL
@@ -551,13 +591,32 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "SoMA+ <soma@lefil.com.br>",
-        to: memberEmails,
+        to: recipients,
         subject: `Nova Solicitação de Demanda: ${title.substring(0, 50)}${title.length > 50 ? "..." : ""}`,
         html: emailHtml,
       }),
     });
 
     const data = await res.json();
+
+    const subjectLine = `Nova Solicitação de Demanda: ${title.substring(0, 50)}${title.length > 50 ? "..." : ""}`;
+    const logRows = recipients.map((email) => ({
+      message_id: `${dedupeKey}:${email}`,
+      template_name: "demand-request",
+      event_type: "demand_request_created",
+      dedupe_key: dedupeKey,
+      recipient_email: email,
+      subject: subjectLine,
+      status: res.ok ? "sent" : "failed",
+      source_function: "notify-demand-request",
+      related_entity_type: "demand_request",
+      related_entity_id: requestId,
+      provider_message_id: res.ok ? (data?.id ?? null) : null,
+      http_status: res.status,
+      error_message: res.ok ? null : JSON.stringify(data).slice(0, 500),
+      metadata: {},
+    }));
+    await supabaseAdmin.from("email_send_log").insert(logRows);
 
     if (!res.ok) {
       console.error(`Resend gateway error [${res.status}]:`, data);
@@ -570,7 +629,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Emails sent successfully:", data);
 
     return new Response(
-      JSON.stringify({ success: true, emailsSent: memberEmails.length, notificationsCreated }),
+      JSON.stringify({ success: true, emailsSent: recipients.length, notificationsCreated }),
+
       {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },

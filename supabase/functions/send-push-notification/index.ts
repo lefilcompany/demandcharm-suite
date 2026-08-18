@@ -14,7 +14,12 @@ interface PushNotificationRequest {
   data?: Record<string, string>;
   /** When false, skips the automatic email mirror (caller already sends its own email). */
   mirrorEmail?: boolean;
+  /** Event identifier stored in email_send_log (e.g. "demand_status_changed"). */
+  eventType?: string;
+  /** Base deduplication key; the recipient id is appended per user. */
+  dedupeKey?: string;
 }
+
 
 interface UserPreferences {
   pushNotifications?: boolean;
@@ -270,6 +275,8 @@ async function sendMirrorEmail(
   body: string,
   actionUrl: string,
   notificationType: string,
+  eventType: string,
+  dedupeKey: string | null,
 ): Promise<{ ok: boolean; code?: string }> {
   try {
     const resp = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
@@ -290,7 +297,11 @@ async function sendMirrorEmail(
           actionText: "Abrir no SoMA+",
           type: emailTypeForNotification(notificationType),
         },
+        eventType,
+        dedupeKey: dedupeKey ? `${dedupeKey}:${userId}` : undefined,
+        sourceFunction: "send-push-notification",
       }),
+
     });
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
@@ -341,7 +352,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // 2. Validate request
-    const { userId, userIds, title, body, link, data, mirrorEmail }: PushNotificationRequest = await req.json();
+    const { userId, userIds, title, body, link, data, mirrorEmail, eventType, dedupeKey }: PushNotificationRequest = await req.json();
     if (!title || !body) return respond(400, { error: "title and body are required" });
     const notificationType = data?.notificationType || "demandUpdates";
 
@@ -521,7 +532,10 @@ Deno.serve(async (req: Request) => {
         body,
         finalLink,
         notificationType,
+        eventType || `push_${notificationType}`,
+        dedupeKey || null,
       );
+
       if (r.ok) emailsSent++;
       else {
         emailsFailed++;

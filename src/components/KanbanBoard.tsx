@@ -1022,7 +1022,8 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
           // Only send notifications if online
           if (!isOffline && demand) {
             // Send email notification to creator for important status changes
-            const importantStatuses = ["Entregue", "Aprovação do Cliente", "Em Ajuste"];
+            // Approval/adjustment stages have their own dedicated emails below — keep this generic notice for delivery only.
+            const importantStatuses = ["Entregue"];
             if (importantStatuses.includes(columnKey) && demand.created_by && demand.created_by !== user?.id) {
               try {
                 const creatorId = demand.created_by;
@@ -1047,6 +1048,11 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                         actionText: "Ver Demanda",
                         type: columnKey === "Entregue" ? "success" : columnKey === "Em Ajuste" ? "warning" : "info",
                       },
+                      eventType: "demand_status_changed",
+                      dedupeKey: `demand_status_changed:${demand.id}:${columnKey}:${creatorId}`,
+                      sourceFunction: "KanbanBoard",
+                      relatedEntityType: "demand",
+                      relatedEntityId: demand.id,
                     },
                   });
                 }
@@ -1244,7 +1250,8 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
           // Only send notifications if online
           if (!isOffline && demand) {
             // Send email notification to creator for important status changes
-            const importantStatuses = ["Entregue", "Aprovação do Cliente", "Em Ajuste"];
+            // Approval/adjustment stages have their own dedicated emails below — keep this generic notice for delivery only.
+            const importantStatuses = ["Entregue"];
             if (importantStatuses.includes(newStatusKey) && demand.created_by && demand.created_by !== user?.id) {
               try {
                 const creatorId = demand.created_by;
@@ -1269,6 +1276,11 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                         actionText: "Ver Demanda",
                         type: newStatusKey === "Entregue" ? "success" : newStatusKey === "Em Ajuste" ? "warning" : "info",
                       },
+                      eventType: "demand_status_changed",
+                      dedupeKey: `demand_status_changed:${demand.id}:${newStatusKey}:${creatorId}`,
+                      sourceFunction: "KanbanBoard",
+                      relatedEntityType: "demand",
+                      relatedEntityId: demand.id,
                     },
                   });
                 }

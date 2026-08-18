@@ -13,6 +13,11 @@ interface SendPushNotificationParams {
    * same event — otherwise the user receives two emails.
    */
   mirrorEmail?: boolean;
+  /** Event name recorded in the email log when the push mirrors an email. */
+  eventType?: string;
+  /** Base deduplication key (recipient id is appended by the edge function). */
+  dedupeKey?: string;
+
 }
 
 /**
@@ -27,6 +32,8 @@ export async function sendPushNotification({
   data,
   notificationType,
   mirrorEmail,
+  eventType,
+  dedupeKey,
 }: SendPushNotificationParams): Promise<{ success: boolean; sent?: number; failed?: number; error?: string }> {
   if (userIds.length === 0) {
     console.log("No user IDs provided for push notification");
@@ -45,7 +52,10 @@ export async function sendPushNotification({
           notificationType: notificationType || "demandUpdates",
         },
         ...(mirrorEmail === false ? { mirrorEmail: false } : {}),
+        ...(eventType ? { eventType } : {}),
+        ...(dedupeKey ? { dedupeKey } : {}),
       },
+
     });
 
     if (error) {
@@ -382,11 +392,13 @@ export async function sendDemandRequestPushNotification({
   requesterName,
   requestTitle,
   boardName,
+  requestId,
 }: {
   adminIds: string[];
   requesterName: string;
   requestTitle: string;
   boardName?: string;
+  requestId?: string;
 }) {
   const boardPrefix = boardName ? `[${boardName}] ` : "";
   return sendPushNotification({
@@ -399,7 +411,12 @@ export async function sendDemandRequestPushNotification({
       boardName: boardName || "",
     },
     notificationType: "demandUpdates",
+    // notify-demand-request already sends the rich email for this event.
+    mirrorEmail: false,
+    eventType: "demand_request_created",
+    ...(requestId ? { dedupeKey: `demand_request_created:${requestId}` } : {}),
   });
+
 }
 
 /**

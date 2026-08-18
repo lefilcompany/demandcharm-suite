@@ -40,7 +40,14 @@ interface EmailRequest {
     userName?: string;
     type?: 'info' | 'success' | 'warning' | 'error';
   };
+  eventType?: string;
+  dedupeKey?: string;
+  dedupeWindowMinutes?: number;
+  sourceFunction?: string;
+  relatedEntityType?: string;
+  relatedEntityId?: string;
 }
+
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -92,6 +99,77 @@ function isUUID(str: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(str);
 }
+
+// ---------------------------------------------------------------------------
+// email_send_log helpers (source of truth for sends + deduplication)
+// ---------------------------------------------------------------------------
+function adminClientOrNull() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
+interface LogEntry {
+  message_id?: string | null;
+  event_type: string;
+  dedupe_key?: string | null;
+  recipient_email: string;
+  recipient_user_id?: string | null;
+  subject: string;
+  status: "sent" | "skipped_duplicate" | "skipped_preference" | "failed";
+  source_function?: string | null;
+  related_entity_type?: string | null;
+  related_entity_id?: string | null;
+  triggered_by?: string | null;
+  provider_message_id?: string | null;
+  http_status?: number | null;
+  error_message?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+async function logEmail(entry: LogEntry): Promise<void> {
+  try {
+    const admin = adminClientOrNull();
+    if (!admin) return;
+    const { error } = await admin.from("email_send_log").insert({
+      template_name: "notification",
+      metadata: {},
+      ...entry,
+    });
+    if (error) console.warn("Could not write email_send_log:", error.message);
+  } catch (err) {
+    console.warn("email_send_log insert threw:", err);
+  }
+}
+
+// Returns the previous log row if an identical email was already sent recently.
+async function findRecentDuplicate(
+  dedupeKey: string,
+  recipientEmail: string,
+  windowMinutes: number,
+): Promise<{ id: string; created_at: string } | null> {
+  try {
+    const admin = adminClientOrNull();
+    if (!admin) return null;
+    const since = new Date(Date.now() - windowMinutes * 60_000).toISOString();
+    const { data } = await admin
+      .from("email_send_log")
+      .select("id, created_at")
+      .eq("dedupe_key", dedupeKey)
+      .eq("recipient_email", recipientEmail)
+      .eq("status", "sent")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    return data && data.length > 0 ? data[0] : null;
+  } catch (err) {
+    console.warn("Duplicate check failed, proceeding to send:", err);
+    return null;
+  }
+}
+
+
 
 // Verify JWT token and get user
 async function verifyAuth(req: Request): Promise<{ userId: string | null; error: string | null }> {
@@ -213,7 +291,17 @@ const handler = async (req: Request): Promise<Response> => {
           userName: validateBoundedString(rawTemplateData.userName, "templateData.userName", 120, false),
           type: type as NotificationType | undefined,
         },
+        eventType: validateBoundedString(rawPayload.eventType, "eventType", 80, false),
+        dedupeKey: validateBoundedString(rawPayload.dedupeKey, "dedupeKey", 300, false),
+        dedupeWindowMinutes:
+          typeof rawPayload.dedupeWindowMinutes === "number" && rawPayload.dedupeWindowMinutes > 0
+            ? Math.min(rawPayload.dedupeWindowMinutes, 1440)
+            : undefined,
+        sourceFunction: validateBoundedString(rawPayload.sourceFunction, "sourceFunction", 80, false),
+        relatedEntityType: validateBoundedString(rawPayload.relatedEntityType, "relatedEntityType", 60, false),
+        relatedEntityId: validateBoundedString(rawPayload.relatedEntityId, "relatedEntityId", 120, false),
       };
+
     } catch (validationError) {
       return new Response(
         JSON.stringify({ error: validationError instanceof Error ? validationError.message : "Invalid email payload" }),
@@ -225,6 +313,15 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const { to, subject, templateData } = payload;
+    const eventType = payload.eventType || "generic";
+    const dedupeKey = payload.dedupeKey || null;
+    const dedupeWindowMinutes = payload.dedupeWindowMinutes ?? 10;
+    const sourceFunction = payload.sourceFunction || null;
+    const relatedEntityType = payload.relatedEntityType || null;
+    const relatedEntityId = payload.relatedEntityId || null;
+    const messageId = dedupeKey ? `${dedupeKey}:${crypto.randomUUID().slice(0, 8)}` : crypto.randomUUID();
+
+
 
     let recipientEmail = to;
     let recipientUserId: string | null = null;
@@ -337,6 +434,20 @@ const handler = async (req: Request): Promise<Response> => {
           const prefs = (prefRow?.preference_value || {}) as Record<string, unknown>;
           if (prefs.emailNotifications === false) {
             console.log(`Skipping email to ${recipientEmail}: emailNotifications disabled`);
+            await logEmail({
+              message_id: messageId,
+              event_type: eventType,
+              dedupe_key: dedupeKey,
+              recipient_email: recipientEmail,
+              recipient_user_id: recipientUserId,
+              subject,
+              status: "skipped_preference",
+              source_function: sourceFunction,
+              related_entity_type: relatedEntityType,
+              related_entity_id: relatedEntityId,
+              triggered_by: userId,
+              metadata: { reason: "emailNotifications disabled" },
+            });
             return new Response(
               JSON.stringify({ success: true, skipped: true, reason: "emailNotifications disabled" }),
               { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -346,6 +457,33 @@ const handler = async (req: Request): Promise<Response> => {
       }
     } catch (prefErr) {
       console.warn("Could not check notification preferences, proceeding to send:", prefErr);
+    }
+
+    // Deduplication: block a second identical email for the same recipient
+    // within the configured window (default 10 minutes).
+    if (dedupeKey) {
+      const duplicate = await findRecentDuplicate(dedupeKey, recipientEmail, dedupeWindowMinutes);
+      if (duplicate) {
+        console.log(`Skipping duplicate email (${dedupeKey}) to ${recipientEmail}`);
+        await logEmail({
+          message_id: messageId,
+          event_type: eventType,
+          dedupe_key: dedupeKey,
+          recipient_email: recipientEmail,
+          recipient_user_id: recipientUserId,
+          subject,
+          status: "skipped_duplicate",
+          source_function: sourceFunction,
+          related_entity_type: relatedEntityType,
+          related_entity_id: relatedEntityId,
+          triggered_by: userId,
+          metadata: { duplicate_of: duplicate.id, window_minutes: dedupeWindowMinutes },
+        });
+        return new Response(
+          JSON.stringify({ success: true, skipped: true, reason: "duplicate" }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
     }
 
     console.log('Rendering notification template for:', templateData.title);
@@ -387,7 +525,7 @@ const handler = async (req: Request): Promise<Response> => {
         const data = await res.json();
 
         if (res.ok) {
-          return { success: true, data };
+          return { success: true, data, status: res.status };
         }
 
         // If rate limited (429), wait and retry
@@ -408,6 +546,23 @@ const handler = async (req: Request): Promise<Response> => {
     const result = await sendWithRetry();
 
     if (!result.success) {
+      await logEmail({
+        message_id: messageId,
+        event_type: eventType,
+        dedupe_key: dedupeKey,
+        recipient_email: recipientEmail,
+        recipient_user_id: recipientUserId,
+        subject,
+        status: "failed",
+        source_function: sourceFunction,
+        related_entity_type: relatedEntityType,
+        related_entity_id: relatedEntityId,
+        triggered_by: userId,
+        http_status: result.status ?? null,
+        error_message:
+          typeof result.data?.message === "string" ? result.data.message : "Failed to send email",
+        metadata: { provider: "resend" },
+      });
       return new Response(JSON.stringify({ error: "Failed to send email" }), {
         status: result.status || 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -418,6 +573,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Email sent successfully:", data);
 
+    await logEmail({
+      message_id: messageId,
+      event_type: eventType,
+      dedupe_key: dedupeKey,
+      recipient_email: recipientEmail,
+      recipient_user_id: recipientUserId,
+      subject,
+      status: "sent",
+      source_function: sourceFunction,
+      related_entity_type: relatedEntityType,
+      related_entity_id: relatedEntityId,
+      triggered_by: userId,
+      provider_message_id: typeof data?.id === "string" ? data.id : null,
+      http_status: result.status ?? 200,
+      metadata: { provider: "resend" },
+    });
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: {
@@ -425,6 +597,7 @@ const handler = async (req: Request): Promise<Response> => {
         ...corsHeaders,
       },
     });
+
   } catch (error: any) {
     console.error("Error in send-email function:", error);
     return new Response(
