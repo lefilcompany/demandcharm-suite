@@ -527,17 +527,27 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log('Rendering notification template for:', templateData.title);
+    const isProductUpdate = payload.template === "product_update";
+    console.log(`Rendering ${payload.template} template for:`, templateData.title);
     const emailHtml = await render(
-      React.createElement(NotificationEmail, {
-        title: templateData.title,
-        message: templateData.message,
-        actionUrl: templateData.actionUrl,
-        actionText: templateData.actionText,
-        userName: templateData.userName,
-        type: templateData.type,
-      })
+      isProductUpdate
+        ? React.createElement(ProductUpdateEmail, {
+            title: templateData.title,
+            message: templateData.message,
+            actionUrl: templateData.actionUrl,
+            actionText: templateData.actionText,
+            userName: templateData.userName,
+          })
+        : React.createElement(NotificationEmail, {
+            title: templateData.title,
+            message: templateData.message,
+            actionUrl: templateData.actionUrl,
+            actionText: templateData.actionText,
+            userName: templateData.userName,
+            type: templateData.type,
+          })
     );
+
 
     console.log(`Sending email to ${recipientEmail} with subject: ${subject}`);
 
