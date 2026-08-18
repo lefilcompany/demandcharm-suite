@@ -1,6 +1,7 @@
 import React from "npm:react@18.3.1";
 import { render } from "npm:@react-email/render@0.0.12";
 import { NotificationEmail } from "../_shared/email-templates/notification.tsx";
+import { ProductUpdateEmail } from "../_shared/email-templates/product-update.tsx";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -31,7 +32,7 @@ type NotificationType = 'info' | 'success' | 'warning' | 'error';
 interface EmailRequest {
   to: string; // Can be email or user_id (UUID)
   subject: string;
-  template: 'notification';
+  template: 'notification' | 'product_update';
   templateData: {
     title: string;
     message: string;
@@ -268,7 +269,7 @@ const handler = async (req: Request): Promise<Response> => {
       const to = validateBoundedString(rawPayload.to, "to", 64);
       const subject = validateBoundedString(rawPayload.subject, "subject", 200);
       const template = rawPayload.template;
-      if (template !== "notification" || !isRecord(rawPayload.templateData)) {
+      if ((template !== "notification" && template !== "product_update") || !isRecord(rawPayload.templateData)) {
         throw new Error("A valid notification template is required");
       }
 
@@ -282,7 +283,8 @@ const handler = async (req: Request): Promise<Response> => {
       payload = {
         to: to!,
         subject: subject!,
-        template: "notification",
+        template,
+
         templateData: {
           title: validateBoundedString(rawTemplateData.title, "templateData.title", 200)!,
           message: validateBoundedString(rawTemplateData.message, "templateData.message", 5000)!,
@@ -526,17 +528,27 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log('Rendering notification template for:', templateData.title);
+    const isProductUpdate = payload.template === "product_update";
+    console.log(`Rendering ${payload.template} template for:`, templateData.title);
     const emailHtml = await render(
-      React.createElement(NotificationEmail, {
-        title: templateData.title,
-        message: templateData.message,
-        actionUrl: templateData.actionUrl,
-        actionText: templateData.actionText,
-        userName: templateData.userName,
-        type: templateData.type,
-      })
+      isProductUpdate
+        ? React.createElement(ProductUpdateEmail, {
+            title: templateData.title,
+            message: templateData.message,
+            actionUrl: templateData.actionUrl,
+            actionText: templateData.actionText,
+            userName: templateData.userName,
+          })
+        : React.createElement(NotificationEmail, {
+            title: templateData.title,
+            message: templateData.message,
+            actionUrl: templateData.actionUrl,
+            actionText: templateData.actionText,
+            userName: templateData.userName,
+            type: templateData.type,
+          })
     );
+
 
     console.log(`Sending email to ${recipientEmail} with subject: ${subject}`);
 
