@@ -44,7 +44,9 @@ export const ProductUpdateEmail = ({
   actionUrl,
   actionText = 'Conhecer novidade',
   userName,
+  imageUrl,
 }: ProductUpdateEmailProps) => (
+
   <Html>
     <Head />
     <Preview>{title}</Preview>
