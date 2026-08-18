@@ -275,6 +275,8 @@ async function sendMirrorEmail(
   body: string,
   actionUrl: string,
   notificationType: string,
+  eventType: string,
+  dedupeKey: string | null,
 ): Promise<{ ok: boolean; code?: string }> {
   try {
     const resp = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
@@ -295,7 +297,11 @@ async function sendMirrorEmail(
           actionText: "Abrir no SoMA+",
           type: emailTypeForNotification(notificationType),
         },
+        eventType,
+        dedupeKey: dedupeKey ? `${dedupeKey}:${userId}` : undefined,
+        sourceFunction: "send-push-notification",
       }),
+
     });
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
