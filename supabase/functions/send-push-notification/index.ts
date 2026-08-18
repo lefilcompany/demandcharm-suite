@@ -532,7 +532,10 @@ Deno.serve(async (req: Request) => {
         body,
         finalLink,
         notificationType,
+        eventType || `push_${notificationType}`,
+        dedupeKey || null,
       );
+
       if (r.ok) emailsSent++;
       else {
         emailsFailed++;
