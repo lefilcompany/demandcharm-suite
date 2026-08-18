@@ -352,7 +352,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // 2. Validate request
-    const { userId, userIds, title, body, link, data, mirrorEmail }: PushNotificationRequest = await req.json();
+    const { userId, userIds, title, body, link, data, mirrorEmail, eventType, dedupeKey }: PushNotificationRequest = await req.json();
     if (!title || !body) return respond(400, { error: "title and body are required" });
     const notificationType = data?.notificationType || "demandUpdates";
 
