@@ -227,22 +227,6 @@ const messageText = {
   margin: '0 0 24px',
 }
 
-const buttonSection = {
-  margin: '4px 0 20px',
-}
-
-const button = {
-  backgroundColor: BRAND.primary,
-  borderRadius: '8px',
-  color: BRAND.white,
-  display: 'inline-block',
-  fontSize: '16px',
-  fontWeight: '600',
-  padding: '14px 32px',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-}
-
 const logoSection = {
   backgroundColor: BRAND.softBg,
   padding: '28px 40px',
