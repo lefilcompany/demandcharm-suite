@@ -14,7 +14,8 @@ export type NotificationEventType =
   | "demandDeadline"
   | "boardMembership"
   | "teamUpdates"
-  | "requestApproval";
+  | "requestApproval"
+  | "platformUpdates";
 
 export const NOTIFICATION_EVENT_TYPES: NotificationEventType[] = [
   "demandAssigned",
@@ -27,6 +28,7 @@ export const NOTIFICATION_EVENT_TYPES: NotificationEventType[] = [
   "boardMembership",
   "teamUpdates",
   "requestApproval",
+  "platformUpdates",
 ];
 
 export type BoardScope = "all" | "assigned_only" | "off";
@@ -95,6 +97,7 @@ function mapLegacyTypes(legacy: Record<string, unknown>): Record<NotificationEve
     boardMembership: teamUpdates,
     teamUpdates: teamUpdates,
     requestApproval: demandUpdates,
+    platformUpdates: true,
   };
 }
 
