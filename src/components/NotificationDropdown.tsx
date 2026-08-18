@@ -1,4 +1,4 @@
-import { Bell, Check, CheckCheck, ExternalLink, LayoutGrid } from "lucide-react";
+import { Bell, Check, CheckCheck, ExternalLink, LayoutGrid, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -87,6 +87,7 @@ export function NotificationDropdown() {
           ) : (
             notifications.map((notification) => {
               const { boardName, cleanTitle } = extractBoardName(notification.title);
+              const isProductUpdate = notification.type === "product_update";
               
               return (
                 <DropdownMenuItem
@@ -95,13 +96,25 @@ export function NotificationDropdown() {
                     "flex flex-col items-start gap-1 p-3 cursor-pointer border-b border-border/30 last:border-b-0",
                     "hover:!bg-muted focus:!bg-muted",
                     "data-[highlighted]:!bg-muted",
-                    !notification.read && "bg-primary/5"
+                    !notification.read && "bg-primary/5",
+                    isProductUpdate && "bg-primary/[0.07]"
                   )}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start gap-2 w-full">
-                    <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", getTypeColor(notification.type))} />
+                    {isProductUpdate ? (
+                      <Sparkles className="h-3.5 w-3.5 mt-1 shrink-0 text-primary" />
+                    ) : (
+                      <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", getTypeColor(notification.type))} />
+                    )}
                     <div className="flex-1 min-w-0">
+                      {isProductUpdate && (
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Badge className="text-[10px] px-1.5 py-0 h-4 font-medium bg-primary/15 text-primary hover:bg-primary/15 border-0">
+                            Novidade
+                          </Badge>
+                        </div>
+                      )}
                       {boardName && (
                         <div className="flex items-center gap-1.5 mb-1">
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal text-muted-foreground border-muted-foreground/30">

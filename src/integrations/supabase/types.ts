@@ -3453,6 +3453,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_release_delivery_attempts: {
+        Args: { p_ids: string[] }
+        Returns: undefined
+      }
       is_board_admin_in_team: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
