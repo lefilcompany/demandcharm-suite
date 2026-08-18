@@ -45,6 +45,8 @@ export interface ReleaseFeature {
   emailBody?: string;
   ctaPath?: string;
   ctaLabel?: string;
+  /** Optional illustration rendered in the product-update email. */
+  imageUrl?: string;
   priority: ReleasePriority;
   audience: ReleaseAudience;
   channels: ReleaseChannels;
@@ -61,7 +63,26 @@ export const LIMITS = {
   summary: 300,
   emailBody: 5000,
   ctaLabel: 60,
+  imageUrl: 2048,
 } as const;
+
+/** Only assets hosted by the platform may be embedded in release emails. */
+export function isValidReleaseImageUrl(value: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(value.trim());
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "https:") return false;
+  const host = parsed.hostname.toLowerCase();
+  return (
+    host === "pla.soma.lefil.com.br" ||
+    /\.lovable\.(app|dev)$/i.test(host) ||
+    /\.supabase\.co$/i.test(host)
+  );
+}
+
 
 export interface ValidationIssue {
   path: string;
@@ -239,6 +260,19 @@ function validateFeature(value: unknown, path: string, issues: ValidationIssue[]
   const emailBody = optionalString(raw.emailBody, `${path}.emailBody`, LIMITS.emailBody, issues);
   const ctaLabel = optionalString(raw.ctaLabel, `${path}.ctaLabel`, LIMITS.ctaLabel, issues);
 
+  let imageUrl: string | undefined;
+  const rawImageUrl = optionalString(raw.imageUrl, `${path}.imageUrl`, LIMITS.imageUrl, issues);
+  if (rawImageUrl !== undefined) {
+    if (!isValidReleaseImageUrl(rawImageUrl)) {
+      issues.push({
+        path: `${path}.imageUrl`,
+        message: "deve ser uma URL https hospedada na plataforma",
+      });
+    } else {
+      imageUrl = rawImageUrl.trim();
+    }
+  }
+
   let ctaPath: string | undefined;
   if (raw.ctaPath !== undefined && raw.ctaPath !== null && raw.ctaPath !== "") {
     if (typeof raw.ctaPath !== "string" || !isValidCtaPath(raw.ctaPath)) {
@@ -281,6 +315,7 @@ function validateFeature(value: unknown, path: string, issues: ValidationIssue[]
     ...(emailBody !== undefined ? { emailBody } : {}),
     ...(ctaPath !== undefined ? { ctaPath } : {}),
     ...(ctaLabel !== undefined ? { ctaLabel } : {}),
+    ...(imageUrl !== undefined ? { imageUrl } : {}),
     priority,
     audience,
     channels,

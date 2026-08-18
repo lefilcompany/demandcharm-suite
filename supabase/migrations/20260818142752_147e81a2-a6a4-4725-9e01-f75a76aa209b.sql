@@ -1,0 +1,1 @@
+ALTER TABLE public.release_features ADD COLUMN IF NOT EXISTS image_url text;

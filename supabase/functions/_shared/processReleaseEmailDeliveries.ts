@@ -46,6 +46,7 @@ export interface EmailDeliveryFeature {
   email_body: string | null;
   cta_path: string | null;
   cta_label: string | null;
+  image_url?: string | null;
 }
 
 export interface SendEmailPayload {
@@ -58,6 +59,7 @@ export interface SendEmailPayload {
     message: string;
     actionText: string;
     actionUrl?: string;
+    imageUrl?: string;
     type: "success";
   };
   dedupeKey: string;
@@ -65,6 +67,7 @@ export interface SendEmailPayload {
   relatedEntityType: string;
   relatedEntityId: string;
 }
+
 
 export type SendEmailOutcome =
   | { kind: "sent" }
@@ -109,6 +112,7 @@ export function buildSendEmailPayload(
       message: feature.email_body || feature.summary,
       actionText: feature.cta_label || "Conhecer novidade",
       ...(actionUrl ? { actionUrl } : {}),
+      ...(feature.image_url ? { imageUrl: feature.image_url } : {}),
       type: "success",
     },
     dedupeKey: `release:${delivery.announcement_key}:${delivery.user_id}`,
@@ -271,7 +275,7 @@ export function createSupabaseEmailDeliverySource(
       for (let i = 0; i < featureIds.length; i += CHUNK) {
         const { data, error } = await client
           .from("release_features")
-          .select("id, title, summary, email_body, cta_path, cta_label")
+          .select("id, title, summary, email_body, cta_path, cta_label, image_url")
           .in("id", featureIds.slice(i, i + CHUNK));
         if (error) throw new Error(`[emailDeliveries] release_features: ${error.message}`);
         for (const row of data ?? []) map.set(row.id as string, row as EmailDeliveryFeature);

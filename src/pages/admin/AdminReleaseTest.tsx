@@ -13,7 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Rocket, Mail, Bell, Users, Copy } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, Rocket, Mail, Bell, Users, Copy, Upload, ImageOff, X } from "lucide-react";
 
 interface Counts {
   pending: number;
@@ -75,6 +76,41 @@ export default function AdminReleaseTest() {
   const [boardId, setBoardId] = useState<string>(NONE);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<TestResult | null>(null);
+  const [withImage, setWithImage] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageSelect = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione um arquivo de imagem");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx. 5MB)");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const path = `release-test/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("email-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data, error } = await supabase.storage
+        .from("email-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+      if (error || !data?.signedUrl) throw error ?? new Error("Não foi possível gerar o link da imagem");
+      setImageUrl(data.signedUrl);
+      toast.success("Imagem enviada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao enviar imagem");
+    } finally {
+      setUploading(false);
+    }
+  };
+
 
   useEffect(() => {
     (async () => {
@@ -105,6 +141,7 @@ export default function AdminReleaseTest() {
         body: {
           teamId: teamId === NONE ? null : teamId,
           boardId: boardId === NONE ? null : boardId,
+          ...(withImage && imageUrl ? { imageUrl } : {}),
         },
       });
       if (error) throw error;
@@ -178,6 +215,67 @@ export default function AdminReleaseTest() {
               </Select>
             </div>
           </div>
+
+
+
+          <div className="space-y-2">
+            <Label>Imagem da novidade (e-mails da release)</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant={withImage ? "outline" : "default"}
+                size="sm"
+                onClick={() => setWithImage(false)}
+              >
+                <ImageOff className="h-4 w-4 mr-2" /> Sem imagem
+              </Button>
+              <Button
+                type="button"
+                variant={withImage ? "default" : "outline"}
+                size="sm"
+                onClick={() => setWithImage(true)}
+              >
+                <Upload className="h-4 w-4 mr-2" /> Com imagem
+              </Button>
+            </div>
+            {withImage && (
+              <div className="space-y-2 pt-1">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploading}
+                  onChange={(e) => handleImageSelect(e.target.files?.[0])}
+                />
+                {uploading && (
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Enviando imagem...
+                  </p>
+                )}
+                {imageUrl && (
+                  <div className="relative w-fit">
+                    <img
+                      src={imageUrl}
+                      alt="Prévia da imagem da novidade"
+                      className="max-h-40 rounded-md border"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="absolute -right-2 -top-2 h-6 w-6"
+                      onClick={() => setImageUrl(null)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  PNG ou JPG até 5MB. A imagem é aplicada às features de teste que enviam e-mail.
+                </p>
+              </div>
+            )}
+          </div>
+
 
           <Button onClick={runTest} disabled={running}>
             {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}

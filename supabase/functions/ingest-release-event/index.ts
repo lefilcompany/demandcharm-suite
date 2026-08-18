@@ -83,6 +83,7 @@ function featureRow(releaseId: string, feature: ReleaseFeature) {
     email_body: feature.emailBody ?? null,
     cta_path: feature.ctaPath ?? null,
     cta_label: feature.ctaLabel ?? null,
+    image_url: feature.imageUrl ?? null,
     priority: feature.priority,
     audience_scope: feature.audience.scope,
     global_roles: feature.audience.globalRoles,

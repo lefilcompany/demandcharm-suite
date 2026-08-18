@@ -13,6 +13,7 @@
  */
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { isValidReleaseImageUrl } from "../_shared/releaseManifest.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -86,6 +87,16 @@ Deno.serve(async (req) => {
   const teamId = typeof body.teamId === "string" && body.teamId ? body.teamId : null;
   const boardId = typeof body.boardId === "string" && body.boardId ? body.boardId : null;
 
+  // Optional illustration for the product-update email (uploaded by the admin).
+  let imageUrl: string | null = null;
+  if (typeof body.imageUrl === "string" && body.imageUrl.trim()) {
+    const candidate = body.imageUrl.trim();
+    if (candidate.length > 2048 || !isValidReleaseImageUrl(candidate)) {
+      return json({ error: "Imagem inválida: use uma URL https hospedada na plataforma" }, 400);
+    }
+    imageUrl = candidate;
+  }
+
   // Validate the referenced entities exist (QA safety, not business logic).
   if (teamId) {
     const { data: team } = await admin.from("teams").select("id").eq("id", teamId).maybeSingle();
@@ -110,6 +121,7 @@ Deno.serve(async (req) => {
         "Este é um e-mail de teste do pipeline de novidades da plataforma. Somente administradores globais recebem esta feature.",
       ctaPath: "/admin/release-test",
       ctaLabel: "Abrir teste de release",
+      ...(imageUrl ? { imageUrl } : {}),
       priority: "high",
       audience: { scope: "global", globalRoles: ["admin"], teamRoles: [], boardRoles: [], teamId: null, boardId: null },
       channels: { email: true, inapp: true },
@@ -138,6 +150,7 @@ Deno.serve(async (req) => {
       emailBody: "Este é um e-mail de teste enviado apenas para membros da equipe selecionada.",
       ctaPath: "/dashboard",
       ctaLabel: "Ir para o painel",
+      ...(imageUrl ? { imageUrl } : {}),
       priority: "normal",
       audience: { scope: "team", globalRoles: [], teamRoles: [], boardRoles: [], teamId, boardId: null },
       channels: { email: true, inapp: true },
