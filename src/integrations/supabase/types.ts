@@ -1956,6 +1956,10 @@ export type Database = {
       }
       platform_releases: {
         Row: {
+          approval_note: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           commit_sha: string | null
           created_at: string
           deployment_id: string | null
@@ -1968,6 +1972,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_note?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           commit_sha?: string | null
           created_at?: string
           deployment_id?: string | null
@@ -1980,6 +1988,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_note?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           commit_sha?: string | null
           created_at?: string
           deployment_id?: string | null
