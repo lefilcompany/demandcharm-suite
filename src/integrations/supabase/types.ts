@@ -722,6 +722,44 @@ export type Database = {
           },
         ]
       }
+      demand_due_date_changes: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          demand_id: string
+          id: string
+          new_due_date: string | null
+          previous_due_date: string | null
+          reason: string | null
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          demand_id: string
+          id?: string
+          new_due_date?: string | null
+          previous_due_date?: string | null
+          reason?: string | null
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          demand_id?: string
+          id?: string
+          new_due_date?: string | null
+          previous_due_date?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_due_date_changes_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demand_interactions: {
         Row: {
           channel: string
@@ -1251,6 +1289,7 @@ export type Database = {
           is_overdue: boolean
           last_started_at: string | null
           meet_link: string | null
+          original_due_date: string | null
           parent_demand_id: string | null
           priority: string | null
           recurring_demand_id: string | null
@@ -1280,6 +1319,7 @@ export type Database = {
           is_overdue?: boolean
           last_started_at?: string | null
           meet_link?: string | null
+          original_due_date?: string | null
           parent_demand_id?: string | null
           priority?: string | null
           recurring_demand_id?: string | null
@@ -1309,6 +1349,7 @@ export type Database = {
           is_overdue?: boolean
           last_started_at?: string | null
           meet_link?: string | null
+          original_due_date?: string | null
           parent_demand_id?: string | null
           priority?: string | null
           recurring_demand_id?: string | null
@@ -3595,6 +3636,10 @@ export type Database = {
       reorder_subdemands: {
         Args: { p_ordered_ids: string[]; p_parent_id: string }
         Returns: undefined
+      }
+      reschedule_demand: {
+        Args: { p_demand_id: string; p_new_due_date: string; p_reason: string }
+        Returns: Json
       }
       update_trial_coupon: {
         Args: {
