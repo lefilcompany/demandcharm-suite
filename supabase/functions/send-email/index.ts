@@ -562,7 +562,6 @@ const handler = async (req: Request): Promise<Response> => {
             message: templateData.message,
             actionUrl: templateData.actionUrl,
             actionText: templateData.actionText,
-            userName: templateData.userName,
             imageUrl: templateData.imageUrl,
           })
         : React.createElement(NotificationEmail, {

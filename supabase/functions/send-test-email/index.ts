@@ -187,7 +187,6 @@ Deno.serve(async (req) => {
               message: cfg.message,
               actionUrl: cfg.actionUrl,
               actionText: cfg.actionText,
-              userName: "Administrador",
               imageUrl: cfg.imageUrl,
             })
           : React.createElement(NotificationEmail, {
