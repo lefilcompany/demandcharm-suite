@@ -63,6 +63,8 @@ export default defineConfig(({ mode }) => {
       react(),
       mode === "development" && componentTagger(),
       mcpPlugin(),
+      releaseBuildInfoPlugin(),
+
       VitePWA({
         registerType: "prompt",
         includeAssets: [
