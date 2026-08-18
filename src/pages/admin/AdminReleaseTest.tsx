@@ -191,6 +191,23 @@ export default function AdminReleaseTest() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">releaseId</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-sm font-mono break-all">{result.release.id}</code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(result.release.id);
+                      toast.success("releaseId copiado");
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">status: {result.release.status}</Badge>
                 <Badge variant="outline" className="gap-1">
@@ -217,6 +234,49 @@ export default function AdminReleaseTest() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Resumo das deliveries criadas</CardTitle>
+              <CardDescription>
+                Total de {totalDeliveries} delivery(ies) em release_deliveries para esta release.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs text-muted-foreground">
+                    <th className="py-2 pr-3 font-medium">announcement_key</th>
+                    <th className="py-2 pr-3 font-medium">canal</th>
+                    <th className="py-2 pr-3 font-medium">total</th>
+                    <th className="py-2 pr-3 font-medium">pendentes</th>
+                    <th className="py-2 pr-3 font-medium">enviados</th>
+                    <th className="py-2 pr-3 font-medium">ignorados</th>
+                    <th className="py-2 font-medium">falhas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.features.flatMap((feature) =>
+                    (["email", "inapp"] as const).map((channel) => {
+                      const counts = channel === "email" ? feature.email : feature.inapp;
+                      return (
+                        <tr key={`${feature.id}-${channel}`} className="border-b last:border-0">
+                          <td className="py-2 pr-3 font-mono text-xs break-all">{feature.announcementKey}</td>
+                          <td className="py-2 pr-3">{channel}</td>
+                          <td className="py-2 pr-3">{counts.total}</td>
+                          <td className="py-2 pr-3">{counts.pending + counts.processing}</td>
+                          <td className="py-2 pr-3 text-emerald-500">{counts.sent}</td>
+                          <td className="py-2 pr-3 text-amber-500">{counts.skipped}</td>
+                          <td className="py-2 text-destructive">{counts.failed}</td>
+                        </tr>
+                      );
+                    }),
+                  )}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+
 
           <div className="grid gap-4">
             {result.features.map((feature) => (
