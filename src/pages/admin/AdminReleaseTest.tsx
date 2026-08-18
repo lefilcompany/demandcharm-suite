@@ -92,6 +92,11 @@ export default function AdminReleaseTest() {
     [boards, teamId],
   );
 
+  const totalDeliveries = useMemo(
+    () => (result ? result.totals.email.total + result.totals.inapp.total : 0),
+    [result],
+  );
+
   const runTest = async () => {
     setRunning(true);
     setResult(null);
