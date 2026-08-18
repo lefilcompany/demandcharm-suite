@@ -40,7 +40,14 @@ interface EmailRequest {
     userName?: string;
     type?: 'info' | 'success' | 'warning' | 'error';
   };
+  eventType?: string;
+  dedupeKey?: string;
+  dedupeWindowMinutes?: number;
+  sourceFunction?: string;
+  relatedEntityType?: string;
+  relatedEntityId?: string;
 }
+
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
