@@ -483,7 +483,7 @@ var attachServiceToBoardTool = defineTool3({
 // src/lib/mcp/tools/demands/index.ts
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z5 } from "npm:zod@^4.4.3";
-var DEMAND_COLS = "id, title, description, status_id, board_id, team_id, due_date, priority, board_sequence_number, service_id, parent_demand_id, is_overdue, archived, delivered_at, created_by, created_at, updated_at";
+var DEMAND_COLS = "id, title, description, status_id, board_id, team_id, due_date, original_due_date, priority, board_sequence_number, service_id, parent_demand_id, is_overdue, archived, delivered_at, created_by, created_at, updated_at";
 var listDemandsTool = defineTool4({
   name: "list_demands",
   title: "List demands",
@@ -766,6 +766,52 @@ var createDemandWithSubdemandsTool = defineTool4({
     });
     if (error) return fromPgError(error);
     return okCreated({ result: data });
+  }
+});
+var rescheduleDemandTool = defineTool4({
+  name: "reschedule_demand",
+  title: "Reschedule demand deadline",
+  description: "Change a demand deadline with a mandatory justification. The original (first) deadline stays frozen and every change is logged.",
+  inputSchema: {
+    demand_id: zUuid,
+    new_due_date: zIsoDate,
+    reason: z5.string().trim().min(3).max(2e3).describe("Why the deadline was renegotiated.")
+  },
+  annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
+  handler: async ({ demand_id, new_due_date, reason }, ctx) => {
+    const a = requireAuth(ctx);
+    if (a) return a;
+    const { data, error } = await sb(ctx).rpc("reschedule_demand", {
+      p_demand_id: demand_id,
+      p_new_due_date: new_due_date,
+      p_reason: reason
+    });
+    if (error) return fromPgError(error);
+    return okUpdated({ result: data }, { open_url: urls.demand(demand_id) });
+  }
+});
+var demandDeadlineHistoryTool = defineTool4({
+  name: "demand_deadline_history",
+  title: "Demand deadline history",
+  description: "Original (frozen) deadline, current deadline, how many times it was rescheduled and the reason of each change.",
+  inputSchema: { demand_id: zUuid },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ demand_id }, ctx) => {
+    const a = requireAuth(ctx);
+    if (a) return a;
+    const client = sb(ctx);
+    const { data: demand, error } = await client.from("demands").select("id, title, board_sequence_number, due_date, original_due_date, is_overdue, delivered_at, archived").eq("id", demand_id).maybeSingle();
+    if (error) return fromPgError(error);
+    if (!demand) return err("NOT_FOUND", "Demand not found");
+    const { data: changes, error: cErr } = await client.from("demand_due_date_changes").select("previous_due_date, new_due_date, reason, changed_by, created_at").eq("demand_id", demand_id).order("created_at", { ascending: true });
+    if (cErr) return fromPgError(cErr);
+    return ok({
+      demand,
+      original_due_date: demand.original_due_date,
+      current_due_date: demand.due_date,
+      reschedule_count: (changes ?? []).length,
+      changes: changes ?? []
+    }, { open_url: urls.demand(demand_id) });
   }
 });
 
@@ -1866,12 +1912,30 @@ var overdueDemandsTool = defineTool17({
   handler: async ({ board_id, team_id, limit }, ctx) => {
     const a = requireAuth(ctx);
     if (a) return a;
-    let q = sb(ctx).from("demands").select("id, title, board_id, team_id, due_date, priority, status_id, is_overdue").eq("is_overdue", true).eq("archived", false).is("delivered_at", null).order("due_date", { ascending: true }).limit(limit ?? 50);
+    let q = sb(ctx).from("demands").select("id, title, board_id, team_id, due_date, original_due_date, priority, status_id, is_overdue").eq("is_overdue", true).eq("archived", false).is("delivered_at", null).order("due_date", { ascending: true }).limit(limit ?? 50);
     if (board_id) q = q.eq("board_id", board_id);
     if (team_id) q = q.eq("team_id", team_id);
     const { data, error } = await q;
     if (error) return fromPgError(error);
-    return okList("overdue", data ?? []);
+    const rows = data ?? [];
+    if (rows.length === 0) return okList("overdue", rows);
+    const { data: changes } = await sb(ctx).from("demand_due_date_changes").select("demand_id, previous_due_date, new_due_date, reason, created_at").in("demand_id", rows.map((r) => r.id)).order("created_at", { ascending: true });
+    const byDemand = /* @__PURE__ */ new Map();
+    for (const c of changes ?? []) {
+      const list = byDemand.get(c.demand_id) ?? [];
+      list.push(c);
+      byDemand.set(c.demand_id, list);
+    }
+    const enriched = rows.map((r) => {
+      const list = byDemand.get(r.id) ?? [];
+      return {
+        ...r,
+        reschedule_count: list.length,
+        reschedule_reasons: list.map((c) => c.reason ?? "Sem justificativa registrada"),
+        deadline_changes: list
+      };
+    });
+    return okList("overdue", enriched);
   }
 });
 var dueSoonDemandsTool = defineTool17({
@@ -2135,7 +2199,7 @@ var mcp_default = defineMcp({
     "5. `get_operational_snapshot` para leitura executiva, ou operar demandas.",
     "",
     "## Tools por inten\xE7\xE3o (\xA721.1 do descritivo SoMA+)",
-    "- **Consultar opera\xE7\xE3o:** `get_operational_snapshot`, `board_summary_stats`, `overdue_demands`, `due_soon_demands`, `risk_of_delay`.",
+    "- **Consultar opera\xE7\xE3o:** `get_operational_snapshot`, `board_summary_stats`, `overdue_demands` (inclui prazo inicial, n\xBA de reagendamentos e motivos), `demand_deadline_history`, `due_soon_demands`, `risk_of_delay`.",
     "- **Criar quadro:** `list_boards`, `create_board`, `add_board_member`, `attach_service_to_board`.",
     "- **Criar demanda:** `list_board_statuses`, `list_board_services`, `list_board_members`, `create_demand`, `create_demand_with_subdemands`.",
     "- **Trabalhar em demanda:** `get_demand`, `move_demand`, `post_comment`, `start_demand_timer`, `stop_demand_timer`.",
@@ -2192,6 +2256,8 @@ var mcp_default = defineMcp({
     archiveDemandTool,
     deleteDemandTool,
     createDemandWithSubdemandsTool,
+    rescheduleDemandTool,
+    demandDeadlineHistoryTool,
     // subtasks
     listSubtasksTool,
     createSubtaskTool,

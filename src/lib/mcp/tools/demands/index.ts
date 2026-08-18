@@ -5,7 +5,7 @@ import { ok, okList, okCreated, okUpdated, okDeleted, err, fromPgError, requireA
 import { urls } from "../../_shared/urls";
 import { zUuid, zPriority, zIsoDate, zAeiouOrigin } from "../../_shared/zod-common";
 
-const DEMAND_COLS = "id, title, description, status_id, board_id, team_id, due_date, priority, board_sequence_number, service_id, parent_demand_id, is_overdue, archived, delivered_at, created_by, created_at, updated_at";
+const DEMAND_COLS = "id, title, description, status_id, board_id, team_id, due_date, original_due_date, priority, board_sequence_number, service_id, parent_demand_id, is_overdue, archived, delivered_at, created_by, created_at, updated_at";
 
 export const listDemandsTool = defineTool({
   name: "list_demands",
@@ -313,5 +313,53 @@ export const createDemandWithSubdemandsTool = defineTool({
     });
     if (error) return fromPgError(error);
     return okCreated({ result: data });
+  },
+});
+
+export const rescheduleDemandTool = defineTool({
+  name: "reschedule_demand",
+  title: "Reschedule demand deadline",
+  description: "Change a demand deadline with a mandatory justification. The original (first) deadline stays frozen and every change is logged.",
+  inputSchema: {
+    demand_id: zUuid,
+    new_due_date: zIsoDate,
+    reason: z.string().trim().min(3).max(2000).describe("Why the deadline was renegotiated."),
+  },
+  annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
+  handler: async ({ demand_id, new_due_date, reason }, ctx) => {
+    const a = requireAuth(ctx); if (a) return a;
+    const { data, error } = await sb(ctx).rpc("reschedule_demand", {
+      p_demand_id: demand_id, p_new_due_date: new_due_date, p_reason: reason,
+    });
+    if (error) return fromPgError(error);
+    return okUpdated({ result: data }, { open_url: urls.demand(demand_id) });
+  },
+});
+
+export const demandDeadlineHistoryTool = defineTool({
+  name: "demand_deadline_history",
+  title: "Demand deadline history",
+  description: "Original (frozen) deadline, current deadline, how many times it was rescheduled and the reason of each change.",
+  inputSchema: { demand_id: zUuid },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ demand_id }, ctx) => {
+    const a = requireAuth(ctx); if (a) return a;
+    const client = sb(ctx);
+    const { data: demand, error } = await client.from("demands")
+      .select("id, title, board_sequence_number, due_date, original_due_date, is_overdue, delivered_at, archived")
+      .eq("id", demand_id).maybeSingle();
+    if (error) return fromPgError(error);
+    if (!demand) return err("NOT_FOUND", "Demand not found");
+    const { data: changes, error: cErr } = await client.from("demand_due_date_changes")
+      .select("previous_due_date, new_due_date, reason, changed_by, created_at")
+      .eq("demand_id", demand_id).order("created_at", { ascending: true });
+    if (cErr) return fromPgError(cErr);
+    return ok({
+      demand,
+      original_due_date: (demand as any).original_due_date,
+      current_due_date: (demand as any).due_date,
+      reschedule_count: (changes ?? []).length,
+      changes: changes ?? [],
+    }, { open_url: urls.demand(demand_id) });
   },
 });
