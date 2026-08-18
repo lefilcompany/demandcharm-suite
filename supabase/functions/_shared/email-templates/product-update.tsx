@@ -1,6 +1,5 @@
 import {
   Body,
-  Button,
   Container,
   Head,
   Heading,
@@ -92,13 +91,6 @@ export const ProductUpdateEmail = ({
                       </tbody>
                     </table>
                     <Text style={messageTextCompact}>{message}</Text>
-                    {actionUrl && (
-                      <Section style={buttonSection}>
-                        <Button style={button} href={actionUrl}>
-                          {actionText}
-                        </Button>
-                      </Section>
-                    )}
                   </td>
                 </tr>
               </tbody>
@@ -122,14 +114,6 @@ export const ProductUpdateEmail = ({
               </table>
 
               <Text style={messageText}>{message}</Text>
-
-              {actionUrl && (
-                <Section style={buttonSection}>
-                  <Button style={button} href={actionUrl}>
-                    {actionText}
-                  </Button>
-                </Section>
-              )}
             </>
           )}
         </Section>
@@ -243,22 +227,6 @@ const messageText = {
   margin: '0 0 24px',
 }
 
-const buttonSection = {
-  margin: '4px 0 20px',
-}
-
-const button = {
-  backgroundColor: BRAND.primary,
-  borderRadius: '8px',
-  color: BRAND.white,
-  display: 'inline-block',
-  fontSize: '16px',
-  fontWeight: '600',
-  padding: '14px 32px',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-}
-
 const logoSection = {
   backgroundColor: BRAND.softBg,
   padding: '28px 40px',
@@ -319,7 +287,7 @@ const splitTable = {
 const imageColumn = {
   width: '250px',
   verticalAlign: 'middle' as const,
-  paddingRight: '20px',
+  paddingRight: '40px',
 }
 
 const textColumn = {
