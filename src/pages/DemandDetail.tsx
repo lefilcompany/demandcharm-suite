@@ -60,7 +60,7 @@ import { SubdemandTimer } from "@/components/SubdemandTimer";
 import { CreateSubdemandDialog, type SubdemandFormData } from "@/components/CreateSubdemandDialog";
 import { ParentDemandTimeDisplay } from "@/components/ParentDemandTimeDisplay";
 import { checkDependencyBeforeStatusChange, useDemandDependencyInfo, useBatchDependencyInfo } from "@/hooks/useDependencyCheck";
-import { Lock, Link2, GripVertical } from "lucide-react";
+import { Lock, Link2, GripVertical, FileText } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
 import { isFinalizationStatus, analyzeSubdemandsForPropagation } from "@/lib/subdemandStatusPropagation";
 import { patchDemandStatusByIds, patchParentAggregatedTime } from "@/lib/demandRealtimeCache";
