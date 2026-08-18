@@ -20,7 +20,9 @@ export interface ProductUpdateEmailProps {
   actionUrl?: string;
   actionText?: string;
   userName?: string;
+  imageUrl?: string;
 }
+
 
 const BRAND = {
   primary: '#F28705',
