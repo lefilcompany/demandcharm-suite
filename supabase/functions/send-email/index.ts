@@ -313,6 +313,13 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const { to, subject, templateData } = payload;
+    const eventType = payload.eventType || "generic";
+    const dedupeKey = payload.dedupeKey || null;
+    const dedupeWindowMinutes = payload.dedupeWindowMinutes ?? 10;
+    const sourceFunction = payload.sourceFunction || null;
+    const relatedEntityType = payload.relatedEntityType || null;
+    const relatedEntityId = payload.relatedEntityId || null;
+
 
     let recipientEmail = to;
     let recipientUserId: string | null = null;
