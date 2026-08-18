@@ -13,6 +13,11 @@ interface SendPushNotificationParams {
    * same event — otherwise the user receives two emails.
    */
   mirrorEmail?: boolean;
+  /** Event name recorded in the email log when the push mirrors an email. */
+  eventType?: string;
+  /** Base deduplication key (recipient id is appended by the edge function). */
+  dedupeKey?: string;
+
 }
 
 /**
