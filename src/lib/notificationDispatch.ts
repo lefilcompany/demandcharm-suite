@@ -60,6 +60,7 @@ function parsePreferencesValue(value: unknown): NotificationPreferences {
     boardMembership: legacyTeam,
     teamUpdates: legacyTeam,
     requestApproval: legacyDemand,
+    productUpdates: true,
   };
   return {
     channels: {
