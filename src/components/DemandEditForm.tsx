@@ -14,6 +14,7 @@ import { useHasBoardServices } from "@/hooks/useBoardServices";
 import { UnsavedChangesDialog } from "@/components/UnsavedChangesDialog";
 import { useFormDraft } from "@/hooks/useFormDraft";
 import { useNavigationBlock } from "@/hooks/useNavigationBlock";
+import { Textarea } from "@/components/ui/textarea";
 import { calculateBusinessDueDate, formatDueDateForInput, toDateOnly, formatDateOnlyBR } from "@/lib/dateUtils";
 import { useRescheduleDemand } from "@/hooks/useDueDateHistory";
 import { RecurrenceConfig, RecurrenceData, defaultRecurrenceData } from "@/components/RecurrenceConfig";
