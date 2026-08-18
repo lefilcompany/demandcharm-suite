@@ -270,3 +270,18 @@ const copyright = {
   margin: '10px 0 0',
   textAlign: 'center' as const,
 }
+
+const imageSection = {
+  margin: '0 0 24px',
+  textAlign: 'center' as const,
+}
+
+const featureImage = {
+  width: '100%',
+  maxWidth: '520px',
+  height: 'auto' as const,
+  borderRadius: '10px',
+  border: `1px solid ${BRAND.border}`,
+  display: 'block',
+  margin: '0 auto',
+}
