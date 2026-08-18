@@ -342,12 +342,9 @@ export function parseReleaseManifest(raw: string): ManifestParseResult {
 /** Convenience wrapper for scripts/edge functions that prefer exceptions. */
 export function assertReleaseManifest(input: unknown): ReleaseManifest {
   const result = validateReleaseManifest(input);
-  if (!result.success) {
-    throw new Error(
-      `Release manifest inválido:\n${result.issues.map((i) => `- ${i.path}: ${i.message}`).join("\n")}`,
-    );
-  }
-  return result.data;
+  if (result.success === true) return result.data;
+  const details = result.issues.map((i) => `- ${i.path}: ${i.message}`).join("\n");
+  throw new Error(`Release manifest inválido:\n${details}`);
 }
 
 export function formatManifestIssues(issues: ValidationIssue[]): string {
