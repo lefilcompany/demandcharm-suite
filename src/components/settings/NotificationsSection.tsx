@@ -43,6 +43,7 @@ const EVENT_TYPES: EventTypeMeta[] = [
   { key: "boardMembership", label: "Alterações em quadros", desc: "Quando você é adicionado, removido ou tem seu cargo alterado." },
   { key: "teamUpdates", label: "Atualizações da equipe", desc: "Novos membros e mudanças gerais da equipe." },
   { key: "requestApproval", label: "Solicitações de demanda", desc: "Status de solicitações que você criou ou revisa." },
+  { key: "platformUpdates", label: "Novidades da plataforma", desc: "Novas funcionalidades, melhorias e lançamentos do SoMA+." },
 ];
 
 interface ChannelBlockProps {
@@ -67,6 +68,9 @@ function ChannelBlock({
   extra,
 }: ChannelBlockProps) {
   const state = preferences.channels[channel];
+  const visibleEventTypes = EVENT_TYPES.filter(
+    ({ key }) => key !== "platformUpdates" || channel !== "push",
+  );
 
   const setEnabled = (v: boolean) => {
     onChange({
@@ -124,7 +128,6 @@ function ChannelBlock({
         />
       </div>
 
-
       <CollapsibleContent>
         <div className="px-3 pb-3 space-y-3">
           {extra}
@@ -133,7 +136,7 @@ function ChannelBlock({
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Tipos que você recebe por este canal
             </p>
-            {EVENT_TYPES.map(({ key, label, desc }) => (
+            {visibleEventTypes.map(({ key, label, desc }) => (
               <div key={key} className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <Label className="text-sm cursor-pointer">{label}</Label>
