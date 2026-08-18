@@ -100,6 +100,77 @@ function isUUID(str: string): boolean {
   return uuidRegex.test(str);
 }
 
+// ---------------------------------------------------------------------------
+// email_send_log helpers (source of truth for sends + deduplication)
+// ---------------------------------------------------------------------------
+function adminClientOrNull() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
+interface LogEntry {
+  message_id?: string | null;
+  event_type: string;
+  dedupe_key?: string | null;
+  recipient_email: string;
+  recipient_user_id?: string | null;
+  subject: string;
+  status: "sent" | "skipped_duplicate" | "skipped_preference" | "failed";
+  source_function?: string | null;
+  related_entity_type?: string | null;
+  related_entity_id?: string | null;
+  triggered_by?: string | null;
+  provider_message_id?: string | null;
+  http_status?: number | null;
+  error_message?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+async function logEmail(entry: LogEntry): Promise<void> {
+  try {
+    const admin = adminClientOrNull();
+    if (!admin) return;
+    const { error } = await admin.from("email_send_log").insert({
+      template_name: "notification",
+      metadata: {},
+      ...entry,
+    });
+    if (error) console.warn("Could not write email_send_log:", error.message);
+  } catch (err) {
+    console.warn("email_send_log insert threw:", err);
+  }
+}
+
+// Returns the previous log row if an identical email was already sent recently.
+async function findRecentDuplicate(
+  dedupeKey: string,
+  recipientEmail: string,
+  windowMinutes: number,
+): Promise<{ id: string; created_at: string } | null> {
+  try {
+    const admin = adminClientOrNull();
+    if (!admin) return null;
+    const since = new Date(Date.now() - windowMinutes * 60_000).toISOString();
+    const { data } = await admin
+      .from("email_send_log")
+      .select("id, created_at")
+      .eq("dedupe_key", dedupeKey)
+      .eq("recipient_email", recipientEmail)
+      .eq("status", "sent")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    return data && data.length > 0 ? data[0] : null;
+  } catch (err) {
+    console.warn("Duplicate check failed, proceeding to send:", err);
+    return null;
+  }
+}
+
+
+
 // Verify JWT token and get user
 async function verifyAuth(req: Request): Promise<{ userId: string | null; error: string | null }> {
   const authHeader = req.headers.get("authorization");
