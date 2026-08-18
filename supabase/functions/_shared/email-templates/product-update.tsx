@@ -92,13 +92,6 @@ export const ProductUpdateEmail = ({
                       </tbody>
                     </table>
                     <Text style={messageTextCompact}>{message}</Text>
-                    {actionUrl && (
-                      <Section style={buttonSection}>
-                        <Button style={button} href={actionUrl}>
-                          {actionText}
-                        </Button>
-                      </Section>
-                    )}
                   </td>
                 </tr>
               </tbody>
@@ -122,14 +115,6 @@ export const ProductUpdateEmail = ({
               </table>
 
               <Text style={messageText}>{message}</Text>
-
-              {actionUrl && (
-                <Section style={buttonSection}>
-                  <Button style={button} href={actionUrl}>
-                    {actionText}
-                  </Button>
-                </Section>
-              )}
             </>
           )}
         </Section>
@@ -319,7 +304,7 @@ const splitTable = {
 const imageColumn = {
   width: '250px',
   verticalAlign: 'middle' as const,
-  paddingRight: '20px',
+  paddingRight: '40px',
 }
 
 const textColumn = {
