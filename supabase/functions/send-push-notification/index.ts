@@ -14,7 +14,12 @@ interface PushNotificationRequest {
   data?: Record<string, string>;
   /** When false, skips the automatic email mirror (caller already sends its own email). */
   mirrorEmail?: boolean;
+  /** Event identifier stored in email_send_log (e.g. "demand_status_changed"). */
+  eventType?: string;
+  /** Base deduplication key; the recipient id is appended per user. */
+  dedupeKey?: string;
 }
+
 
 interface UserPreferences {
   pushNotifications?: boolean;
