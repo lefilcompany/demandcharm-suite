@@ -432,6 +432,20 @@ const handler = async (req: Request): Promise<Response> => {
           const prefs = (prefRow?.preference_value || {}) as Record<string, unknown>;
           if (prefs.emailNotifications === false) {
             console.log(`Skipping email to ${recipientEmail}: emailNotifications disabled`);
+            await logEmail({
+              message_id: messageId,
+              event_type: eventType,
+              dedupe_key: dedupeKey,
+              recipient_email: recipientEmail,
+              recipient_user_id: recipientUserId,
+              subject,
+              status: "skipped_preference",
+              source_function: sourceFunction,
+              related_entity_type: relatedEntityType,
+              related_entity_id: relatedEntityId,
+              triggered_by: userId,
+              metadata: { reason: "emailNotifications disabled" },
+            });
             return new Response(
               JSON.stringify({ success: true, skipped: true, reason: "emailNotifications disabled" }),
               { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -441,6 +455,33 @@ const handler = async (req: Request): Promise<Response> => {
       }
     } catch (prefErr) {
       console.warn("Could not check notification preferences, proceeding to send:", prefErr);
+    }
+
+    // Deduplication: block a second identical email for the same recipient
+    // within the configured window (default 10 minutes).
+    if (dedupeKey) {
+      const duplicate = await findRecentDuplicate(dedupeKey, recipientEmail, dedupeWindowMinutes);
+      if (duplicate) {
+        console.log(`Skipping duplicate email (${dedupeKey}) to ${recipientEmail}`);
+        await logEmail({
+          message_id: messageId,
+          event_type: eventType,
+          dedupe_key: dedupeKey,
+          recipient_email: recipientEmail,
+          recipient_user_id: recipientUserId,
+          subject,
+          status: "skipped_duplicate",
+          source_function: sourceFunction,
+          related_entity_type: relatedEntityType,
+          related_entity_id: relatedEntityId,
+          triggered_by: userId,
+          metadata: { duplicate_of: duplicate.id, window_minutes: dedupeWindowMinutes },
+        });
+        return new Response(
+          JSON.stringify({ success: true, skipped: true, reason: "duplicate" }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
     }
 
     console.log('Rendering notification template for:', templateData.title);
@@ -482,7 +523,7 @@ const handler = async (req: Request): Promise<Response> => {
         const data = await res.json();
 
         if (res.ok) {
-          return { success: true, data };
+          return { success: true, data, status: res.status };
         }
 
         // If rate limited (429), wait and retry
@@ -503,6 +544,23 @@ const handler = async (req: Request): Promise<Response> => {
     const result = await sendWithRetry();
 
     if (!result.success) {
+      await logEmail({
+        message_id: messageId,
+        event_type: eventType,
+        dedupe_key: dedupeKey,
+        recipient_email: recipientEmail,
+        recipient_user_id: recipientUserId,
+        subject,
+        status: "failed",
+        source_function: sourceFunction,
+        related_entity_type: relatedEntityType,
+        related_entity_id: relatedEntityId,
+        triggered_by: userId,
+        http_status: result.status ?? null,
+        error_message:
+          typeof result.data?.message === "string" ? result.data.message : "Failed to send email",
+        metadata: { provider: "resend" },
+      });
       return new Response(JSON.stringify({ error: "Failed to send email" }), {
         status: result.status || 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -513,6 +571,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Email sent successfully:", data);
 
+    await logEmail({
+      message_id: messageId,
+      event_type: eventType,
+      dedupe_key: dedupeKey,
+      recipient_email: recipientEmail,
+      recipient_user_id: recipientUserId,
+      subject,
+      status: "sent",
+      source_function: sourceFunction,
+      related_entity_type: relatedEntityType,
+      related_entity_id: relatedEntityId,
+      triggered_by: userId,
+      provider_message_id: typeof data?.id === "string" ? data.id : null,
+      http_status: result.status ?? 200,
+      metadata: { provider: "resend" },
+    });
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: {
@@ -520,6 +595,7 @@ const handler = async (req: Request): Promise<Response> => {
         ...corsHeaders,
       },
     });
+
   } catch (error: any) {
     console.error("Error in send-email function:", error);
     return new Response(
