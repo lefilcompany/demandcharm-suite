@@ -39,6 +39,7 @@ interface EmailRequest {
     actionUrl?: string;
     actionText?: string;
     userName?: string;
+    imageUrl?: string;
     type?: 'info' | 'success' | 'warning' | 'error';
   };
   eventType?: string;
@@ -90,6 +91,29 @@ function validateActionUrl(value: unknown): string | undefined {
   const isAllowedHost = ALLOWED_ACTION_URL_HOSTS.has(hostname) || PREVIEW_HOST_PATTERN.test(hostname);
   if (parsed.protocol !== "https:" || !isAllowedHost) {
     throw new Error("templateData.actionUrl must use an approved app domain");
+  }
+
+  return parsed.toString();
+}
+
+function validateImageUrl(value: unknown): string | undefined {
+  const rawUrl = validateBoundedString(value, "templateData.imageUrl", 2048, false);
+  if (!rawUrl) return undefined;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error("templateData.imageUrl must be an absolute URL");
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  const isAllowedHost =
+    ALLOWED_ACTION_URL_HOSTS.has(hostname) ||
+    PREVIEW_HOST_PATTERN.test(hostname) ||
+    /\.supabase\.co$/i.test(hostname);
+  if (parsed.protocol !== "https:" || !isAllowedHost) {
+    throw new Error("templateData.imageUrl must use an approved domain");
   }
 
   return parsed.toString();
@@ -291,6 +315,7 @@ const handler = async (req: Request): Promise<Response> => {
           actionUrl: validateActionUrl(rawTemplateData.actionUrl),
           actionText: validateBoundedString(rawTemplateData.actionText, "templateData.actionText", 80, false),
           userName: validateBoundedString(rawTemplateData.userName, "templateData.userName", 120, false),
+          imageUrl: validateImageUrl(rawTemplateData.imageUrl),
           type: type as NotificationType | undefined,
         },
         eventType: validateBoundedString(rawPayload.eventType, "eventType", 80, false),
@@ -538,6 +563,7 @@ const handler = async (req: Request): Promise<Response> => {
             actionUrl: templateData.actionUrl,
             actionText: templateData.actionText,
             userName: templateData.userName,
+            imageUrl: templateData.imageUrl,
           })
         : React.createElement(NotificationEmail, {
             title: templateData.title,
