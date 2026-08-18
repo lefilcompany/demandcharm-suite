@@ -432,6 +432,46 @@ const handler = async (req: Request): Promise<Response> => {
             .maybeSingle();
 
           const prefs = (prefRow?.preference_value || {}) as Record<string, unknown>;
+
+          // Preferência por tipo de evento (novo formato channels.email)
+          if (eventType && eventType !== "generic") {
+            const channels = (prefs.channels && typeof prefs.channels === "object"
+              ? (prefs.channels as Record<string, unknown>)
+              : {}) as Record<string, unknown>;
+            const emailCh = (channels.email && typeof channels.email === "object"
+              ? (channels.email as Record<string, unknown>)
+              : null);
+            if (emailCh) {
+              const types = (emailCh.types && typeof emailCh.types === "object"
+                ? (emailCh.types as Record<string, unknown>)
+                : {}) as Record<string, unknown>;
+              // undefined = habilitado; apenas false desabilita
+              const channelDisabled = emailCh.enabled === false;
+              const typeDisabled = types[eventType] === false;
+              if (channelDisabled || typeDisabled) {
+                console.log(`Skipping email to ${recipientEmail}: preference disabled for ${eventType}`);
+                await logEmail({
+                  message_id: messageId,
+                  event_type: eventType,
+                  dedupe_key: dedupeKey,
+                  recipient_email: recipientEmail,
+                  recipient_user_id: recipientUserId,
+                  subject,
+                  status: "skipped_preference",
+                  source_function: sourceFunction,
+                  related_entity_type: relatedEntityType,
+                  related_entity_id: relatedEntityId,
+                  triggered_by: userId,
+                  metadata: { reason: "notification preference disabled", eventType },
+                });
+                return new Response(
+                  JSON.stringify({ success: true, skipped: true, reason: "notification preference disabled" }),
+                  { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+                );
+              }
+            }
+          }
+
           if (prefs.emailNotifications === false) {
             console.log(`Skipping email to ${recipientEmail}: emailNotifications disabled`);
             await logEmail({

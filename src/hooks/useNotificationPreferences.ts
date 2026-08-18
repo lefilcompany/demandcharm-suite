@@ -14,7 +14,8 @@ export type NotificationEventType =
   | "demandDeadline"
   | "boardMembership"
   | "teamUpdates"
-  | "requestApproval";
+  | "requestApproval"
+  | "productUpdates";
 
 export const NOTIFICATION_EVENT_TYPES: NotificationEventType[] = [
   "demandAssigned",
@@ -27,7 +28,21 @@ export const NOTIFICATION_EVENT_TYPES: NotificationEventType[] = [
   "boardMembership",
   "teamUpdates",
   "requestApproval",
+  "productUpdates",
 ];
+
+/** Canais em que cada evento pode ser configurado. Ausente = todos os canais. */
+export const EVENT_SUPPORTED_CHANNELS: Partial<Record<NotificationEventType, NotificationChannel[]>> = {
+  productUpdates: ["email", "inapp"],
+};
+
+export function isEventSupportedOnChannel(
+  type: NotificationEventType,
+  channel: NotificationChannel
+): boolean {
+  const supported = EVENT_SUPPORTED_CHANNELS[type];
+  return !supported || supported.includes(channel);
+}
 
 export type BoardScope = "all" | "assigned_only" | "off";
 
@@ -95,6 +110,8 @@ function mapLegacyTypes(legacy: Record<string, unknown>): Record<NotificationEve
     boardMembership: teamUpdates,
     teamUpdates: teamUpdates,
     requestApproval: demandUpdates,
+    // Novidades da plataforma: habilitado por padrão para preferências antigas
+    productUpdates: true,
   };
 }
 
