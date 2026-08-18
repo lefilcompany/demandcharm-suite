@@ -300,6 +300,8 @@ export function useCreateDemandRequest() {
                 requesterName,
                 requestTitle: data.title,
                 boardName,
+                requestId: result.id,
+
               });
               console.log("Push notification result:", pushResult);
             }
