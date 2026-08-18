@@ -160,6 +160,8 @@ Deno.serve(async (req) => {
       deploymentId: `qa-${stamp}`,
       publishedAt: new Date().toISOString(),
       manifest,
+      // Disparo de teste é a própria decisão do admin -> já entra aprovado.
+      autoApprove: true,
     }),
   });
   const ingestResult = await ingestResponse.json().catch(() => ({}));
