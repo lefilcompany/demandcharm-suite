@@ -213,7 +213,10 @@ export default function AdminReleaseTest() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
           </div>
+
+
 
           <div className="space-y-2">
             <Label>Imagem da novidade (e-mails da release)</Label>
