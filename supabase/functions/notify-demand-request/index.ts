@@ -523,7 +523,47 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log(`Sending emails to ${memberEmails.length} board members:`, memberEmails);
+    // ---- Deduplication: skip recipients already emailed for this request ----
+    const dedupeKey = `demand_request_created:${requestId}`;
+    let recipients = memberEmails;
+    try {
+      const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+      const { data: alreadySent } = await supabaseAdmin
+        .from("email_send_log")
+        .select("recipient_email")
+        .eq("dedupe_key", dedupeKey)
+        .eq("status", "sent")
+        .gte("created_at", since);
+      const sentSet = new Set((alreadySent || []).map((r: any) => r.recipient_email));
+      recipients = memberEmails.filter((e) => !sentSet.has(e));
+      for (const skipped of memberEmails.filter((e) => sentSet.has(e))) {
+        await supabaseAdmin.from("email_send_log").insert({
+          template_name: "demand-request",
+          event_type: "demand_request_created",
+          dedupe_key: dedupeKey,
+          recipient_email: skipped,
+          subject: `Nova Solicitação de Demanda: ${title}`,
+          status: "skipped_duplicate",
+          source_function: "notify-demand-request",
+          related_entity_type: "demand_request",
+          related_entity_id: requestId,
+          metadata: {},
+        });
+      }
+    } catch (err) {
+      console.warn("Dedupe check failed, proceeding:", err);
+    }
+
+    if (recipients.length === 0) {
+      console.log("All recipients already notified for this request");
+      return new Response(JSON.stringify({ success: true, emailsSent: 0, notificationsCreated, deduplicated: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    console.log(`Sending emails to ${recipients.length} board members:`, recipients);
+
 
     // Generate the action URL
     const appUrl = "https://pla.soma.lefil.com.br"; // Production URL
