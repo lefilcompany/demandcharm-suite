@@ -13,7 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Rocket, Mail, Bell, Users, Copy } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, Rocket, Mail, Bell, Users, Copy, Upload, ImageOff, X } from "lucide-react";
 
 interface Counts {
   pending: number;
