@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { GitBranch, Plus, Minus, ChevronLeft, ChevronRight, Trash2, Package, Users, Loader2, Link2 } from "lucide-react";
 import { LinkAsSubdemandDialog } from "@/components/LinkAsSubdemandDialog";
+import { DemandDependencyEditor } from "@/components/DemandDependencyEditor";
 import { StepProgress, SubdemandStepForm } from "@/components/create-demand";
 import type { SubdemandFormData } from "@/components/create-demand";
 import { supabase } from "@/integrations/supabase/client";
@@ -616,6 +617,12 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                   minHeight="140px"
                 />
               </div>
+
+              {/* Dependência — editar travamento de demandas já criadas */}
+              {canManageAssignees && (
+                <DemandDependencyEditor demandId={demand.id} boardId={demand.board_id} />
+              )}
+
 
               {/* Recurrence — only for managers, creator or responsibles */}
               {canManageAssignees && (
