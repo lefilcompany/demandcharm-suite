@@ -76,6 +76,41 @@ export default function AdminReleaseTest() {
   const [boardId, setBoardId] = useState<string>(NONE);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<TestResult | null>(null);
+  const [withImage, setWithImage] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageSelect = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione um arquivo de imagem");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx. 5MB)");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const path = `release-test/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("email-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data, error } = await supabase.storage
+        .from("email-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+      if (error || !data?.signedUrl) throw error ?? new Error("Não foi possível gerar o link da imagem");
+      setImageUrl(data.signedUrl);
+      toast.success("Imagem enviada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao enviar imagem");
+    } finally {
+      setUploading(false);
+    }
+  };
+
 
   useEffect(() => {
     (async () => {
