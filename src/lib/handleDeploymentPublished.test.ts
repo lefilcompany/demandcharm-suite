@@ -26,7 +26,7 @@ function feature(id: string, key: string): FeatureRow {
     release_id: RELEASE_ID,
     announcement_key: key,
     audience_scope: "global",
-    global_roles: null,
+    global_roles: ["admin", "member"],
     team_roles: null,
     board_roles: null,
     team_id: null,
