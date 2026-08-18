@@ -102,6 +102,39 @@ function eventRetryAt(attempts: number): string | null {
 
 type Client = ReturnType<typeof createClient>;
 
+/**
+ * Keeps only the events whose release was approved by a global admin.
+ * The announcement pipeline is never automatic: detection creates the event,
+ * an admin decides when (and whether) it is announced.
+ */
+async function filterApprovedEventIds(client: Client, ids: string[]): Promise<string[]> {
+  const { data: events, error } = await client
+    .from("platform_events")
+    .select("id, aggregate_id")
+    .in("id", ids);
+  if (error) throw new Error(`[platformEvents] approval lookup: ${error.message}`);
+
+  const rows = (events ?? []) as Array<{ id: string; aggregate_id: string }>;
+  const releaseIds = [...new Set(rows.map((r) => r.aggregate_id).filter(Boolean))];
+  if (releaseIds.length === 0) return [];
+
+  const { data: releases, error: releaseError } = await client
+    .from("platform_releases")
+    .select("id")
+    .in("id", releaseIds)
+    .eq("approval_status", "approved");
+  if (releaseError) throw new Error(`[platformEvents] approval releases: ${releaseError.message}`);
+
+  const approved = new Set((releases ?? []).map((r) => r.id as string));
+  const allowed = rows.filter((r) => approved.has(r.aggregate_id)).map((r) => r.id);
+  if (allowed.length !== ids.length) {
+    log("info", "events waiting for admin approval", { waiting: ids.length - allowed.length });
+  }
+  return allowed;
+}
+
+
+
 /** Logical lock: pending|due-failed -> processing, attempts += 1. */
 async function claimEvents(
   client: Client,
@@ -141,6 +174,14 @@ async function claimEvents(
   }
 
   if (ids.length === 0) return [];
+
+  // ---- Approval gate: only releases explicitly approved by a global admin
+  // may generate deliveries. Non-approved events simply stay `pending`.
+  const approvedIds = await filterApprovedEventIds(client, ids);
+  if (approvedIds.length === 0) return [];
+  ids.length = 0;
+  ids.push(...approvedIds);
+
 
   // Conditional update = logical lock; a concurrent worker gets nothing back.
   const { data: claimed, error: claimError } = await client

@@ -167,6 +167,10 @@ Deno.serve(async (req) => {
   }
 
   // --- Create release ---
+  // Announcements are never sent automatically: a global admin must approve
+  // the release. `autoApprove` exists only for internal/admin test flows.
+  const autoApprove = raw.autoApprove === true;
+
   const { data: release, error: releaseError } = await supabase
     .from("platform_releases")
     .insert({
@@ -175,7 +179,10 @@ Deno.serve(async (req) => {
       commit_sha: (raw.commitSha as string | undefined) ?? null,
       published_at: publishedAt,
       status: "detected",
+      approval_status: autoApprove ? "approved" : "pending_approval",
+      approved_at: autoApprove ? new Date().toISOString() : null,
     })
+
     .select("id")
     .maybeSingle();
 
