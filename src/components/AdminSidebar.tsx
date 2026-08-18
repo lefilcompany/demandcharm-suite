@@ -1,4 +1,4 @@
-import { LayoutDashboard, Ticket, Building2, Users, CreditCard, MailCheck, BellRing, ScrollText } from "lucide-react";
+import { LayoutDashboard, Ticket, Building2, Users, CreditCard, MailCheck, BellRing, ScrollText, Rocket } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -24,6 +24,7 @@ const navItems = [
   { to: "/admin/email-test", icon: MailCheck, label: "Teste de e-mail" },
   { to: "/admin/push-test", icon: BellRing, label: "Teste de push" },
   { to: "/admin/email-logs", icon: ScrollText, label: "Logs de e-mail" },
+  { to: "/admin/release-test", icon: Rocket, label: "Teste de Release" },
 ];
 
 export function AdminSidebar() {
