@@ -9,18 +9,28 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, Loader2, MailCheck, RefreshCw, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertTriangle, Eye, Info, Loader2, MailCheck, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { SEOHead } from "@/components/SEOHead";
 
-type Scenario = "creation" | "deadline" | "generic";
+type Scenario = "creation" | "deadline" | "generic" | "product_update";
 
 const SCENARIO_LABEL: Record<Scenario, string> = {
   creation: "Criação de demanda",
   deadline: "Vencimento de demanda",
   generic: "Verificação genérica",
+  product_update: "Novidade da plataforma",
+};
+
+const PRODUCT_UPDATE_DEFAULTS = {
+  title: "Novo painel de relatórios",
+  message:
+    "Agora ficou mais fácil acompanhar a performance da sua operação. Conheça os novos recursos disponíveis no SoMA+.",
+  actionText: "Conhecer novidade",
+  ctaPath: "/reports",
 };
 
 export default function AdminEmailTest() {
@@ -29,6 +39,11 @@ export default function AdminEmailTest() {
   const [recipient, setRecipient] = useState(user?.email ?? "");
   const [scenario, setScenario] = useState<Scenario>("creation");
   const [sending, setSending] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [fields, setFields] = useState(PRODUCT_UPDATE_DEFAULTS);
+
+  const isProductUpdate = scenario === "product_update";
 
   const { data: logs, isLoading, refetch } = useQuery({
     queryKey: ["test-email-log"],
@@ -43,6 +58,28 @@ export default function AdminEmailTest() {
     },
   });
 
+  const buildBody = (extra: Record<string, unknown>) => ({
+    scenario,
+    ...(isProductUpdate ? fields : {}),
+    ...extra,
+  });
+
+  const handlePreview = async () => {
+    setPreviewing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-test-email", {
+        body: buildBody({ preview: true }),
+      });
+      if (error) throw error;
+      if (!data?.html) throw new Error(data?.error ?? "Não foi possível gerar a prévia");
+      setPreviewHtml(data.html);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Falha ao gerar prévia");
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!recipient) {
       toast.error("Informe um e-mail de destino");
@@ -51,13 +88,13 @@ export default function AdminEmailTest() {
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-test-email", {
-        body: { to: recipient, scenario },
+        body: buildBody({ to: recipient }),
       });
       if (error) throw error;
       if (data?.status === "accepted") {
         toast.success("E-mail aceito pelo provedor. Verifique a caixa de entrada.");
       } else {
-        toast.warning(`E-mail rejeitado: ${data?.error_message ?? "erro desconhecido"}`);
+        toast.warning(`E-mail rejeitado: ${data?.error_message ?? data?.error ?? "erro desconhecido"}`);
       }
       await queryClient.invalidateQueries({ queryKey: ["test-email-log"] });
     } catch (err: any) {
@@ -118,13 +155,79 @@ export default function AdminEmailTest() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end">
-              <Button onClick={handleSend} disabled={sending} className="w-full md:w-auto">
+            <div className="flex items-end gap-2">
+              <Button variant="outline" onClick={handlePreview} disabled={previewing}>
+                {previewing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
+                Visualizar e-mail
+              </Button>
+              <Button onClick={handleSend} disabled={sending}>
                 {sending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                 Enviar teste
               </Button>
             </div>
           </div>
+
+          {isProductUpdate && (
+            <div className="grid gap-4 rounded-lg border p-4 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="pu-title">Título</Label>
+                <Input
+                  id="pu-title"
+                  maxLength={200}
+                  value={fields.title}
+                  onChange={(e) => setFields((f) => ({ ...f, title: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="pu-message">Resumo / mensagem</Label>
+                <Textarea
+                  id="pu-message"
+                  rows={3}
+                  maxLength={2000}
+                  value={fields.message}
+                  onChange={(e) => setFields((f) => ({ ...f, message: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pu-action">Texto do botão</Label>
+                <Input
+                  id="pu-action"
+                  maxLength={80}
+                  value={fields.actionText}
+                  onChange={(e) => setFields((f) => ({ ...f, actionText: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pu-cta">Caminho do CTA</Label>
+                <Input
+                  id="pu-cta"
+                  placeholder="/reports"
+                  maxLength={200}
+                  value={fields.ctaPath}
+                  onChange={(e) => setFields((f) => ({ ...f, ctaPath: e.target.value }))}
+                />
+                <p className="text-xs text-muted-foreground">Somente rotas internas iniciando com “/”.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Info className="h-3.5 w-3.5" />
+            Esta prévia utiliza o mesmo template do envio de produção.
+          </div>
+
+          {previewHtml && (
+            <div className="rounded-lg border bg-muted/30 p-4">
+              <div className="mx-auto w-full max-w-[600px] overflow-hidden rounded-md bg-white">
+                <iframe
+                  title="Prévia do e-mail"
+                  srcDoc={previewHtml}
+                  sandbox=""
+                  className="h-[720px] w-full border-0"
+                />
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

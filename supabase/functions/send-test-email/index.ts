@@ -1,7 +1,7 @@
 import React from "npm:react@18.3.1";
 import { render } from "npm:@react-email/render@0.0.12";
 import { createClient } from "npm:@supabase/supabase-js@2.110.7";
-import { NotificationEmail } from "./_templates/notification.tsx";
+import { NotificationEmail } from "../_shared/email-templates/notification.tsx";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,7 +17,9 @@ const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const RESEND_GATEWAY_URL = "https://connector-gateway.lovable.dev/resend/emails";
 const DEFAULT_FROM = Deno.env.get("TEST_EMAIL_FROM") ?? "SoMA+ <soma@lefil.com.br>";
 
-type Scenario = "creation" | "deadline" | "generic";
+type Scenario = "creation" | "deadline" | "generic" | "product_update";
+
+const APP_URL = "https://pla.soma.lefil.com.br";
 
 const SCENARIOS: Record<Scenario, { subject: string; title: string; message: string; type: "info" | "warning" | "success" }> = {
   creation: {
@@ -38,7 +40,80 @@ const SCENARIOS: Record<Scenario, { subject: string; title: string; message: str
     message: "Se você recebeu esta mensagem, o envio de notificações do SoMA+ está funcionando corretamente.",
     type: "success",
   },
+  product_update: {
+    subject: "[Teste] Novidade no SoMA+",
+    title: "Novo painel de relatórios",
+    message:
+      "Agora ficou mais fácil acompanhar a performance da sua operação. Conheça os novos recursos disponíveis no SoMA+.",
+    type: "success",
+  },
 };
+
+const DEFAULT_PRODUCT_UPDATE = {
+  actionText: "Conhecer novidade",
+  ctaPath: "/reports",
+};
+
+/** Valida caminho interno de CTA: só rota relativa iniciando com "/". */
+function validateCtaPath(value: unknown): string {
+  if (value === undefined || value === null || value === "") return DEFAULT_PRODUCT_UPDATE.ctaPath;
+  if (typeof value !== "string") throw new Error("CTA inválido");
+  const path = value.trim();
+  if (path.length > 200) throw new Error("CTA muito longo (máx. 200 caracteres)");
+  if (!path.startsWith("/") || path.startsWith("//")) {
+    throw new Error("CTA deve ser uma rota interna iniciando com /");
+  }
+  if (/^\s*(javascript|data|vbscript|file):/i.test(path) || /[<>"'\\]/.test(path)) {
+    throw new Error("CTA contém caracteres ou protocolo não permitido");
+  }
+  return path;
+}
+
+function boundedString(value: unknown, field: string, max: number, fallback: string): string {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value !== "string") throw new Error(`${field} inválido`);
+  const trimmed = value.trim();
+  if (!trimmed) return fallback;
+  if (trimmed.length > max) throw new Error(`${field} muito longo (máx. ${max} caracteres)`);
+  return trimmed;
+}
+
+interface ResolvedEmail {
+  subject: string;
+  title: string;
+  message: string;
+  actionText: string;
+  actionUrl: string;
+  type: "info" | "warning" | "success";
+}
+
+function resolveEmail(scenario: Scenario, body: Record<string, unknown>): ResolvedEmail {
+  const cfg = SCENARIOS[scenario];
+  if (scenario !== "product_update") {
+    return {
+      subject: cfg.subject,
+      title: cfg.title,
+      message: cfg.message,
+      actionText: "Abrir SoMA+",
+      actionUrl: APP_URL,
+      type: cfg.type,
+    };
+  }
+
+  const title = boundedString(body?.title, "Título", 200, cfg.title);
+  const message = boundedString(body?.message, "Mensagem", 2000, cfg.message);
+  const actionText = boundedString(body?.actionText, "Texto do botão", 80, DEFAULT_PRODUCT_UPDATE.actionText);
+  const ctaPath = validateCtaPath(body?.ctaPath);
+
+  return {
+    subject: `[Teste] Novidade no SoMA+: ${title}`,
+    title,
+    message,
+    actionText,
+    actionUrl: `${APP_URL}${ctaPath}`,
+    type: "success",
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -64,9 +139,35 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const scenario: Scenario = (["creation", "deadline", "generic"] as const).includes(body?.scenario)
+    const scenario: Scenario = (["creation", "deadline", "generic", "product_update"] as const).includes(body?.scenario)
       ? body.scenario
       : "generic";
+    const previewOnly = body?.preview === true;
+
+    let cfg: ResolvedEmail;
+    try {
+      cfg = resolveEmail(scenario, body ?? {});
+    } catch (validationError) {
+      return json({ error: (validationError as Error).message }, 400);
+    }
+
+    const renderHtml = () =>
+      render(
+        React.createElement(NotificationEmail, {
+          title: cfg.title,
+          message: cfg.message,
+          actionUrl: cfg.actionUrl,
+          actionText: cfg.actionText,
+          userName: "Administrador",
+          type: cfg.type,
+        }),
+      );
+
+    // Modo prévia: renderiza o MESMO template, sem enviar nem registrar.
+    if (previewOnly) {
+      return json({ preview: true, subject: cfg.subject, html: await renderHtml() }, 200);
+    }
+
     const recipientEmail: string | undefined = typeof body?.to === "string" ? body.to.trim() : undefined;
 
     if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
@@ -78,24 +179,14 @@ Deno.serve(async (req) => {
         userId,
         recipientEmail,
         scenario,
-        subject: SCENARIOS[scenario].subject,
+        subject: cfg.subject,
         status: "rejected",
         errorMessage: "Missing LOVABLE_API_KEY or RESEND_API_KEY",
       });
       return json({ error: "Configuração de e-mail ausente no servidor" }, 500);
     }
 
-    const cfg = SCENARIOS[scenario];
-    const html = await render(
-      React.createElement(NotificationEmail, {
-        title: cfg.title,
-        message: cfg.message,
-        actionUrl: `${SUPABASE_URL.replace(/\/$/, "")}`,
-        actionText: "Abrir SoMA+",
-        userName: "Administrador",
-        type: cfg.type,
-      }),
-    );
+    const html = await renderHtml();
 
     const res = await fetch(RESEND_GATEWAY_URL, {
       method: "POST",
