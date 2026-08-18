@@ -80,6 +80,13 @@ export const ProductUpdateEmail = ({
 
           <Text style={messageText}>{message}</Text>
 
+          {imageUrl && (
+            <Section style={imageSection}>
+              <Img src={imageUrl} alt={title} width="520" style={featureImage} />
+            </Section>
+          )}
+
+
           {actionUrl && (
             <Section style={buttonSection}>
               <Button style={button} href={actionUrl}>
