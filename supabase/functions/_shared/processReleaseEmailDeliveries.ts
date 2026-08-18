@@ -46,6 +46,7 @@ export interface EmailDeliveryFeature {
   email_body: string | null;
   cta_path: string | null;
   cta_label: string | null;
+  image_url?: string | null;
 }
 
 export interface SendEmailPayload {
@@ -58,6 +59,7 @@ export interface SendEmailPayload {
     message: string;
     actionText: string;
     actionUrl?: string;
+    imageUrl?: string;
     type: "success";
   };
   dedupeKey: string;
@@ -65,6 +67,7 @@ export interface SendEmailPayload {
   relatedEntityType: string;
   relatedEntityId: string;
 }
+
 
 export type SendEmailOutcome =
   | { kind: "sent" }
