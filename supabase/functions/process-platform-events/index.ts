@@ -142,6 +142,14 @@ async function claimEvents(
 
   if (ids.length === 0) return [];
 
+  // ---- Approval gate: only releases explicitly approved by a global admin
+  // may generate deliveries. Non-approved events simply stay `pending`.
+  const approvedIds = await filterApprovedEventIds(client, ids);
+  if (approvedIds.length === 0) return [];
+  ids.length = 0;
+  ids.push(...approvedIds);
+
+
   // Conditional update = logical lock; a concurrent worker gets nothing back.
   const { data: claimed, error: claimError } = await client
     .from("platform_events")
