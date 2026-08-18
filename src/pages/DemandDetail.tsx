@@ -774,18 +774,29 @@ export default function DemandDetail() {
       <div className="space-y-2 md:space-y-3 animate-fade-in">
       {/* Breadcrumbs */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <PageBreadcrumb items={[{
-          label: originInfo.label,
-          href: originInfo.path,
-          icon: originInfo.icon,
-          state: {
-            viewMode: originInfo.viewMode,
-            ...(originInfo.calendarMonth && { calendarMonth: originInfo.calendarMonth })
-          }
-        }, {
-          label: demand?.title || "Carregando...",
-          isCurrent: true
-        }]} />
+        <PageBreadcrumb items={[
+          { label: "Kanban", icon: Kanban, href: "/kanban" },
+          ...(originInfo.label === "Kanban" ? [] : [{
+            label: originInfo.label,
+            href: originInfo.path,
+            icon: originInfo.icon,
+            state: {
+              viewMode: originInfo.viewMode,
+              ...(originInfo.calendarMonth && { calendarMonth: originInfo.calendarMonth })
+            }
+          }]),
+          ...(demand?.parent_demand_id && parentDemand ? [{
+            label: parentDemand.board_sequence_number
+              ? `${formatDemandCode(parentDemand.board_sequence_number)} ${parentDemand.title}`
+              : parentDemand.title,
+            href: `/demands/${parentDemand.id}`,
+            icon: FileText,
+          }] : []),
+          {
+            label: demand?.title || "Carregando...",
+            isCurrent: true
+          }]} />
+
         {id && <DemandPresenceIndicator demandId={id} />}
       </div>
 
