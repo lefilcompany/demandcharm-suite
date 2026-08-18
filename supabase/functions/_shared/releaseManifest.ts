@@ -260,6 +260,19 @@ function validateFeature(value: unknown, path: string, issues: ValidationIssue[]
   const emailBody = optionalString(raw.emailBody, `${path}.emailBody`, LIMITS.emailBody, issues);
   const ctaLabel = optionalString(raw.ctaLabel, `${path}.ctaLabel`, LIMITS.ctaLabel, issues);
 
+  let imageUrl: string | undefined;
+  const rawImageUrl = optionalString(raw.imageUrl, `${path}.imageUrl`, LIMITS.imageUrl, issues);
+  if (rawImageUrl !== undefined) {
+    if (!isValidReleaseImageUrl(rawImageUrl)) {
+      issues.push({
+        path: `${path}.imageUrl`,
+        message: "deve ser uma URL https hospedada na plataforma",
+      });
+    } else {
+      imageUrl = rawImageUrl.trim();
+    }
+  }
+
   let ctaPath: string | undefined;
   if (raw.ctaPath !== undefined && raw.ctaPath !== null && raw.ctaPath !== "") {
     if (typeof raw.ctaPath !== "string" || !isValidCtaPath(raw.ctaPath)) {
@@ -302,6 +315,7 @@ function validateFeature(value: unknown, path: string, issues: ValidationIssue[]
     ...(emailBody !== undefined ? { emailBody } : {}),
     ...(ctaPath !== undefined ? { ctaPath } : {}),
     ...(ctaLabel !== undefined ? { ctaLabel } : {}),
+    ...(imageUrl !== undefined ? { imageUrl } : {}),
     priority,
     audience,
     channels,
