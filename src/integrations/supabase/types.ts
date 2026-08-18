@@ -2422,6 +2422,7 @@ export type Database = {
           feature_key: string
           global_roles: string[] | null
           id: string
+          image_url: string | null
           inapp_enabled: boolean
           priority: string
           processed_at: string | null
@@ -2445,6 +2446,7 @@ export type Database = {
           feature_key: string
           global_roles?: string[] | null
           id?: string
+          image_url?: string | null
           inapp_enabled?: boolean
           priority?: string
           processed_at?: string | null
@@ -2468,6 +2470,7 @@ export type Database = {
           feature_key?: string
           global_roles?: string[] | null
           id?: string
+          image_url?: string | null
           inapp_enabled?: boolean
           priority?: string
           processed_at?: string | null
