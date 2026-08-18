@@ -1,6 +1,6 @@
 import React from "npm:react@18.3.1";
 import { render } from "npm:@react-email/render@0.0.12";
-import { NotificationEmail } from "./_templates/notification.tsx";
+import { NotificationEmail } from "../_shared/email-templates/notification.tsx";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
