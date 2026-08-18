@@ -1849,6 +1849,87 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_events: {
+        Row: {
+          aggregate_id: string
+          aggregate_type: string
+          attempts: number
+          created_at: string | null
+          event_type: string
+          id: string
+          last_error: string | null
+          next_retry_at: string | null
+          payload: Json
+          processed_at: string | null
+          status: string
+        }
+        Insert: {
+          aggregate_id: string
+          aggregate_type: string
+          attempts?: number
+          created_at?: string | null
+          event_type: string
+          id?: string
+          last_error?: string | null
+          next_retry_at?: string | null
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+        }
+        Update: {
+          aggregate_id?: string
+          aggregate_type?: string
+          attempts?: number
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          last_error?: string | null
+          next_retry_at?: string | null
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      platform_releases: {
+        Row: {
+          commit_sha: string | null
+          created_at: string
+          deployment_id: string | null
+          id: string
+          processed_at: string | null
+          published_at: string | null
+          release_key: string
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          commit_sha?: string | null
+          created_at?: string
+          deployment_id?: string | null
+          id?: string
+          processed_at?: string | null
+          published_at?: string | null
+          release_key: string
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          commit_sha?: string | null
+          created_at?: string
+          deployment_id?: string | null
+          id?: string
+          processed_at?: string | null
+          published_at?: string | null
+          release_key?: string
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -2162,6 +2243,142 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      release_deliveries: {
+        Row: {
+          announcement_key: string
+          attempts: number
+          channel: string
+          created_at: string | null
+          id: string
+          last_error: string | null
+          next_retry_at: string | null
+          priority: string
+          release_feature_id: string
+          sent_at: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          announcement_key: string
+          attempts?: number
+          channel: string
+          created_at?: string | null
+          id?: string
+          last_error?: string | null
+          next_retry_at?: string | null
+          priority: string
+          release_feature_id: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          announcement_key?: string
+          attempts?: number
+          channel?: string
+          created_at?: string | null
+          id?: string
+          last_error?: string | null
+          next_retry_at?: string | null
+          priority?: string
+          release_feature_id?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "release_deliveries_release_feature_id_fkey"
+            columns: ["release_feature_id"]
+            isOneToOne: false
+            referencedRelation: "release_features"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      release_features: {
+        Row: {
+          announcement_key: string
+          audience_scope: string
+          board_id: string | null
+          board_roles: string[] | null
+          created_at: string | null
+          cta_label: string | null
+          cta_path: string | null
+          email_body: string | null
+          email_enabled: boolean
+          feature_key: string
+          global_roles: string[] | null
+          id: string
+          inapp_enabled: boolean
+          priority: string
+          processed_at: string | null
+          release_id: string
+          status: string
+          summary: string
+          team_id: string | null
+          team_roles: string[] | null
+          title: string
+        }
+        Insert: {
+          announcement_key: string
+          audience_scope?: string
+          board_id?: string | null
+          board_roles?: string[] | null
+          created_at?: string | null
+          cta_label?: string | null
+          cta_path?: string | null
+          email_body?: string | null
+          email_enabled?: boolean
+          feature_key: string
+          global_roles?: string[] | null
+          id?: string
+          inapp_enabled?: boolean
+          priority?: string
+          processed_at?: string | null
+          release_id: string
+          status?: string
+          summary: string
+          team_id?: string | null
+          team_roles?: string[] | null
+          title: string
+        }
+        Update: {
+          announcement_key?: string
+          audience_scope?: string
+          board_id?: string | null
+          board_roles?: string[] | null
+          created_at?: string | null
+          cta_label?: string | null
+          cta_path?: string | null
+          email_body?: string | null
+          email_enabled?: boolean
+          feature_key?: string
+          global_roles?: string[] | null
+          id?: string
+          inapp_enabled?: boolean
+          priority?: string
+          processed_at?: string | null
+          release_id?: string
+          status?: string
+          summary?: string
+          team_id?: string | null
+          team_roles?: string[] | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "release_features_release_id_fkey"
+            columns: ["release_id"]
+            isOneToOne: false
+            referencedRelation: "platform_releases"
             referencedColumns: ["id"]
           },
         ]
