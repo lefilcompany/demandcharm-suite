@@ -18,8 +18,6 @@ import {
   AlertCircle,
   Users,
 } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { useTeamAvailability } from "@/hooks/useTeamAvailability";
 import { buildAvailabilityDetail } from "@/lib/availabilityDisplay";
 import {
