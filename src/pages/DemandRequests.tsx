@@ -1852,7 +1852,7 @@ export default function DemandRequests() {
                 <Users className="h-4 w-4" />
                 Responsáveis
               </Label>
-              <AssigneeSelector teamId={selectedTeamId} boardId={selectedBoardId} selectedUserIds={assigneeIds} onChange={setAssigneeIds} />
+              <AssigneeSelector dueDate={dueDate || null} teamId={selectedTeamId} boardId={selectedBoardId} selectedUserIds={assigneeIds} onChange={setAssigneeIds} />
             </div>
 
             <div className="space-y-2">

@@ -321,6 +321,7 @@ export function CreateDemandQuickDialog({
             <div className="space-y-2">
               <Label>Responsáveis *</Label>
               <AssigneeSelector
+                dueDate={dueDate || null}
                 teamId={currentTeamId}
                 boardId={selectedBoardId}
                 selectedUserIds={assigneeIds}

@@ -572,6 +572,7 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                       Responsáveis *
                     </Label>
                     <AssigneeSelector
+                      dueDate={dueDate || null}
                       teamId={demand.team_id}
                       boardId={demand.board_id}
                       selectedUserIds={selectedAssignees}

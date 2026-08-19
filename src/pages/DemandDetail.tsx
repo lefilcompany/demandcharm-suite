@@ -1234,6 +1234,7 @@ export default function DemandDetail() {
                     </Button>}
                 </div>
                 <AssigneeSelector
+                  dueDate={demand.due_date}
                   teamId={demand.team_id}
                   boardId={demand.board_id}
                   selectedUserIds={selectedAssignees}

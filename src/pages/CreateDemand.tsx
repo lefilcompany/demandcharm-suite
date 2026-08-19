@@ -992,6 +992,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                           Responsável e acompanhantes *
                         </Label>
                         <AssigneeSelector
+                          dueDate={dueDate || null}
                           teamId={selectedTeamId}
                           boardId={activeBoardId}
                           selectedUserIds={assigneeIds}
