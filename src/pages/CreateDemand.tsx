@@ -34,7 +34,19 @@ import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
 import { SEOHead } from "@/components/SEOHead";
 import { calculateBusinessDueDate, formatDueDateForInput } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
-import { parseAssigneeUnavailableError } from "@/lib/assigneeAvailability";
+import { parseAssigneeUnavailableError, findBlockingAbsence } from "@/lib/assigneeAvailability";
+import { useTeamAbsences, ABSENCE_TYPE_LABELS, type Absence } from "@/hooks/useAbsences";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
@@ -285,7 +297,11 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     if (error) console.error("Error saving approval recipients:", error);
   };
 
-  const handleSubmit = async () => {
+  const submitDemand = async (
+    assigneeIds: string[],
+    primaryAssigneeId: string | null,
+    allowNoAssignee = false,
+  ) => {
     if (!title.trim() || !selectedTeamId || !activeBoardId || !statusId || !canCreate) return;
 
     if (hasBoardServices && (!serviceId || serviceId === "none")) {
@@ -299,7 +315,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     }
 
     // Required fields: assignees, priority, due date
-    if (canAssignResponsibles && assigneeIds.length === 0) {
+    if (canAssignResponsibles && assigneeIds.length === 0 && !allowNoAssignee) {
       toast.error("Selecione pelo menos um responsável para a demanda");
       return;
     }
@@ -578,6 +594,40 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
         },
       }
     );
+  };
+
+  // --- Aviso de responsável indisponível na data prevista ---
+  const { data: teamAbsences } = useTeamAbsences(dueDate ? selectedTeamId : null);
+  const { data: teamMembersForNames } = useTeamMembers(selectedTeamId);
+  const [unavailableWarning, setUnavailableWarning] = useState<
+    { userId: string; name: string; absence: Absence }[] | null
+  >(null);
+
+  const memberName = (userId: string) =>
+    teamMembersForNames?.find((m) => m.user_id === userId)?.profile?.full_name || "Este usuário";
+
+  const handleSubmit = async () => {
+    const blocked = assigneeIds
+      .map((userId) => {
+        const absence = findBlockingAbsence(teamAbsences, userId, dueDate || null);
+        return absence ? { userId, name: memberName(userId), absence } : null;
+      })
+      .filter(Boolean) as { userId: string; name: string; absence: Absence }[];
+
+    if (blocked.length > 0) {
+      setUnavailableWarning(blocked);
+      return;
+    }
+
+    await submitDemand(assigneeIds, primaryAssigneeId);
+  };
+
+  const handleCreateAnyway = async () => {
+    const blockedIds = new Set((unavailableWarning ?? []).map((b) => b.userId));
+    const remaining = assigneeIds.filter((id) => !blockedIds.has(id));
+    const primary = primaryAssigneeId && remaining.includes(primaryAssigneeId) ? primaryAssigneeId : remaining[0] ?? null;
+    setUnavailableWarning(null);
+    await submitDemand(remaining, primary, true);
   };
 
   const handleCreateAnother = () => {
@@ -1152,6 +1202,34 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
           </>
         )}
       </DialogContent>
+
+      <AlertDialog
+        open={!!unavailableWarning}
+        onOpenChange={(v) => { if (!v) setUnavailableWarning(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Responsável indisponível</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {(unavailableWarning ?? []).map((b) => (
+                  <p key={b.userId}>
+                    {b.name} está indisponível por motivo de{" "}
+                    {(ABSENCE_TYPE_LABELS[b.absence.type] ?? "ausência").toLowerCase()} e a demanda
+                    seguirá sem responsável.
+                  </p>
+                ))}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCreateAnyway}>
+              Criar demanda mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
