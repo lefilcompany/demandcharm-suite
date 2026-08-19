@@ -297,7 +297,11 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     if (error) console.error("Error saving approval recipients:", error);
   };
 
-  const submitDemand = async (assigneeIds: string[], primaryAssigneeId: string | null) => {
+  const submitDemand = async (
+    assigneeIds: string[],
+    primaryAssigneeId: string | null,
+    allowNoAssignee = false,
+  ) => {
     if (!title.trim() || !selectedTeamId || !activeBoardId || !statusId || !canCreate) return;
 
     if (hasBoardServices && (!serviceId || serviceId === "none")) {
@@ -311,7 +315,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     }
 
     // Required fields: assignees, priority, due date
-    if (canAssignResponsibles && assigneeIds.length === 0) {
+    if (canAssignResponsibles && assigneeIds.length === 0 && !allowNoAssignee) {
       toast.error("Selecione pelo menos um responsável para a demanda");
       return;
     }
@@ -590,6 +594,40 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
         },
       }
     );
+  };
+
+  // --- Aviso de responsável indisponível na data prevista ---
+  const { data: teamAbsences } = useTeamAbsences(dueDate ? selectedTeamId : null);
+  const { data: teamMembersForNames } = useTeamMembers(selectedTeamId);
+  const [unavailableWarning, setUnavailableWarning] = useState<
+    { userId: string; name: string; absence: Absence }[] | null
+  >(null);
+
+  const memberName = (userId: string) =>
+    teamMembersForNames?.find((m) => m.user_id === userId)?.profile?.full_name || "Este usuário";
+
+  const handleSubmit = async () => {
+    const blocked = assigneeIds
+      .map((userId) => {
+        const absence = findBlockingAbsence(teamAbsences, userId, dueDate || null);
+        return absence ? { userId, name: memberName(userId), absence } : null;
+      })
+      .filter(Boolean) as { userId: string; name: string; absence: Absence }[];
+
+    if (blocked.length > 0) {
+      setUnavailableWarning(blocked);
+      return;
+    }
+
+    await submitDemand(assigneeIds, primaryAssigneeId);
+  };
+
+  const handleCreateAnyway = async () => {
+    const blockedIds = new Set((unavailableWarning ?? []).map((b) => b.userId));
+    const remaining = assigneeIds.filter((id) => !blockedIds.has(id));
+    const primary = primaryAssigneeId && remaining.includes(primaryAssigneeId) ? primaryAssigneeId : remaining[0] ?? null;
+    setUnavailableWarning(null);
+    await submitDemand(remaining, primary, true);
   };
 
   const handleCreateAnother = () => {
