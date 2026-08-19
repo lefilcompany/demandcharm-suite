@@ -49,5 +49,8 @@ export function useTeamAvailability(
     },
     enabled: !!teamId,
     staleTime: 60_000,
+    // "Disponível agora" precisa acompanhar a passagem do tempo.
+    refetchInterval: at ? false : 5 * 60_000,
+    refetchOnWindowFocus: true,
   });
 }

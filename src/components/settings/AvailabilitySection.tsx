@@ -106,7 +106,8 @@ function formatDate(value: string) {
   }
 }
 
-const todayISO = () => new Date().toISOString().substring(0, 10);
+/** Data de hoje no fuso local (evita virada antecipada em UTC-3). */
+const todayISO = () => format(new Date(), "yyyy-MM-dd");
 
 export function AvailabilitySection() {
   const { user } = useAuth();
@@ -165,11 +166,18 @@ export function AvailabilitySection() {
   const handleSaveSchedule = async () => {
     if (!teamId) return;
 
+    // Todos os dias são persistidos (inclusive os desabilitados), então a
+    // validação precisa cobrir a semana inteira para não violar o CHECK do banco.
     const invalid = WEEK_ORDER.filter(
-      (d) => days[d].is_enabled && days[d].start_time >= days[d].end_time,
+      (d) => !days[d].start_time || !days[d].end_time || days[d].start_time >= days[d].end_time,
     );
     if (invalid.length > 0) {
-      toast.error("O horário final deve ser maior que o inicial");
+      const enabledInvalid = invalid.filter((d) => days[d].is_enabled);
+      toast.error(
+        enabledInvalid.length > 0
+          ? "O horário final deve ser maior que o inicial"
+          : "Há dias desativados com horários inválidos. Corrija-os antes de salvar.",
+      );
       return;
     }
 
@@ -323,6 +331,10 @@ export function AvailabilitySection() {
       toast.error("Informe o nome do feriado");
       return;
     }
+    if (!holidayDate) {
+      toast.error("Informe a data do feriado");
+      return;
+    }
     try {
       if (editingHoliday) {
         await updateHoliday.mutateAsync({
@@ -434,6 +446,9 @@ export function AvailabilitySection() {
                 <SelectValue placeholder="Selecione o fuso" />
               </SelectTrigger>
               <SelectContent>
+                {timezone && !TIMEZONE_OPTIONS.some((tz) => tz.value === timezone) && (
+                  <SelectItem value={timezone}>{timezone}</SelectItem>
+                )}
                 {TIMEZONE_OPTIONS.map((tz) => (
                   <SelectItem key={tz.value} value={tz.value}>
                     {tz.label}
