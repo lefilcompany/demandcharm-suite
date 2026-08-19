@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      _availability_test_results: {
+        Row: {
+          detail: string | null
+          name: string | null
+          passed: boolean | null
+        }
+        Insert: {
+          detail?: string | null
+          name?: string | null
+          passed?: boolean | null
+        }
+        Update: {
+          detail?: string | null
+          name?: string | null
+          passed?: boolean | null
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string
