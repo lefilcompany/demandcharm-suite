@@ -46,6 +46,11 @@ export default function TeamDetail() {
     data: members,
     isLoading: membersLoading
   } = useTeamMembers(id || null);
+  // Disponibilidade: uma única chamada RPC para toda a equipe.
+  const { data: availability } = useTeamAvailability(id || null);
+  const availabilityByUser = new Map<string, TeamMemberAvailability>(
+    (availability ?? []).map((a) => [a.user_id, a]),
+  );
   const {
     isAdmin
   } = useIsTeamAdmin(id || null);
