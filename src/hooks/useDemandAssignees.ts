@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { parseAssigneeUnavailableError } from "@/lib/assigneeAvailability";
 import {
   notifyDemandAssigneeChange,
   type DemandAssigneeEvent,
@@ -117,7 +119,11 @@ export function useAddAssignee() {
         .select("is_primary")
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        const friendly = parseAssigneeUnavailableError(error);
+        if (friendly) throw new Error(friendly);
+        throw error;
+      }
       return { demandId, userId, isPrimary: !!(data as { is_primary?: boolean })?.is_primary };
     },
     onSuccess: (result, variables) => {
@@ -129,6 +135,11 @@ export function useAddAssignee() {
           event: result.isPrimary ? "assigned_primary" : "assigned_follower",
         },
       ]);
+    },
+    onError: (error: unknown) => {
+      toast.error(
+        error instanceof Error ? error.message : "Erro ao adicionar responsável"
+      );
     },
   });
 }
@@ -213,6 +224,8 @@ export function useSetAssignees() {
           );
 
         if (insertError) {
+          const unavailable = parseAssigneeUnavailableError(insertError);
+          if (unavailable) throw new Error(unavailable);
           const msg = (insertError as any)?.message || "";
           if (msg.includes("row-level security")) {
             throw new Error(
@@ -311,6 +324,11 @@ export function useSetAssignees() {
       if (result?.events?.length) {
         void dispatchAssigneeNotifications(result.demandId, result.events);
       }
+    },
+    onError: (error: unknown) => {
+      toast.error(
+        error instanceof Error ? error.message : "Erro ao atualizar responsáveis"
+      );
     },
   });
 }

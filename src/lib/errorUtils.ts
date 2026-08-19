@@ -9,6 +9,8 @@ interface ErrorMapping {
 }
 
 const ERROR_MAPPINGS: ErrorMapping[] = [
+  // Assignee unavailable (vacation / absence) — show the database message
+  { pattern: /ASSIGNEE_UNAVAILABLE/i, message: "__PASS_THROUGH__" },
   // Zod validation errors (show original message)
   { pattern: /deve ter no máximo/i, message: "__PASS_THROUGH__" },
   { pattern: /Este campo é obrigatório/i, message: "__PASS_THROUGH__" },
@@ -77,6 +79,11 @@ export function getErrorMessage(error: unknown): string {
   // Log the original error for debugging (only in development)
   if (process.env.NODE_ENV === "development") {
     console.error("Original error:", error);
+  }
+
+  const unavailableIdx = errorMessage.indexOf("ASSIGNEE_UNAVAILABLE:");
+  if (unavailableIdx !== -1) {
+    return errorMessage.slice(unavailableIdx + "ASSIGNEE_UNAVAILABLE:".length).trim();
   }
 
   // Check for matching error pattern
