@@ -14,6 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { CalendarOff } from "lucide-react";
+import { toast } from "sonner";
+import { useTeamAbsences } from "@/hooks/useAbsences";
+import {
+  findBlockingAbsence,
+  buildUnavailableMessage,
+  absenceShortLabel,
+} from "@/lib/assigneeAvailability";
 
 type Role = "admin" | "moderator" | "executor" | "requester";
 
@@ -54,6 +62,8 @@ interface AssigneeSelectorProps {
   disabled?: boolean;
   hideIcon?: boolean;
   restrictToUserIds?: string[];
+  /** Data de entrega da demanda — bloqueia membros ausentes nesse período. */
+  dueDate?: string | null;
   // Controlled mode
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
@@ -72,6 +82,7 @@ export function AssigneeSelector({
   disabled = false,
   hideIcon = false,
   restrictToUserIds,
+  dueDate,
   open: openProp,
   onOpenChange,
   hideTrigger = false,
@@ -141,11 +152,28 @@ export function AssigneeSelector({
     );
   }, [members, search]);
 
+  const { data: teamAbsences } = useTeamAbsences(dueDate ? teamId : null);
+
+  const blockedFor = (userId: string) =>
+    findBlockingAbsence(teamAbsences, userId, dueDate);
+
+  const memberName = (userId: string) =>
+    members?.find((m) => m.user_id === userId)?.profile?.full_name || "Este usuário";
+
+  /** Retorna true se o membro estiver bloqueado (e avisa o usuário). */
+  const rejectIfUnavailable = (userId: string) => {
+    const absence = blockedFor(userId);
+    if (!absence) return false;
+    toast.error(buildUnavailableMessage(memberName(userId), absence));
+    return true;
+  };
+
   const setPrimary = (userId: string | null) => {
     if (onPrimaryChange) onPrimaryChange(userId);
   };
 
   const toggleUser = (userId: string) => {
+    if (!selectedUserIds.includes(userId) && rejectIfUnavailable(userId)) return;
     if (selectedUserIds.includes(userId)) {
       const next = selectedUserIds.filter((id) => id !== userId);
       onChange(next);
@@ -162,6 +190,7 @@ export function AssigneeSelector({
   };
 
   const promoteToPrimary = (userId: string) => {
+    if (rejectIfUnavailable(userId)) return;
     if (!selectedUserIds.includes(userId)) {
       // also auto-add to selection
       onChange([...selectedUserIds, userId]);
@@ -317,6 +346,7 @@ export function AssigneeSelector({
                     {primarySectionMembers.map((member) => {
                       const isPrimary = effectivePrimary === member.user_id;
                       const config = roleConfig[member.role] || roleConfig.requester;
+                      const blockingAbsence = blockedFor(member.user_id);
                       return (
                         <button
                           key={`primary-${member.id}`}
@@ -325,8 +355,14 @@ export function AssigneeSelector({
                           className={cn(
                             "relative rounded-xl border-2 bg-card overflow-hidden text-left transition-all",
                             "hover:shadow-md hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                            isPrimary ? "border-primary shadow-md ring-2 ring-primary/30" : "border-border"
+                            isPrimary ? "border-primary shadow-md ring-2 ring-primary/30" : "border-border",
+                            blockingAbsence && "opacity-60"
                           )}
+                          title={
+                            blockingAbsence
+                              ? buildUnavailableMessage(member.profile?.full_name || "", blockingAbsence)
+                              : undefined
+                          }
                         >
                           <div className={`h-10 bg-gradient-to-r ${config.bannerColor}`} />
                           {isPrimary && (
@@ -351,6 +387,12 @@ export function AssigneeSelector({
                                 {config.icon}
                                 <span className="ml-1">{config.label}</span>
                               </Badge>
+                              {blockingAbsence && (
+                                <p className="flex items-center justify-center gap-1 text-[10px] font-medium text-destructive leading-tight">
+                                  <CalendarOff className="h-3 w-3 shrink-0" />
+                                  <span>{absenceShortLabel(blockingAbsence)}</span>
+                                </p>
+                              )}
                             </div>
                           </div>
                         </button>
@@ -378,6 +420,7 @@ export function AssigneeSelector({
                       {followersAreaMembers.map((member) => {
                         const isSelected = selectedUserIds.includes(member.user_id);
                         const config = roleConfig[member.role] || roleConfig.requester;
+                        const blockingAbsence = blockedFor(member.user_id);
                         return (
                           <button
                             key={`follower-${member.id}`}
@@ -386,8 +429,14 @@ export function AssigneeSelector({
                             className={cn(
                               "relative rounded-xl border-2 bg-card overflow-hidden text-left transition-all",
                               "hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                              isSelected ? "border-primary shadow-md" : "border-border"
+                              isSelected ? "border-primary shadow-md" : "border-border",
+                              blockingAbsence && !isSelected && "opacity-60"
                             )}
+                            title={
+                              blockingAbsence
+                                ? buildUnavailableMessage(member.profile?.full_name || "", blockingAbsence)
+                                : undefined
+                            }
                           >
                             <div className={`h-10 bg-gradient-to-r ${config.bannerColor} opacity-80`} />
                             {isSelected && (
@@ -412,6 +461,12 @@ export function AssigneeSelector({
                                   {config.icon}
                                   <span className="ml-1">{config.label}</span>
                                 </Badge>
+                                {blockingAbsence && (
+                                  <p className="flex items-center justify-center gap-1 text-[10px] font-medium text-destructive leading-tight">
+                                    <CalendarOff className="h-3 w-3 shrink-0" />
+                                    <span>{absenceShortLabel(blockingAbsence)}</span>
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </button>
