@@ -20,6 +20,7 @@ import { useIsTeamAdmin, useTeamRole } from "@/hooks/useTeamRole";
 import { useTeamScope } from "@/hooks/useTeamScope";
 import { useTeamPositions, useAssignPosition } from "@/hooks/useTeamPositions";
 import { MemberCard } from "@/components/MemberCard";
+import { TeamAvailabilitySummary } from "@/components/TeamAvailabilitySummary";
 import { TeamScopeConfig } from "@/components/TeamScopeConfig";
 import { TeamPositionsManager } from "@/components/TeamPositionsManager";
 import { TeamRole } from "@/hooks/useTeamRole";
