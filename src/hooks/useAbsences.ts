@@ -112,7 +112,12 @@ export function useUpdateAbsence() {
       endsOn,
       note,
     }: UpdateAbsenceInput): Promise<Absence | null> => {
-      const payload: Record<string, string | null> = {};
+      const payload: {
+        type?: AbsenceType;
+        starts_on?: string;
+        ends_on?: string;
+        note?: string | null;
+      } = {};
       if (type !== undefined) payload.type = type;
       if (startsOn !== undefined) payload.starts_on = startsOn;
       if (endsOn !== undefined) payload.ends_on = endsOn;
