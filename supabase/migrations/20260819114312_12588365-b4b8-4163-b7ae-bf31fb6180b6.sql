@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.block_assignee_when_unavailable() FROM PUBLIC, anon, authenticated;

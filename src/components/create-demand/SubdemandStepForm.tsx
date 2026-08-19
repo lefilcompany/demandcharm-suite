@@ -84,6 +84,7 @@ export function SubdemandStepForm({
         <div className="space-y-2">
           <Label>Responsáveis *</Label>
           <AssigneeSelector
+            dueDate={data.due_date || null}
             teamId={teamId}
             boardId={boardId}
             selectedUserIds={data.assigneeIds || []}

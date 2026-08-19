@@ -79,6 +79,11 @@ export function getErrorMessage(error: unknown): string {
     console.error("Original error:", error);
   }
 
+  const unavailableIdx = errorMessage.indexOf("ASSIGNEE_UNAVAILABLE:");
+  if (unavailableIdx !== -1) {
+    return errorMessage.slice(unavailableIdx + "ASSIGNEE_UNAVAILABLE:".length).trim();
+  }
+
   // Check for matching error pattern
   for (const mapping of ERROR_MAPPINGS) {
     if (typeof mapping.pattern === "string") {
