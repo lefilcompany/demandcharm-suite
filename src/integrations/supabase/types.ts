@@ -2067,6 +2067,7 @@ export type Database = {
           phone: string | null
           profile_visibility: Json
           state: string | null
+          timezone: string | null
           trial_ends_at: string | null
           updated_at: string
           website: string | null
@@ -2093,6 +2094,7 @@ export type Database = {
           phone?: string | null
           profile_visibility?: Json
           state?: string | null
+          timezone?: string | null
           trial_ends_at?: string | null
           updated_at?: string
           website?: string | null
@@ -2119,6 +2121,7 @@ export type Database = {
           phone?: string | null
           profile_visibility?: Json
           state?: string | null
+          timezone?: string | null
           trial_ends_at?: string | null
           updated_at?: string
           website?: string | null
@@ -2659,6 +2662,41 @@ export type Database = {
           },
         ]
       }
+      team_holidays: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          name: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          name: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          name?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_holidays_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_join_requests: {
         Row: {
           id: string
@@ -2999,6 +3037,57 @@ export type Database = {
           },
         ]
       }
+      user_absences: {
+        Row: {
+          created_at: string
+          ends_on: string
+          id: string
+          note: string | null
+          starts_on: string
+          team_id: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_on: string
+          id?: string
+          note?: string | null
+          starts_on: string
+          team_id: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_on?: string
+          id?: string
+          note?: string | null
+          starts_on?: string
+          team_id?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_absences_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_absences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_board_ai_insights: {
         Row: {
           board_id: string
@@ -3089,6 +3178,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_work_schedules: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          is_enabled: boolean
+          start_time: string
+          team_id: string
+          updated_at: string
+          user_id: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          is_enabled?: boolean
+          start_time: string
+          team_id: string
+          updated_at?: string
+          user_id: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_enabled?: boolean
+          start_time?: string
+          team_id?: string
+          updated_at?: string
+          user_id?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_work_schedules_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_work_schedules_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
