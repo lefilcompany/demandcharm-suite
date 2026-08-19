@@ -34,7 +34,19 @@ import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
 import { SEOHead } from "@/components/SEOHead";
 import { calculateBusinessDueDate, formatDueDateForInput } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
-import { parseAssigneeUnavailableError } from "@/lib/assigneeAvailability";
+import { parseAssigneeUnavailableError, findBlockingAbsence } from "@/lib/assigneeAvailability";
+import { useTeamAbsences, ABSENCE_TYPE_LABELS, type Absence } from "@/hooks/useAbsences";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
@@ -285,7 +297,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     if (error) console.error("Error saving approval recipients:", error);
   };
 
-  const handleSubmit = async () => {
+  const submitDemand = async (assigneeIds: string[], primaryAssigneeId: string | null) => {
     if (!title.trim() || !selectedTeamId || !activeBoardId || !statusId || !canCreate) return;
 
     if (hasBoardServices && (!serviceId || serviceId === "none")) {
