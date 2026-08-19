@@ -9,8 +9,6 @@ interface ErrorMapping {
 }
 
 const ERROR_MAPPINGS: ErrorMapping[] = [
-  // Assignee unavailable (vacation / absence) — show the database message
-  { pattern: /ASSIGNEE_UNAVAILABLE/i, message: "__PASS_THROUGH__" },
   // Zod validation errors (show original message)
   { pattern: /deve ter no máximo/i, message: "__PASS_THROUGH__" },
   { pattern: /Este campo é obrigatório/i, message: "__PASS_THROUGH__" },
