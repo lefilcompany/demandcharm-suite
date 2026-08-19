@@ -92,50 +92,6 @@ const availabilityConfig: Record<
   },
 };
 
-/** Texto complementar de disponibilidade (ex.: "Disponível às 13:00"). */
-function buildAvailabilityDetail(av: TeamMemberAvailability): string | null {
-  if (av.available_now) {
-    // Disponível agora — mostrar janela de trabalho se existir.
-    if (av.work_start_time && av.work_end_time) {
-      return `${av.work_start_time} — ${av.work_end_time}`;
-    }
-    return null;
-  }
-
-  if (av.status === "vacation" && av.absence_ends_on) {
-    try {
-      return `Retorna em ${format(new Date(av.absence_ends_on.substring(0, 10)), "dd/MM", { locale: ptBR })}`;
-    } catch {
-      return null;
-    }
-  }
-
-  if (av.next_available_at) {
-    try {
-      const next = new Date(av.next_available_at.substring(0, 19));
-      const now = new Date();
-      const isSameDay =
-        next.getFullYear() === now.getFullYear() &&
-        next.getMonth() === now.getMonth() &&
-        next.getDate() === now.getDate();
-      const tomorrow = new Date(now);
-      tomorrow.setDate(now.getDate() + 1);
-      const isTomorrow =
-        next.getFullYear() === tomorrow.getFullYear() &&
-        next.getMonth() === tomorrow.getMonth() &&
-        next.getDate() === tomorrow.getDate();
-      const time = format(next, "HH:mm");
-      if (isSameDay) return `Disponível às ${time}`;
-      if (isTomorrow) return `Disponível amanhã às ${time}`;
-      return `Disponível em ${format(next, "dd/MM", { locale: ptBR })} às ${time}`;
-    } catch {
-      return null;
-    }
-  }
-
-  return null;
-}
-
 const roleConfig: Record<TeamRole, { label: string; badgeColor: string; bannerColor: string; icon: React.ReactNode }> = {
   owner: {
     label: "Dono",
