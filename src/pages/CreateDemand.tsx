@@ -34,6 +34,7 @@ import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
 import { SEOHead } from "@/components/SEOHead";
 import { calculateBusinessDueDate, formatDueDateForInput } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { parseAssigneeUnavailableError } from "@/lib/assigneeAvailability";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
@@ -493,7 +494,12 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
               );
             if (assignError) {
               console.error("Erro ao atribuir responsáveis:", assignError);
-              toast.warning("Demanda criada, mas houve um erro ao atribuir responsáveis");
+              const unavailable = parseAssigneeUnavailableError(assignError);
+              toast.warning(
+                unavailable
+                  ? `Demanda criada, mas os responsáveis não foram atribuídos: ${unavailable}`
+                  : "Demanda criada, mas houve um erro ao atribuir responsáveis"
+              );
             }
           }
 

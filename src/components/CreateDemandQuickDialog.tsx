@@ -29,6 +29,7 @@ import { useFormDraft } from "@/hooks/useFormDraft";
 import { useBoardRole } from "@/hooks/useBoardMembers";
 import { AssigneeSelector } from "@/components/AssigneeSelector";
 import { supabase } from "@/integrations/supabase/client";
+import { parseAssigneeUnavailableError } from "@/lib/assigneeAvailability";
 import { RecurrenceConfig, RecurrenceData, defaultRecurrenceData } from "@/components/RecurrenceConfig";
 import { useCreateRecurringDemand } from "@/hooks/useRecurringDemands";
 import { toast } from "sonner";
@@ -150,9 +151,17 @@ export function CreateDemandQuickDialog({
       // Assign responsibles
       if (result?.id && assigneeIds.length > 0) {
         const primary = primaryAssigneeId && assigneeIds.includes(primaryAssigneeId) ? primaryAssigneeId : assigneeIds[0];
-        await supabase
+        const { error: assignError } = await supabase
           .from("demand_assignees")
           .insert(assigneeIds.map((userId) => ({ demand_id: result.id, user_id: userId, is_primary: userId === primary })));
+        if (assignError) {
+          const unavailable = parseAssigneeUnavailableError(assignError);
+          toast.warning(
+            unavailable
+              ? `Demanda criada, mas os responsáveis não foram atribuídos: ${unavailable}`
+              : "Demanda criada, mas houve um erro ao atribuir responsáveis"
+          );
+        }
       }
 
       // Clear draft on success
