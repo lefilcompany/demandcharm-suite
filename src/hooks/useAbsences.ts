@@ -156,3 +156,22 @@ export function useDeleteAbsence() {
     },
   });
 }
+
+/** Lista todas as ausências da equipe (usada para bloquear atribuições). */
+export function useTeamAbsences(teamId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["team-absences", teamId],
+    queryFn: async (): Promise<Absence[]> => {
+      if (!teamId) return [];
+      const { data, error } = await supabase
+        .from("user_absences")
+        .select("*")
+        .eq("team_id", teamId)
+        .order("starts_on", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Absence[];
+    },
+    enabled: !!teamId,
+    staleTime: 60_000,
+  });
+}
