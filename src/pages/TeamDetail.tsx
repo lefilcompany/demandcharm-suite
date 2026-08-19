@@ -15,6 +15,7 @@ import { useState, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import { useTeams, useDeleteTeam } from "@/hooks/useTeams";
 import { useTeamMembers, useRemoveMember, useUpdateMemberRole } from "@/hooks/useTeamMembers";
+import { useTeamAvailability, type TeamMemberAvailability } from "@/hooks/useTeamAvailability";
 import { useIsTeamAdmin, useTeamRole } from "@/hooks/useTeamRole";
 import { useTeamScope } from "@/hooks/useTeamScope";
 import { useTeamPositions, useAssignPosition } from "@/hooks/useTeamPositions";
@@ -45,6 +46,11 @@ export default function TeamDetail() {
     data: members,
     isLoading: membersLoading
   } = useTeamMembers(id || null);
+  // Disponibilidade: uma única chamada RPC para toda a equipe.
+  const { data: availability } = useTeamAvailability(id || null);
+  const availabilityByUser = new Map<string, TeamMemberAvailability>(
+    (availability ?? []).map((a) => [a.user_id, a]),
+  );
   const {
     isAdmin
   } = useIsTeamAdmin(id || null);
@@ -272,6 +278,7 @@ export default function TeamDetail() {
                   isChangingPosition={assignPosition.isPending}
                   onRoleChange={canManage ? handleRoleChange : undefined}
                   isChangingRole={updateMemberRole.isPending}
+                  availability={availabilityByUser.get(member.user_id)}
                 />
               ))}
             </div> : <p className="text-center text-muted-foreground py-8">
