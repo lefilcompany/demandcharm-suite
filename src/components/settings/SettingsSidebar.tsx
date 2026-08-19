@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Crown, ExternalLink, ChevronRight, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type SettingsTab = "profile" | "public-profile" | "security" | "preferences" | "notifications" | "team" | "account";
+export type SettingsTab = "profile" | "public-profile" | "security" | "preferences" | "notifications" | "availability" | "team" | "account";
 
 export interface SettingsNavItem {
   id: SettingsTab;
