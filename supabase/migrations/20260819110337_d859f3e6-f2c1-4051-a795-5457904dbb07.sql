@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.get_team_availability(uuid, timestamptz) TO postgres;

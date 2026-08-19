@@ -3597,6 +3597,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_team_availability: {
+        Args: { p_at?: string; p_team_id: string }
+        Returns: {
+          absence_ends_on: string
+          absence_starts_on: string
+          absence_type: string
+          available_now: boolean
+          holiday_name: string
+          next_available_at: string
+          status: string
+          status_label: string
+          user_id: string
+          work_end_time: string
+          work_start_time: string
+        }[]
+      }
       get_team_by_access_code: {
         Args: { code: string }
         Returns: {
