@@ -193,6 +193,9 @@ export default function TeamDetail() {
         />
       )}
 
+      {/* Resumo rápido de disponibilidade da equipe */}
+      <TeamAvailabilitySummary teamId={id || null} />
+
       {/* Members List */}
       <Card>
         <CardHeader>
