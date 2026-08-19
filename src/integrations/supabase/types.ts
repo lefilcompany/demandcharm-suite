@@ -3439,6 +3439,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _availability_selftest: {
+        Args: never
+        Returns: {
+          detail: string
+          name: string
+          passed: boolean
+        }[]
+      }
       approve_demand_request: {
         Args: {
           p_assignee_ids?: string[]
