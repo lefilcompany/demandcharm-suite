@@ -21,6 +21,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTeamAvailability } from "@/hooks/useTeamAvailability";
+import { buildAvailabilityDetail } from "@/lib/availabilityDisplay";
 import {
   useTeamMembers,
   type TeamMember,
@@ -87,49 +88,6 @@ function getInitials(name: string | undefined | null): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-}
-
-function nextAvailableText(av: TeamMemberAvailability): string | null {
-  if (av.available_now) {
-    if (av.work_start_time && av.work_end_time) {
-      return `${av.work_start_time} — ${av.work_end_time}`;
-    }
-    return null;
-  }
-  if (av.status === "vacation" && av.absence_ends_on) {
-    try {
-      return `Retorna em ${format(
-        new Date(av.absence_ends_on.substring(0, 10)),
-        "dd/MM",
-        { locale: ptBR },
-      )}`;
-    } catch {
-      return null;
-    }
-  }
-  if (av.next_available_at) {
-    try {
-      const next = new Date(av.next_available_at.substring(0, 19));
-      const now = new Date();
-      const isSameDay =
-        next.getFullYear() === now.getFullYear() &&
-        next.getMonth() === now.getMonth() &&
-        next.getDate() === now.getDate();
-      const tomorrow = new Date(now);
-      tomorrow.setDate(now.getDate() + 1);
-      const isTomorrow =
-        next.getFullYear() === tomorrow.getFullYear() &&
-        next.getMonth() === tomorrow.getMonth() &&
-        next.getDate() === tomorrow.getDate();
-      const time = format(next, "HH:mm");
-      if (isSameDay) return `Disponível às ${time}`;
-      if (isTomorrow) return `Disponível amanhã às ${time}`;
-      return `Disponível em ${format(next, "dd/MM", { locale: ptBR })} às ${time}`;
-    } catch {
-      return null;
-    }
-  }
-  return null;
 }
 
 interface EnrichedMember {
@@ -359,7 +317,7 @@ export function TeamAvailabilitySummary({ teamId }: TeamAvailabilitySummaryProps
                       ? statusMeta[availability.status]
                       : statusMeta.unconfigured;
                     const next = availability
-                      ? nextAvailableText(availability)
+                      ? buildAvailabilityDetail(availability)
                       : null;
                     return (
                       <div

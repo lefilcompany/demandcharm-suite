@@ -26,6 +26,7 @@ import { ptBR } from "date-fns/locale";
 import { TeamMember } from "@/hooks/useTeamMembers";
 import type { TeamMemberAvailability, AvailabilityStatus } from "@/hooks/useTeamAvailability";
 import { TeamRole } from "@/hooks/useTeamRole";
+import { buildAvailabilityDetail } from "@/lib/availabilityDisplay";
 import { PositionBadge } from "@/components/PositionBadge";
 import { PositionSelector } from "@/components/PositionSelector";
 import { TeamPosition } from "@/hooks/useTeamPositions";
