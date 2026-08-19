@@ -15,6 +15,7 @@ import { useState, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import { useTeams, useDeleteTeam } from "@/hooks/useTeams";
 import { useTeamMembers, useRemoveMember, useUpdateMemberRole } from "@/hooks/useTeamMembers";
+import { useTeamAvailability, type TeamMemberAvailability } from "@/hooks/useTeamAvailability";
 import { useIsTeamAdmin, useTeamRole } from "@/hooks/useTeamRole";
 import { useTeamScope } from "@/hooks/useTeamScope";
 import { useTeamPositions, useAssignPosition } from "@/hooks/useTeamPositions";
