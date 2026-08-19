@@ -400,6 +400,28 @@ export function MemberCard({
                 textColor={member.position.text_color}
               />
             ) : null}
+
+            {/* Disponibilidade da equipe (independente do status online/offline) */}
+            {availability && (
+              <div className="pt-1 flex flex-col items-center gap-1">
+                <Badge
+                  variant="outline"
+                  className={`gap-1 justify-center text-[10px] font-medium px-2 py-0.5 ${availabilityConfig[availability.status].className}`}
+                >
+                  {availabilityConfig[availability.status].icon}
+                  {availabilityConfig[availability.status].label}
+                </Badge>
+                {(() => {
+                  const detail = buildAvailabilityDetail(availability);
+                  if (!detail) return null;
+                  return (
+                    <span className="text-[10px] text-muted-foreground leading-tight text-center">
+                      {detail}
+                    </span>
+                  );
+                })()}
+              </div>
+            )}
           </div>
         </div>
       </div>
