@@ -1202,6 +1202,34 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
           </>
         )}
       </DialogContent>
+
+      <AlertDialog
+        open={!!unavailableWarning}
+        onOpenChange={(v) => { if (!v) setUnavailableWarning(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Responsável indisponível</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {(unavailableWarning ?? []).map((b) => (
+                  <p key={b.userId}>
+                    {b.name} está indisponível por motivo de{" "}
+                    {(ABSENCE_TYPE_LABELS[b.absence.type] ?? "ausência").toLowerCase()} e a demanda
+                    seguirá sem responsável.
+                  </p>
+                ))}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCreateAnyway}>
+              Criar demanda mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
