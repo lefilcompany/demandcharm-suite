@@ -20,10 +20,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Trash2, Crown, User, MoreVertical, ShieldCheck, ChevronDown } from "lucide-react";
+import { Trash2, Crown, User, MoreVertical, ShieldCheck, ChevronDown, Clock, CalendarDays, Palmtree, AlertCircle, Plane, CalendarOff } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TeamMember } from "@/hooks/useTeamMembers";
+import type { TeamMemberAvailability, AvailabilityStatus } from "@/hooks/useTeamAvailability";
 import { TeamRole } from "@/hooks/useTeamRole";
 import { PositionBadge } from "@/components/PositionBadge";
 import { PositionSelector } from "@/components/PositionSelector";
