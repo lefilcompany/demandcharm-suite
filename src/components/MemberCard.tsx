@@ -172,6 +172,7 @@ export function MemberCard({
   isChangingPosition = false,
   onRoleChange,
   isChangingRole = false,
+  availability,
 }: MemberCardProps) {
   const navigate = useNavigate();
   const isCurrentUser = member.user_id === currentUserId;
