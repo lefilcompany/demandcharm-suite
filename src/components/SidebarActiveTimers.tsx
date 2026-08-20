@@ -1,4 +1,5 @@
-import { Pause, Timer } from "lucide-react";
+import { Pause, Timer, PictureInPicture2 } from "lucide-react";
+import { usePipTimer } from "@/contexts/PipTimerContext";
 import { useActiveTimerDemands } from "@/hooks/useActiveTimerDemands";
 import { NavLink } from "@/components/NavLink";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -28,6 +29,7 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
     lastStartedAt: demand.started_at,
   });
   const stopTimer = useStopUserTimer();
+  const { isSupported: isPipAvailable, openPip } = usePipTimer();
 
   const handlePause = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -36,12 +38,35 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
     stopTimer.mutate(demand.id);
   };
 
+  const handlePip = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openPip(demand.id);
+  };
+
+  const PipButton = ({ className }: { className?: string }) =>
+    isPipAvailable ? (
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={handlePip}
+        aria-label="Abrir timer em janela flutuante"
+        title="Abrir timer em janela flutuante"
+        className={cn("shrink-0 hover:bg-primary/20", className)}
+      >
+        <PictureInPicture2 className="h-4 w-4 text-primary" />
+      </Button>
+    ) : null;
+
   const showText = isMobile || !isCollapsed;
 
   if (isCollapsed && !isMobile) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
+          <div className="flex flex-col items-center gap-1">
+          <PipButton className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20" />
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 relative">
           <Button
             type="button"
@@ -53,6 +78,7 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
           >
             <Pause className="h-4 w-4 text-destructive" />
           </Button>
+          </div>
           </div>
         </TooltipTrigger>
         <TooltipContent side="right" className="max-w-48">
@@ -83,6 +109,7 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
           </div>
         )}
       </NavLink>
+      <PipButton className="h-9 w-9" />
       <Button
         type="button"
         variant="ghost"
