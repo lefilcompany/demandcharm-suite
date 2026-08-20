@@ -65,6 +65,8 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
     return (
       <Tooltip>
         <TooltipTrigger asChild>
+          <div className="flex flex-col items-center gap-1">
+          <PipButton className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20" />
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 relative">
           <Button
             type="button"
