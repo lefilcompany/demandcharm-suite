@@ -1,9 +1,11 @@
-import { Calendar, Clock, Play, Pause, Loader2 } from "lucide-react";
+import { Calendar, Clock, Play, Pause, Loader2, PictureInPicture2 } from "lucide-react";
 import { useLiveTimer, getTotalTimeSinceCreation, formatTimeDisplay } from "@/hooks/useLiveTimer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { usePipTimer } from "@/contexts/PipTimerContext";
 
 interface DemandTimeDisplayProps {
+  demandId?: string;
   createdAt?: string;
   updatedAt?: string;
   timeInProgressSeconds?: number | null;
@@ -20,6 +22,7 @@ interface DemandTimeDisplayProps {
 }
 
 export function DemandTimeDisplay({
+  demandId,
   createdAt,
   updatedAt,
   timeInProgressSeconds,
@@ -33,6 +36,7 @@ export function DemandTimeDisplay({
   onPauseClick,
   isLoading = false,
 }: DemandTimeDisplayProps) {
+  const { isSupported: isPipAvailable, openPip } = usePipTimer();
   // Live timer for execution time when timer is running
   const liveExecutionTime = useLiveTimer({
     isActive: isTimerRunning,
@@ -90,6 +94,25 @@ export function DemandTimeDisplay({
     );
   };
 
+
+  const PipButton = () => {
+    if (!isPipAvailable || !demandId) return null;
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6 shrink-0 text-emerald-600/70 hover:text-emerald-700 dark:text-emerald-400/70"
+        title="Abrir timer em janela flutuante"
+        onClick={(e) => {
+          e.stopPropagation();
+          openPip(demandId);
+        }}
+      >
+        <PictureInPicture2 className="h-3.5 w-3.5" />
+      </Button>
+    );
+  };
+
   if (variant === "table") {
     return (
       <div className="flex flex-col gap-0.5 text-xs">
@@ -124,6 +147,7 @@ export function DemandTimeDisplay({
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
             )}
+            <PipButton />
             <TimerButton />
           </div>
         )}
@@ -152,6 +176,7 @@ export function DemandTimeDisplay({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
           )}
+          <PipButton />
           <TimerButton />
         </div>
       )}
