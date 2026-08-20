@@ -92,7 +92,7 @@ export function PipTimerProvider({ children }: { children: ReactNode }) {
         // @ts-expect-error - Document Picture-in-Picture API is not in TS lib yet
         const pipWindow: Window = await window.documentPictureInPicture.requestWindow({
           width: 320,
-          height: 120,
+          height: 100,
         });
 
         copyStyles(pipWindow);
