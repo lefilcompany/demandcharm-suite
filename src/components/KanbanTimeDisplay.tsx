@@ -1,4 +1,4 @@
-import { Clock, Play, Pause, Loader2, Users } from "lucide-react";
+import { Clock, Play, Pause, Loader2, Users, PictureInPicture2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useLiveTimer, formatTimeDisplay } from "@/hooks/useLiveTimer";
 import { useUserTimerControl, useDemandUserTimeStats } from "@/hooks/useUserTimeTracking";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { usePipTimer } from "@/contexts/PipTimerContext";
 
 interface KanbanTimeDisplayProps {
   demandId: string;
