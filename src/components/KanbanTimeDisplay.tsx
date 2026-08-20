@@ -25,6 +25,8 @@ export function KanbanTimeDisplay({ demandId, canControl = false, forceShow = fa
     stopTimer,
     isLoading,
   } = useUserTimerControl(demandId);
+  const { isSupported: isPipAvailable, openPip } = usePipTimer();
+
 
   const { data: hasSubdemands = false } = useQuery({
     queryKey: ["demand-has-subdemands", demandId],
