@@ -1,4 +1,4 @@
-import { Clock, Play, Pause, Loader2, Users } from "lucide-react";
+import { Clock, Play, Pause, Loader2, Users, PictureInPicture2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useLiveTimer, formatTimeDisplay } from "@/hooks/useLiveTimer";
 import { useUserTimerControl, useDemandUserTimeStats } from "@/hooks/useUserTimeTracking";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { usePipTimer } from "@/contexts/PipTimerContext";
 
 interface KanbanTimeDisplayProps {
   demandId: string;
@@ -24,6 +25,8 @@ export function KanbanTimeDisplay({ demandId, canControl = false, forceShow = fa
     stopTimer,
     isLoading,
   } = useUserTimerControl(demandId);
+  const { isSupported: isPipAvailable, openPip } = usePipTimer();
+
 
   const { data: hasSubdemands = false } = useQuery({
     queryKey: ["demand-has-subdemands", demandId],
@@ -88,6 +91,19 @@ export function KanbanTimeDisplay({ demandId, canControl = false, forceShow = fa
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+        )}
+        {isPipAvailable && (
+          <button
+            type="button"
+            className="shrink-0 rounded p-0.5 text-emerald-600/70 hover:text-emerald-700 dark:text-emerald-400/70 dark:hover:text-emerald-300"
+            title="Abrir timer em janela flutuante"
+            onClick={(e) => {
+              e.stopPropagation();
+              openPip(demandId);
+            }}
+          >
+            <PictureInPicture2 className="h-3 w-3" />
+          </button>
         )}
       </div>
       {canControl && (
