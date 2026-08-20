@@ -92,6 +92,19 @@ export function KanbanTimeDisplay({ demandId, canControl = false, forceShow = fa
             </Tooltip>
           </TooltipProvider>
         )}
+        {isPipAvailable && (
+          <button
+            type="button"
+            className="shrink-0 rounded p-0.5 text-emerald-600/70 hover:text-emerald-700 dark:text-emerald-400/70 dark:hover:text-emerald-300"
+            title="Abrir timer em janela flutuante"
+            onClick={(e) => {
+              e.stopPropagation();
+              openPip(demandId);
+            }}
+          >
+            <PictureInPicture2 className="h-3 w-3" />
+          </button>
+        )}
       </div>
       {canControl && (
         <Button
