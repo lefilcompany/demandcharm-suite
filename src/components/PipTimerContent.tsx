@@ -4,6 +4,7 @@ import { useLiveTimer, formatTimeDisplay } from "@/hooks/useLiveTimer";
 import { useUserTimerControl } from "@/hooks/useUserTimeTracking";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { formatDemandCode } from "@/lib/demandCodeUtils";
 
 interface PipTimerContentProps {
   demandId: string;
@@ -20,7 +21,7 @@ export function PipTimerContent({ demandId, onOpenDemand, onClose }: PipTimerCon
     queryFn: async () => {
       const { data, error } = await supabase
         .from("demands")
-        .select("id, title, sequence_number")
+        .select("id, title, board_sequence_number")
         .eq("id", demandId)
         .maybeSingle();
       if (error) throw error;
@@ -45,7 +46,7 @@ export function PipTimerContent({ demandId, onOpenDemand, onClose }: PipTimerCon
     >
       <div className="flex items-start gap-2">
         <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-          {demand?.sequence_number ? `#${String(demand.sequence_number).padStart(4, "0")} ` : ""}
+          {demand?.board_sequence_number ? `${formatDemandCode(demand.board_sequence_number)} ` : ""}
           {demand?.title || "Demanda"}
         </p>
         <button
