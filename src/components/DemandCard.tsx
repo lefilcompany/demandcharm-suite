@@ -191,6 +191,7 @@ export function DemandCard({ demand, onClick, showFullDetails = false }: DemandC
         {/* Execution time - show for in progress or delivered */}
         {showFullDetails && (isInProgress || isDelivered) && (
           <DemandTimeDisplay
+            demandId={demand.id}
             createdAt={demand.created_at}
             updatedAt={demand.updated_at}
             timeInProgressSeconds={demand.time_in_progress_seconds}

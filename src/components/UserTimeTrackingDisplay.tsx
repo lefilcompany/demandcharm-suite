@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Clock, Play, Pause, Loader2, Users } from "lucide-react";
+import { Clock, Play, Pause, Loader2, Users, PictureInPicture2 } from "lucide-react";
 import { useLiveTimer, formatTimeDisplay } from "@/hooks/useLiveTimer";
 import { useDemandTimeEntries, useDemandUserTimeStats, useUserTimerControl } from "@/hooks/useUserTimeTracking";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import { TimeEntryEditDialog } from "./TimeEntryEditDialog";
 import { useAuth } from "@/lib/auth";
+import { usePipTimer } from "@/contexts/PipTimerContext";
 interface UserTimeTrackingDisplayProps {
   demandId: string;
   variant?: "card" | "detail";
@@ -113,6 +114,8 @@ export function UserTimeTrackingDisplay({
     lastStartedAt: activeStartedAt,
   });
 
+  const { isSupported: isPipAvailable, openPip } = usePipTimer();
+
   // Calculate total time from all users
   const grandTotalSeconds = userStats?.reduce((sum, user) => {
     let userTotal = user.totalSeconds;
@@ -139,6 +142,20 @@ export function UserTimeTrackingDisplay({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
+        )}
+        {isPipAvailable && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0 text-emerald-600/70 hover:text-emerald-700"
+            title="Abrir timer em janela flutuante"
+            onClick={(e) => {
+              e.stopPropagation();
+              openPip(demandId);
+            }}
+          >
+            <PictureInPicture2 className="h-3.5 w-3.5" />
+          </Button>
         )}
         {showControls && canControl && (
           <Button
@@ -219,6 +236,17 @@ export function UserTimeTrackingDisplay({
               demandId={demandId}
               isLoading={isLoadingEntries}
             />
+          )}
+          {isPipAvailable && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full shrink-0 text-emerald-600/70 hover:text-emerald-700"
+              title="Abrir timer em janela flutuante"
+              onClick={() => openPip(demandId)}
+            >
+              <PictureInPicture2 className="h-4 w-4" />
+            </Button>
           )}
           {showControls && canControl && (
             <Button
