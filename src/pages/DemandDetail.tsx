@@ -1202,13 +1202,16 @@ export default function DemandDetail() {
                 </div>
               )}
 
-            <div className="pt-2">
-              <DueDateHistory
-                demandId={demand.id}
-                originalDueDate={(demand as any).original_due_date}
-                currentDueDate={demand.due_date}
-              />
-            </div>
+            {(boardRole === "admin" || boardRole === "moderator" || boardRole === "executor") && (
+              <div className="pt-2">
+                <DueDateHistory
+                  demandId={demand.id}
+                  originalDueDate={(demand as any).original_due_date}
+                  currentDueDate={demand.due_date}
+                />
+              </div>
+            )}
+
 
             {/* Service tag */}
             <div className="flex items-center gap-2 text-sm">
