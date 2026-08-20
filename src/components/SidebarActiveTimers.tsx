@@ -109,6 +109,7 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
           </div>
         )}
       </NavLink>
+      <PipButton className="h-9 w-9" />
       <Button
         type="button"
         variant="ghost"
