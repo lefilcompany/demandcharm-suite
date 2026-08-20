@@ -9,6 +9,7 @@ import { BoardProvider } from "@/contexts/BoardContext";
 import { PresenceProvider } from "@/contexts/PresenceContext";
 import { CreateDemandProvider, useCreateDemandModal } from "@/contexts/CreateDemandContext";
 import { PlansModalProvider } from "@/contexts/PlansModalContext";
+import { PipTimerProvider } from "@/contexts/PipTimerContext";
 import { RequireAuth } from "@/components/RequireAuth";
 import { RequireTeam } from "@/components/RequireTeam";
 import { ProtectedLayout } from "@/components/ProtectedLayout";
