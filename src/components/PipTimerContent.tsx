@@ -44,7 +44,7 @@ export function PipTimerContent({ demandId, onOpenDemand, onClose }: PipTimerCon
 
   return (
     <div
-      className="relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-card text-card-foreground select-none"
+      className="relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-xl bg-card text-card-foreground select-none"
       onClick={onOpenDemand}
       title="Voltar ao SoMA+"
     >
@@ -57,85 +57,74 @@ export function PipTimerContent({ demandId, onOpenDemand, onClose }: PipTimerCon
         )}
         style={{
           background:
-            "radial-gradient(120% 90% at 50% 38%, hsl(var(--primary) / 0.22) 0%, hsl(var(--primary) / 0.06) 35%, transparent 70%)",
+            "radial-gradient(120% 90% at 50% 40%, hsl(var(--primary) / 0.22) 0%, hsl(var(--primary) / 0.06) 35%, transparent 70%)",
         }}
       />
-      {/* Hairline inner border for depth */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/5"
+        className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/5"
       />
 
       {/* Header */}
-      <div className="relative z-10 flex items-center justify-between gap-2 px-4 pt-3.5">
-        <div className="flex min-w-0 items-center gap-2">
+      <div className="relative z-10 flex items-center justify-between gap-2 px-3 pt-2.5">
+        <div className="flex min-w-0 items-center gap-1.5">
           {code && (
-            <span className="shrink-0 rounded-md bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
+            <span className="shrink-0 rounded bg-primary px-1 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary-foreground">
               {code}
             </span>
           )}
-          <p className="min-w-0 truncate text-[13px] font-semibold leading-tight text-foreground">
+          <p className="min-w-0 truncate text-[11px] font-semibold leading-tight text-foreground">
             {demand?.title || "Demanda"}
           </p>
         </div>
         <button
           type="button"
-          className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+          className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
           onClick={(e) => {
             e.stopPropagation();
             onClose();
           }}
           title="Fechar janela"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="h-3 w-3" />
         </button>
       </div>
 
       {/* Hero timer */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-1.5 px-4">
-        <div className="flex items-center gap-2.5">
-          {isTimerRunning && (
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-            </span>
-          )}
-          <span className="font-mono text-[2rem] font-bold leading-none tabular-nums tracking-tight text-foreground">
-            {displayTime}
+      <div className="relative z-10 flex flex-1 items-center justify-center gap-2 px-3">
+        {isTimerRunning && (
+          <span className="relative flex h-1.5 w-1.5 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
           </span>
-        </div>
-        <p
-          className={cn(
-            "text-[10px] font-medium uppercase tracking-[0.18em] transition-colors",
-            isTimerRunning ? "text-primary" : "text-muted-foreground"
-          )}
-        >
-          {isTimerRunning ? "Em execução" : "Pausado"}
-        </p>
+        )}
+        <span className="font-mono text-2xl font-bold leading-none tabular-nums tracking-tight text-foreground">
+          {displayTime}
+        </span>
       </div>
 
       {/* Footer */}
-      <div className="relative z-10 flex items-center gap-2 px-4 pb-3.5">
+      <div className="relative z-10 flex items-center gap-1.5 px-3 pb-2.5">
         <button
           type="button"
-          className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+          className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
           onClick={(e) => {
             e.stopPropagation();
             onOpenDemand();
           }}
           title="Abrir no SoMA+"
         >
-          <ArrowUpRight className="h-3.5 w-3.5" />
+          <ArrowUpRight className="h-3 w-3" />
           <span>Abrir</span>
         </button>
 
         <button
           type="button"
           className={cn(
-            "ml-auto flex items-center justify-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all duration-200",
+            "ml-auto flex items-center justify-center gap-1 rounded-md px-3 py-1 text-[11px] font-semibold transition-all duration-200",
             isTimerRunning
               ? "bg-primary/15 text-primary ring-1 ring-inset ring-primary/30 hover:bg-primary/25"
-              : "bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_hsl(var(--primary)/0.6)] hover:brightness-110"
+              : "bg-primary text-primary-foreground shadow-[0_3px_10px_-3px_hsl(var(--primary)/0.6)] hover:brightness-110"
           )}
           onClick={(e) => {
             e.stopPropagation();
@@ -146,15 +135,15 @@ export function PipTimerContent({ demandId, onOpenDemand, onClose }: PipTimerCon
           disabled={isLoading}
         >
           {isLoading ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="h-3 w-3 animate-spin" />
           ) : isTimerRunning ? (
             <>
-              <Pause className="h-3.5 w-3.5 fill-current" />
+              <Pause className="h-3 w-3 fill-current" />
               <span>Pausar</span>
             </>
           ) : (
             <>
-              <Play className="h-3.5 w-3.5 fill-current" />
+              <Play className="h-3 w-3 fill-current" />
               <span>Iniciar</span>
             </>
           )}
