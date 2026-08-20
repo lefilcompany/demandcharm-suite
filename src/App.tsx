@@ -130,6 +130,7 @@ const App = () => {
                       <CreateDemandProvider>
                         <KeyboardShortcutsProvider>
                           <SwipeNavigationProvider>
+                            <PipTimerProvider>
                             <Toaster position="top-right" richColors />
                             <CommandMenu />
                             <PWAInstallPrompt />
