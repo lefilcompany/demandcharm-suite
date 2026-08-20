@@ -29,6 +29,7 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
     lastStartedAt: demand.started_at,
   });
   const stopTimer = useStopUserTimer();
+  const { isSupported: isPipAvailable, openPip } = usePipTimer();
 
   const handlePause = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -36,6 +37,27 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
     if (stopTimer.isPending) return;
     stopTimer.mutate(demand.id);
   };
+
+  const handlePip = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openPip(demand.id);
+  };
+
+  const PipButton = ({ className }: { className?: string }) =>
+    isPipAvailable ? (
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={handlePip}
+        aria-label="Abrir timer em janela flutuante"
+        title="Abrir timer em janela flutuante"
+        className={cn("shrink-0 hover:bg-primary/20", className)}
+      >
+        <PictureInPicture2 className="h-4 w-4 text-primary" />
+      </Button>
+    ) : null;
 
   const showText = isMobile || !isCollapsed;
 
