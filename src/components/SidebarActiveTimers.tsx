@@ -79,6 +79,7 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
             <Pause className="h-4 w-4 text-destructive" />
           </Button>
           </div>
+          </div>
         </TooltipTrigger>
         <TooltipContent side="right" className="max-w-48">
           <p className="font-medium truncate">{demand.title}</p>
