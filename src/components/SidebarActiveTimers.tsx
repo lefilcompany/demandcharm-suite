@@ -1,4 +1,5 @@
-import { Pause, Timer } from "lucide-react";
+import { Pause, Timer, PictureInPicture2 } from "lucide-react";
+import { usePipTimer } from "@/contexts/PipTimerContext";
 import { useActiveTimerDemands } from "@/hooks/useActiveTimerDemands";
 import { NavLink } from "@/components/NavLink";
 import { useSidebar } from "@/components/ui/sidebar";
