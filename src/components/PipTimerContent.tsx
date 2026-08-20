@@ -1,4 +1,4 @@
-import { Clock, Play, Pause, Loader2, X, Maximize2 } from "lucide-react";
+import { Play, Pause, Loader2, X, ArrowUpRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useLiveTimer, formatTimeDisplay } from "@/hooks/useLiveTimer";
 import { useUserTimerControl } from "@/hooks/useUserTimeTracking";
@@ -44,35 +44,43 @@ export function PipTimerContent({ demandId, onOpenDemand, onClose }: PipTimerCon
 
   return (
     <div
-      className="group relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-background via-background to-muted/40 p-4 text-foreground shadow-lg transition-colors"
+      className="relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-card text-card-foreground select-none"
       onClick={onOpenDemand}
       title="Voltar ao SoMA+"
     >
-      {/* Accent bar */}
+      {/* Warm radial glow — the signature. Breathes when the timer is alive. */}
       <div
+        aria-hidden
         className={cn(
-          "absolute inset-x-0 top-0 h-1 transition-colors",
-          isTimerRunning
-            ? "bg-gradient-to-r from-primary to-amber-500"
-            : "bg-gradient-to-r from-primary/60 to-primary/20"
+          "pointer-events-none absolute inset-0 transition-opacity duration-700",
+          isTimerRunning ? "opacity-100 animate-pulse" : "opacity-30"
         )}
+        style={{
+          background:
+            "radial-gradient(120% 90% at 50% 38%, hsl(var(--primary) / 0.22) 0%, hsl(var(--primary) / 0.06) 35%, transparent 70%)",
+        }}
+      />
+      {/* Hairline inner border for depth */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/5"
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="relative z-10 flex items-center justify-between gap-2 px-4 pt-3.5">
         <div className="flex min-w-0 items-center gap-2">
           {code && (
-            <span className="shrink-0 rounded-md bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
+            <span className="shrink-0 rounded-md bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
               {code}
             </span>
           )}
-          <p className="min-w-0 truncate text-sm font-semibold text-foreground">
+          <p className="min-w-0 truncate text-[13px] font-semibold leading-tight text-foreground">
             {demand?.title || "Demanda"}
           </p>
         </div>
         <button
           type="button"
-          className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
           onClick={(e) => {
             e.stopPropagation();
             onClose();
@@ -83,52 +91,51 @@ export function PipTimerContent({ demandId, onOpenDemand, onClose }: PipTimerCon
         </button>
       </div>
 
-      {/* Timer block */}
-      <div className="mt-3 flex flex-1 flex-col justify-center">
-        <div className="flex items-center justify-center gap-2.5">
-          <Clock
-            className={cn(
-              "h-5 w-5 shrink-0 transition-colors",
-              isTimerRunning ? "text-emerald-500" : "text-muted-foreground"
-            )}
-          />
-          <span className="font-mono text-3xl font-bold tabular-nums tracking-tight text-foreground">
-            {displayTime}
-          </span>
+      {/* Hero timer */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-1.5 px-4">
+        <div className="flex items-center gap-2.5">
           {isTimerRunning && (
-            <span className="relative flex h-2.5 w-2.5 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
           )}
+          <span className="font-mono text-[2rem] font-bold leading-none tabular-nums tracking-tight text-foreground">
+            {displayTime}
+          </span>
         </div>
-        <p className="mt-1 text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <p
+          className={cn(
+            "text-[10px] font-medium uppercase tracking-[0.18em] transition-colors",
+            isTimerRunning ? "text-primary" : "text-muted-foreground"
+          )}
+        >
           {isTimerRunning ? "Em execução" : "Pausado"}
         </p>
       </div>
 
-      {/* Footer actions */}
-      <div className="mt-3 flex items-center justify-between gap-2">
+      {/* Footer */}
+      <div className="relative z-10 flex items-center gap-2 px-4 pb-3.5">
         <button
           type="button"
-          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+          className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
           onClick={(e) => {
             e.stopPropagation();
             onOpenDemand();
           }}
           title="Abrir no SoMA+"
         >
-          <Maximize2 className="h-3 w-3" />
+          <ArrowUpRight className="h-3.5 w-3.5" />
           <span>Abrir</span>
         </button>
 
         <button
           type="button"
           className={cn(
-            "flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all",
+            "ml-auto flex items-center justify-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all duration-200",
             isTimerRunning
-              ? "bg-amber-500/20 text-amber-600 hover:bg-amber-500/30 dark:text-amber-400"
-              : "bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30 dark:text-emerald-400"
+              ? "bg-primary/15 text-primary ring-1 ring-inset ring-primary/30 hover:bg-primary/25"
+              : "bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_hsl(var(--primary)/0.6)] hover:brightness-110"
           )}
           onClick={(e) => {
             e.stopPropagation();
@@ -142,12 +149,12 @@ export function PipTimerContent({ demandId, onOpenDemand, onClose }: PipTimerCon
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : isTimerRunning ? (
             <>
-              <Pause className="h-3.5 w-3.5" />
+              <Pause className="h-3.5 w-3.5 fill-current" />
               <span>Pausar</span>
             </>
           ) : (
             <>
-              <Play className="h-3.5 w-3.5" />
+              <Play className="h-3.5 w-3.5 fill-current" />
               <span>Iniciar</span>
             </>
           )}
