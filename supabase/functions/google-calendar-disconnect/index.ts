@@ -1,5 +1,6 @@
 import {
   corsHeaders,
+  isCalendarAvailableForUser,
   json,
   requireUser,
   serviceClient,
