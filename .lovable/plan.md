@@ -43,7 +43,7 @@ A allowlist inteira nunca é retornada — só o booleano do próprio usuário.
 
 ## 4. Backend `google-calendar-oauth-start`
 
-Ordem de verificação: JWT válido (senão `401`) → kill switch ENV → resolução do rollout no banco para `auth.uid()`. Sem autorização, retorna `403 { error: "FEATURE_NOT_AVAILABLE" }` **antes** de qualquer insert, garantindo zero linhas em `google_oauth_states`. Nenhuma confiança no frontend.
+Ordem de verificação: JWT válido (senão `401`) → kill switch ENV → resolução do rollout no banco para `auth.uid()`. Para `rollout = internal`, toda validação backend deriva o usuário **exclusivamente de `auth.uid()`/JWT validado** — nenhum `user_id` enviado pelo frontend é aceito para decidir a allowlist. Sem autorização, retorna `403 { error: "FEATURE_NOT_AVAILABLE" }` **antes** de qualquer insert, garantindo zero linhas em `google_oauth_states`. Nenhuma confiança no frontend.
 
 `google-calendar-oauth-callback` e `google-calendar-disconnect` passam a usar o mesmo helper de rollout (o callback rejeita quando o usuário perdeu autorização), sem mudança de contrato, URL ou scopes.
 
