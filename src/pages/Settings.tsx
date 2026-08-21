@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Settings as SettingsIcon, User, KeyRound, Palette, Bell, Users, Shield, Eye, CalendarClock } from "lucide-react";
+import { Settings as SettingsIcon, User, KeyRound, Palette, Bell, Users, Shield, Eye, CalendarClock, Plug } from "lucide-react";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { SEOHead } from "@/components/SEOHead";
 import { useSelectedTeam } from "@/contexts/TeamContext";
