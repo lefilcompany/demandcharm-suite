@@ -16,37 +16,50 @@ O placeholder `<PROJECT_REF_PROD>` deve ser substituído por essa URL. Nenhuma r
 - Secrets Google já existentes na PROD (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`) pertencem a outros usos e **não serão reutilizados nem alterados**. O Calendar terá secrets próprios com prefixo `GOOGLE_CALENDAR_*`.
 - `ENVIRONMENT` e `APP_URL` já existem na PROD e serão apenas lidos.
 
+## Checkpoint
+
+Antes de qualquer alteração, registro o checkpoint de código `pre-calendar-oauth-phase-4` (marco de rollback do frontend/functions).
+
+## Ordem de execução
+
+migration → validar DB/RLS/RPC → deploy das Edge Functions → testar com flag OFF → frontend Settings → testes de regressão.
+
 ## Banco (migration única, 100% aditiva, com IF NOT EXISTS)
 
 `public.google_oauth_states`
 - `id`, `user_id` (FK auth.users, on delete cascade), `state_hash` (unique, SHA-256 do state), `redirect_path`, `created_at`, `expires_at` (default now()+10min), `used_at`.
-- Índices em `user_id` e `expires_at`. Single-use garantido por `used_at IS NULL` + unicidade do hash.
+- Índices em `user_id` e `expires_at`. Single-use garantido por consumo atômico no callback:
+  `UPDATE ... SET used_at = now() WHERE state_hash = $1 AND used_at IS NULL AND expires_at > now() RETURNING user_id, redirect_path` — sem SELECT prévio, sem janela de race.
 - RLS ligado, **sem policies para anon/authenticated** (acesso exclusivo de service_role nas Edge Functions). GRANT ALL para `service_role`.
 
 `public.google_calendar_connections`
-- `user_id` (PK, FK auth.users, cascade) — garante 1 conexão por usuário, `google_account_email`, `google_account_id`, `refresh_token_encrypted`, `scopes text[]`, `status` (`active` | `revoked` | `error`), `connected_at`, `disconnected_at`, `last_error`, `created_at`, `updated_at`.
-- RLS ligado. GRANT SELECT para `authenticated` apenas via a view segura; a tabela em si só é acessível por `service_role`.
+- `user_id` (PK, FK auth.users, cascade) — garante 1 conexão por usuário, `google_account_email`, `google_account_id` (`sub` do Google), `refresh_token_encrypted`, `scopes text[]`, `status` (`connected` | `revoked` | `error`, compatível com o DEV homologado — a Fase 2 depende de `status === "connected"`), `connected_at`, `disconnected_at`, `last_error`, `created_at`, `updated_at`.
+- RLS ligado, sem policies para `authenticated`; GRANT ALL apenas para `service_role`. Nenhum acesso direto do frontend.
 
-`public.google_calendar_connection_status` (view `security_invoker`)
-- Expõe apenas `user_id, status, google_account_email, connected_at, updated_at` do próprio usuário (`user_id = auth.uid()`). Nunca expõe `refresh_token_encrypted`.
-- GRANT SELECT para `authenticated`.
+`public.get_google_calendar_connection_status()` — RPC SECURITY DEFINER (substitui a view)
+- Deriva o usuário exclusivamente de `auth.uid()` (não aceita parâmetro de usuário); `SET search_path = public`; `STABLE`.
+- Retorna apenas campos não sensíveis: `enabled` (flag lida de config server-side), `status`, `google_account_email`, `connected_at`, `updated_at`. Nunca retorna `refresh_token_encrypted`.
+- `REVOKE EXECUTE ... FROM public, anon` e `GRANT EXECUTE ... TO authenticated`.
+- A flag é lida de uma tabela/linha de configuração `public.app_feature_flags` (nova, aditiva, somente leitura via a própria RPC), inicializada com `google_calendar_enabled = false`, para que o frontend saiba o estado sem chamar `oauth-start`.
 
 Nenhum DROP, DELETE, TRUNCATE ou RENAME. Nenhuma tabela existente é modificada.
 
 ## Edge Functions (3 novas, nenhuma existente tocada)
 
-Helpers compartilhados novos em `supabase/functions/_shared/google-calendar/` (crypto AES-GCM, flags, config) — sem alterar helpers atuais.
+Helpers compartilhados novos em `supabase/functions/_shared/google-calendar/` (crypto AES-GCM, flags, config), preservando nomes e contratos do DEV homologado — sem refactor arquitetural, para facilitar o porte da Fase 2.
 
-1. `google-calendar-oauth-start` — exige JWT SoMA válido (validação em código); retorna 403 se `GOOGLE_CALENDAR_ENABLED != 'true'`; gera state aleatório (32 bytes), grava só o hash com expiração de 10 min; monta a URL do Google com `access_type=offline`, `prompt=consent`, `include_granted_scopes=true` e scopes `openid email https://www.googleapis.com/auth/calendar.events.owned`; `redirect_uri` = callback real da PROD.
-2. `google-calendar-oauth-callback` — sem JWT do browser (`verify_jwt=false`, redirect vindo do Google); trata `error=access_denied`; valida state (existe, não expirado, não usado) e o marca como usado; troca `code` por tokens com o client PROD; extrai o e-mail do `id_token`; criptografa o refresh token com AES-GCM usando `GOOGLE_TOKEN_ENCRYPTION_KEY`; faz upsert em `google_calendar_connections`; redireciona para `https://pla.soma.lefil.com.br/settings?tab=integrations&calendar=connected|error=<codigo>`. Nunca loga nem devolve tokens.
-3. `google-calendar-disconnect` — exige sessão autenticada, opera só em `auth.uid()` (sem aceitar `user_id` do cliente); tenta `POST https://oauth2.googleapis.com/revoke`; marca a conexão como `revoked` e limpa o refresh token.
+1. `google-calendar-oauth-start` — só é chamado quando o usuário clica em "Conectar Google Calendar"; exige JWT SoMA válido (validação em código); revalida a flag server-side e retorna 403 `FEATURE_DISABLED` se desligada; gera state aleatório (32 bytes), grava só o hash com expiração de 10 min; monta a URL do Google com `access_type=offline`, `prompt=consent`, `include_granted_scopes=true` e scopes `openid email https://www.googleapis.com/auth/calendar.events.owned`; `redirect_uri` = callback real da PROD.
+2. `google-calendar-oauth-callback` — sem JWT do browser (`verify_jwt=false`, redirect vindo do Google); trata `error=access_denied`; consome o state de forma atômica (inválido/expirado/reutilizado → redirect com erro); troca `code` por tokens com o client PROD; **obtém a identidade Google consultando o endpoint OpenID Connect `userinfo` com o access token recém-emitido** (sem confiar em decode do `id_token`), persistindo `google_account_id = sub` e `google_account_email = email`; criptografa o refresh token com AES-GCM usando `GOOGLE_TOKEN_ENCRYPTION_KEY`; faz upsert em `google_calendar_connections` com `status = 'connected'`; redireciona para `https://pla.soma.lefil.com.br/settings?tab=integrations&calendar=connected|error=<codigo>`. Nunca loga nem devolve tokens.
+3. `google-calendar-disconnect` — exige sessão autenticada, opera só em `auth.uid()` (sem aceitar `user_id` do cliente); tenta `POST https://oauth2.googleapis.com/revoke`; marca a conexão como `revoked`, preenche `disconnected_at` e limpa o refresh token.
 
 ## Frontend (mínimo, sem nada de reunião)
 
 - Nova aba **Integrações** em `src/pages/Settings.tsx` + `src/components/settings/IntegrationsSection.tsx` com um único card "Google Calendar".
-- Novo hook `src/hooks/useGoogleCalendarConnection.ts`: lê a view de status e chama as functions de start/disconnect.
-- Estado da flag vindo do backend: `google-calendar-oauth-start` responde 403 com `FEATURE_DISABLED`; o card consulta esse estado (chamada leve) e, com a feature desligada, exibe "Em breve" com o botão desabilitado. Nenhum usuário comum consegue iniciar o OAuth.
+- Novo hook `src/hooks/useGoogleCalendarConnection.ts`: lê `enabled`/`status`/e-mail pela RPC segura (nunca via `oauth-start`) e chama as functions de start/disconnect apenas em ação explícita do usuário.
+- Com `enabled = false`, o card mostra "Em breve" e o botão fica desabilitado; `oauth-start` revalida a flag no servidor de qualquer forma.
 - Nenhuma UI de reunião, nenhum campo em CreateDemand.
+
+
 
 ## Secrets que você precisa cadastrar manualmente (nenhum valor do DEV)
 
