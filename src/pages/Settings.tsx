@@ -103,6 +103,7 @@ export default function Settings() {
           {active === "preferences" && <PreferencesSection />}
           {active === "notifications" && <NotificationsSection />}
           {active === "availability" && <AvailabilitySection />}
+          {active === "integrations" && <IntegrationsSection />}
           {active === "team" && <TeamSection />}
           {active === "account" && <AccountSection />}
         </main>
