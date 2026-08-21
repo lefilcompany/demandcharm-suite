@@ -60,6 +60,11 @@ Deno.serve(async (req) => {
 
     const redirectPath = consumed.redirect_path || FALLBACK_PATH;
 
+    // User must still be authorized for the internal rollout before continuing.
+    if (!(await isCalendarAvailableForUser(supabase, consumed.user_id))) {
+      return redirectTo(redirectPath, { calendar: "error", reason: "feature_not_available" });
+    }
+
     const client = googleClient();
     if (!client) {
       return redirectTo(redirectPath, { calendar: "error", reason: "missing_credentials" });
