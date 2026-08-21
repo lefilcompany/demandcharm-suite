@@ -75,6 +75,7 @@ export default function Settings() {
     { id: "preferences", label: "Preferências", description: "Aparência e idioma", icon: Palette },
     { id: "notifications", label: "Notificações", description: "Alertas e canais", icon: Bell },
     { id: "availability", label: "Disponibilidade", description: "Horário, férias e ausências", icon: CalendarClock },
+    { id: "integrations", label: "Integrações", description: "Serviços conectados", icon: Plug },
     ...(currentTeam ? [{ id: "team" as const, label: "Equipe", description: "Participação e gestão", icon: Users }] : []),
     { id: "account", label: "Conta", description: "Gerenciar conta", icon: Shield },
   ];
