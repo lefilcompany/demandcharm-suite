@@ -18,6 +18,13 @@ Deno.serve(async (req) => {
 
     const supabase = serviceClient();
 
+    // Require the user to still be authorized (derived from the validated JWT).
+    if (!(await isCalendarAvailableForUser(supabase, userId))) {
+      return json({ error: "FEATURE_NOT_AVAILABLE" }, 403);
+    }
+
+
+
     const { data: connection } = await supabase
       .from("google_calendar_connections")
       .select("refresh_token_encrypted")
