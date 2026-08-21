@@ -57,7 +57,9 @@ Nada de UI de reunião.
 
 ## 6. Allowlist
 
-A migration cria a tabela vazia. Se você me passar os `user_id` (ou e-mails, que eu resolvo para id), incluo-os na mesma execução; caso contrário entrego a estrutura pronta e adiciono depois.
+A migration cria a tabela e insere o usuário `kelven.gomes@lefil.com.br` (id resolvido a partir do e-mail no momento da migration). Outros IDs podem ser adicionados depois.
+
+A allowlist SoMA e os Test Users do Google Cloud permanecem **independentes** — nenhuma sincronização automática entre elas será criada.
 
 ## 7. Testes desta fase
 
