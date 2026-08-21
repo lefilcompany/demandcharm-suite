@@ -24,13 +24,13 @@ Regra única, aplicada tanto na RPC quanto nas Edge Functions:
 
 ```text
 GOOGLE_CALENDAR_ENABLED = "false"  -> kill switch absoluto: feature off para todos
-qualquer outro valor / ausente     -> decide o banco (coluna rollout)
+ENV ausente (vazio/indefinido)     -> o banco decide (coluna rollout)
    rollout = off       -> ninguém
-   rollout = internal  -> apenas user_id na allowlist
+   rollout = internal  -> apenas user_id na allowlist (auth.uid())
    rollout = all       -> todos os usuários autenticados
 ```
 
-O ENV deixa de ligar a feature; ele só pode desligá-la. A fonte de verdade do rollout passa a ser exclusivamente o banco. Como o banco não enxerga o ENV, o kill switch é aplicado nas Edge Functions (start/callback/disconnect) e o frontend depende da RPC — por isso o kill switch será também refletido no banco na hora de usá-lo (procedimento documentado: setar `rollout='off'`).
+Comportamento final: **o ENV nunca liga a feature** — se estiver ausente, o banco é a única fonte de verdade via `rollout`. Para esta etapa de homologação o ENV `GOOGLE_CALENDAR_ENABLED` permanece **ausente** (não será criado com `false`, pois isso bloquearia inclusive os usuários internos). O kill switch absoluto por ENV fica disponível para emergência futura. Estado inicial desejado: `rollout = 'internal'`, e apenas usuários explicitamente inseridos em `google_calendar_rollout_users` podem iniciar o OAuth. Como o banco não enxerga o ENV, o kill switch por ENV é aplicado nas Edge Functions (start/callback/disconnect); o frontend depende da RPC.
 
 ## 3. RPC de status
 
