@@ -10,7 +10,7 @@ Backend PROD `erxhxmetrvkigjwxchbj`. Callback, OAuth client, scopes, login Googl
 
 ## 1. Modelo de rollout (migration aditiva)
 
-Nova coluna `rollout` (texto, default `'off'`, valores válidos `off | internal | all`) em `app_feature_flags`, sem remover `enabled`. A linha `google_calendar_enabled` recebe `rollout = 'internal'`; `enabled` deixa de ser a chave de decisão do Calendar (fica preservada por compatibilidade, sempre derivada como `rollout <> 'off'`).
+Nova coluna `rollout` (texto, default `'off'`, valores válidos `off | internal | all`) em `app_feature_flags`. `rollout` passa a ser a **única fonte de verdade** do estado da feature. A coluna `enabled` permanece apenas por compatibilidade legada e nenhum código novo decide disponibilidade por ela; sempre que `enabled` precisar ser exposto, será **calculado** como `rollout <> 'off'` (sem dois estados sincronizados). A linha `google_calendar_enabled` recebe `rollout = 'internal'`.
 
 Nova tabela `public.google_calendar_rollout_users`:
 - `user_id uuid PK` referenciando `auth.users`, `created_at`, `note text`.
@@ -24,13 +24,13 @@ Regra única, aplicada tanto na RPC quanto nas Edge Functions:
 
 ```text
 GOOGLE_CALENDAR_ENABLED = "false"  -> kill switch absoluto: feature off para todos
-qualquer outro valor / ausente     -> decide o banco (coluna rollout)
+ENV ausente (vazio/indefinido)     -> o banco decide (coluna rollout)
    rollout = off       -> ninguém
-   rollout = internal  -> apenas user_id na allowlist
+   rollout = internal  -> apenas user_id na allowlist (auth.uid())
    rollout = all       -> todos os usuários autenticados
 ```
 
-O ENV deixa de ligar a feature; ele só pode desligá-la. A fonte de verdade do rollout passa a ser exclusivamente o banco. Como o banco não enxerga o ENV, o kill switch é aplicado nas Edge Functions (start/callback/disconnect) e o frontend depende da RPC — por isso o kill switch será também refletido no banco na hora de usá-lo (procedimento documentado: setar `rollout='off'`).
+Comportamento final: **o ENV nunca liga a feature** — se estiver ausente, o banco é a única fonte de verdade via `rollout`. Para esta etapa de homologação o ENV `GOOGLE_CALENDAR_ENABLED` permanece **ausente** (não será criado com `false`, pois isso bloquearia inclusive os usuários internos). O kill switch absoluto por ENV fica disponível para emergência futura. Estado inicial desejado: `rollout = 'internal'`, e apenas usuários explicitamente inseridos em `google_calendar_rollout_users` podem iniciar o OAuth. Como o banco não enxerga o ENV, o kill switch por ENV é aplicado nas Edge Functions (start/callback/disconnect); o frontend depende da RPC.
 
 ## 3. RPC de status
 
@@ -43,7 +43,7 @@ A allowlist inteira nunca é retornada — só o booleano do próprio usuário.
 
 ## 4. Backend `google-calendar-oauth-start`
 
-Ordem de verificação: JWT válido (senão `401`) → kill switch ENV → resolução do rollout no banco para `auth.uid()`. Sem autorização, retorna `403 { error: "FEATURE_NOT_AVAILABLE" }` **antes** de qualquer insert, garantindo zero linhas em `google_oauth_states`. Nenhuma confiança no frontend.
+Ordem de verificação: JWT válido (senão `401`) → kill switch ENV → resolução do rollout no banco para `auth.uid()`. Para `rollout = internal`, toda validação backend deriva o usuário **exclusivamente de `auth.uid()`/JWT validado** — nenhum `user_id` enviado pelo frontend é aceito para decidir a allowlist. Sem autorização, retorna `403 { error: "FEATURE_NOT_AVAILABLE" }` **antes** de qualquer insert, garantindo zero linhas em `google_oauth_states`. Nenhuma confiança no frontend.
 
 `google-calendar-oauth-callback` e `google-calendar-disconnect` passam a usar o mesmo helper de rollout (o callback rejeita quando o usuário perdeu autorização), sem mudança de contrato, URL ou scopes.
 
@@ -57,7 +57,9 @@ Nada de UI de reunião.
 
 ## 6. Allowlist
 
-A migration cria a tabela vazia. Se você me passar os `user_id` (ou e-mails, que eu resolvo para id), incluo-os na mesma execução; caso contrário entrego a estrutura pronta e adiciono depois.
+A migration cria a tabela e insere o usuário `kelven.gomes@lefil.com.br` (id resolvido a partir do e-mail no momento da migration). Outros IDs podem ser adicionados depois.
+
+A allowlist SoMA e os Test Users do Google Cloud permanecem **independentes** — nenhuma sincronização automática entre elas será criada.
 
 ## 7. Testes desta fase
 
