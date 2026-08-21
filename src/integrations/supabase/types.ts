@@ -106,6 +106,24 @@ export type Database = {
           },
         ]
       }
+      app_feature_flags: {
+        Row: {
+          enabled: boolean
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       board_approval_notify_settings: {
         Row: {
           approval_type: string
@@ -1525,6 +1543,48 @@ export type Database = {
         }
         Relationships: []
       }
+      google_calendar_connections: {
+        Row: {
+          connected_at: string | null
+          created_at: string
+          disconnected_at: string | null
+          google_account_email: string | null
+          google_account_id: string | null
+          last_error: string | null
+          refresh_token_encrypted: string | null
+          scopes: string[]
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string | null
+          created_at?: string
+          disconnected_at?: string | null
+          google_account_email?: string | null
+          google_account_id?: string | null
+          last_error?: string | null
+          refresh_token_encrypted?: string | null
+          scopes?: string[]
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string | null
+          created_at?: string
+          disconnected_at?: string | null
+          google_account_email?: string | null
+          google_account_id?: string | null
+          last_error?: string | null
+          refresh_token_encrypted?: string | null
+          scopes?: string[]
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       google_calendar_tokens: {
         Row: {
           access_token: string
@@ -1551,6 +1611,36 @@ export type Database = {
           refresh_token?: string
           token_expires_at?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      google_oauth_states: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          redirect_path: string | null
+          state_hash: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          redirect_path?: string | null
+          state_hash: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          redirect_path?: string | null
+          state_hash?: string
+          used_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -3549,6 +3639,16 @@ export type Database = {
         Returns: number
       }
       get_check_deadlines_cron_token: { Args: never; Returns: string }
+      get_google_calendar_connection_status: {
+        Args: never
+        Returns: {
+          connected_at: string
+          enabled: boolean
+          google_account_email: string
+          status: string
+          updated_at: string
+        }[]
+      }
       get_join_request_profiles: {
         Args: { request_team_id: string }
         Returns: {
