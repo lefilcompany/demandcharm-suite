@@ -10,7 +10,7 @@ Backend PROD `erxhxmetrvkigjwxchbj`. Callback, OAuth client, scopes, login Googl
 
 ## 1. Modelo de rollout (migration aditiva)
 
-Nova coluna `rollout` (texto, default `'off'`, valores válidos `off | internal | all`) em `app_feature_flags`, sem remover `enabled`. A linha `google_calendar_enabled` recebe `rollout = 'internal'`; `enabled` deixa de ser a chave de decisão do Calendar (fica preservada por compatibilidade, sempre derivada como `rollout <> 'off'`).
+Nova coluna `rollout` (texto, default `'off'`, valores válidos `off | internal | all`) em `app_feature_flags`. `rollout` passa a ser a **única fonte de verdade** do estado da feature. A coluna `enabled` permanece apenas por compatibilidade legada e nenhum código novo decide disponibilidade por ela; sempre que `enabled` precisar ser exposto, será **calculado** como `rollout <> 'off'` (sem dois estados sincronizados). A linha `google_calendar_enabled` recebe `rollout = 'internal'`.
 
 Nova tabela `public.google_calendar_rollout_users`:
 - `user_id uuid PK` referenciando `auth.users`, `created_at`, `note text`.
