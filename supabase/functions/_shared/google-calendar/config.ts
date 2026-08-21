@@ -34,21 +34,50 @@ export function googleClient() {
   return { clientId, clientSecret };
 }
 
-/** Feature flag: env var wins, DB flag is the fallback source of truth. */
-export async function isCalendarEnabled(
+export type CalendarRollout = "off" | "internal" | "all";
+
+/**
+ * Feature state resolution (single documented precedence):
+ *  - ENV GOOGLE_CALENDAR_ENABLED === "false" -> absolute kill switch (off for everyone)
+ *  - otherwise -> the DB column app_feature_flags.rollout is the ONLY source of truth
+ * The legacy `enabled` boolean column is never used to decide availability.
+ */
+export function killSwitchOn(): boolean {
+  return Deno.env.get("GOOGLE_CALENDAR_ENABLED") === "false";
+}
+
+export async function getRollout(
   supabase: ReturnType<typeof serviceClient>,
-): Promise<boolean> {
-  const envFlag = Deno.env.get("GOOGLE_CALENDAR_ENABLED");
-  if (envFlag !== undefined && envFlag !== null && envFlag !== "") {
-    return envFlag === "true";
-  }
+): Promise<CalendarRollout> {
+  if (killSwitchOn()) return "off";
   const { data } = await supabase
     .from("app_feature_flags")
-    .select("enabled")
+    .select("rollout")
     .eq("key", "google_calendar_enabled")
     .maybeSingle();
-  return data?.enabled === true;
+  const rollout = data?.rollout;
+  return rollout === "all" || rollout === "internal" ? rollout : "off";
 }
+
+/**
+ * Whether the given user (always derived from a validated JWT, never from the
+ * request body) may use the Google Calendar OAuth flow.
+ */
+export async function isCalendarAvailableForUser(
+  supabase: ReturnType<typeof serviceClient>,
+  userId: string,
+): Promise<boolean> {
+  const rollout = await getRollout(supabase);
+  if (rollout === "all") return true;
+  if (rollout !== "internal") return false;
+  const { data } = await supabase
+    .from("google_calendar_rollout_users")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return !!data;
+}
+
 
 /** Validates the caller's SoMA JWT and returns the user id. */
 export async function requireUser(req: Request): Promise<string | null> {

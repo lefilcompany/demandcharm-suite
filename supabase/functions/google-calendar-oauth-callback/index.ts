@@ -3,7 +3,7 @@ import {
   callbackUrl,
   corsHeaders,
   googleClient,
-  isCalendarEnabled,
+  isCalendarAvailableForUser,
   serviceClient,
 } from "../_shared/google-calendar/config.ts";
 import { encryptToken, sha256Hex } from "../_shared/google-calendar/crypto.ts";
@@ -29,9 +29,8 @@ Deno.serve(async (req) => {
   try {
     const supabase = serviceClient();
 
-    if (!(await isCalendarEnabled(supabase))) {
-      return redirectTo(FALLBACK_PATH, { calendar: "error", reason: "feature_disabled" });
-    }
+    // Rollout is revalidated after the state is consumed (user identity needed).
+
 
     if (errorParam) {
       return redirectTo(FALLBACK_PATH, {
