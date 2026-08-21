@@ -3,7 +3,7 @@ import {
   corsHeaders,
   GOOGLE_SCOPES,
   googleClient,
-  isCalendarEnabled,
+  isCalendarAvailableForUser,
   json,
   requireUser,
   serviceClient,
@@ -21,10 +21,11 @@ Deno.serve(async (req) => {
 
     const supabase = serviceClient();
 
-    // Feature flag revalidated server-side on every start.
-    if (!(await isCalendarEnabled(supabase))) {
-      return json({ error: "FEATURE_DISABLED" }, 403);
+    // Rollout authorization, derived exclusively from the validated JWT.
+    if (!(await isCalendarAvailableForUser(supabase, userId))) {
+      return json({ error: "FEATURE_NOT_AVAILABLE" }, 403);
     }
+
 
     const client = googleClient();
     if (!client) return json({ error: "MISSING_GOOGLE_CREDENTIALS" }, 503);

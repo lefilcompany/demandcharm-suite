@@ -110,16 +110,19 @@ export type Database = {
         Row: {
           enabled: boolean
           key: string
+          rollout: string
           updated_at: string
         }
         Insert: {
           enabled?: boolean
           key: string
+          rollout?: string
           updated_at?: string
         }
         Update: {
           enabled?: boolean
           key?: string
+          rollout?: string
           updated_at?: string
         }
         Relationships: []
@@ -1581,6 +1584,24 @@ export type Database = {
           scopes?: string[]
           status?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      google_calendar_rollout_users: {
+        Row: {
+          created_at: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          note?: string | null
           user_id?: string
         }
         Relationships: []
@@ -3642,6 +3663,7 @@ export type Database = {
       get_google_calendar_connection_status: {
         Args: never
         Returns: {
+          available: boolean
           connected_at: string
           enabled: boolean
           google_account_email: string

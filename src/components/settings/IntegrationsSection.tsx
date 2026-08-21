@@ -12,6 +12,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   access_denied: "Você cancelou a autorização no Google.",
   invalid_state: "A sessão de autorização expirou. Tente novamente.",
   feature_disabled: "A integração ainda não está habilitada.",
+  feature_not_available: "Sua conta não está autorizada a usar esta integração.",
   missing_credentials: "A integração ainda não está configurada.",
   token_exchange_failed: "O Google recusou a autorização. Tente novamente.",
   userinfo_failed: "Não foi possível confirmar a conta Google.",
@@ -40,8 +41,8 @@ export function IntegrationsSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calendarParam, reasonParam]);
 
-  const enabled = data?.enabled ?? false;
-  const isConnected = enabled && data?.status === "connected";
+  const available = data?.available ?? false;
+  const isConnected = available && data?.status === "connected";
 
   return (
     <div className="space-y-6">
@@ -67,7 +68,7 @@ export function IntegrationsSection() {
           </div>
           {isLoading ? (
             <Skeleton className="h-6 w-20" />
-          ) : !enabled ? (
+          ) : !available ? (
             <Badge variant="secondary">Em breve</Badge>
           ) : isConnected ? (
             <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15">
@@ -87,7 +88,7 @@ export function IntegrationsSection() {
                   Conta conectada: <span className="font-medium text-foreground">{data.google_account_email}</span>
                 </p>
               )}
-              {!enabled && (
+              {!available && (
                 <p className="text-sm text-muted-foreground">
                   Esta integração está em preparação e será liberada em breve.
                 </p>
@@ -104,7 +105,7 @@ export function IntegrationsSection() {
               ) : (
                 <Button
                   onClick={() => connect.mutate()}
-                  disabled={!enabled || connect.isPending}
+                  disabled={!available || connect.isPending}
                 >
                   {connect.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Conectar Google Calendar

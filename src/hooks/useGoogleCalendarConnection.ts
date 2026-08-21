@@ -6,6 +6,7 @@ export type GoogleCalendarStatus = "connected" | "revoked" | "error";
 
 export interface GoogleCalendarConnectionStatus {
   enabled: boolean;
+  available: boolean;
   status: GoogleCalendarStatus | null;
   google_account_email: string | null;
   connected_at: string | null;
@@ -28,6 +29,7 @@ export function useGoogleCalendarConnection() {
       const row = Array.isArray(data) ? data[0] : data;
       return {
         enabled: row?.enabled ?? false,
+        available: row?.available ?? false,
         status: (row?.status as GoogleCalendarStatus) ?? null,
         google_account_email: row?.google_account_email ?? null,
         connected_at: row?.connected_at ?? null,

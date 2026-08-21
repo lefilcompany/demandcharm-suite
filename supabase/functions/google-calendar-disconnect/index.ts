@@ -1,5 +1,6 @@
 import {
   corsHeaders,
+  isCalendarAvailableForUser,
   json,
   requireUser,
   serviceClient,
@@ -16,6 +17,13 @@ Deno.serve(async (req) => {
     if (!userId) return json({ error: "Unauthorized" }, 401);
 
     const supabase = serviceClient();
+
+    // Require the user to still be authorized (derived from the validated JWT).
+    if (!(await isCalendarAvailableForUser(supabase, userId))) {
+      return json({ error: "FEATURE_NOT_AVAILABLE" }, 403);
+    }
+
+
 
     const { data: connection } = await supabase
       .from("google_calendar_connections")
