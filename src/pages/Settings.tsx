@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Settings as SettingsIcon, User, KeyRound, Palette, Bell, Users, Shield, Eye, CalendarClock, Plug } from "lucide-react";
+import { Settings as SettingsIcon, User, KeyRound, Palette, Bell, Users, Shield, Eye, CalendarClock } from "lucide-react";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { SEOHead } from "@/components/SEOHead";
 import { useSelectedTeam } from "@/contexts/TeamContext";
@@ -16,7 +16,6 @@ import { SecuritySection } from "@/components/settings/SecuritySection";
 import { PreferencesSection } from "@/components/settings/PreferencesSection";
 import { NotificationsSection } from "@/components/settings/NotificationsSection";
 import { AvailabilitySection } from "@/components/settings/AvailabilitySection";
-import { IntegrationsSection } from "@/components/settings/IntegrationsSection";
 import { TeamSection } from "@/components/settings/TeamSection";
 import { AccountSection } from "@/components/settings/AccountSection";
 
@@ -76,7 +75,6 @@ export default function Settings() {
     { id: "preferences", label: "Preferências", description: "Aparência e idioma", icon: Palette },
     { id: "notifications", label: "Notificações", description: "Alertas e canais", icon: Bell },
     { id: "availability", label: "Disponibilidade", description: "Horário, férias e ausências", icon: CalendarClock },
-    { id: "integrations", label: "Integrações", description: "Serviços conectados", icon: Plug },
     ...(currentTeam ? [{ id: "team" as const, label: "Equipe", description: "Participação e gestão", icon: Users }] : []),
     { id: "account", label: "Conta", description: "Gerenciar conta", icon: Shield },
   ];
@@ -103,7 +101,6 @@ export default function Settings() {
           {active === "preferences" && <PreferencesSection />}
           {active === "notifications" && <NotificationsSection />}
           {active === "availability" && <AvailabilitySection />}
-          {active === "integrations" && <IntegrationsSection />}
           {active === "team" && <TeamSection />}
           {active === "account" && <AccountSection />}
         </main>
