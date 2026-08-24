@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDemands, useDemandStatuses } from "./useDemands";
 import { supabase } from "@/integrations/supabase/client";
+import { isAdjustmentStage } from "@/hooks/useBoardStatuses";
 
 export function useAdjustmentCount(teamId: string | null) {
   const { data: demands } = useDemands(teamId || undefined);
@@ -9,10 +10,10 @@ export function useAdjustmentCount(teamId: string | null) {
 
   const count = useMemo(() => {
     if (!demands || !statuses) return 0;
-    const adjustmentStatusId = statuses.find((s) => s.name === "Em Ajuste")?.id;
-    if (!adjustmentStatusId) return 0;
+    const adjustmentIds = new Set(statuses.filter((s) => isAdjustmentStage(s.name)).map((s) => s.id));
+    if (adjustmentIds.size === 0) return 0;
     return demands.filter(
-      (d) => d.status_id === adjustmentStatusId && !d.archived
+      (d) => adjustmentIds.has(d.status_id) && !d.archived
     ).length;
   }, [demands, statuses]);
 

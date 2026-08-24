@@ -8,7 +8,7 @@ import { DemandChat } from "@/components/DemandChat";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useDemandById, useCreateInteraction, useUpdateDemand } from "@/hooks/useDemands";
-import { useBoardStatuses } from "@/hooks/useBoardStatuses";
+import { useBoardStatuses, isAdjustmentStage, isTimerStage } from "@/hooks/useBoardStatuses";
 import { useDemandAssignees, useSetAssignees } from "@/hooks/useDemandAssignees";
 import { useBoard } from "@/hooks/useBoards";
 import { ChangeBoardDialog } from "@/components/ChangeBoardDialog";

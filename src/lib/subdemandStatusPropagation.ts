@@ -5,7 +5,7 @@ import type { Subdemand } from "@/hooks/useSubdemands";
  * nesses estados, vale a pena pedir confirmação antes de propagar status da pai,
  * pois cronômetros podem estar rodando.
  */
-const ACTIVE_STATUS_NAMES = new Set(["Fazendo", "Em Ajuste"]);
+const ACTIVE_STATUS_NAMES = new Set(["Fazendo", "Em Ajuste", "Ajuste"]);
 
 /**
  * Adjustment types que indicam um status de finalização/revisão.

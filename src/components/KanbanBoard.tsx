@@ -530,7 +530,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     const parentStatusName = (parentDemand.demand_statuses as any)?.name;
 
     // If the sub-demand is moving TO Fazendo or Em Ajuste, auto-move parent to Fazendo
-    if ((newStatusKey === "Fazendo" || newStatusKey === "Em Ajuste") && parentStatusName !== "Fazendo") {
+    if ((newStatusKey === "Fazendo" || isAdjustmentStage(newStatusKey)) && parentStatusName !== "Fazendo") {
       await autoMoveParent(demand.parent_demand_id, "Fazendo");
       return;
     }
@@ -871,7 +871,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     if (previousStatusName === columnKey) return;
 
     // Interceptar tentativa de mover para "Em Ajuste" - abrir diálogo ao invés de mover direto
-    if (columnKey === "Em Ajuste") {
+    if (isAdjustmentStage(columnKey)) {
       setAdjustmentDemandId(currentDraggedId);
       setAdjustmentDialogOpen(true);
       return;
@@ -915,8 +915,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
 
       const subs = demands.filter((d) => d.parent_demand_id === demandId);
       const subsToMove = subs.filter((s) => s.status_id !== statusId);
-      const activeStatusNames = new Set(["Fazendo", "Em Ajuste"]);
-      const activeCount = subsToMove.filter((s) => activeStatusNames.has(s.demand_statuses?.name ?? "")).length;
+      const activeCount = subsToMove.filter((s) => isTimerStage(s.demand_statuses?.name)).length;
       const targetStatus = statuses?.find((s) => s.id === statusId);
 
       if (subsToMove.length === 0) {
@@ -1139,8 +1138,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
 
       const subs = demands.filter((d) => d.parent_demand_id === demandId);
       const subsToMove = subs.filter((s) => s.status_id !== targetStatusIdParent);
-      const activeStatusNames = new Set(["Fazendo", "Em Ajuste"]);
-      const activeCount = subsToMove.filter((s) => activeStatusNames.has(s.demand_statuses?.name ?? "")).length;
+      const activeCount = subsToMove.filter((s) => isTimerStage(s.demand_statuses?.name)).length;
       const targetStatus = statuses?.find((s) => s.id === targetStatusIdParent);
 
       if (subsToMove.length === 0) {
