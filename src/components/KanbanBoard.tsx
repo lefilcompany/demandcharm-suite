@@ -38,6 +38,7 @@ import { fetchPreferencesForUsers, shouldNotifyUser, filterRecipientsByChannel }
 import { useBoardMembers } from "@/hooks/useBoardMembers";
 import { toast } from "sonner";
 import { useAdjustmentCounts, AdjustmentInfo } from "@/hooks/useAdjustmentCount";
+import { isAdjustmentStage, isTimerStage } from "@/hooks/useBoardStatuses";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -560,7 +561,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
 
     // If sub-demand is moving BACK (e.g. to A Iniciar), check if NO sibling is in active statuses
     // If so, move parent back to A Iniciar
-    const activeStatuses = ["Fazendo", "Em Ajuste", "Aprovação do Cliente", "Entregue"];
+    const activeStatuses = ["Fazendo", "Em Ajuste", "Ajuste", "Aprovação do Cliente", "Entregue"];
     if (!activeStatuses.includes(newStatusKey) && parentStatusName !== "A Iniciar") {
       const { data: siblings } = await supabase
         .from("demands")
@@ -964,13 +965,13 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
       setActiveColumns([columnKey]);
     }
 
-    const isAdjustmentCompletion = previousStatusName === "Em Ajuste" && columnKey === "Aprovação do Cliente";
+    const isAdjustmentCompletion = isAdjustmentStage(previousStatusName) && columnKey === "Aprovação do Cliente";
 
     // Check if this demand is a parent (has children) - parents don't get their own timers
     const isParentDemand = demands.some(d => d.parent_demand_id === demandId);
 
     // Stop timer when leaving "Fazendo" or "Em Ajuste" for any other status
-    const timerStatuses = ["Fazendo", "Em Ajuste"];
+    const timerStatuses = ["Fazendo", "Em Ajuste", "Ajuste"];
     if (!isParentDemand && previousStatusName && timerStatuses.includes(previousStatusName) && !timerStatuses.includes(columnKey)) {
       await stopAllTimersForDemand(demandId);
     }
@@ -1033,7 +1034,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   channel: "email", type: "demandStatusChanged", boardId, isUserAssigned: isCreatorAssigned,
                 });
                 if (wantEmail) {
-                  const statusEmoji = columnKey === "Entregue" ? "✅" : columnKey === "Em Ajuste" ? "🔧" : "📋";
+                  const statusEmoji = columnKey === "Entregue" ? "✅" : isAdjustmentStage(columnKey) ? "🔧" : "📋";
                   const publicUrl = await buildPublicDemandUrl(demand.id, user?.id || "");
                   await supabase.functions.invoke("send-email", {
                     body: {
@@ -1045,7 +1046,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                         message: `A demanda "${demand.title}" mudou de "${previousStatusName}" para "${columnKey}".`,
                         actionUrl: publicUrl,
                         actionText: "Ver Demanda",
-                        type: columnKey === "Entregue" ? "success" : columnKey === "Em Ajuste" ? "warning" : "info",
+                        type: columnKey === "Entregue" ? "success" : isAdjustmentStage(columnKey) ? "warning" : "info",
                       },
                       eventType: "demand_status_changed",
                       dedupeKey: `demand_status_changed:${demand.id}:${columnKey}:${creatorId}`,
@@ -1169,7 +1170,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     }
 
     // Interceptar tentativa de mover para "Em Ajuste" - abrir diálogo ao invés de mover direto
-    if (newStatusKey === "Em Ajuste") {
+    if (isAdjustmentStage(newStatusKey)) {
       setAdjustmentDemandId(demandId);
       setAdjustmentDialogOpen(true);
       return;
@@ -1196,13 +1197,13 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     // Apply optimistic update immediately
     setOptimisticUpdates(prev => ({ ...prev, [demandId]: newStatusKey }));
 
-    const isAdjustmentCompletion = prevStatusName === "Em Ajuste" && newStatusKey === "Aprovação do Cliente";
+    const isAdjustmentCompletion = isAdjustmentStage(prevStatusName) && newStatusKey === "Aprovação do Cliente";
 
     // Check if this demand is a parent (has children) - parents don't get their own timers
     const isParentDemandMobile = demands.some(d => d.parent_demand_id === demandId);
 
     // Stop timer when leaving "Fazendo" or "Em Ajuste" for any other status
-    const timerStatuses = ["Fazendo", "Em Ajuste"];
+    const timerStatuses = ["Fazendo", "Em Ajuste", "Ajuste"];
     if (!isParentDemandMobile && prevStatusName && timerStatuses.includes(prevStatusName) && !timerStatuses.includes(newStatusKey)) {
       await stopAllTimersForDemand(demandId);
     }
@@ -1260,7 +1261,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   channel: "email", type: "demandStatusChanged", boardId, isUserAssigned: isCreatorAssigned,
                 });
                 if (wantEmail) {
-                  const statusEmoji = newStatusKey === "Entregue" ? "✅" : newStatusKey === "Em Ajuste" ? "🔧" : "📋";
+                  const statusEmoji = newStatusKey === "Entregue" ? "✅" : isAdjustmentStage(newStatusKey) ? "🔧" : "📋";
                   const publicUrl = await buildPublicDemandUrl(demand.id, user?.id || "");
                   await supabase.functions.invoke("send-email", {
                     body: {
@@ -1272,7 +1273,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                         message: `A demanda "${demand.title}" mudou de "${previousStatusName}" para "${newStatusKey}".`,
                         actionUrl: publicUrl,
                         actionText: "Ver Demanda",
-                        type: newStatusKey === "Entregue" ? "success" : newStatusKey === "Em Ajuste" ? "warning" : "info",
+                        type: newStatusKey === "Entregue" ? "success" : isAdjustmentStage(newStatusKey) ? "warning" : "info",
                       },
                       eventType: "demand_status_changed",
                       dedupeKey: `demand_status_changed:${demand.id}:${newStatusKey}:${creatorId}`,
@@ -1594,11 +1595,11 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                 )}
 
                 {/* Time display */}
-                {(columnKey === "Entregue" || columnKey === "Aprovação do Cliente" || columnKey === "Fazendo" || columnKey === "Em Ajuste") && (() => {
+                {(columnKey === "Entregue" || columnKey === "Aprovação do Cliente" || columnKey === "Fazendo" || isAdjustmentStage(columnKey)) && (() => {
                   const canControlTimer = !readOnly && 
                     (userRole === "admin" || userRole === "moderator" || userRole === "executor") &&
-                    (columnKey === "Fazendo" || columnKey === "Em Ajuste");
-                  const shouldForceShow = canControlTimer && (columnKey === "Fazendo" || columnKey === "Em Ajuste");
+                    (columnKey === "Fazendo" || isAdjustmentStage(columnKey));
+                  const shouldForceShow = canControlTimer && (columnKey === "Fazendo" || isAdjustmentStage(columnKey));
                   return (
                     <KanbanTimeDisplay demandId={demand.id} canControl={canControlTimer} forceShow={shouldForceShow} hideIfHasSubdemands />
                   );
@@ -1871,7 +1872,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   </TooltipProvider>
                 )}
 
-                {columnKey === "Em Ajuste" && latestAdjustmentType && (
+                {isAdjustmentStage(columnKey) && latestAdjustmentType && (
                   <Badge variant="outline" className={cn("text-[10px] py-0 px-1.5 h-5", latestAdjustmentType === "internal" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" : "bg-purple-500/10 text-purple-600 border-purple-500/20")}>
                     {latestAdjustmentType === "internal" ? "Interno" : "Externo"}
                   </Badge>
@@ -1893,7 +1894,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                     <GitBranch className="h-2.5 w-2.5 shrink-0" />
                     <span className="font-medium shrink-0">Subdemandas: {childDemandIds.length}</span>
                   </div>
-                  {(columnKey === "Entregue" || columnKey === "Aprovação do Cliente" || columnKey === "Fazendo" || columnKey === "Em Ajuste") && (
+                  {(columnKey === "Entregue" || columnKey === "Aprovação do Cliente" || columnKey === "Fazendo" || isAdjustmentStage(columnKey)) && (
                     <KanbanParentTimeDisplay demandId={demand.id} subdemandIds={childDemandIds} inline />
                   )}
                 </div>
@@ -1901,11 +1902,11 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                 </CollapsibleContent>
               </Collapsible>
 
-              {!isParentDemand && (columnKey === "Entregue" || columnKey === "Aprovação do Cliente" || columnKey === "Fazendo" || columnKey === "Em Ajuste") && (() => {
+              {!isParentDemand && (columnKey === "Entregue" || columnKey === "Aprovação do Cliente" || columnKey === "Fazendo" || isAdjustmentStage(columnKey)) && (() => {
                 const canControlTimer = !readOnly && 
                   (userRole === "admin" || userRole === "moderator" || userRole === "executor") &&
-                  (columnKey === "Fazendo" || columnKey === "Em Ajuste");
-                const shouldForceShow = canControlTimer && (columnKey === "Fazendo" || columnKey === "Em Ajuste");
+                  (columnKey === "Fazendo" || isAdjustmentStage(columnKey));
+                const shouldForceShow = canControlTimer && (columnKey === "Fazendo" || isAdjustmentStage(columnKey));
                 return (
                   <div className="mt-2">
                     <KanbanTimeDisplay demandId={demand.id} canControl={canControlTimer} forceShow={shouldForceShow} hideIfHasSubdemands />
