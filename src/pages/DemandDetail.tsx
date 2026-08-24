@@ -8,7 +8,7 @@ import { DemandChat } from "@/components/DemandChat";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useDemandById, useCreateInteraction, useUpdateDemand } from "@/hooks/useDemands";
-import { useBoardStatuses } from "@/hooks/useBoardStatuses";
+import { useBoardStatuses, isAdjustmentStage, isTimerStage } from "@/hooks/useBoardStatuses";
 import { useDemandAssignees, useSetAssignees } from "@/hooks/useDemandAssignees";
 import { useBoard } from "@/hooks/useBoards";
 import { ChangeBoardDialog } from "@/components/ChangeBoardDialog";
@@ -340,7 +340,7 @@ export default function DemandDetail() {
   // Check if demand is delivered or in progress
   const deliveredStatusId = statuses?.find(s => s.name === "Entregue")?.id;
   const approvalStatusId = statuses?.find(s => s.name === "Aprovação do Cliente")?.id;
-  const adjustmentStatusId = statuses?.find(s => s.name === "Em Ajuste")?.id;
+  const adjustmentStatusId = statuses?.find(s => isAdjustmentStage(s.name))?.id;
   const fazendoStatusId = statuses?.find(s => s.name === "Fazendo")?.id;
 
   // Demandas entregues são apenas visualizáveis
@@ -532,9 +532,8 @@ export default function DemandDetail() {
   const applyParentStatusChange = (status: { id: string; name: string; color?: string }) => {
     if (!demand) return;
     const previousStatusName = demand.demand_statuses?.name;
-    const timerStatuses = ["Fazendo", "Em Ajuste"];
-    const isEnteringTimerStatus = timerStatuses.includes(status.name);
-    const isLeavingTimerStatus = previousStatusName && timerStatuses.includes(previousStatusName) && !isEnteringTimerStatus;
+    const isEnteringTimerStatus = isTimerStage(status.name);
+    const isLeavingTimerStatus = !!previousStatusName && isTimerStage(previousStatusName) && !isEnteringTimerStatus;
     const statusChangedAt = new Date().toISOString();
     const deliveredAt = status.id === deliveredStatusId ? statusChangedAt : demand.delivered_at;
 

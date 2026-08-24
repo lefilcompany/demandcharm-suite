@@ -47,6 +47,25 @@ export function isFixedBoundaryStatus(statusName: string): boolean {
   return statusName === FIXED_END_STATUS;
 }
 
+/** Nome canônico da etapa de ajuste. */
+export const ADJUSTMENT_STATUS_NAME = "Em Ajuste";
+
+/**
+ * Reconhece a etapa de ajuste, incluindo o nome legado "Ajuste" criado por
+ * versões antigas da rotina de criação de quadro.
+ */
+export function isAdjustmentStage(statusName: string | null | undefined): boolean {
+  const normalized = (statusName ?? "").trim().toLowerCase();
+  return normalized === "em ajuste" || normalized === "ajuste";
+}
+
+/** Etapas em que o cronômetro da demanda deve contar tempo. */
+export function isTimerStage(statusName: string | null | undefined): boolean {
+  const normalized = (statusName ?? "").trim().toLowerCase();
+  return normalized === "fazendo" || isAdjustmentStage(normalized);
+}
+
+
 // Default columns fallback (matches current static columns)
 export const DEFAULT_COLUMNS: KanbanColumn[] = [
   { key: "A Iniciar", label: "A Iniciar", color: "bg-muted", shortLabel: "Iniciar", statusId: "", adjustmentType: "none" },
