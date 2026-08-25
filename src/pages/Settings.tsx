@@ -18,6 +18,7 @@ import { NotificationsSection } from "@/components/settings/NotificationsSection
 import { AvailabilitySection } from "@/components/settings/AvailabilitySection";
 import { TeamSection } from "@/components/settings/TeamSection";
 import { AccountSection } from "@/components/settings/AccountSection";
+import { IntegrationsSection } from "@/components/settings/IntegrationsSection";
 
 export default function Settings() {
   const { t } = useTranslation();
