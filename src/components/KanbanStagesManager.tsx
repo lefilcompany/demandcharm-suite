@@ -53,6 +53,8 @@ import {
   BoardStatus,
   isFixedBoundaryStatus,
   FIXED_END_STATUS,
+  BACKLOG_STATUS_NAME,
+  isBacklogStage,
   AdjustmentType,
   BOARD_ROLES,
   BoardRoleType,
@@ -514,6 +516,28 @@ export function KanbanStagesManager({ boardId }: KanbanStagesManagerProps) {
     }
   };
 
+  const hasBacklogStage = localStatuses.some(s => isBacklogStage(s.status.name));
+
+  const handleAddBacklogStage = async () => {
+    try {
+      await createCustomStatus.mutateAsync({
+        name: BACKLOG_STATUS_NAME,
+        color: "#64748B",
+        boardId,
+        adjustmentType: "none",
+        visibleToRoles: [],
+        placeFirst: true,
+      });
+      toast.success("Etapa Backlog adicionada ao quadro");
+    } catch (error: any) {
+      if (error?.message?.includes("duplicate") || error?.code === "23505") {
+        toast.error("Já existe uma etapa com esse nome");
+      } else {
+        toast.error("Erro ao adicionar a etapa Backlog");
+      }
+    }
+  };
+
   const showForm = panelMode !== null;
 
   // Keep panel mounted during exit animation
@@ -644,6 +668,27 @@ export function KanbanStagesManager({ boardId }: KanbanStagesManagerProps) {
                   <Plus className="h-4 w-4" />
                   Criar Nova Etapa
                 </Button>
+
+                {!hasBacklogStage && (
+                  <div className="rounded-lg border border-dashed p-3 space-y-2">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">Etapa Backlog (opcional)</p>
+                      <p className="text-xs text-muted-foreground">
+                        Primeira coluna do quadro para ideias e demandas ainda sem data de entrega. Pode ser removida a qualquer momento.
+                      </p>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full gap-2"
+                      onClick={handleAddBacklogStage}
+                      disabled={createCustomStatus.isPending}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Adicionar Backlog
+                    </Button>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label>Etapas do Quadro ({localStatuses.length})</Label>
