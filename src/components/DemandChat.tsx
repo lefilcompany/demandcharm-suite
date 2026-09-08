@@ -262,6 +262,7 @@ export function DemandChat({
         interaction_type: "comment",
         content,
         channel,
+        ...(replyTo ? { metadata: { reply_to: replyTo } } : {}),
       },
       {
         onSuccess: async (created) => {
@@ -271,6 +272,7 @@ export function DemandChat({
             setPendingFiles([]);
           }
           setComment("");
+          setReplyTo(null);
           setIsSending(false);
           stopTyping();
 
