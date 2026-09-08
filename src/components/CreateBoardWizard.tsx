@@ -636,11 +636,13 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
 
   const filteredMembers = useMemo(() => {
     if (!teamMembers) return [];
-    // Exclude team admins (auto-added as moderator) and current user (auto-added as admin)
-    const eligible = teamMembers.filter((m) => m.role !== "owner");
-    if (!memberSearch.trim()) return eligible;
+    // Show ALL team members; owners are auto-added as moderators (non-removable)
+    const sorted = [...teamMembers].sort((a, b) =>
+      a.role === b.role ? 0 : a.role === "owner" ? 1 : -1
+    );
+    if (!memberSearch.trim()) return sorted;
     const q = memberSearch.toLowerCase();
-    return eligible.filter((m) => m.profile.full_name.toLowerCase().includes(q));
+    return sorted.filter((m) => m.profile.full_name.toLowerCase().includes(q));
   }, [teamMembers, memberSearch]);
 
   const toggleMember = useCallback((userId: string) => {
@@ -929,19 +931,25 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
             ) : (
               <div className="space-y-2">
                 {filteredMembers.map((m) => {
-                  const isSelected = memberRoles.has(m.user_id);
+                  const isOwner = m.role === "owner";
+                  const isSelected = isOwner || memberRoles.has(m.user_id);
                   const role = memberRoles.get(m.user_id) || "executor";
                   return (
                     <div
                       key={m.user_id}
-                      onClick={() => toggleMember(m.user_id)}
+                      onClick={() => !isOwner && toggleMember(m.user_id)}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg border p-2.5 transition-colors cursor-pointer hover:bg-muted/50",
-                        isSelected ? "border-primary bg-primary/5 hover:bg-primary/10" : "bg-card"
+                        "flex items-center gap-3 rounded-lg border p-2.5 transition-colors",
+                        isOwner
+                          ? "border-primary/40 bg-primary/5 opacity-80 cursor-default"
+                          : "cursor-pointer hover:bg-muted/50",
+                        !isOwner && isSelected && "border-primary bg-primary/5 hover:bg-primary/10",
+                        !isOwner && !isSelected && "bg-card"
                       )}
                     >
                       <Checkbox
                         checked={isSelected}
+                        disabled={isOwner}
                         onCheckedChange={() => toggleMember(m.user_id)}
                         onClick={(e) => e.stopPropagation()}
                       />
@@ -953,11 +961,13 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{m.profile.full_name}</p>
-                        {m.position && (
+                        {isOwner ? (
+                          <p className="text-[11px] text-primary truncate">Proprietário — entra como Coordenador automaticamente</p>
+                        ) : m.position ? (
                           <p className="text-[11px] text-muted-foreground truncate">{m.position.name}</p>
-                        )}
+                        ) : null}
                       </div>
-                      {isSelected && (
+                      {!isOwner && isSelected && (
                         <div className="flex gap-1">
                           {ROLE_OPTIONS.map((opt) => {
                             const Icon = opt.icon;
