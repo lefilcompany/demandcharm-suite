@@ -295,6 +295,20 @@ export default function Kanban() {
           {/* Scheduled demands */}
           <ScheduledDemandsModal boardId={selectedBoardId} teamId={currentTeamId} buttonStyle="standard" />
 
+          {/* Snapshot / download do resumo do quadro */}
+          {selectedBoardId && (
+            <KanbanSnapshotDialog
+              boardName={currentBoard?.name || "Quadro"}
+              authorName={
+                (user?.user_metadata?.full_name as string) || user?.email || "—"
+              }
+              columns={kanbanColumns as any}
+              filteredDemands={filteredDemands as any}
+              allDemands={(demands || []) as any}
+              hasActiveFilters={hasActiveFilters}
+            />
+          )}
+
         </div>
       </div>
 
