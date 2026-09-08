@@ -4,7 +4,7 @@ import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { InteractionAttachments } from "@/components/InteractionAttachments";
 import { MentionInput } from "@/components/MentionInput";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Copy, MoreHorizontal, Pencil, Trash2, Wrench, ArrowRightLeft } from "lucide-react";
+import { Copy, MoreHorizontal, Pencil, Trash2, Wrench, ArrowRightLeft, Reply } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,23 @@ interface ChatMessageProps {
   onEditingContentChange: (content: string) => void;
   isSavingEdit: boolean;
   onNavigateUser: (userId: string) => void;
+  onReply?: (interaction: ChatMessageProps["interaction"]) => void;
+  onJumpToMessage?: (messageId: string) => void;
+  isHighlighted?: boolean;
+}
+
+export function stripHtmlPreview(html: string | null | undefined, max = 140) {
+  if (!html) return "";
+  const text = html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
 export function DemandChatMessage({
