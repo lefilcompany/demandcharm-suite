@@ -242,7 +242,7 @@ export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
         styles: { fontSize: 8, cellPadding: 1.8, textColor: GRAPHITE, lineColor: LINE, overflow: "linebreak" },
         columnStyles: {
           0: { cellWidth: 16 },
-          1: { cellWidth: 78 },
+          1: { cellWidth: 72 },
           2: { cellWidth: 40 },
           3: { cellWidth: 40 },
           4: { cellWidth: 22, halign: "center" },
