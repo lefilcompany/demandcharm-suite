@@ -28,5 +28,14 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
+  if (!isSessionChecked()) {
+    return (
+      <Navigate
+        to={sessionCheckRedirect(window.location.pathname, window.location.search)}
+        replace
+      />
+    );
+  }
+
   return <>{children}</>;
 }
