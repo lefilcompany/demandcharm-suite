@@ -2646,46 +2646,112 @@ export type Database = {
           },
         ]
       }
+      service_catalog_items: {
+        Row: {
+          area_key: string
+          area_name: string
+          area_order: number
+          catalog_key: string
+          created_at: string
+          description: string | null
+          hours_max: number | null
+          hours_min: number | null
+          hours_unit: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          area_key: string
+          area_name: string
+          area_order: number
+          catalog_key: string
+          created_at?: string
+          description?: string | null
+          hours_max?: number | null
+          hours_min?: number | null
+          hours_unit?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          area_key?: string
+          area_name?: string
+          area_order?: number
+          catalog_key?: string
+          created_at?: string
+          description?: string | null
+          hours_max?: number | null
+          hours_min?: number | null
+          hours_unit?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           board_id: string | null
+          catalog_key: string | null
           created_at: string
           created_by: string
           description: string | null
           estimated_hours: number
+          hours_max: number | null
+          hours_min: number | null
+          hours_unit: string | null
           id: string
+          is_active: boolean
+          is_catalog: boolean
           is_folder: boolean
           name: string
           parent_id: string | null
           price_cents: number
+          sort_order: number
           team_id: string
           updated_at: string
         }
         Insert: {
           board_id?: string | null
+          catalog_key?: string | null
           created_at?: string
           created_by: string
           description?: string | null
           estimated_hours?: number
+          hours_max?: number | null
+          hours_min?: number | null
+          hours_unit?: string | null
           id?: string
+          is_active?: boolean
+          is_catalog?: boolean
           is_folder?: boolean
           name: string
           parent_id?: string | null
           price_cents?: number
+          sort_order?: number
           team_id: string
           updated_at?: string
         }
         Update: {
           board_id?: string | null
+          catalog_key?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
           estimated_hours?: number
+          hours_max?: number | null
+          hours_min?: number | null
+          hours_unit?: string | null
           id?: string
+          is_active?: boolean
+          is_catalog?: boolean
           is_folder?: boolean
           name?: string
           parent_id?: string | null
           price_cents?: number
+          sort_order?: number
           team_id?: string
           updated_at?: string
         }
@@ -3918,6 +3984,10 @@ export type Database = {
       reschedule_demand: {
         Args: { p_demand_id: string; p_new_due_date: string; p_reason: string }
         Returns: Json
+      }
+      seed_team_service_catalog: {
+        Args: { _team_id: string }
+        Returns: undefined
       }
       update_trial_coupon: {
         Args: {
