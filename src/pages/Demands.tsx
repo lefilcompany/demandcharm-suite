@@ -16,7 +16,7 @@ import { useBoardRole } from "@/hooks/useBoardMembers";
 import { useAuth } from "@/lib/auth";
 import { useMembersByPosition } from "@/hooks/useMembersByPosition";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
-import { Plus, Briefcase, LayoutList, LayoutGrid, List, Search, Eye, EyeOff, CalendarDays, User, Layers, Archive, RotateCcw } from "lucide-react";
+import { Plus, Briefcase, LayoutList, LayoutGrid, List, Search, Eye, EyeOff, CalendarDays, User, Layers, Trash2, RotateCcw } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { DemandHierarchyTable, HierarchicalDemand } from "@/components/demands/DemandHierarchyTable";
 import { DemandHierarchyGrid } from "@/components/demands/DemandHierarchyGrid";
@@ -32,7 +32,7 @@ import { ScheduledDemandsModal } from "@/components/ScheduledDemandsModal";
 import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
 import { usePlanLimitGuard } from "@/hooks/usePlanLimitCheck";
 import { useTeamMembershipRole } from "@/hooks/useTeamRole";
-import { ArchivedDemandsModal } from "@/components/ArchivedDemandsModal";
+import { TrashDemandsModal } from "@/components/TrashDemandsModal";
 import { SEOHead } from "@/components/SEOHead";
 import { safeDateTimestamp, safeIncludesText } from "@/lib/demandViewSafety";
 type ViewMode = "table" | "grid" | "calendar";
@@ -264,7 +264,9 @@ export default function Demands() {
   // Calendar quick create dialog
   const [selectedDateForCreate, setSelectedDateForCreate] = useState<Date | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isArchivedOpen, setIsArchivedOpen] = useState(false);
+  const [isArchivedOpen, setIsArchivedOpen] = useState(
+    () => new URLSearchParams(window.location.search).get("trash") === "1"
+  );
 
   // Detect if screen is mobile or tablet (< 1024px)
   const [isTabletOrSmaller, setIsTabletOrSmaller] = useState(false);
@@ -588,8 +590,8 @@ export default function Demands() {
                     onClick={() => setIsArchivedOpen(true)}
                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium h-8 transition-all duration-200 whitespace-nowrap bg-background border border-border/60 hover:border-primary/40 hover:text-primary"
                   >
-                    <Archive className="h-3.5 w-3.5" />
-                    <span>Arquivadas</span>
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Lixeira</span>
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>Ver demandas que foram arquivadas e removidas da visualização principal.</TooltipContent>
@@ -750,6 +752,6 @@ export default function Demands() {
       {/* Quick create dialog for calendar - show request dialog for requesters, demand dialog for others */}
       {isReadOnly ? <CreateRequestQuickDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} selectedDate={selectedDateForCreate} /> : <CreateDemandQuickDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} selectedDate={selectedDateForCreate} />}
 
-      <ArchivedDemandsModal open={isArchivedOpen} onOpenChange={setIsArchivedOpen} isReadOnly={isReadOnly} />
+      <TrashDemandsModal open={isArchivedOpen} onOpenChange={setIsArchivedOpen} isReadOnly={isReadOnly} />
     </div>;
 }

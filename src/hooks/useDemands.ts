@@ -561,6 +561,31 @@ export function useDeleteInteraction() {
   });
 }
 
+export function useDeleteDemandPermanently() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from("demands")
+        .delete()
+        .eq("id", id)
+        .eq("archived", true)
+        .select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Não foi possível excluir. A demanda precisa estar na lixeira e você precisa ser membro do quadro.");
+      }
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["archived-demands"] });
+      queryClient.invalidateQueries({ queryKey: ["demands"] });
+      queryClient.invalidateQueries({ queryKey: ["all-team-demands"] });
+    },
+  });
+}
+
 export function useArchiveDeliveredDemands() {
   const queryClient = useQueryClient();
 

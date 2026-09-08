@@ -28,7 +28,7 @@ import { DueDateHistory } from "@/components/DueDateHistory";
 import { SubdemandEditForm } from "@/components/SubdemandEditForm";
 import { DemandFolderPicker } from "@/components/DemandFolderPicker";
 import { AttachmentUploader } from "@/components/AttachmentUploader";
-import { Calendar, Users, Archive, Pencil, Wrench, AlertTriangle, LayoutGrid, List, ChevronDown, Kanban, CalendarDays, LucideIcon, Check, X, ArrowRight, UserCircle, GitBranch, Plus, MoreVertical, ExternalLink, Copy, FolderOpen } from "lucide-react";
+import { Calendar, Users, Archive, Trash2, Pencil, Wrench, AlertTriangle, LayoutGrid, List, ChevronDown, Kanban, CalendarDays, LucideIcon, Check, X, ArrowRight, UserCircle, GitBranch, Plus, MoreVertical, ExternalLink, Copy, FolderOpen } from "lucide-react";
 import { DuplicateDemandDialog } from "@/components/DuplicateDemandDialog";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -356,10 +356,8 @@ export default function DemandDetail() {
     isCurrentAssignee;
   const canManageAssignees = !isDeliveredStatus && hasEditPermission;
   const canEdit = !isDeliveredStatus && hasEditPermission;
-  // Arquivar continua restrito a admin/moderator/criador/responsável (não a qualquer agente)
-  const canArchive =
-    !isDeliveredStatus &&
-    (boardRole === "admin" || boardRole === "moderator" || isCreator || isCurrentAssignee);
+  // Qualquer membro do quadro pode mover a demanda para a lixeira (demandas fechadas ficam protegidas)
+  const canArchive = !isDeliveredStatus && !!boardRole;
   const canChangeBoard = !isDeliveredStatus && (boardRole === "admin" || boardRole === "moderator" || boardRole === "executor");
 
   // Permissões de ajuste baseadas no boardRole
@@ -670,7 +668,7 @@ export default function DemandDetail() {
       archived_at: new Date().toISOString()
     }, {
       onSuccess: () => {
-        toast.success("Demanda arquivada com sucesso!");
+        toast.success("Demanda movida para a lixeira. Ela será apagada em 30 dias, a menos que seja restaurada.");
         navigate(originInfo.path, {
           state: {
             viewMode: originInfo.viewMode,
@@ -1047,21 +1045,21 @@ export default function DemandDetail() {
               {canArchive && <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" disabled={updateDemand.isPending} className="flex-1 sm:flex-none">
-                      <Archive className="mr-2 h-4 w-4" />
-                      Arquivar
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Lixeira
                     </Button>
                   </AlertDialogTrigger>
                 <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-lg mx-auto">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Arquivar demanda?</AlertDialogTitle>
+                    <AlertDialogTitle>Mover para a lixeira?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Tem certeza que deseja arquivar esta demanda? Você poderá restaurá-la posteriormente na seção de demandas arquivadas.
+                      A demanda sairá do Kanban e ficará na Lixeira por 30 dias. Nesse período, qualquer membro do quadro pode restaurá-la; depois disso, ela é apagada definitivamente.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="flex-col sm:flex-row gap-2">
                     <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
                     <AlertDialogAction onClick={handleArchive} className="w-full sm:w-auto">
-                      Arquivar
+                      Mover para lixeira
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MoreVertical, ExternalLink, Share2, FolderOpen, Archive, Pencil, Copy } from "lucide-react";
+import { MoreVertical, ExternalLink, Share2, FolderOpen, Trash2, Pencil, Copy } from "lucide-react";
 import { DuplicateDemandDialog } from "@/components/DuplicateDemandDialog";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -64,7 +64,7 @@ export function KanbanCardMenu({ demandId, teamId, boardId, isDelivered, readOnl
       archived_at: new Date().toISOString(),
     }, {
       onSuccess: () => {
-        toast.success("Demanda arquivada!");
+        toast.success("Demanda movida para a lixeira (apagada em 30 dias se não for restaurada)");
         queryClient.invalidateQueries({ queryKey: ["demands"] });
       },
     });
@@ -141,8 +141,8 @@ export function KanbanCardMenu({ demandId, teamId, boardId, isDelivered, readOnl
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleArchive} className="text-destructive focus:text-destructive">
-                <Archive className="h-4 w-4 mr-2" />
-                Arquivar
+                <Trash2 className="h-4 w-4 mr-2" />
+                Mover para lixeira
               </DropdownMenuItem>
             </>
           )}
