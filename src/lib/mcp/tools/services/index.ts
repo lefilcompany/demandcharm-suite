@@ -52,7 +52,7 @@ export const createServiceTool = defineTool({
     parent_id: zUuid.optional(),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async () => err("FORBIDDEN", CATALOG_LOCKED),
+  handler: async () => err("UNSUPPORTED", CATALOG_LOCKED),
 });
 
 export const updateServiceTool = defineTool({
@@ -67,7 +67,7 @@ export const updateServiceTool = defineTool({
     price_cents: z.number().int().min(0).optional(),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async () => err("FORBIDDEN", CATALOG_LOCKED),
+  handler: async () => err("UNSUPPORTED", CATALOG_LOCKED),
 });
 
 export const deleteServiceTool = defineTool({
@@ -76,6 +76,6 @@ export const deleteServiceTool = defineTool({
   description: "Disabled: the service catalog is fixed and read-only.",
   inputSchema: { service_id: zUuid },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async () => err("FORBIDDEN", CATALOG_LOCKED),
+  handler: async () => err("UNSUPPORTED", CATALOG_LOCKED),
 });
 

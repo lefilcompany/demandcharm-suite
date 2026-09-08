@@ -1212,7 +1212,7 @@ var createServiceTool = defineTool9({
     parent_id: zUuid.optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async () => err("FORBIDDEN", CATALOG_LOCKED)
+  handler: async () => err("UNSUPPORTED", CATALOG_LOCKED)
 });
 var updateServiceTool = defineTool9({
   name: "update_service",
@@ -1226,7 +1226,7 @@ var updateServiceTool = defineTool9({
     price_cents: z10.number().int().min(0).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async () => err("FORBIDDEN", CATALOG_LOCKED)
+  handler: async () => err("UNSUPPORTED", CATALOG_LOCKED)
 });
 var deleteServiceTool = defineTool9({
   name: "delete_service",
@@ -1234,7 +1234,7 @@ var deleteServiceTool = defineTool9({
   description: "Disabled: the service catalog is fixed and read-only.",
   inputSchema: { service_id: zUuid },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async () => err("FORBIDDEN", CATALOG_LOCKED)
+  handler: async () => err("UNSUPPORTED", CATALOG_LOCKED)
 });
 
 // src/lib/mcp/tools/notes/index.ts
