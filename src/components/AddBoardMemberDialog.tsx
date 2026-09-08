@@ -140,14 +140,15 @@ export function AddBoardMemberDialog({ trigger, boardId: propBoardId }: AddBoard
   }, []);
 
   const selectAll = useCallback(() => {
-    if (!filteredMembers.length) return;
+    const selectable = filteredMembers.filter((m: any) => !m.already_member);
+    if (!selectable.length) return;
     setSelectedMembers((prev) => {
       const next = new Map(prev);
-      const allSelected = filteredMembers.every((m: any) => next.has(m.user_id));
+      const allSelected = selectable.every((m: any) => next.has(m.user_id));
       if (allSelected) {
-        filteredMembers.forEach((m: any) => next.delete(m.user_id));
+        selectable.forEach((m: any) => next.delete(m.user_id));
       } else {
-        filteredMembers.forEach((m: any) => {
+        selectable.forEach((m: any) => {
           if (!next.has(m.user_id)) next.set(m.user_id, "executor");
         });
       }
