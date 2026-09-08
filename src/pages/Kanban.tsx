@@ -26,7 +26,7 @@ import { useMembersByPosition } from "@/hooks/useMembersByPosition";
 import { useIsTeamAdminOrModerator } from "@/hooks/useTeamRole";
 import { useKanbanColumns } from "@/hooks/useBoardStatuses";
 import { useKanbanPreferences } from "@/hooks/useKanbanPreferences";
-import { Plus, LayoutGrid, Columns3, Loader2, Kanban as KanbanIcon } from "lucide-react";
+import { Plus, LayoutGrid, Columns3, Loader2, Kanban as KanbanIcon, Trash2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useRealtimeDemands, useKanbanRealtimeNotifications } from "@/hooks/useRealtimeDemands";
 import { isToday, isThisWeek, isPast } from "date-fns";
@@ -35,6 +35,7 @@ import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
 import { useTeamMembershipRole } from "@/hooks/useTeamRole";
 import { SEOHead } from "@/components/SEOHead";
 import { KanbanSnapshotDialog } from "@/components/KanbanSnapshotDialog";
+import { TrashDemandsModal } from "@/components/TrashDemandsModal";
 
 export default function Kanban() {
   const { t } = useTranslation();
@@ -115,6 +116,7 @@ export default function Kanban() {
   };
 
   const [filters, setFilters] = useState<KanbanFiltersState>(() => readStoredFilters(filtersStorageKey));
+  const [isTrashOpen, setIsTrashOpen] = useState(false);
 
   // Re-hydrate when the user becomes available after the initial mount.
   useEffect(() => {
@@ -315,8 +317,27 @@ export default function Kanban() {
             />
           )}
 
+          {/* Lixeira */}
+          {selectedBoardId && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5 shrink-0" onClick={() => setIsTrashOpen(true)}>
+                    <Trash2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Lixeira</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">Demandas descartadas (apagadas após 30 dias)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
         </div>
       </div>
+
+      <TrashDemandsModal open={isTrashOpen} onOpenChange={setIsTrashOpen} isReadOnly={isReadOnly} />
 
       <div className="flex-1 min-h-0 overflow-hidden">
         {!selectedBoardId ? (
