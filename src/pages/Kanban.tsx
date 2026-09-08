@@ -221,6 +221,11 @@ export default function Kanban() {
     });
   }, [demands, filters, user?.id, membersByPosition, serviceChildMap]);
 
+  const hasActiveFilters = useMemo(
+    () => Object.values(filters).some((v) => v !== null && v !== false),
+    [filters]
+  );
+
   // Count user's demands
   const myDemandsCount = useMemo(() => {
     if (!demands || !user?.id) return 0;
