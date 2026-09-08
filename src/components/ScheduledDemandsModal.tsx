@@ -94,9 +94,12 @@ export function ScheduledDemandsModal({ boardId, teamId, buttonStyle = "compact"
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Agendamento desativado!");
-    } catch {
-      toast.error("Erro ao desativar agendamento");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao desativar agendamento"
+      );
     }
+
   };
 
   const toggleWeekday = (day: number) => {
