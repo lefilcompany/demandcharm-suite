@@ -967,7 +967,7 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
                           <p className="text-[11px] text-muted-foreground truncate">{m.position.name}</p>
                         ) : null}
                       </div>
-                      {isSelected && (
+                      {!isOwner && isSelected && (
                         <div className="flex gap-1">
                           {ROLE_OPTIONS.map((opt) => {
                             const Icon = opt.icon;
