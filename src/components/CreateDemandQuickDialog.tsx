@@ -102,6 +102,11 @@ export function CreateDemandQuickDialog({
   const defaultStatusId =
     statuses?.find((s) => s.name !== "Entregue")?.id || statuses?.[0]?.id || "";
 
+  // Backlog: etapa opcional em que a demanda pode ficar sem data de entrega
+  const isBacklogSelected = isBacklogStage(
+    statuses?.find((s) => s.id === (statusId || defaultStatusId))?.name
+  );
+
   // Initialize dueDate from selectedDate when dialog opens
   useEffect(() => {
     if (open && selectedDate && !dueDate) {
