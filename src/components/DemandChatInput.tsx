@@ -37,6 +37,8 @@ export function DemandChatInput({
   boardId,
   channel,
   placeholder,
+  replyTo,
+  onCancelReply,
 }: DemandChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
