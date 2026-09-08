@@ -186,7 +186,7 @@ export function AddBoardMemberDialog({ trigger, boardId: propBoardId }: AddBoard
     setStep("select");
   };
 
-  const allFilteredSelected = filteredMembers.length > 0 && filteredMembers.every((m: any) => selectedMembers.has(m.user_id));
+  const allFilteredSelected = filteredMembers.filter((m: any) => !m.already_member).length > 0 && filteredMembers.filter((m: any) => !m.already_member).every((m: any) => selectedMembers.has(m.user_id));
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) resetAndClose(); else setOpen(true); }}>
