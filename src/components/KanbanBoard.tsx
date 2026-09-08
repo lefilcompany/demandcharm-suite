@@ -1530,7 +1530,19 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
         <Card
           key={demand.id}
           data-demand-id={demand.id}
-          draggable={false}
+          draggable={showDragHandleBase}
+          onDragStart={(e) => {
+            if (!isCardDragAllowed(e)) {
+              e.preventDefault();
+              return;
+            }
+            handleDragStart(e, demand.id);
+          }}
+          onDragEnd={() => {
+            handleDragEnd();
+            setSubReorderDragOverId(null);
+            subReorderSourceIdRef.current = null;
+          }}
           className={cn(
             "transition-all cursor-pointer group relative overflow-hidden",
             "hover:shadow-sm",
