@@ -636,9 +636,9 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
 
   const filteredMembers = useMemo(() => {
     if (!teamMembers) return [];
-    // Show ALL team members; owners are auto-added as moderators (non-removable)
+    // Show ALL team members (owners included) — nobody is auto-added
     const sorted = [...teamMembers].sort((a, b) =>
-      a.role === b.role ? 0 : a.role === "owner" ? 1 : -1
+      a.profile.full_name.localeCompare(b.profile.full_name)
     );
     if (!memberSearch.trim()) return sorted;
     const q = memberSearch.toLowerCase();
@@ -909,8 +909,9 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
         {stepIdx === 2 && (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Selecione membros adicionais e defina o cargo de cada um neste quadro. Você (criador) será adicionado como Administrador automaticamente, e administradores da equipe entram como Coordenadores.
+              Selecione os participantes deste quadro e defina o cargo de cada um. Você (criador) será adicionado como Administrador automaticamente; os demais só entram se forem selecionados aqui.
             </p>
+
 
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -932,24 +933,19 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
               <div className="space-y-2">
                 {filteredMembers.map((m) => {
                   const isOwner = m.role === "owner";
-                  const isSelected = isOwner || memberRoles.has(m.user_id);
+                  const isSelected = memberRoles.has(m.user_id);
                   const role = memberRoles.get(m.user_id) || "executor";
                   return (
                     <div
                       key={m.user_id}
-                      onClick={() => !isOwner && toggleMember(m.user_id)}
+                      onClick={() => toggleMember(m.user_id)}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg border p-2.5 transition-colors",
-                        isOwner
-                          ? "border-primary/40 bg-primary/5 opacity-80 cursor-default"
-                          : "cursor-pointer hover:bg-muted/50",
-                        !isOwner && isSelected && "border-primary bg-primary/5 hover:bg-primary/10",
-                        !isOwner && !isSelected && "bg-card"
+                        "flex items-center gap-3 rounded-lg border p-2.5 transition-colors cursor-pointer hover:bg-muted/50",
+                        isSelected ? "border-primary bg-primary/5 hover:bg-primary/10" : "bg-card"
                       )}
                     >
                       <Checkbox
                         checked={isSelected}
-                        disabled={isOwner}
                         onCheckedChange={() => toggleMember(m.user_id)}
                         onClick={(e) => e.stopPropagation()}
                       />
@@ -962,12 +958,12 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{m.profile.full_name}</p>
                         {isOwner ? (
-                          <p className="text-[11px] text-primary truncate">Proprietário — entra como Coordenador automaticamente</p>
+                          <p className="text-[11px] text-muted-foreground truncate">Proprietário da equipe</p>
                         ) : m.position ? (
                           <p className="text-[11px] text-muted-foreground truncate">{m.position.name}</p>
                         ) : null}
                       </div>
-                      {!isOwner && isSelected && (
+                      {isSelected && (
                         <div className="flex gap-1">
                           {ROLE_OPTIONS.map((opt) => {
                             const Icon = opt.icon;
