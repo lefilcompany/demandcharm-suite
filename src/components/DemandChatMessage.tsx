@@ -237,6 +237,17 @@ export function DemandChatMessage({
       {isHovered && !isEditing && (
         <div className="absolute right-2 -top-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="flex items-center gap-0.5 bg-popover border rounded-md shadow-md p-0.5">
+            {onReply && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                title="Responder"
+                onClick={() => onReply(interaction)}
+              >
+                <Reply className="h-3 w-3" />
+              </Button>
+            )}
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyRichContent(interaction.content || "")}>
               <Copy className="h-3 w-3" />
             </Button>
