@@ -85,6 +85,15 @@ export default function Auth() {
     confirmPassword: ""
   });
   const [signupSuccessEmail, setSignupSuccessEmail] = useState<string | null>(null);
+  const [existingSessionAcknowledged, setExistingSessionAcknowledged] = useState(false);
+  const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
+  const hadInitialSessionRef = useRef<boolean | null>(null);
+  if (!loading && hadInitialSessionRef.current === null) {
+    hadInitialSessionRef.current = !!user;
+  }
+  const hadInitialSession = hadInitialSessionRef.current === true;
+
+
 
   // Fetch states from IBGE API
   useEffect(() => {
