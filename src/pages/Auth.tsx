@@ -409,13 +409,13 @@ export default function Auth() {
       // Store remember me preference
       if (rememberMe) {
         localStorage.setItem("rememberMe", "true");
-        // Long session: 7 days
-        const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
+        // Long session: 5 days
+        const expiresAt = Date.now() + 5 * 24 * 60 * 60 * 1000;
         localStorage.setItem("sessionExpiresAt", expiresAt.toString());
       } else {
         localStorage.removeItem("rememberMe");
-        // Short session: 24 hours
-        const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+        // Short session: 16 hours
+        const expiresAt = Date.now() + 16 * 60 * 60 * 1000;
         localStorage.setItem("sessionExpiresAt", expiresAt.toString());
       }
       await signIn(loginData.email, loginData.password);
