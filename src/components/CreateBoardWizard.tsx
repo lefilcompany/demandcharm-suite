@@ -933,24 +933,19 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
               <div className="space-y-2">
                 {filteredMembers.map((m) => {
                   const isOwner = m.role === "owner";
-                  const isSelected = isOwner || memberRoles.has(m.user_id);
+                  const isSelected = memberRoles.has(m.user_id);
                   const role = memberRoles.get(m.user_id) || "executor";
                   return (
                     <div
                       key={m.user_id}
-                      onClick={() => !isOwner && toggleMember(m.user_id)}
+                      onClick={() => toggleMember(m.user_id)}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg border p-2.5 transition-colors",
-                        isOwner
-                          ? "border-primary/40 bg-primary/5 opacity-80 cursor-default"
-                          : "cursor-pointer hover:bg-muted/50",
-                        !isOwner && isSelected && "border-primary bg-primary/5 hover:bg-primary/10",
-                        !isOwner && !isSelected && "bg-card"
+                        "flex items-center gap-3 rounded-lg border p-2.5 transition-colors cursor-pointer hover:bg-muted/50",
+                        isSelected ? "border-primary bg-primary/5 hover:bg-primary/10" : "bg-card"
                       )}
                     >
                       <Checkbox
                         checked={isSelected}
-                        disabled={isOwner}
                         onCheckedChange={() => toggleMember(m.user_id)}
                         onClick={(e) => e.stopPropagation()}
                       />
@@ -963,12 +958,12 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{m.profile.full_name}</p>
                         {isOwner ? (
-                          <p className="text-[11px] text-primary truncate">Proprietário — entra como Coordenador automaticamente</p>
+                          <p className="text-[11px] text-muted-foreground truncate">Proprietário da equipe</p>
                         ) : m.position ? (
                           <p className="text-[11px] text-muted-foreground truncate">{m.position.name}</p>
                         ) : null}
                       </div>
-                      {!isOwner && isSelected && (
+                      {isSelected && (
                         <div className="flex gap-1">
                           {ROLE_OPTIONS.map((opt) => {
                             const Icon = opt.icon;
@@ -993,6 +988,9 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
                           })}
                         </div>
                       )}
+                    </div>
+                  );
+                })}
                     </div>
                   );
                 })}
