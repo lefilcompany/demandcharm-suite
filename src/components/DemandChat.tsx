@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DemandChatMessage, DateSeparator } from "@/components/DemandChatMessage";
+import { DemandChatMessage, DateSeparator, stripHtmlPreview } from "@/components/DemandChatMessage";
 import { DemandChatInput } from "@/components/DemandChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
@@ -128,6 +128,20 @@ export function DemandChat({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ id: string; author: string; preview: string } | null>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+
+  const handleJumpToMessage = useCallback((messageId: string) => {
+    const container = scrollRef.current;
+    const el = container?.querySelector<HTMLElement>(`[data-message-id="${messageId}"]`);
+    if (!container || !el) {
+      toast.info("Mensagem original não está nesta conversa");
+      return;
+    }
+    container.scrollTop = el.offsetTop - container.clientHeight / 3;
+    setHighlightedId(messageId);
+    setTimeout(() => setHighlightedId((cur) => (cur === messageId ? null : cur)), 2000);
+  }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
