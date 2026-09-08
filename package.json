@@ -107,7 +107,7 @@
     "vite-plugin-pwa": "0.20.5",
     "workbox-build": "7.3.0",
     "workbox-window": "7.3.0",
-    "zod": "^4.4.3"
+    "zod": "3.23.8"
   },
   "devDependencies": {
     "@eslint/js": "9.32.0",
