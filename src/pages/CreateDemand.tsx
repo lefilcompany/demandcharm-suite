@@ -103,12 +103,6 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     }));
   }, [boardStatuses]);
 
-  // Backlog é uma etapa opcional para demandas ainda sem prazo definido
-  const isBacklogSelected = useMemo(
-    () => isBacklogStage(statuses.find(s => s.id === statusId)?.name),
-    [statuses, statusId]
-  );
-
   const [successState, setSuccessState] = useState<{
     demandId: string;
     demandTitle: string;
@@ -138,6 +132,12 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   const [statusId, setStatusId] = useState("");
   const [priority, setPriority] = useState("média");
   const [dueDate, setDueDate] = useState("");
+  // Backlog é uma etapa opcional para demandas ainda sem prazo definido
+  const isBacklogSelected = useMemo(
+    () => isBacklogStage(statuses.find(s => s.id === statusId)?.name),
+    [statuses, statusId]
+  );
+
   const [serviceId, setServiceId] = useState("");
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [primaryAssigneeId, setPrimaryAssigneeId] = useState<string | null>(null);
