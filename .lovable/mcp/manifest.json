@@ -1911,10 +1911,10 @@
       {
         "name": "create_service",
         "title": "Create service",
-        "description": "Create a new service in a team catalog.",
+        "description": "Disabled: the service catalog is fixed and read-only.",
         "annotations": {
-          "readOnlyHint": false,
-          "idempotentHint": false,
+          "readOnlyHint": true,
+          "idempotentHint": true,
           "openWorldHint": false
         },
         "inputSchema": {
@@ -1961,10 +1961,10 @@
       {
         "name": "update_service",
         "title": "Update service",
-        "description": "Update a service's fields.",
+        "description": "Disabled: the service catalog is fixed and read-only.",
         "annotations": {
-          "readOnlyHint": false,
-          "idempotentHint": false,
+          "readOnlyHint": true,
+          "idempotentHint": true,
           "openWorldHint": false
         },
         "inputSchema": {
@@ -2004,10 +2004,9 @@
       {
         "name": "delete_service",
         "title": "Delete service",
-        "description": "Delete a service. Fails if the service is referenced by demands.",
+        "description": "Disabled: the service catalog is fixed and read-only.",
         "annotations": {
-          "readOnlyHint": false,
-          "destructiveHint": true,
+          "readOnlyHint": true,
           "idempotentHint": true,
           "openWorldHint": false
         },

@@ -1,11 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { ServiceCreateSchema, ServiceUpdateSchema, validateData } from "@/lib/validations";
 import { useMemo } from "react";
-import { toast } from "sonner";
-import { usePlansModal } from "@/contexts/PlansModalContext";
-import { showPlanLimitToast } from "@/lib/planLimitErrors";
 
 export interface Service {
   id: string;
@@ -20,6 +16,13 @@ export interface Service {
   created_by: string;
   created_at: string;
   updated_at: string;
+  is_catalog?: boolean;
+  is_active?: boolean;
+  hours_min?: number | null;
+  hours_max?: number | null;
+  hours_unit?: string | null;
+  sort_order?: number;
+  catalog_key?: string | null;
 }
 
 export interface ServiceWithHierarchy extends Service {
@@ -33,6 +36,20 @@ export interface SelectableService extends Service {
   displayName: string;
 }
 
+/** Formats the reference hours of a catalog service, e.g. "0,5–2h/dia". */
+export function formatServiceHours(service: Pick<Service, "estimated_hours" | "hours_min" | "hours_max" | "hours_unit">): string {
+  const fmt = (n: number) => String(n).replace(".", ",");
+  const unitSuffix =
+    service.hours_unit === "semana" ? "/semana" : service.hours_unit === "dia" ? "/dia" : "";
+
+  if (service.hours_min != null && service.hours_max != null) {
+    return service.hours_min === service.hours_max
+      ? `${fmt(Number(service.hours_min))}h${unitSuffix}`
+      : `${fmt(Number(service.hours_min))}–${fmt(Number(service.hours_max))}h${unitSuffix}`;
+  }
+  return `${service.estimated_hours}h`;
+}
+
 export function useServices(teamId: string | null, boardId?: string | null) {
   const { user } = useAuth();
 
@@ -40,11 +57,13 @@ export function useServices(teamId: string | null, boardId?: string | null) {
     queryKey: ["services", teamId, boardId],
     queryFn: async () => {
       if (!teamId) return [];
-      
+
       let query = supabase
         .from("services")
         .select("*")
         .eq("team_id", teamId)
+        .eq("is_active", true)
+        .order("sort_order")
         .order("name");
 
       // Filter by board_id: show services for this board OR team-wide services (board_id = null)
@@ -55,7 +74,7 @@ export function useServices(teamId: string | null, boardId?: string | null) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Service[];
+      return data as unknown as Service[];
     },
     enabled: !!user && !!teamId,
   });
@@ -70,15 +89,15 @@ export function useHierarchicalServices(teamId: string | null, boardId?: string 
 
     // Get root services (no parent)
     const rootServices = services.filter(s => !s.parent_id);
-    
+
     // Build hierarchy
     const buildHierarchy = (parentId: string | null): ServiceWithHierarchy[] => {
       const children = services.filter(s => s.parent_id === parentId);
-      
+
       return children.map(service => {
         const grandchildren = services.filter(s => s.parent_id === service.id);
         const isCategory = !!service.is_folder || grandchildren.length > 0;
-        
+
         return {
           ...service,
           children: isCategory ? buildHierarchy(service.id) : [],
@@ -90,7 +109,7 @@ export function useHierarchicalServices(teamId: string | null, boardId?: string 
     return rootServices.map(service => {
       const children = services.filter(s => s.parent_id === service.id);
       const isCategory = !!service.is_folder || children.length > 0;
-      
+
       return {
         ...service,
         children: isCategory ? buildHierarchy(service.id) : [],
@@ -149,121 +168,12 @@ export function usePotentialParentServices(teamId: string | null, excludeId?: st
   return { data: potentialParents, isLoading };
 }
 
-export function useCreateService() {
-  const queryClient = useQueryClient();
-  const { openPlans } = usePlansModal();
-
-  return useMutation({
-    mutationFn: async (data: {
-      name: string;
-      description?: string;
-      team_id: string;
-      estimated_hours: number;
-      price_cents?: number;
-      parent_id?: string | null;
-      is_folder?: boolean;
-    }) => {
-      // Validate input data before database operation
-      const validatedData = validateData(ServiceCreateSchema, data);
-      const userId = (await supabase.auth.getUser()).data.user!.id;
-      
-      const { data: service, error } = await supabase
-        .from("services")
-        .insert({
-          name: validatedData.name,
-          description: validatedData.description,
-          team_id: validatedData.team_id,
-          estimated_hours: validatedData.estimated_hours,
-          price_cents: validatedData.price_cents || 0,
-          parent_id: data.parent_id || null,
-          is_folder: data.is_folder ?? false,
-          created_by: userId,
-        })
-        .select()
-        .maybeSingle();
-
-      if (error) throw error;
-      return service;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["services", variables.team_id] });
-    },
-    onError: (error: Error) => {
-      if (showPlanLimitToast(error, openPlans)) return;
-      toast.error("Erro ao criar serviço: " + error.message);
-    },
-  });
-}
-
-export function useUpdateService() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      id,
-      team_id,
-      ...data
-    }: {
-      id: string;
-      team_id: string;
-      name?: string;
-      description?: string;
-      estimated_hours?: number;
-      price_cents?: number;
-      parent_id?: string | null;
-      is_folder?: boolean;
-    }) => {
-      // Validate input data before database operation
-      const validatedData = validateData(ServiceUpdateSchema, { id, team_id, ...data });
-      const { id: validatedId, team_id: validatedTeamId, ...updateData } = validatedData;
-      
-      // Add parent_id if provided
-      const finalUpdateData = {
-        ...updateData,
-        ...(data.parent_id !== undefined ? { parent_id: data.parent_id } : {}),
-        ...(data.is_folder !== undefined ? { is_folder: data.is_folder } : {}),
-      };
-      
-      const { data: service, error } = await supabase
-        .from("services")
-        .update(finalUpdateData)
-        .eq("id", validatedId)
-        .select()
-        .maybeSingle();
-
-      if (error) throw error;
-      return service;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["services", variables.team_id] });
-    },
-  });
-}
-
-export function useDeleteService() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, team_id }: { id: string; team_id: string }) => {
-      const { error } = await supabase
-        .from("services")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["services", variables.team_id] });
-    },
-  });
-}
-
 // Helper to get service name with category prefix
 export function getServiceDisplayName(service: Service, allServices: Service[]): string {
   if (!service.parent_id) return service.name;
-  
+
   const parent = allServices.find(s => s.id === service.parent_id);
   if (!parent) return service.name;
-  
+
   return `${parent.name} > ${service.name}`;
 }
