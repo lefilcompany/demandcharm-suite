@@ -491,7 +491,7 @@ export function DemandChat({
         ) : (
           <div className="py-2">
             {groupedMessages.map(({ interaction, isGrouped, showDateSep }) => (
-              <div key={interaction.id}>
+              <div key={interaction.id} data-message-id={interaction.id}>
                 {showDateSep && <DateSeparator date={new Date(interaction.created_at)} />}
                 <DemandChatMessage
                   interaction={interaction}
@@ -507,6 +507,15 @@ export function DemandChat({
                   onEditingContentChange={setEditingContent}
                   isSavingEdit={updateInteraction.isPending}
                   onNavigateUser={(userId) => navigate(`/user/${userId}`)}
+                  isHighlighted={highlightedId === interaction.id}
+                  onJumpToMessage={handleJumpToMessage}
+                  onReply={(target) =>
+                    setReplyTo({
+                      id: target.id,
+                      author: target.profiles?.full_name || "Usuário",
+                      preview: stripHtmlPreview(target.content) || "Mensagem",
+                    })
+                  }
                 />
               </div>
             ))}
@@ -546,6 +555,8 @@ export function DemandChat({
         isSending={isSending || createInteraction.isPending}
         boardId={boardId}
         channel={channel}
+        replyTo={replyTo}
+        onCancelReply={() => setReplyTo(null)}
       />
     </div>
   );
