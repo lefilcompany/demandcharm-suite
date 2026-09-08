@@ -34,6 +34,7 @@ import { ScheduledDemandsModal } from "@/components/ScheduledDemandsModal";
 import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
 import { useTeamMembershipRole } from "@/hooks/useTeamRole";
 import { SEOHead } from "@/components/SEOHead";
+import { KanbanSnapshotDialog } from "@/components/KanbanSnapshotDialog";
 
 export default function Kanban() {
   const { t } = useTranslation();
@@ -220,6 +221,11 @@ export default function Kanban() {
     });
   }, [demands, filters, user?.id, membersByPosition, serviceChildMap]);
 
+  const hasActiveFilters = useMemo(
+    () => Object.values(filters).some((v) => v !== null && v !== false),
+    [filters]
+  );
+
   // Count user's demands
   const myDemandsCount = useMemo(() => {
     if (!demands || !user?.id) return 0;
@@ -294,6 +300,20 @@ export default function Kanban() {
 
           {/* Scheduled demands */}
           <ScheduledDemandsModal boardId={selectedBoardId} teamId={currentTeamId} buttonStyle="standard" />
+
+          {/* Snapshot / download do resumo do quadro */}
+          {selectedBoardId && (
+            <KanbanSnapshotDialog
+              boardName={currentBoard?.name || "Quadro"}
+              authorName={
+                (user?.user_metadata?.full_name as string) || user?.email || "—"
+              }
+              columns={kanbanColumns as any}
+              filteredDemands={filteredDemands as any}
+              allDemands={(demands || []) as any}
+              hasActiveFilters={hasActiveFilters}
+            />
+          )}
 
         </div>
       </div>

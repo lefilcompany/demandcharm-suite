@@ -80,6 +80,7 @@ export function useDemands(boardId?: string) {
           boards(id, name),
           demand_assignees(
             user_id,
+            is_primary,
             profile:profiles(full_name, avatar_url)
           )
         `)
