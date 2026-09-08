@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
+import { isSessionChecked, sessionCheckRedirect } from "@/lib/sessionCheck";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
