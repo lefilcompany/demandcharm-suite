@@ -823,6 +823,19 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     e.dataTransfer.effectAllowed = "move";
   };
 
+  // The whole card is draggable, but interactive controls inside it
+  // (buttons, menus, inputs, links) must keep their normal behaviour.
+  const isCardDragAllowed = (e: React.DragEvent) => {
+    if (readOnly) return false;
+    const target = e.target as HTMLElement | null;
+    if (!target || typeof target.closest !== "function") return true;
+    return !target.closest(
+      'button, a, input, textarea, select, [role="menuitem"], [role="button"], [data-no-card-drag]'
+    );
+  };
+
+
+
 
   const handleDragOver = (e: React.DragEvent, columnKey?: string) => {
     e.preventDefault();
