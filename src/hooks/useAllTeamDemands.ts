@@ -55,6 +55,7 @@ export function useAllTeamDemands(
               boards(id, name),
               demand_assignees(
                 user_id,
+                is_primary,
                 profile:profiles(id, full_name, avatar_url)
               )
             `)
