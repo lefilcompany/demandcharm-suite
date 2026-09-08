@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -259,6 +259,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [subReorderDragOverId, setSubReorderDragOverId] = useState<string | null>(null);
   const subReorderSourceIdRef = useState<{ current: string | null }>({ current: null })[0];
+  const hoverOpenTimerRef = useRef<number | null>(null);
 
   // State for parent-to-subdemand status propagation confirmation
   const [propagateDialog, setPropagateDialog] = useState<{
@@ -822,21 +823,49 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     e.dataTransfer.effectAllowed = "move";
   };
 
+  // The whole card is draggable, but interactive controls inside it
+  // (buttons, menus, inputs, links) must keep their normal behaviour.
+  const isCardDragAllowed = (e: React.DragEvent) => {
+    if (readOnly) return false;
+    const target = e.target as HTMLElement | null;
+    if (!target || typeof target.closest !== "function") return true;
+    return !target.closest(
+      'button, a, input, textarea, select, [role="menuitem"], [role="button"], [data-no-card-drag]'
+    );
+  };
+
+
+
 
   const handleDragOver = (e: React.DragEvent, columnKey?: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (columnKey && dragOverColumn !== columnKey) {
       setDragOverColumn(columnKey);
+      // Hovering a collapsed column while dragging opens it after a short
+      // pause, so the card can be dropped straight into the visible list.
+      if (hoverOpenTimerRef.current) window.clearTimeout(hoverOpenTimerRef.current);
+      hoverOpenTimerRef.current = window.setTimeout(() => {
+        setActiveColumns((prev) => (prev.includes(columnKey) ? prev : [...prev, columnKey]));
+      }, 550);
+    }
+  };
+
+  const clearHoverOpenTimer = () => {
+    if (hoverOpenTimerRef.current) {
+      window.clearTimeout(hoverOpenTimerRef.current);
+      hoverOpenTimerRef.current = null;
     }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    clearHoverOpenTimer();
     setDragOverColumn(null);
   };
 
   const handleDragEnd = () => {
+    clearHoverOpenTimer();
     setDraggedId(null);
     setDragOverColumn(null);
   };
@@ -1514,10 +1543,23 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
         <Card
           key={demand.id}
           data-demand-id={demand.id}
-          draggable={false}
+          draggable={showDragHandleBase}
+          onDragStart={(e) => {
+            if (!isCardDragAllowed(e)) {
+              e.preventDefault();
+              return;
+            }
+            handleDragStart(e, demand.id);
+          }}
+          onDragEnd={() => {
+            handleDragEnd();
+            setSubReorderDragOverId(null);
+            subReorderSourceIdRef.current = null;
+          }}
           className={cn(
             "transition-all cursor-pointer group relative overflow-hidden",
             "hover:shadow-sm",
+            showDragHandleBase && "cursor-grab active:cursor-grabbing",
             draggedId === demand.id && "opacity-50 scale-95",
             showOfflineIndicator && "ring-2 ring-amber-500/50",
             highlightDemandId === demand.id && "ring-2 ring-primary shadow-lg",
@@ -1732,9 +1774,18 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
       <Card
         key={demand.id}
         data-demand-id={demand.id}
-        draggable={false}
+        draggable={showDragHandleBase}
+        onDragStart={(e) => {
+          if (!isCardDragAllowed(e)) {
+            e.preventDefault();
+            return;
+          }
+          handleDragStart(e, demand.id);
+        }}
+        onDragEnd={handleDragEnd}
         className={cn(
           "hover:shadow-md transition-all cursor-pointer group relative",
+          showDragHandleBase && "cursor-grab active:cursor-grabbing",
           draggedId === demand.id && "opacity-50 scale-95",
           showOfflineIndicator && "ring-2 ring-amber-500/50 bg-amber-500/5",
           isParentDemand && "border-l-[3px] border-l-primary bg-orange-50 dark:bg-orange-950/30 shadow-sm",
