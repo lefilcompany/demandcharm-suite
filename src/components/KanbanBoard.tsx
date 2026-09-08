@@ -1583,7 +1583,8 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                 {/* Compact badges */}
                 <div className="flex flex-wrap gap-1 mb-2.5">
                   {demand.priority && (
-                    <Badge variant="outline" className={cn("text-[10px] capitalize px-1.5 py-0 h-[18px]", priorityColors[demand.priority] || "bg-muted text-muted-foreground")}>
+                    <Badge variant="outline" className={cn("text-[10px] font-semibold capitalize px-1.5 py-0 h-[18px] gap-1 border", priorityColors[demand.priority] || "bg-muted text-muted-foreground")}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
                       {demand.priority}
                     </Badge>
                   )}
@@ -1855,7 +1856,8 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   <TooltipProvider delayDuration={300}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Badge variant="outline" className={cn("text-[10px] py-0 px-1.5 h-5 capitalize", priorityColors[demand.priority] || "bg-muted text-muted-foreground")}>
+                        <Badge variant="outline" className={cn("text-[10px] font-semibold py-0 px-1.5 h-5 capitalize gap-1 border", priorityColors[demand.priority] || "bg-muted text-muted-foreground")}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
                           {demand.priority}
                         </Badge>
                       </TooltipTrigger>
