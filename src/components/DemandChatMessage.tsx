@@ -171,6 +171,21 @@ export function DemandChatMessage({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
+        {replyTo && (
+          <button
+            type="button"
+            onClick={() => onJumpToMessage?.(replyTo.id)}
+            className="mb-1 flex w-full max-w-full items-center gap-1.5 rounded-md border-l-2 border-primary/60 bg-muted/50 px-2 py-1 text-left transition-colors hover:bg-muted"
+          >
+            <Reply className="h-3 w-3 shrink-0 text-primary/70" />
+            <span className="text-[11px] font-semibold text-primary/80 shrink-0">
+              {replyTo.author || "Mensagem"}
+            </span>
+            <span className="truncate text-[11px] text-muted-foreground">
+              {replyTo.preview || "mensagem"}
+            </span>
+          </button>
+        )}
         {!isGrouped && (
           <div className="flex items-baseline gap-2 mb-0.5">
             <button
