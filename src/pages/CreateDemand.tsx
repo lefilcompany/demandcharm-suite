@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { useCreateDemand } from "@/hooks/useDemands";
-import { useBoardStatuses } from "@/hooks/useBoardStatuses";
+import { useBoardStatuses, isBacklogStage } from "@/hooks/useBoardStatuses";
 import { useSelectedTeam } from "@/contexts/TeamContext";
 import { useSelectedBoardSafe } from "@/contexts/BoardContext";
 import { useCanCreateDemandOnBoard } from "@/hooks/useBoardScope";
@@ -102,6 +102,12 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
       color: bs.status.color,
     }));
   }, [boardStatuses]);
+
+  // Backlog é uma etapa opcional para demandas ainda sem prazo definido
+  const isBacklogSelected = useMemo(
+    () => isBacklogStage(statuses.find(s => s.id === statusId)?.name),
+    [statuses, statusId]
+  );
 
   const [successState, setSuccessState] = useState<{
     demandId: string;
@@ -323,7 +329,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
       toast.error("Defina a prioridade da demanda");
       return;
     }
-    if (!dueDate) {
+    if (!dueDate && !isBacklogSelected) {
       toast.error("Defina a data de entrega da demanda");
       return;
     }
@@ -649,7 +655,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
       // Parent step — require minimum fields + assignees + priority + due date
       const baseValid = !!(title.trim() && statusId && activeBoardId && canCreate !== false && (hasBoardServices ? isServiceValid() : true));
       const assigneesValid = canAssignResponsibles ? assigneeIds.length > 0 : true;
-      return baseValid && assigneesValid && !!priority && !!dueDate;
+      return baseValid && assigneesValid && !!priority && (!!dueDate || isBacklogSelected);
     }
     if (currentStep > 0 && currentStep <= subdemandCount) {
       // Subdemand step — require title + assignees + priority + due date
@@ -710,7 +716,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     title.trim() && statusId && activeBoardId && canCreate !== false &&
     (hasBoardServices ? isServiceValid() : true) &&
     (canAssignResponsibles ? assigneeIds.length > 0 : true) &&
-    !!priority && !!dueDate
+    !!priority && (!!dueDate || isBacklogSelected)
   );
 
   // Step title
@@ -1014,14 +1020,16 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="dueDate">Data de Entrega *</Label>
+                        <Label htmlFor="dueDate">
+                          {isBacklogSelected ? "Data de Entrega (opcional)" : "Data de Entrega *"}
+                        </Label>
                         <Input
                           id="dueDate"
                           type="date"
                           value={dueDate}
                           onChange={(e) => setDueDate(e.target.value)}
                           className="h-8"
-                          required
+                          required={!isBacklogSelected}
                         />
                       </div>
 

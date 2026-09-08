@@ -50,6 +50,7 @@ export function CreateDemandQuickDialog({
   const navigate = useNavigate();
   const { selectedBoardId, currentTeamId } = useSelectedBoard();
   const { data: statuses } = useDemandStatuses();
+
   const { data: boardServices } = useBoardServices(selectedBoardId || undefined);
   const { data: boardRole } = useBoardRole(selectedBoardId);
   const createDemand = useCreateDemand();
@@ -131,7 +132,7 @@ export function CreateDemandQuickDialog({
       return;
     }
 
-    if (!dueDate) {
+    if (!dueDate && !isBacklogSelected) {
       toast.error("Defina a data de entrega");
       return;
     }
@@ -142,7 +143,7 @@ export function CreateDemandQuickDialog({
         description: description.trim() || null,
         priority,
         status_id: statusId || defaultStatusId,
-        due_date: dueDate,
+        due_date: dueDate || null,
         board_id: selectedBoardId,
         team_id: currentTeamId,
         service_id: serviceId || null,
@@ -315,13 +316,15 @@ export function CreateDemandQuickDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="quick-due-date">Data de Entrega *</Label>
+              <Label htmlFor="quick-due-date">
+                {isBacklogSelected ? "Data de Entrega (opcional)" : "Data de Entrega *"}
+              </Label>
               <Input
                 id="quick-due-date"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                required
+                required={!isBacklogSelected}
               />
             </div>
           </div>
