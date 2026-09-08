@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { MentionInput } from "@/components/MentionInput";
 import { PendingFile } from "@/components/InlineFileUploader";
-import { Send, Paperclip, ClipboardPaste, X, Image, FileText, File as FileIcon, Loader2, Check } from "lucide-react";
+import { Send, Paperclip, ClipboardPaste, X, Image, FileText, File as FileIcon, Loader2, Check, Reply } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -128,6 +128,27 @@ export function DemandChatInput({
       "border-t bg-background/80 backdrop-blur-sm px-1.5 py-2",
       channel === "internal" && "border-t-blue-500/30"
     )}>
+      {/* Reply preview */}
+      {replyTo && (
+        <div className="mb-2 flex items-center gap-2 rounded-md border-l-2 border-primary bg-muted/50 px-2 py-1.5">
+          <Reply className="h-3.5 w-3.5 shrink-0 text-primary" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold text-primary">
+              Respondendo a {replyTo.author}
+            </p>
+            <p className="truncate text-[11px] text-muted-foreground">{replyTo.preview}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancelReply}
+            className="shrink-0 text-muted-foreground/60 transition-colors hover:text-destructive"
+            aria-label="Cancelar resposta"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Pending files preview - compact chips */}
       {pendingFiles.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
