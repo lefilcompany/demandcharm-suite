@@ -34,6 +34,7 @@ import { ScheduledDemandsModal } from "@/components/ScheduledDemandsModal";
 import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
 import { useTeamMembershipRole } from "@/hooks/useTeamRole";
 import { SEOHead } from "@/components/SEOHead";
+import { KanbanSnapshotDialog } from "@/components/KanbanSnapshotDialog";
 
 export default function Kanban() {
   const { t } = useTranslation();
