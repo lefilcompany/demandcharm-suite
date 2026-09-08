@@ -124,7 +124,9 @@ interface KanbanBoardProps {
   boardId?: string;
   initialColumnsOpen?: boolean;
   showBoardBadge?: boolean; // Show board name badge on each card
+  highlightDemandId?: string | null; // Card to highlight when returning from a demand
 }
+
 
 const priorityColors: Record<string, string> = {
   baixa: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
