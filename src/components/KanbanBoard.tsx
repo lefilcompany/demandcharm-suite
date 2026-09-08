@@ -1760,7 +1760,15 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
       <Card
         key={demand.id}
         data-demand-id={demand.id}
-        draggable={false}
+        draggable={showDragHandleBase}
+        onDragStart={(e) => {
+          if (!isCardDragAllowed(e)) {
+            e.preventDefault();
+            return;
+          }
+          handleDragStart(e, demand.id);
+        }}
+        onDragEnd={handleDragEnd}
         className={cn(
           "hover:shadow-md transition-all cursor-pointer group relative",
           draggedId === demand.id && "opacity-50 scale-95",
