@@ -1322,6 +1322,7 @@ export type Database = {
           team_id: string
           time_in_progress_seconds: number | null
           title: string
+          trash_expires_at: string | null
           updated_at: string
         }
         Insert: {
@@ -1352,6 +1353,7 @@ export type Database = {
           team_id: string
           time_in_progress_seconds?: number | null
           title: string
+          trash_expires_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -1382,6 +1384,7 @@ export type Database = {
           team_id?: string
           time_in_progress_seconds?: number | null
           title?: string
+          trash_expires_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3953,6 +3956,7 @@ export type Database = {
         Args: { p_new_status_id: string; p_parent_id: string }
         Returns: Json
       }
+      purge_expired_trashed_demands: { Args: never; Returns: number }
       redeem_trial_coupon: {
         Args: { p_code: string; p_team_id: string }
         Returns: Json
