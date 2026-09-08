@@ -636,9 +636,9 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
 
   const filteredMembers = useMemo(() => {
     if (!teamMembers) return [];
-    // Show ALL team members; owners are auto-added as moderators (non-removable)
+    // Show ALL team members (owners included) — nobody is auto-added
     const sorted = [...teamMembers].sort((a, b) =>
-      a.role === b.role ? 0 : a.role === "owner" ? 1 : -1
+      a.profile.full_name.localeCompare(b.profile.full_name)
     );
     if (!memberSearch.trim()) return sorted;
     const q = memberSearch.toLowerCase();
