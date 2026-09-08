@@ -909,8 +909,9 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
         {stepIdx === 2 && (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Selecione membros adicionais e defina o cargo de cada um neste quadro. Você (criador) será adicionado como Administrador automaticamente, e administradores da equipe entram como Coordenadores.
+              Selecione os participantes deste quadro e defina o cargo de cada um. Você (criador) será adicionado como Administrador automaticamente; os demais só entram se forem selecionados aqui.
             </p>
+
 
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
