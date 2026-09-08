@@ -203,7 +203,7 @@ function useIsLargeDesktop() {
 // No limit on open columns - users can open all if they want
 // Horizontal scroll handles overflow
 
-export function KanbanBoard({ demands, columns: propColumns, onDemandClick, readOnly = false, userRole, boardName, boardId, initialColumnsOpen = false, showBoardBadge = false }: KanbanBoardProps) {
+export function KanbanBoard({ demands, columns: propColumns, onDemandClick, readOnly = false, userRole, boardName, boardId, initialColumnsOpen = false, showBoardBadge = false, highlightDemandId = null }: KanbanBoardProps) {
   // Use provided columns or fallback to default
   const allColumns = propColumns && propColumns.length > 0 ? propColumns : DEFAULT_COLUMNS;
   
@@ -1501,12 +1501,14 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
       return (
         <Card
           key={demand.id}
+          data-demand-id={demand.id}
           draggable={false}
           className={cn(
             "transition-all cursor-pointer group relative overflow-hidden",
             "hover:shadow-sm",
             draggedId === demand.id && "opacity-50 scale-95",
             showOfflineIndicator && "ring-2 ring-amber-500/50",
+            highlightDemandId === demand.id && "ring-2 ring-primary shadow-lg",
           )}
         >
           <CardContent className="p-2.5 sm:p-3">
@@ -1716,12 +1718,14 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     return (
       <Card
         key={demand.id}
+        data-demand-id={demand.id}
         draggable={false}
         className={cn(
           "hover:shadow-md transition-all cursor-pointer group relative",
           draggedId === demand.id && "opacity-50 scale-95",
           showOfflineIndicator && "ring-2 ring-amber-500/50 bg-amber-500/5",
           isParentDemand && "border-l-[3px] border-l-primary bg-orange-50 dark:bg-orange-950/30 shadow-sm",
+          highlightDemandId === demand.id && "ring-2 ring-primary shadow-lg",
         )}
       >
         <CardContent className={cn("p-3 sm:p-4", isParentDemand && "p-2.5 sm:p-3")}>

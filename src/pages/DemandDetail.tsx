@@ -775,8 +775,8 @@ export default function DemandDetail() {
       {/* Breadcrumbs */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <PageBreadcrumb items={[
-          { label: "Kanban", icon: Kanban, href: "/kanban" },
-          { label: "Lista", icon: List, href: "/demands", state: { viewMode: "table" } },
+          { label: "Kanban", icon: Kanban, href: "/kanban", state: { highlightDemandId: id } },
+
           ...(demand?.parent_demand_id && parentDemand ? [{
             label: parentDemand.board_sequence_number
               ? `${formatDemandCode(parentDemand.board_sequence_number)} ${parentDemand.title}`
