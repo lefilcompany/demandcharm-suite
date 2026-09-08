@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Users, LogOut } from "lucide-react";
 import { TeamSelector } from "@/components/TeamSelector";
 import { supabase } from "@/integrations/supabase/client";
+import { isSessionChecked, sessionCheckRedirect } from "@/lib/sessionCheck";
 import authBg from "@/assets/auth-background.jpg";
 import logoSoma from "@/assets/logo-soma.png";
 
