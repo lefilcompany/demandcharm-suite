@@ -1198,10 +1198,11 @@ var getServiceTool = defineTool9({
     return ok({ service: data }, { open_url: urls.service(service_id) });
   }
 });
+var CATALOG_LOCKED = "The service catalog is fixed and centrally managed. Services cannot be created, updated or deleted.";
 var createServiceTool = defineTool9({
   name: "create_service",
   title: "Create service",
-  description: "Create a new service in a team catalog.",
+  description: "Disabled: the service catalog is fixed and read-only.",
   inputSchema: {
     team_id: zUuid,
     name: z10.string().min(1).max(200),
@@ -1210,19 +1211,13 @@ var createServiceTool = defineTool9({
     price_cents: z10.number().int().min(0).optional(),
     parent_id: zUuid.optional()
   },
-  annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
-  handler: async (input, ctx) => {
-    const a = requireAuth(ctx);
-    if (a) return a;
-    const { data, error } = await sb(ctx).from("services").insert({ ...input, created_by: ctx.getUserId() }).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return okCreated({ service: data });
-  }
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async () => err("FORBIDDEN", CATALOG_LOCKED)
 });
 var updateServiceTool = defineTool9({
   name: "update_service",
   title: "Update service",
-  description: "Update a service's fields.",
+  description: "Disabled: the service catalog is fixed and read-only.",
   inputSchema: {
     service_id: zUuid,
     name: z10.string().min(1).max(200).optional(),
@@ -1230,30 +1225,16 @@ var updateServiceTool = defineTool9({
     estimated_hours: z10.number().min(0).optional(),
     price_cents: z10.number().int().min(0).optional()
   },
-  annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
-  handler: async ({ service_id, ...patch }, ctx) => {
-    const a = requireAuth(ctx);
-    if (a) return a;
-    Object.keys(patch).forEach((k) => patch[k] === void 0 && delete patch[k]);
-    if (!Object.keys(patch).length) return err("VALIDATION", "No fields to update");
-    const { data, error } = await sb(ctx).from("services").update(patch).eq("id", service_id).select().maybeSingle();
-    if (error) return fromPgError(error);
-    return okUpdated({ service: data });
-  }
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async () => err("FORBIDDEN", CATALOG_LOCKED)
 });
 var deleteServiceTool = defineTool9({
   name: "delete_service",
   title: "Delete service",
-  description: "Delete a service. Fails if the service is referenced by demands.",
+  description: "Disabled: the service catalog is fixed and read-only.",
   inputSchema: { service_id: zUuid },
-  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ service_id }, ctx) => {
-    const a = requireAuth(ctx);
-    if (a) return a;
-    const { error } = await sb(ctx).from("services").delete().eq("id", service_id);
-    if (error) return fromPgError(error);
-    return okDeleted(service_id);
-  }
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async () => err("FORBIDDEN", CATALOG_LOCKED)
 });
 
 // src/lib/mcp/tools/notes/index.ts
