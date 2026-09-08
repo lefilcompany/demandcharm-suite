@@ -70,6 +70,9 @@ export function DemandChatMessage({
   onEditingContentChange,
   isSavingEdit,
   onNavigateUser,
+  onReply,
+  onJumpToMessage,
+  isHighlighted,
 }: ChatMessageProps) {
   const [isHovered, setIsHovered] = useState(false);
   const isEditing = editingId === interaction.id;
@@ -77,9 +80,13 @@ export function DemandChatMessage({
   const isAdjustment = interaction.interaction_type === "adjustment_request";
   const canEdit = isOwnMessage && interaction.interaction_type === "comment";
 
-  const metadata = interaction.metadata as { adjustment_type?: string } | null;
+  const metadata = interaction.metadata as {
+    adjustment_type?: string;
+    reply_to?: { id: string; author?: string | null; preview?: string | null };
+  } | null;
   const adjustmentType = metadata?.adjustment_type || "external";
   const isInternal = isAdjustment && adjustmentType === "internal";
+  const replyTo = metadata?.reply_to && metadata.reply_to.id ? metadata.reply_to : null;
 
   const createdAt = new Date(interaction.created_at);
   const timeStr = format(createdAt, "HH:mm");
