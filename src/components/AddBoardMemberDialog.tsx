@@ -290,6 +290,9 @@ export function AddBoardMemberDialog({ trigger, boardId: propBoardId }: AddBoard
                               {config.icon}
                               {config.label}
                             </Badge>
+                            {alreadyMember && (
+                              <p className="text-[10px] text-muted-foreground">Já está no quadro</p>
+                            )}
                           </div>
                         </button>
                       );
