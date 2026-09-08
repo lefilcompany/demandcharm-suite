@@ -129,9 +129,10 @@ interface KanbanBoardProps {
 
 
 const priorityColors: Record<string, string> = {
-  baixa: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  média: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  alta: "bg-rose-500/10 text-rose-600 border-rose-500/20",
+  baixa: "bg-emerald-500 text-white border-emerald-600",
+  média: "bg-amber-500 text-white border-amber-600",
+  alta: "bg-rose-500 text-white border-rose-600",
+  urgente: "bg-red-600 text-white border-red-700",
 };
 
 // Check if a color is a hex color (custom) vs a Tailwind class (system)
