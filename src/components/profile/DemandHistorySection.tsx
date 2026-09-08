@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { getStatusDisplayName } from "@/hooks/useBoardStatuses";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -614,7 +615,7 @@ export function DemandHistorySection({ userId, isPublic, embedded = false }: Pro
                                 className="text-[10px] text-muted-foreground"
                                 style={{ color: d.demand_statuses.color }}
                               >
-                                {d.demand_statuses.name}
+                                {getStatusDisplayName(d.demand_statuses.name)}
                               </span>
                             )}
                           </div>

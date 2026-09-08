@@ -8,7 +8,7 @@ import { DemandChat } from "@/components/DemandChat";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useDemandById, useCreateInteraction, useUpdateDemand } from "@/hooks/useDemands";
-import { useBoardStatuses, isAdjustmentStage, isTimerStage } from "@/hooks/useBoardStatuses";
+import { useBoardStatuses, isAdjustmentStage, isTimerStage, getStatusDisplayName } from "@/hooks/useBoardStatuses";
 import { useDemandAssignees, useSetAssignees } from "@/hooks/useDemandAssignees";
 import { useBoard } from "@/hooks/useBoards";
 import { ChangeBoardDialog } from "@/components/ChangeBoardDialog";
@@ -974,7 +974,7 @@ export default function DemandDetail() {
                       <div className="w-3 h-3 rounded-full flex-shrink-0" style={{
                       backgroundColor: demand.demand_statuses.color
                     }} />
-                      {demand.demand_statuses.name}
+                      {getStatusDisplayName(demand.demand_statuses.name)}
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>

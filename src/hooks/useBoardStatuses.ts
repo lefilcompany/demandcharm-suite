@@ -82,7 +82,7 @@ export const DEFAULT_COLUMNS: KanbanColumn[] = [
   { key: "Em Ajuste", label: "Em Ajuste", color: "bg-purple-500/10", shortLabel: "Ajuste", statusId: "", adjustmentType: "none" },
   { key: "Aprovação Interna", label: "Aprovação Interna", color: "bg-blue-500/10", shortLabel: "APROVAÇÃO INTERNA", statusId: "", adjustmentType: "internal" },
   { key: "Aprovação do Cliente", label: "Aprovação do Cliente", color: "bg-amber-500/10", shortLabel: "Aprovação", statusId: "", adjustmentType: "external" },
-  { key: "Entregue", label: "Entregue", color: "bg-emerald-500/10", shortLabel: "Entregue", statusId: "", adjustmentType: "none" },
+  { key: "Entregue", label: "Fechadas", color: "bg-emerald-500/10", shortLabel: "Fechadas", statusId: "", adjustmentType: "none" },
 ];
 
 // Map status names to colors
@@ -106,8 +106,19 @@ const statusShortLabelMap: Record<string, string> = {
   "Em Ajuste": "Ajuste",
   "Aprovação Interna": "APROVAÇÃO INTERNA",
   "Aprovação do Cliente": "Aprovação",
-  "Entregue": "Entregue",
+  "Entregue": "Fechadas",
 };
+
+// Display names for system statuses (internal key stays "Entregue")
+const statusDisplayNameMap: Record<string, string> = {
+  "Entregue": "Fechadas",
+};
+
+/** Human-facing name of a status (e.g. "Entregue" is shown as "Fechadas"). */
+export function getStatusDisplayName(statusName: string | null | undefined): string {
+  if (!statusName) return "";
+  return statusDisplayNameMap[statusName] || statusName;
+}
 
 // Get color class based on status name (fallback for system statuses)
 export function getStatusColor(statusName: string): string {
@@ -135,7 +146,7 @@ export function boardStatusToColumn(boardStatus: BoardStatus): KanbanColumn {
   
   return {
     key: boardStatus.status.name,
-    label: boardStatus.status.name,
+    label: getStatusDisplayName(boardStatus.status.name),
     // Use the actual color from database, fallback to mapped color for system statuses
     color: isSystemStatus ? getStatusColor(boardStatus.status.name) : boardStatus.status.color,
     shortLabel: getShortLabel(boardStatus.status.name),
