@@ -146,8 +146,9 @@ export function DemandChatMessage({
     <div
       className={cn(
         "group relative flex gap-2.5 px-3 transition-colors",
-        isGrouped ? "py-0.5" : "pt-3 pb-0.5",
-        isHovered && "bg-muted/30"
+        isGrouped && !replyTo ? "py-0.5" : "pt-3 pb-0.5",
+        isHovered && "bg-muted/30",
+        isHighlighted && "bg-primary/10 ring-1 ring-inset ring-primary/40 rounded-md"
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
