@@ -231,6 +231,15 @@ export default function Kanban() {
     }).length;
   }, [demands, user?.id]);
 
+  // When returning from a demand detail page, guarantee the previously opened
+  // demand stays visible even if active filters would otherwise hide it.
+  const visibleDemands = useMemo(() => {
+    if (!highlightDemandId) return filteredDemands;
+    if (filteredDemands.some((d) => d.id === highlightDemandId)) return filteredDemands;
+    const highlighted = demands?.find((d) => d.id === highlightDemandId);
+    return highlighted ? [...filteredDemands, highlighted] : filteredDemands;
+  }, [filteredDemands, demands, highlightDemandId]);
+
   return (
     <div className="flex flex-col h-full animate-fade-in space-y-4">
       <SEOHead title="Kanban" path="/kanban" />
@@ -305,7 +314,7 @@ export default function Kanban() {
 
         ) : (
           <KanbanBoard 
-            demands={filteredDemands} 
+            demands={visibleDemands} 
             columns={kanbanColumns}
             onDemandClick={id => navigate(`/demands/${id}`, { state: { from: "kanban" } })} 
             readOnly={isReadOnly}
