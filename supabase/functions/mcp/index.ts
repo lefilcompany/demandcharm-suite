@@ -7,7 +7,7 @@ import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.22.2";
 
 // src/lib/mcp/tools/session/index.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z } from "npm:zod@^4.4.3";
+import { z } from "npm:zod@3.23.8";
 
 // src/lib/mcp/_shared/supabase.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.110.7";
@@ -186,10 +186,10 @@ var updateProfileTool = defineTool({
 
 // src/lib/mcp/tools/teams/index.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z3 } from "npm:zod@^4.4.3";
+import { z as z3 } from "npm:zod@3.23.8";
 
 // src/lib/mcp/_shared/zod-common.ts
-import { z as z2 } from "npm:zod@^4.4.3";
+import { z as z2 } from "npm:zod@3.23.8";
 var zUuid = z2.string().uuid();
 var zIsoDate = z2.string().regex(/^\d{4}-\d{2}-\d{2}$/, "ISO date YYYY-MM-DD");
 var zIsoDateTime = z2.string().datetime({ offset: true });
@@ -297,7 +297,7 @@ var getPlanLimitsTool = defineTool2({
 
 // src/lib/mcp/tools/boards/index.ts
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z4 } from "npm:zod@^4.4.3";
+import { z as z4 } from "npm:zod@3.23.8";
 var listBoardsTool = defineTool3({
   name: "list_boards",
   title: "List boards",
@@ -482,7 +482,7 @@ var attachServiceToBoardTool = defineTool3({
 
 // src/lib/mcp/tools/demands/index.ts
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z5 } from "npm:zod@^4.4.3";
+import { z as z5 } from "npm:zod@3.23.8";
 var DEMAND_COLS = "id, title, description, status_id, board_id, team_id, due_date, original_due_date, priority, board_sequence_number, service_id, parent_demand_id, is_overdue, archived, delivered_at, created_by, created_at, updated_at";
 var listDemandsTool = defineTool4({
   name: "list_demands",
@@ -817,7 +817,7 @@ var demandDeadlineHistoryTool = defineTool4({
 
 // src/lib/mcp/tools/subtasks/index.ts
 import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z6 } from "npm:zod@^4.4.3";
+import { z as z6 } from "npm:zod@3.23.8";
 var listSubtasksTool = defineTool5({
   name: "list_subtasks",
   title: "List subtasks",
@@ -891,7 +891,7 @@ var deleteSubtaskTool = defineTool5({
 
 // src/lib/mcp/tools/comments/index.ts
 import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z7 } from "npm:zod@^4.4.3";
+import { z as z7 } from "npm:zod@3.23.8";
 var listCommentsTool = defineTool6({
   name: "list_comments",
   title: "List comments",
@@ -947,7 +947,7 @@ var deleteCommentTool = defineTool6({
 
 // src/lib/mcp/tools/attachments/index.ts
 import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z8 } from "npm:zod@^4.4.3";
+import { z as z8 } from "npm:zod@3.23.8";
 var listAttachmentsTool = defineTool7({
   name: "list_attachments",
   title: "List attachments",
@@ -1055,7 +1055,7 @@ var confirmAttachmentUploadTool = defineTool7({
 
 // src/lib/mcp/tools/time/index.ts
 import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z9 } from "npm:zod@^4.4.3";
+import { z as z9 } from "npm:zod@3.23.8";
 var startDemandTimerTool = defineTool8({
   name: "start_demand_timer",
   title: "Start demand timer",
@@ -1166,7 +1166,7 @@ var logTimeEntryTool = defineTool8({
 
 // src/lib/mcp/tools/services/index.ts
 import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z10 } from "npm:zod@^4.4.3";
+import { z as z10 } from "npm:zod@3.23.8";
 var listServicesTool = defineTool9({
   name: "list_services",
   title: "List services",
@@ -1239,7 +1239,7 @@ var deleteServiceTool = defineTool9({
 
 // src/lib/mcp/tools/notes/index.ts
 import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z11 } from "npm:zod@^4.4.3";
+import { z as z11 } from "npm:zod@3.23.8";
 var listNotesTool = defineTool10({
   name: "list_notes",
   title: "List notes",
@@ -1331,7 +1331,7 @@ var archiveNoteTool = defineTool10({
 
 // src/lib/mcp/tools/projects/index.ts
 import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z12 } from "npm:zod@^4.4.3";
+import { z as z12 } from "npm:zod@3.23.8";
 var listProjectsTool = defineTool11({
   name: "list_projects",
   title: "List projects (folders)",
@@ -1396,7 +1396,7 @@ var linkDemandToProjectTool = defineTool11({
 
 // src/lib/mcp/tools/requests/index.ts
 import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z13 } from "npm:zod@^4.4.3";
+import { z as z13 } from "npm:zod@3.23.8";
 var listDemandRequestsTool = defineTool12({
   name: "list_demand_requests",
   title: "List demand requests",
@@ -1483,7 +1483,7 @@ var respondToRequestTool = defineTool12({
 
 // src/lib/mcp/tools/templates/index.ts
 import { defineTool as defineTool13 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z14 } from "npm:zod@^4.4.3";
+import { z as z14 } from "npm:zod@3.23.8";
 var listTemplatesTool = defineTool13({
   name: "list_templates",
   title: "List demand templates",
@@ -1577,7 +1577,7 @@ var deleteTemplateTool = defineTool13({
 
 // src/lib/mcp/tools/recurring/index.ts
 import { defineTool as defineTool14 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z15 } from "npm:zod@^4.4.3";
+import { z as z15 } from "npm:zod@3.23.8";
 var listRecurringDemandsTool = defineTool14({
   name: "list_recurring_demands",
   title: "List recurring demands",
@@ -1710,7 +1710,7 @@ var deleteRecurringTool = defineTool14({
 
 // src/lib/mcp/tools/notifications/index.ts
 import { defineTool as defineTool15 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z16 } from "npm:zod@^4.4.3";
+import { z as z16 } from "npm:zod@3.23.8";
 var listNotificationsTool = defineTool15({
   name: "list_notifications",
   title: "List my notifications",
@@ -1799,7 +1799,7 @@ var updateNotificationPreferencesTool = defineTool15({
 
 // src/lib/mcp/tools/sharing/index.ts
 import { defineTool as defineTool16 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z17 } from "npm:zod@^4.4.3";
+import { z as z17 } from "npm:zod@3.23.8";
 var createDemandShareTokenTool = defineTool16({
   name: "create_demand_share_token",
   title: "Create demand share link",
@@ -1849,7 +1849,7 @@ var revokeDemandShareTokenTool = defineTool16({
 
 // src/lib/mcp/tools/analytics/index.ts
 import { defineTool as defineTool17 } from "npm:@lovable.dev/mcp-js@0.22.2";
-import { z as z18 } from "npm:zod@^4.4.3";
+import { z as z18 } from "npm:zod@3.23.8";
 var boardSummaryStatsTool = defineTool17({
   name: "board_summary_stats",
   title: "Board summary stats",
