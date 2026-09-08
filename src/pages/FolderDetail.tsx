@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import { isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
 import { SEOHead } from "@/components/SEOHead";
+import { ProjectSnapshotDialog } from "@/components/ProjectSnapshotDialog";
 
 type ViewMode = "table" | "grid" | "calendar";
 const TABLET_BREAKPOINT = 1024;
@@ -269,6 +270,18 @@ export default function FolderDetail() {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <ProjectSnapshotDialog
+            projectName={folder.name}
+            authorName={(user?.user_metadata as any)?.full_name || user?.email || "—"}
+            filteredDemands={filteredDemands as any}
+            allDemands={folderDemands as any}
+            hasActiveFilters={
+              !!searchQuery.trim() ||
+              hideDelivered ||
+              showOnlyMine ||
+              Object.values(filters).some(Boolean)
+            }
+          />
           {canEdit && (
             <Tooltip>
               <TooltipTrigger asChild>

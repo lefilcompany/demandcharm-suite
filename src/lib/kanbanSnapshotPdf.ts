@@ -27,7 +27,10 @@ function hexToRgb(hex?: string): [number, number, number] {
   ];
 }
 
-function drawHeader(doc: jsPDF, snapshot: KanbanSnapshot) {
+export function drawHeader(
+  doc: jsPDF,
+  meta: { title: string; subtitle: string; generatedAt: Date; scopeLabel: string; authorName: string }
+) {
   const w = doc.internal.pageSize.getWidth();
 
   doc.setFillColor(...GRAPHITE);
@@ -44,23 +47,23 @@ function drawHeader(doc: jsPDF, snapshot: KanbanSnapshot) {
   doc.text("S+", 20, 17.5, { align: "center" });
 
   doc.setFontSize(15);
-  doc.text("Resumo do Kanban", 32, 14);
+  doc.text(meta.title, 32, 14);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(220, 220, 220);
-  doc.text(snapshot.boardName, 32, 21);
+  doc.text(meta.subtitle, 32, 21);
 
   doc.setFontSize(8);
   doc.text(
-    `${snapshot.generatedAt.toLocaleString("pt-BR")}  ·  ${snapshot.scopeLabel}`,
+    `${meta.generatedAt.toLocaleString("pt-BR")}  ·  ${meta.scopeLabel}`,
     w - 14,
     14,
     { align: "right" }
   );
-  doc.text(`Gerado por ${snapshot.authorName}`, w - 14, 21, { align: "right" });
+  doc.text(`Gerado por ${meta.authorName}`, w - 14, 21, { align: "right" });
 }
 
-function drawFooter(doc: jsPDF) {
+export function drawFooter(doc: jsPDF) {
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
   const total = doc.getNumberOfPages();
@@ -76,7 +79,7 @@ function drawFooter(doc: jsPDF) {
   }
 }
 
-function sectionTitle(doc: jsPDF, title: string, y: number): number {
+export function sectionTitle(doc: jsPDF, title: string, y: number): number {
   doc.setFillColor(...ORANGE);
   doc.rect(14, y - 4.2, 2.6, 6, "F");
   doc.setFont("helvetica", "bold");
@@ -86,7 +89,7 @@ function sectionTitle(doc: jsPDF, title: string, y: number): number {
   return y + 5;
 }
 
-function drawOverview(doc: jsPDF, snapshot: KanbanSnapshot, y: number): number {
+export function drawOverview(doc: jsPDF, snapshot: KanbanSnapshot, y: number): number {
   const w = doc.internal.pageSize.getWidth();
   const items: { label: string; value: number; accent?: boolean }[] = [
     { label: "Total", value: snapshot.overview.total },
@@ -126,12 +129,24 @@ function lastY(doc: jsPDF, fallback: number): number {
   return typeof y === "number" ? y : fallback;
 }
 
-export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+export interface SnapshotPdfMeta {
+  title: string;
+  subtitle: string;
+  generatedAt: Date;
+  scopeLabel: string;
+  authorName: string;
+}
+
+/** Renders the full set of snapshot blocks (panorama, stages, people, details). */
+export function renderSnapshotSections(
+  doc: jsPDF,
+  snapshot: KanbanSnapshot,
+  startY: number,
+  meta: SnapshotPdfMeta
+): number {
   const w = doc.internal.pageSize.getWidth();
 
-  drawHeader(doc, snapshot);
-  let y = 44;
+  let y = startY;
   y = sectionTitle(doc, "Panorama", y);
   y = drawOverview(doc, snapshot, y);
 
@@ -150,7 +165,8 @@ export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
       2: { cellWidth: 32, halign: "center" },
       3: { cellWidth: 28, halign: "center" },
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: 14, right: 14, top: 44 },
+    didDrawPage: () => drawHeader(doc, meta),
     didParseCell: (data) => {
       if (data.section === "body" && data.column.index === 0) {
         const stage = snapshot.stages[data.row.index];
@@ -164,7 +180,7 @@ export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
   // Por responsável
   if (y > doc.internal.pageSize.getHeight() - 60) {
     doc.addPage();
-    drawHeader(doc, snapshot);
+    drawHeader(doc, meta);
     y = 44;
   }
   y = sectionTitle(doc, "Por responsável", y);
@@ -188,7 +204,8 @@ export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
       3: { cellWidth: 28, halign: "center" },
       4: { cellWidth: 36, halign: "center" },
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: 14, right: 14, top: 44 },
+    didDrawPage: () => drawHeader(doc, meta),
     didParseCell: (data) => {
       if (data.section === "body" && data.column.index === 3 && data.cell.text[0] !== "0") {
         data.cell.styles.textColor = DANGER;
@@ -204,7 +221,7 @@ export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
     .forEach((stage) => {
       if (y > doc.internal.pageSize.getHeight() - 45) {
         doc.addPage();
-        drawHeader(doc, snapshot);
+        drawHeader(doc, meta);
         y = 44;
       }
 
@@ -249,7 +266,8 @@ export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
           5: { cellWidth: 40 },
           6: { cellWidth: 30, halign: "center" },
         },
-        margin: { left: 14, right: 14 },
+        margin: { left: 14, right: 14, top: 44 },
+    didDrawPage: () => drawHeader(doc, meta),
         didParseCell: (data) => {
           if (data.section !== "body") return;
           const row = stage.rows[data.row.index];
@@ -269,6 +287,20 @@ export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
       y = lastY(doc, y) + 9;
     });
 
+  return y;
+}
+
+export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const meta: SnapshotPdfMeta = {
+    title: "Resumo do Kanban",
+    subtitle: snapshot.boardName,
+    generatedAt: snapshot.generatedAt,
+    scopeLabel: snapshot.scopeLabel,
+    authorName: snapshot.authorName,
+  };
+  drawHeader(doc, meta);
+  renderSnapshotSections(doc, snapshot, 44, meta);
   drawFooter(doc);
 
   const slug = snapshot.boardName
