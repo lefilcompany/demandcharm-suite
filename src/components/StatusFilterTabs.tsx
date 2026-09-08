@@ -10,6 +10,7 @@ export const DELIVERED_LATE_FILTER_ID = "__delivered_late__";
 
 // Ordem fixa dos status do sistema
 const STATUS_ORDER = [
+  "Backlog",
   "A Iniciar",
   "Tarefas Internas",
   "Fazendo",
