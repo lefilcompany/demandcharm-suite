@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { getStatusDisplayName } from "@/hooks/useBoardStatuses";
 import { AlertTriangle, Clock, Briefcase, Calendar as CalendarIcon, Flag, CircleDot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isDateOverdue } from "@/lib/dateUtils";
@@ -107,7 +108,7 @@ function CardTooltip({
                   }}
                 >
                   <CircleDot className="h-2.5 w-2.5" />
-                  {demand.demand_statuses.name}
+                  {getStatusDisplayName(demand.demand_statuses.name)}
                 </Badge>
               )}
               {demand.priority && (
@@ -237,7 +238,7 @@ export function CalendarDemandCard({ demand, onClick, compact = false }: Calenda
                     borderColor: `${demand.demand_statuses.color}30`,
                   }}
                 >
-                  {demand.demand_statuses.name}
+                  {getStatusDisplayName(demand.demand_statuses.name)}
                 </Badge>
               )}
               {demand.services?.name && (

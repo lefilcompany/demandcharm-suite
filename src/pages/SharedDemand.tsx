@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useContext } from "react";
+import { getStatusDisplayName } from "@/hooks/useBoardStatuses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -224,7 +225,7 @@ export default function SharedDemand() {
                       className="w-2 h-2 rounded-full"
                       style={{ backgroundColor: demand.demand_statuses.color }}
                     />
-                    {demand.demand_statuses.name}
+                    {getStatusDisplayName(demand.demand_statuses.name)}
                   </Badge>
                 )}
               </div>

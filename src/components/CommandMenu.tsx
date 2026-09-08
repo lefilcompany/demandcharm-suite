@@ -17,7 +17,7 @@ import {
   Kanban, 
   Settings, 
   Plus,
-  Archive,
+  Trash2,
   Search
 } from "lucide-react";
 import { useGlobalSearch } from "@/hooks/useGlobalSearch";
@@ -52,7 +52,7 @@ export function CommandMenu() {
     { icon: Kanban, label: "Kanban", action: () => navigate("/kanban") },
     { icon: FileText, label: "Demandas", action: () => navigate("/demands") },
     { icon: Users, label: "Equipes", action: () => navigate("/teams") },
-    { icon: Archive, label: "Arquivadas", action: () => navigate("/archived") },
+    { icon: Trash2, label: "Lixeira", action: () => navigate("/demands?trash=1") },
     { icon: Settings, label: "Configurações", action: () => navigate("/settings") },
   ];
 

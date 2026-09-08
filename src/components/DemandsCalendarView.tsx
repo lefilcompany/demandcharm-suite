@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { getStatusDisplayName } from "@/hooks/useBoardStatuses";
 import { Button } from "@/components/ui/button";
 import { CalendarDemandCard } from "@/components/CalendarDemandCard";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
@@ -675,7 +676,7 @@ export function DemandsCalendarView({
                               color: demand.demand_statuses.color,
                             }}
                           >
-                            {demand.demand_statuses.name}
+                            {getStatusDisplayName(demand.demand_statuses.name)}
                           </span>
                         )}
                         {demand.priority && (

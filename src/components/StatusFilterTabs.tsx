@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { AlertTriangle } from "lucide-react";
-import { useBoardStatuses } from "@/hooks/useBoardStatuses";
+import { useBoardStatuses, getStatusDisplayName } from "@/hooks/useBoardStatuses";
 import { useSelectedBoard } from "@/contexts/BoardContext";
 import { useBoardRole } from "@/hooks/useBoardMembers";
 import { cn } from "@/lib/utils";
@@ -93,7 +93,7 @@ export function StatusFilterTabs({ value, onChange, values, onValuesChange, mult
         Todos
       </button>
       {orderedStatuses.map((status) => {
-        const shortName = status.name === "Aprovação do Cliente" ? "Aprovação" : status.name;
+        const shortName = status.name === "Aprovação do Cliente" ? "Aprovação" : getStatusDisplayName(status.name);
         const isSelected = selectedSet.has(status.id);
 
         return (

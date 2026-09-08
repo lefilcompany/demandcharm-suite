@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { getStatusDisplayName } from "@/hooks/useBoardStatuses";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -201,7 +202,7 @@ export function FolderDemandManager({
                                     color: d.demand_statuses.color,
                                   }}
                                 >
-                                  {d.demand_statuses.name}
+                                  {getStatusDisplayName(d.demand_statuses.name)}
                                 </span>
                               )}
                               {d.priority && (

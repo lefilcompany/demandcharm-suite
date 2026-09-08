@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getStatusDisplayName } from "@/hooks/useBoardStatuses";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, AlertTriangle, Clock, Wrench, User } from "lucide-react";
 import { AssigneeAvatars } from "@/components/AssigneeAvatars";
@@ -118,7 +119,7 @@ export function DemandCard({ demand, onClick, showFullDetails = false }: DemandC
                 borderColor: `${demand.demand_statuses.color}40`,
               }}
             >
-              {demand.demand_statuses.name}
+              {getStatusDisplayName(demand.demand_statuses.name)}
             </Badge>
           )}
         </div>
