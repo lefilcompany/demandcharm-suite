@@ -1559,6 +1559,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
           className={cn(
             "transition-all cursor-pointer group relative overflow-hidden",
             "hover:shadow-sm",
+            showDragHandleBase && "cursor-grab active:cursor-grabbing",
             draggedId === demand.id && "opacity-50 scale-95",
             showOfflineIndicator && "ring-2 ring-amber-500/50",
             highlightDemandId === demand.id && "ring-2 ring-primary shadow-lg",
@@ -1784,6 +1785,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
         onDragEnd={handleDragEnd}
         className={cn(
           "hover:shadow-md transition-all cursor-pointer group relative",
+          showDragHandleBase && "cursor-grab active:cursor-grabbing",
           draggedId === demand.id && "opacity-50 scale-95",
           showOfflineIndicator && "ring-2 ring-amber-500/50 bg-amber-500/5",
           isParentDemand && "border-l-[3px] border-l-primary bg-orange-50 dark:bg-orange-950/30 shadow-sm",
