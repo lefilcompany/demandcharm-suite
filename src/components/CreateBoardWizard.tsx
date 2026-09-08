@@ -991,9 +991,6 @@ export function CreateBoardWizard({ onComplete, onCancel }: CreateBoardWizardPro
                     </div>
                   );
                 })}
-                    </div>
-                  );
-                })}
               </div>
             )}
 
