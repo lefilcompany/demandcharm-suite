@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DemandChatMessage, DateSeparator } from "@/components/DemandChatMessage";
+import { DemandChatMessage, DateSeparator, stripHtmlPreview } from "@/components/DemandChatMessage";
 import { DemandChatInput } from "@/components/DemandChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
@@ -128,11 +128,26 @@ export function DemandChat({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ id: string; author: string; preview: string } | null>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
   const prevLengthRef = useRef(0);
+
+  const handleJumpToMessage = useCallback((messageId: string) => {
+    const container = scrollRef.current;
+    const el = container?.querySelector<HTMLElement>(`[data-message-id="${messageId}"]`);
+    if (!container || !el) {
+      toast.info("Mensagem original não está nesta conversa");
+      return;
+    }
+    container.scrollTop = el.offsetTop - container.clientHeight / 3;
+    setHighlightedId(messageId);
+    setTimeout(() => setHighlightedId((cur) => (cur === messageId ? null : cur)), 2000);
+  }, []);
+
 
   const { data: interactions } = useDemandInteractions(demandId, channel);
   const createInteraction = useCreateInteraction();
@@ -247,6 +262,7 @@ export function DemandChat({
         interaction_type: "comment",
         content,
         channel,
+        ...(replyTo ? { metadata: { reply_to: replyTo } } : {}),
       },
       {
         onSuccess: async (created) => {
@@ -256,6 +272,7 @@ export function DemandChat({
             setPendingFiles([]);
           }
           setComment("");
+          setReplyTo(null);
           setIsSending(false);
           stopTyping();
 
@@ -474,7 +491,7 @@ export function DemandChat({
         ) : (
           <div className="py-2">
             {groupedMessages.map(({ interaction, isGrouped, showDateSep }) => (
-              <div key={interaction.id}>
+              <div key={interaction.id} data-message-id={interaction.id}>
                 {showDateSep && <DateSeparator date={new Date(interaction.created_at)} />}
                 <DemandChatMessage
                   interaction={interaction}
@@ -490,6 +507,15 @@ export function DemandChat({
                   onEditingContentChange={setEditingContent}
                   isSavingEdit={updateInteraction.isPending}
                   onNavigateUser={(userId) => navigate(`/user/${userId}`)}
+                  isHighlighted={highlightedId === interaction.id}
+                  onJumpToMessage={handleJumpToMessage}
+                  onReply={(target) =>
+                    setReplyTo({
+                      id: target.id,
+                      author: target.profiles?.full_name || "Usuário",
+                      preview: stripHtmlPreview(target.content) || "Mensagem",
+                    })
+                  }
                 />
               </div>
             ))}
@@ -529,6 +555,8 @@ export function DemandChat({
         isSending={isSending || createInteraction.isPending}
         boardId={boardId}
         channel={channel}
+        replyTo={replyTo}
+        onCancelReply={() => setReplyTo(null)}
       />
     </div>
   );

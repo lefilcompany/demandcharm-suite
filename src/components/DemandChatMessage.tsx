@@ -4,7 +4,7 @@ import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { InteractionAttachments } from "@/components/InteractionAttachments";
 import { MentionInput } from "@/components/MentionInput";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Copy, MoreHorizontal, Pencil, Trash2, Wrench, ArrowRightLeft } from "lucide-react";
+import { Copy, MoreHorizontal, Pencil, Trash2, Wrench, ArrowRightLeft, Reply } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,23 @@ interface ChatMessageProps {
   onEditingContentChange: (content: string) => void;
   isSavingEdit: boolean;
   onNavigateUser: (userId: string) => void;
+  onReply?: (interaction: ChatMessageProps["interaction"]) => void;
+  onJumpToMessage?: (messageId: string) => void;
+  isHighlighted?: boolean;
+}
+
+export function stripHtmlPreview(html: string | null | undefined, max = 140) {
+  if (!html) return "";
+  const text = html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
 export function DemandChatMessage({
@@ -53,6 +70,9 @@ export function DemandChatMessage({
   onEditingContentChange,
   isSavingEdit,
   onNavigateUser,
+  onReply,
+  onJumpToMessage,
+  isHighlighted,
 }: ChatMessageProps) {
   const [isHovered, setIsHovered] = useState(false);
   const isEditing = editingId === interaction.id;
@@ -60,9 +80,13 @@ export function DemandChatMessage({
   const isAdjustment = interaction.interaction_type === "adjustment_request";
   const canEdit = isOwnMessage && interaction.interaction_type === "comment";
 
-  const metadata = interaction.metadata as { adjustment_type?: string } | null;
+  const metadata = interaction.metadata as {
+    adjustment_type?: string;
+    reply_to?: { id: string; author?: string | null; preview?: string | null };
+  } | null;
   const adjustmentType = metadata?.adjustment_type || "external";
   const isInternal = isAdjustment && adjustmentType === "internal";
+  const replyTo = metadata?.reply_to && metadata.reply_to.id ? metadata.reply_to : null;
 
   const createdAt = new Date(interaction.created_at);
   const timeStr = format(createdAt, "HH:mm");
@@ -122,8 +146,9 @@ export function DemandChatMessage({
     <div
       className={cn(
         "group relative flex gap-2.5 px-3 transition-colors",
-        isGrouped ? "py-0.5" : "pt-3 pb-0.5",
-        isHovered && "bg-muted/30"
+        isGrouped && !replyTo ? "py-0.5" : "pt-3 pb-0.5",
+        isHovered && "bg-muted/30",
+        isHighlighted && "bg-primary/10 ring-1 ring-inset ring-primary/40 rounded-md"
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -146,6 +171,21 @@ export function DemandChatMessage({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
+        {replyTo && (
+          <button
+            type="button"
+            onClick={() => onJumpToMessage?.(replyTo.id)}
+            className="mb-1 flex w-full max-w-full items-center gap-1.5 rounded-md border-l-2 border-primary/60 bg-muted/50 px-2 py-1 text-left transition-colors hover:bg-muted"
+          >
+            <Reply className="h-3 w-3 shrink-0 text-primary/70" />
+            <span className="text-[11px] font-semibold text-primary/80 shrink-0">
+              {replyTo.author || "Mensagem"}
+            </span>
+            <span className="truncate text-[11px] text-muted-foreground">
+              {replyTo.preview || "mensagem"}
+            </span>
+          </button>
+        )}
         {!isGrouped && (
           <div className="flex items-baseline gap-2 mb-0.5">
             <button
@@ -197,6 +237,17 @@ export function DemandChatMessage({
       {isHovered && !isEditing && (
         <div className="absolute right-2 -top-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="flex items-center gap-0.5 bg-popover border rounded-md shadow-md p-0.5">
+            {onReply && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                title="Responder"
+                onClick={() => onReply(interaction)}
+              >
+                <Reply className="h-3 w-3" />
+              </Button>
+            )}
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyRichContent(interaction.content || "")}>
               <Copy className="h-3 w-3" />
             </Button>
