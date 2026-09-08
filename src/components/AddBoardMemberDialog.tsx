@@ -140,14 +140,15 @@ export function AddBoardMemberDialog({ trigger, boardId: propBoardId }: AddBoard
   }, []);
 
   const selectAll = useCallback(() => {
-    if (!filteredMembers.length) return;
+    const selectable = filteredMembers.filter((m: any) => !m.already_member);
+    if (!selectable.length) return;
     setSelectedMembers((prev) => {
       const next = new Map(prev);
-      const allSelected = filteredMembers.every((m: any) => next.has(m.user_id));
+      const allSelected = selectable.every((m: any) => next.has(m.user_id));
       if (allSelected) {
-        filteredMembers.forEach((m: any) => next.delete(m.user_id));
+        selectable.forEach((m: any) => next.delete(m.user_id));
       } else {
-        filteredMembers.forEach((m: any) => {
+        selectable.forEach((m: any) => {
           if (!next.has(m.user_id)) next.set(m.user_id, "executor");
         });
       }
@@ -185,7 +186,7 @@ export function AddBoardMemberDialog({ trigger, boardId: propBoardId }: AddBoard
     setStep("select");
   };
 
-  const allFilteredSelected = filteredMembers.length > 0 && filteredMembers.every((m: any) => selectedMembers.has(m.user_id));
+  const allFilteredSelected = filteredMembers.filter((m: any) => !m.already_member).length > 0 && filteredMembers.filter((m: any) => !m.already_member).every((m: any) => selectedMembers.has(m.user_id));
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) resetAndClose(); else setOpen(true); }}>
@@ -241,6 +242,7 @@ export function AddBoardMemberDialog({ trigger, boardId: propBoardId }: AddBoard
                   <div className="px-5 pb-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {filteredMembers.map((member: any) => {
                       const isSelected = selectedMembers.has(member.user_id);
+                      const alreadyMember = !!member.already_member;
                       const role = (member.team_role || "member") as string;
                       const config = teamRoleConfig[role] || teamRoleConfig.member;
 
@@ -248,10 +250,14 @@ export function AddBoardMemberDialog({ trigger, boardId: propBoardId }: AddBoard
                         <button
                           key={member.user_id}
                           type="button"
-                          onClick={() => toggleMember(member.user_id)}
+                          disabled={alreadyMember}
+                          title={alreadyMember ? "Já é membro deste quadro" : undefined}
+                          onClick={() => !alreadyMember && toggleMember(member.user_id)}
                           className={cn(
                             "relative flex flex-col items-center rounded-xl border-2 overflow-hidden transition-all text-center",
-                            isSelected
+                            alreadyMember
+                              ? "border-border opacity-60 cursor-not-allowed"
+                              : isSelected
                               ? "border-primary shadow-md ring-1 ring-primary/30"
                               : "border-border hover:border-muted-foreground/30 hover:shadow-sm"
                           )}
@@ -284,6 +290,9 @@ export function AddBoardMemberDialog({ trigger, boardId: propBoardId }: AddBoard
                               {config.icon}
                               {config.label}
                             </Badge>
+                            {alreadyMember && (
+                              <p className="text-[10px] text-muted-foreground">Já está no quadro</p>
+                            )}
                           </div>
                         </button>
                       );

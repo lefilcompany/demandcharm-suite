@@ -368,17 +368,20 @@ export function useAvailableTeamMembers(teamId: string | null, boardId: string |
 
       const boardMemberIds = new Set(boardMembers?.map((m) => m.user_id) || []);
 
-      // Filter out users already in board
+      // Return every team member, flagging those already in the board
       return teamMembers
-        .filter((tm: any) => !boardMemberIds.has(tm.user_id))
         .map((tm: any) => ({
           user_id: tm.user_id,
           full_name: tm.profiles?.full_name || "Usuário",
           avatar_url: tm.profiles?.avatar_url || null,
           job_title: tm.profiles?.job_title || null,
           team_role: tm.role === "admin" ? "owner" : "member",
+          already_member: boardMemberIds.has(tm.user_id),
         }))
-        .sort((a: any, b: any) => (a.full_name as string).localeCompare(b.full_name as string));
+        .sort((a: any, b: any) => {
+          if (a.already_member !== b.already_member) return a.already_member ? 1 : -1;
+          return (a.full_name as string).localeCompare(b.full_name as string);
+        });
     },
     enabled: !!user && !!teamId && !!boardId,
   });
