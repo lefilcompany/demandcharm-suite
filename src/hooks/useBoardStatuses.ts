@@ -47,6 +47,14 @@ export function isFixedBoundaryStatus(statusName: string): boolean {
   return statusName === FIXED_END_STATUS;
 }
 
+/** Nome canônico da etapa opcional de backlog. */
+export const BACKLOG_STATUS_NAME = "Backlog";
+
+/** Reconhece a etapa opcional de backlog (demandas sem prazo definido). */
+export function isBacklogStage(statusName: string | null | undefined): boolean {
+  return (statusName ?? "").trim().toLowerCase() === "backlog";
+}
+
 /** Nome canônico da etapa de ajuste. */
 export const ADJUSTMENT_STATUS_NAME = "Em Ajuste";
 
@@ -79,6 +87,7 @@ export const DEFAULT_COLUMNS: KanbanColumn[] = [
 
 // Map status names to colors
 const statusColorMap: Record<string, string> = {
+  "Backlog": "bg-slate-500/10",
   "A Iniciar": "bg-muted",
   "Tarefas Internas": "bg-violet-500/10",
   "Fazendo": "bg-blue-500/10",
@@ -90,6 +99,7 @@ const statusColorMap: Record<string, string> = {
 
 // Map status names to short labels
 const statusShortLabelMap: Record<string, string> = {
+  "Backlog": "Backlog",
   "A Iniciar": "Iniciar",
   "Tarefas Internas": "Internas",
   "Fazendo": "Fazendo",
@@ -463,12 +473,14 @@ export function useCreateCustomStatus() {
       boardId,
       adjustmentType = 'none',
       visibleToRoles,
+      placeFirst = false,
     }: { 
       name: string; 
       color: string;
       boardId: string;
       adjustmentType?: AdjustmentType;
       visibleToRoles?: string[];
+      placeFirst?: boolean;
     }) => {
       // 1. Create the status in demand_statuses (linked to the board)
       const { data: newStatus, error: statusError } = await supabase
@@ -479,15 +491,16 @@ export function useCreateCustomStatus() {
 
       if (statusError) throw statusError;
 
-      // 2. Get current max position
+      // 2. Get target position (first or last)
       const { data: existing } = await supabase
         .from("board_statuses")
         .select("position")
         .eq("board_id", boardId)
-        .order("position", { ascending: false })
+        .order("position", { ascending: !placeFirst })
         .limit(1);
 
-      const maxPos = existing?.[0]?.position ?? -1;
+      const boundaryPos = existing?.[0]?.position ?? (placeFirst ? 1 : -1);
+      const newPosition = placeFirst ? boundaryPos - 1 : boundaryPos + 1;
 
       // 3. Compute visible_to_roles value
       const rolesValue = visibleToRoles && visibleToRoles.length > 0 && visibleToRoles.length < BOARD_ROLES.length
@@ -500,7 +513,7 @@ export function useCreateCustomStatus() {
         .insert({
           board_id: boardId,
           status_id: newStatus.id,
-          position: maxPos + 1,
+          position: newPosition,
           is_active: true,
           adjustment_type: adjustmentType,
           visible_to_roles: rolesValue,
