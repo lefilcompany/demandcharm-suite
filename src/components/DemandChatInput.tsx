@@ -19,6 +19,8 @@ interface DemandChatInputProps {
   boardId: string;
   channel: "general" | "internal";
   placeholder?: string;
+  replyTo?: { id: string; author: string; preview: string } | null;
+  onCancelReply?: () => void;
 }
 
 const MAX_SIZE = 10 * 1024 * 1024;
