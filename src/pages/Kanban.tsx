@@ -27,7 +27,7 @@ import { useIsTeamAdminOrModerator } from "@/hooks/useTeamRole";
 import { useKanbanColumns } from "@/hooks/useBoardStatuses";
 import { useKanbanPreferences } from "@/hooks/useKanbanPreferences";
 import { Plus, LayoutGrid, Columns3, Loader2, Kanban as KanbanIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useRealtimeDemands, useKanbanRealtimeNotifications } from "@/hooks/useRealtimeDemands";
 import { isToday, isThisWeek, isPast } from "date-fns";
 import { ScheduledDemandsModal } from "@/components/ScheduledDemandsModal";
@@ -38,6 +38,46 @@ import { SEOHead } from "@/components/SEOHead";
 export default function Kanban() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const highlightFromState = (location.state as { highlightDemandId?: string } | null)?.highlightDemandId || null;
+  const [highlightDemandId, setHighlightDemandId] = useState<string | null>(highlightFromState);
+
+  // Scroll the previously opened demand into view (using scrollTop/scrollLeft, never scrollIntoView)
+  useEffect(() => {
+    if (!highlightFromState) return;
+    setHighlightDemandId(highlightFromState);
+    let cancelled = false;
+    let attempts = 0;
+    const tryScroll = () => {
+      if (cancelled) return;
+      const card = document.querySelector<HTMLElement>(`[data-demand-id="${highlightFromState}"]`);
+      if (card) {
+        let el: HTMLElement | null = card.parentElement;
+        while (el) {
+          const style = window.getComputedStyle(el);
+          const scrollableY = /(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight;
+          const scrollableX = /(auto|scroll)/.test(style.overflowX) && el.scrollWidth > el.clientWidth;
+          if (scrollableY || scrollableX) {
+            const cardRect = card.getBoundingClientRect();
+            const contRect = el.getBoundingClientRect();
+            if (scrollableY) el.scrollTop += cardRect.top - contRect.top - el.clientHeight / 3;
+            if (scrollableX) el.scrollLeft += cardRect.left - contRect.left - el.clientWidth / 3;
+          }
+          el = el.parentElement;
+        }
+        return;
+      }
+      if (attempts++ < 20) window.setTimeout(tryScroll, 200);
+    };
+    const start = window.setTimeout(tryScroll, 300);
+    const clear = window.setTimeout(() => setHighlightDemandId(null), 5000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(start);
+      window.clearTimeout(clear);
+    };
+  }, [highlightFromState]);
+
   const { openCreateDemand } = useCreateDemandModal();
   const { user } = useAuth();
   const { selectedBoardId, currentTeamId } = useSelectedBoard();
