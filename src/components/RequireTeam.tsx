@@ -158,6 +158,16 @@ export function RequireTeam({ children }: RequireTeamProps) {
     return <Navigate to="/auth" replace />;
   }
 
+  // Confirm which account should be used when the app is opened in a new browser session
+  if (!isSessionChecked()) {
+    return (
+      <Navigate
+        to={sessionCheckRedirect(window.location.pathname, window.location.search)}
+        replace
+      />
+    );
+  }
+
   // System admin should access admin panel — but only if they have no team to work with.
   // If a system admin also belongs to a team, they can use the regular app via /admin manually.
   // CRITICAL: never trap admins without a team in /admin; let them through to /welcome instead.
