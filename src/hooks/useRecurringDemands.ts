@@ -145,13 +145,20 @@ export function useDeleteRecurringDemand() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("recurring_demands")
         .update({ is_active: false })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error(
+          "Você não tem permissão para cancelar este agendamento. Peça a um administrador do quadro."
+        );
+      }
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recurring-demands"] });
     },
