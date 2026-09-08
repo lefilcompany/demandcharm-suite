@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import { SEOHead } from "@/components/SEOHead";
+import { markSessionChecked, clearSessionChecked } from "@/lib/sessionCheck";
 import { getLastEmail, looksLikeClearedCache, isRecentPasswordLogin, rememberLastLoginMethod } from "@/lib/lastUserEmail";
 import logoSomaDark from "@/assets/logo-soma-dark.png";
 import authBackground from "@/assets/auth-background.jpg";
@@ -200,6 +201,7 @@ export default function Auth() {
   const isPasswordRecovery = hashParams.get("type") === "recovery" || hashParams.get("access_token");
   
   const continueToApp = () => {
+    markSessionChecked();
     if (safeNext) {
       window.location.replace(safeNext);
       return;
@@ -211,6 +213,7 @@ export default function Auth() {
     setIsSwitchingAccount(true);
     try {
       await supabase.auth.signOut();
+      clearSessionChecked();
       setExistingSessionAcknowledged(true);
     } catch (error) {
       console.error("Error signing out:", error);
@@ -264,6 +267,7 @@ export default function Auth() {
   }
 
   if (user && !isPasswordRecovery) {
+    markSessionChecked();
     if (safeNext) {
       window.location.replace(safeNext);
       return null;

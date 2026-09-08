@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
+import { isSessionChecked, sessionCheckRedirect } from "@/lib/sessionCheck";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -26,6 +27,15 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (!isSessionChecked()) {
+    return (
+      <Navigate
+        to={sessionCheckRedirect(window.location.pathname, window.location.search)}
+        replace
+      />
+    );
   }
 
   return <>{children}</>;

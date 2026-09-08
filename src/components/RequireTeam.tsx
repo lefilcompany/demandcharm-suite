@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Users, LogOut } from "lucide-react";
 import { TeamSelector } from "@/components/TeamSelector";
 import { supabase } from "@/integrations/supabase/client";
+import { isSessionChecked, sessionCheckRedirect } from "@/lib/sessionCheck";
 import authBg from "@/assets/auth-background.jpg";
 import logoSoma from "@/assets/logo-soma.png";
 
@@ -156,6 +157,16 @@ export function RequireTeam({ children }: RequireTeamProps) {
   // Redirect to auth if not logged in
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Confirm which account should be used when the app is opened in a new browser session
+  if (!isSessionChecked()) {
+    return (
+      <Navigate
+        to={sessionCheckRedirect(window.location.pathname, window.location.search)}
+        replace
+      />
+    );
   }
 
   // System admin should access admin panel — but only if they have no team to work with.
