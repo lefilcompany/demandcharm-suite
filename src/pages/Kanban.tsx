@@ -313,6 +313,7 @@ export default function Kanban() {
             boardName={currentBoard?.name}
             boardId={selectedBoardId || undefined}
             initialColumnsOpen={preferences.defaultColumnsOpen}
+            highlightDemandId={highlightDemandId}
           />
         )}
       </div>
