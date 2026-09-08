@@ -242,12 +242,12 @@ export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
         styles: { fontSize: 8, cellPadding: 1.8, textColor: GRAPHITE, lineColor: LINE, overflow: "linebreak" },
         columnStyles: {
           0: { cellWidth: 16 },
-          1: { cellWidth: 82 },
-          2: { cellWidth: 42 },
-          3: { cellWidth: 42 },
+          1: { cellWidth: 78 },
+          2: { cellWidth: 40 },
+          3: { cellWidth: 40 },
           4: { cellWidth: 22, halign: "center" },
           5: { cellWidth: 40 },
-          6: { cellWidth: 28, halign: "center" },
+          6: { cellWidth: 30, halign: "center" },
         },
         margin: { left: 14, right: 14 },
         didParseCell: (data) => {
@@ -259,7 +259,8 @@ export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
             data.cell.styles.fontStyle = "bold";
           }
           if (data.column.index === 4) {
-            data.cell.styles.textColor = [255, 255, 255];
+            // Yellow needs dark text to stay readable on paper.
+            data.cell.styles.textColor = row.priority === "Média" ? GRAPHITE : [255, 255, 255];
             data.cell.styles.fillColor = PRIORITY_FILL[row.priority] || MUTED;
             data.cell.styles.fontStyle = "bold";
           }
