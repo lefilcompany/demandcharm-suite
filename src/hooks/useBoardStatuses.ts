@@ -544,14 +544,18 @@ export function useCreateCustomStatus() {
   });
 }
 
-// Sort board statuses ensuring "Entregue" is always last
+// Sort board statuses ensuring "Backlog" is always first and "Entregue" is always last
 export function sortWithFixedBoundaries(statuses: BoardStatus[]): BoardStatus[] {
   return [...statuses].sort((a, b) => {
+    const aIsStart = a.status.name === BACKLOG_STATUS_NAME;
+    const bIsStart = b.status.name === BACKLOG_STATUS_NAME;
+    if (aIsStart && !bIsStart) return -1;
+    if (bIsStart && !aIsStart) return 1;
+
     const aIsEnd = a.status.name === FIXED_END_STATUS;
     const bIsEnd = b.status.name === FIXED_END_STATUS;
-    
-    if (aIsEnd) return 1;
-    if (bIsEnd) return -1;
+    if (aIsEnd && !bIsEnd) return 1;
+    if (bIsEnd && !aIsEnd) return -1;
     return a.position - b.position;
   });
 }
