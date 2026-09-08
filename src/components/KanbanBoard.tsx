@@ -828,15 +828,30 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     e.dataTransfer.dropEffect = "move";
     if (columnKey && dragOverColumn !== columnKey) {
       setDragOverColumn(columnKey);
+      // Hovering a collapsed column while dragging opens it after a short
+      // pause, so the card can be dropped straight into the visible list.
+      if (hoverOpenTimerRef.current) window.clearTimeout(hoverOpenTimerRef.current);
+      hoverOpenTimerRef.current = window.setTimeout(() => {
+        setActiveColumns((prev) => (prev.includes(columnKey) ? prev : [...prev, columnKey]));
+      }, 550);
+    }
+  };
+
+  const clearHoverOpenTimer = () => {
+    if (hoverOpenTimerRef.current) {
+      window.clearTimeout(hoverOpenTimerRef.current);
+      hoverOpenTimerRef.current = null;
     }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    clearHoverOpenTimer();
     setDragOverColumn(null);
   };
 
   const handleDragEnd = () => {
+    clearHoverOpenTimer();
     setDraggedId(null);
     setDragOverColumn(null);
   };
