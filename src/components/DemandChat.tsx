@@ -131,6 +131,11 @@ export function DemandChat({
   const [replyTo, setReplyTo] = useState<{ id: string; author: string; preview: string } | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
+  const prevLengthRef = useRef(0);
+
   const handleJumpToMessage = useCallback((messageId: string) => {
     const container = scrollRef.current;
     const el = container?.querySelector<HTMLElement>(`[data-message-id="${messageId}"]`);
@@ -143,10 +148,6 @@ export function DemandChat({
     setTimeout(() => setHighlightedId((cur) => (cur === messageId ? null : cur)), 2000);
   }, []);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const isNearBottomRef = useRef(true);
-  const prevLengthRef = useRef(0);
 
   const { data: interactions } = useDemandInteractions(demandId, channel);
   const createInteraction = useCreateInteraction();
