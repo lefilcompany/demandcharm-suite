@@ -1368,6 +1368,17 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     return demands.filter((d) => demandColumnMap.get(d.id) === columnKey);
   }, [demands, demandColumnMap]);
 
+  // When returning from a demand detail page, make sure the column that
+  // contains the highlighted demand is open so its card is actually rendered.
+  useEffect(() => {
+    if (!highlightDemandId) return;
+    const columnKey = demandColumnMap.get(highlightDemandId);
+    if (!columnKey) return;
+    setActiveColumns(prev =>
+      prev.includes(columnKey) ? prev : [...prev, columnKey]
+    );
+  }, [highlightDemandId, demandColumnMap]);
+
   const isOverdue = useCallback((dueDate: string | null | undefined) => {
     return isDateOverdue(dueDate);
   }, []);
