@@ -23,10 +23,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Token refresh interval (5 minutes before expiry)
 const TOKEN_REFRESH_MARGIN = 5 * 60 * 1000; // 5 minutes in ms
 
-// Session duration without "remember me" (24 hours)
-const SHORT_SESSION_DURATION = 24 * 60 * 60 * 1000;
-// Session duration with "remember me" enabled (7 days)
-const LONG_SESSION_DURATION = 7 * 24 * 60 * 60 * 1000;
+// Session duration without "remember me" (16 hours)
+const SHORT_SESSION_DURATION = 16 * 60 * 60 * 1000;
+// Session duration with "remember me" enabled (5 days)
+const LONG_SESSION_DURATION = 5 * 24 * 60 * 60 * 1000;
 
 // Clear per-user UI session state (e.g. Kanban filters) on logout / session expiry
 const clearUserSessionState = () => {
