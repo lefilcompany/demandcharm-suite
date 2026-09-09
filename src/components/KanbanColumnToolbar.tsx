@@ -7,10 +7,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, X, ArrowUpDown, ArrowDown, ArrowUp, Calendar, Clock, Hash } from "lucide-react";
+import { Search, X, ArrowUpDown, ArrowDown, ArrowUp, Calendar, Clock, Hash, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getPriorityScore } from "@/lib/priorityScore";
 
-export type KanbanSortOption = "newest" | "oldest" | "priority_high" | "priority_low" | "due_date_asc" | "due_date_desc" | "sequence";
+export type KanbanSortOption = "newest" | "oldest" | "priority_high" | "priority_low" | "due_date_asc" | "due_date_desc" | "sequence" | "priority_score";
 
 interface KanbanColumnToolbarProps {
   searchQuery: string;
@@ -20,6 +21,7 @@ interface KanbanColumnToolbarProps {
 }
 
 const SORT_OPTIONS: { value: KanbanSortOption; label: string; icon: React.ReactNode }[] = [
+  { value: "priority_score", label: "Score de prioridade", icon: <Flame className="h-3 w-3" /> },
   { value: "newest", label: "Mais recente na etapa", icon: <ArrowDown className="h-3 w-3" /> },
   { value: "oldest", label: "Mais antigo na etapa", icon: <ArrowUp className="h-3 w-3" /> },
   { value: "priority_high", label: "Prioridade (alta → baixa)", icon: <ArrowDown className="h-3 w-3" /> },
