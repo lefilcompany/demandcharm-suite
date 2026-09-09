@@ -144,6 +144,7 @@ export function filterAndSortDemands<T extends {
   description?: string | null;
   board_sequence_number?: number | null;
   priority?: string | null;
+  effort_points?: number | null;
   due_date?: string | null;
   created_at?: string;
   updated_at?: string;
