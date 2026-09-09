@@ -51,8 +51,10 @@ export function MoveFolderToBoardDialog({
             Mover projeto
           </DialogTitle>
           <DialogDescription>
-            Escolha em qual quadro o projeto "{folderName}" deve aparecer. As demandas vinculadas não são alteradas.
+            Escolha em qual quadro o projeto "{folderName}" deve aparecer. Todas as demandas ativas do quadro escolhido
+            serão adicionadas ao projeto.
           </DialogDescription>
+
         </DialogHeader>
 
         <ScrollArea className="max-h-[320px] pr-2">
