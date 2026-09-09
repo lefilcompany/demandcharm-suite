@@ -3736,6 +3736,8 @@ export type Database = {
           connected_at: string
           enabled: boolean
           google_account_email: string
+          needs_reconsent: boolean
+          scopes: string[]
           status: string
           updated_at: string
         }[]

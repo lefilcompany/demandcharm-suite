@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Plug, Calendar, CheckCircle2, Loader2 } from "lucide-react";
+import { Plug, Calendar, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { SectionShell } from "./SectionShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,7 @@ export function IntegrationsSection() {
 
   const available = connection?.available ?? false;
   const connected = connection?.connected ?? false;
+  const needsReconsent = connection?.needsReconsent ?? false;
 
   const handleConnect = () => {
     connect.mutate(undefined, {
@@ -68,11 +69,21 @@ export function IntegrationsSection() {
                   Conectado
                 </Badge>
               )}
+              {available && needsReconsent && (
+                <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-600 font-normal">
+                  <AlertTriangle className="h-3 w-3" />
+                  Reconexão necessária
+                </Badge>
+              )}
             </div>
 
             {!available ? (
               <p className="text-xs text-muted-foreground mt-0.5">
                 A integração com o Google Calendar ainda não está disponível para a sua conta.
+              </p>
+            ) : needsReconsent ? (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {connection?.googleAccountEmail || "Conta Google"} — reconecte para autorizar também o Google Meet.
               </p>
             ) : connected ? (
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -92,6 +103,22 @@ export function IntegrationsSection() {
               <Button variant="outline" size="sm" disabled>
                 <Loader2 className="h-4 w-4 animate-spin" />
               </Button>
+            ) : needsReconsent ? (
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleConnect} disabled={connect.isPending}>
+                  {connect.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Reconectar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDisconnect}
+                  disabled={disconnect.isPending}
+                >
+                  {disconnect.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Desconectar
+                </Button>
+              </div>
             ) : connected ? (
               <Button
                 variant="outline"
