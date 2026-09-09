@@ -34,6 +34,7 @@ import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
 import { SEOHead } from "@/components/SEOHead";
 import { calculateBusinessDueDate, formatDueDateForInput } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { EFFORT_OPTIONS, EFFORT_MULTIPLIERS, DEFAULT_EFFORT } from "@/lib/priorityScore";
 import { parseAssigneeUnavailableError, findBlockingAbsence } from "@/lib/assigneeAvailability";
 import { useTeamAbsences, ABSENCE_TYPE_LABELS, type Absence } from "@/hooks/useAbsences";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
