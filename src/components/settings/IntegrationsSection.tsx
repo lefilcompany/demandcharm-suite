@@ -69,11 +69,21 @@ export function IntegrationsSection() {
                   Conectado
                 </Badge>
               )}
+              {available && needsReconsent && (
+                <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-600 font-normal">
+                  <AlertTriangle className="h-3 w-3" />
+                  Reconexão necessária
+                </Badge>
+              )}
             </div>
 
             {!available ? (
               <p className="text-xs text-muted-foreground mt-0.5">
                 A integração com o Google Calendar ainda não está disponível para a sua conta.
+              </p>
+            ) : needsReconsent ? (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {connection?.googleAccountEmail || "Conta Google"} — reconecte para autorizar também o Google Meet.
               </p>
             ) : connected ? (
               <p className="text-xs text-muted-foreground mt-0.5">
