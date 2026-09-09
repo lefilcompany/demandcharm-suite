@@ -9,6 +9,9 @@ export interface GoogleCalendarConnectionDTO {
   available: boolean;
   connected: boolean;
   status: string | null;
+  /** Connection exists but is missing the current required scopes (Meet). */
+  needsReconsent: boolean;
+  scopes: string[];
   googleAccountEmail: string | null;
   connectedAt: string | null;
 }
