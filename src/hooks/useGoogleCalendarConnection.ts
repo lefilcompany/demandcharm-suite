@@ -37,14 +37,18 @@ export function useGoogleCalendarConnection() {
         enabled?: boolean;
         available?: boolean;
         status?: string | null;
+        scopes?: string[] | null;
+        needs_reconsent?: boolean | null;
         google_account_email?: string | null;
         connected_at?: string | null;
       } | null;
       return {
         enabled: !!row?.enabled,
         available: !!row?.available,
-        connected: row?.status === "connected",
+        connected: row?.status === "connected" && !row?.needs_reconsent,
         status: row?.status ?? null,
+        needsReconsent: !!row?.needs_reconsent,
+        scopes: row?.scopes ?? [],
         googleAccountEmail: row?.google_account_email ?? null,
         connectedAt: row?.connected_at ?? null,
       };
