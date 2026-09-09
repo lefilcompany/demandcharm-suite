@@ -103,6 +103,22 @@ export function IntegrationsSection() {
               <Button variant="outline" size="sm" disabled>
                 <Loader2 className="h-4 w-4 animate-spin" />
               </Button>
+            ) : needsReconsent ? (
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleConnect} disabled={connect.isPending}>
+                  {connect.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Reconectar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDisconnect}
+                  disabled={disconnect.isPending}
+                >
+                  {disconnect.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Desconectar
+                </Button>
+              </div>
             ) : connected ? (
               <Button
                 variant="outline"
