@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Plug, Calendar, CheckCircle2, Loader2 } from "lucide-react";
+import { Plug, Calendar, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { SectionShell } from "./SectionShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
