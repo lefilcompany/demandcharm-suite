@@ -131,6 +131,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   const [description, setDescription] = useState("");
   const [statusId, setStatusId] = useState("");
   const [priority, setPriority] = useState("média");
+  const [effortPoints, setEffortPoints] = useState<number>(DEFAULT_EFFORT);
   const [dueDate, setDueDate] = useState("");
   // Backlog é uma etapa opcional para demandas ainda sem prazo definido
   const isBacklogSelected = useMemo(
@@ -1043,6 +1044,22 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                             <SelectItem value="baixa">Baixa</SelectItem>
                             <SelectItem value="média">Média</SelectItem>
                             <SelectItem value="alta">Alta</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="effort">Esforço (Fibonacci)</Label>
+                        <Select value={String(effortPoints)} onValueChange={(v) => setEffortPoints(Number(v))}>
+                          <SelectTrigger className="h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {EFFORT_OPTIONS.map((v) => (
+                              <SelectItem key={v} value={String(v)}>
+                                {v} (x{EFFORT_MULTIPLIERS[v].toFixed(1).replace(".", ",")})
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
