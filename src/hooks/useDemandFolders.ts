@@ -213,13 +213,31 @@ export function useCreateFolder() {
       }
 
       if (error) throw error;
-      return data;
+
+      let linked = 0;
+      let linkFailed = false;
+      if (data?.id && board_id) {
+        try {
+          linked = await linkBoardDemandsToProject(data.id, board_id);
+        } catch {
+          linkFailed = true;
+        }
+      }
+      return { ...(data as any), __linked: linked, __linkFailed: linkFailed };
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       qc.invalidateQueries({ queryKey: ["demand-folders"] });
-      toast.success("Projeto criado com sucesso");
+      if (data?.id) qc.invalidateQueries({ queryKey: ["folder-demand-ids", data.id] });
+      if (data?.__linkFailed) {
+        toast.warning("Projeto criado, mas não foi possível incluir as demandas do quadro");
+      } else if (data?.__linked) {
+        toast.success(`Projeto criado · ${data.__linked} demanda(s) do quadro adicionadas`);
+      } else {
+        toast.success("Projeto criado com sucesso");
+      }
     },
     onError: () => toast.error("Erro ao criar projeto"),
+
   });
 }
 
