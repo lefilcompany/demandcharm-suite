@@ -114,6 +114,10 @@ export default function FolderDetail() {
     return [...new Set(folderDemands.map((d: any) => d.board_id as string))];
   }, [folderDemands]);
 
+  // Keep statuses in sync with the real Kanban state of each board
+  useRealtimeFolderDemands(folderId || null, folderBoardIds as string[]);
+
+
   // Apply filters
   const filteredDemands = useMemo(() => {
     return folderDemands.filter((d: any) => {
