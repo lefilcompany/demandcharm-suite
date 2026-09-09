@@ -30,6 +30,7 @@ import { StepProgress, SubdemandStepForm } from "@/components/create-demand";
 import type { SubdemandFormData } from "@/components/create-demand";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { EFFORT_OPTIONS, EFFORT_MULTIPLIERS, DEFAULT_EFFORT } from "@/lib/priorityScore";
 
 interface DemandEditFormProps {
   demand: {
@@ -44,6 +45,7 @@ interface DemandEditFormProps {
     board_id: string;
     created_by?: string | null;
     original_due_date?: string | null;
+    effort_points?: number | null;
   };
   onClose: () => void;
   onSuccess: () => void;
@@ -78,6 +80,7 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
   const [description, setDescription] = useState(demand.description || "");
   const [statusId, setStatusId] = useState(demand.status_id);
   const [priority, setPriority] = useState(demand.priority || "média");
+  const [effortPoints, setEffortPoints] = useState<number>(demand.effort_points ?? DEFAULT_EFFORT);
   const [dueDate, setDueDate] = useState(toDateOnly(demand.due_date) || "");
   const [serviceId, setServiceId] = useState(demand.service_id || "");
   const originalDueDate = demand.original_due_date || demand.due_date || null;
@@ -367,6 +370,7 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
         description: description.trim() || null,
         status_id: statusId,
         priority,
+        effort_points: effortPoints,
         ...(dueDateChanged ? {} : { due_date: dueDate }),
         service_id: serviceId && serviceId !== "none" ? serviceId : null,
       });
@@ -613,6 +617,22 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                       <SelectItem value="baixa">Baixa</SelectItem>
                       <SelectItem value="média">Média</SelectItem>
                       <SelectItem value="alta">Alta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-effort">Esforço (Fibonacci)</Label>
+                  <Select value={String(effortPoints)} onValueChange={(v) => setEffortPoints(Number(v))}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EFFORT_OPTIONS.map((v) => (
+                        <SelectItem key={v} value={String(v)}>
+                          {v} (x{EFFORT_MULTIPLIERS[v].toFixed(1).replace(".", ",")})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

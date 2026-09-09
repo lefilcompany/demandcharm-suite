@@ -1306,6 +1306,7 @@ export type Database = {
           delivered_at: string | null
           description: string | null
           due_date: string | null
+          effort_points: number
           id: string
           is_overdue: boolean
           last_started_at: string | null
@@ -1337,6 +1338,7 @@ export type Database = {
           delivered_at?: string | null
           description?: string | null
           due_date?: string | null
+          effort_points?: number
           id?: string
           is_overdue?: boolean
           last_started_at?: string | null
@@ -1368,6 +1370,7 @@ export type Database = {
           delivered_at?: string | null
           description?: string | null
           due_date?: string | null
+          effort_points?: number
           id?: string
           is_overdue?: boolean
           last_started_at?: string | null

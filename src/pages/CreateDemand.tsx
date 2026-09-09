@@ -34,6 +34,7 @@ import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
 import { SEOHead } from "@/components/SEOHead";
 import { calculateBusinessDueDate, formatDueDateForInput } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { EFFORT_OPTIONS, EFFORT_MULTIPLIERS, DEFAULT_EFFORT } from "@/lib/priorityScore";
 import { parseAssigneeUnavailableError, findBlockingAbsence } from "@/lib/assigneeAvailability";
 import { useTeamAbsences, ABSENCE_TYPE_LABELS, type Absence } from "@/hooks/useAbsences";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -131,6 +132,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   const [description, setDescription] = useState("");
   const [statusId, setStatusId] = useState("");
   const [priority, setPriority] = useState("média");
+  const [effortPoints, setEffortPoints] = useState<number>(DEFAULT_EFFORT);
   const [dueDate, setDueDate] = useState("");
   // Backlog é uma etapa opcional para demandas ainda sem prazo definido
   const isBacklogSelected = useMemo(
@@ -412,6 +414,11 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
           onSuccess: async (result) => {
             const parentId = result.parent_id;
 
+            if (parentId && effortPoints !== DEFAULT_EFFORT) {
+              await supabase.from("demands").update({ effort_points: effortPoints }).eq("id", parentId);
+            }
+
+
             if (assigneeIds.length > 0 && parentId) {
               const primary = primaryAssigneeId && assigneeIds.includes(primaryAssigneeId) ? primaryAssigneeId : assigneeIds[0];
               await supabase
@@ -502,6 +509,11 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
       {
         onSuccess: async (demand) => {
           const wasCreatedOffline = (demand as any)?._isOffline;
+
+          if (!wasCreatedOffline && demand && effortPoints !== DEFAULT_EFFORT) {
+            await supabase.from("demands").update({ effort_points: effortPoints }).eq("id", demand.id);
+          }
+
 
           if (!wasCreatedOffline && assigneeIds.length > 0 && demand) {
             const primary = primaryAssigneeId && assigneeIds.includes(primaryAssigneeId) ? primaryAssigneeId : assigneeIds[0];
@@ -1043,6 +1055,22 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                             <SelectItem value="baixa">Baixa</SelectItem>
                             <SelectItem value="média">Média</SelectItem>
                             <SelectItem value="alta">Alta</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="effort">Esforço (Fibonacci)</Label>
+                        <Select value={String(effortPoints)} onValueChange={(v) => setEffortPoints(Number(v))}>
+                          <SelectTrigger className="h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {EFFORT_OPTIONS.map((v) => (
+                              <SelectItem key={v} value={String(v)}>
+                                {v} (x{EFFORT_MULTIPLIERS[v].toFixed(1).replace(".", ",")})
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>

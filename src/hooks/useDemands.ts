@@ -369,6 +369,7 @@ export function useUpdateDemand() {
       archived?: boolean;
       archived_at?: string | null;
       service_id?: string | null;
+      effort_points?: number;
       board_id?: string;
       status_changed_by?: string | null;
       status_changed_at?: string | null;
