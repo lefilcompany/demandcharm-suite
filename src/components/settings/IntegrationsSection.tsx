@@ -29,6 +29,7 @@ export function IntegrationsSection() {
 
   const available = connection?.available ?? false;
   const connected = connection?.connected ?? false;
+  const needsReconsent = connection?.needsReconsent ?? false;
 
   const handleConnect = () => {
     connect.mutate(undefined, {
