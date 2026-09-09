@@ -201,6 +201,9 @@ export function filterAndSortDemands<T extends {
       case "sequence": {
         return (b.board_sequence_number || 0) - (a.board_sequence_number || 0);
       }
+      case "priority_score": {
+        return getPriorityScore(b) - getPriorityScore(a);
+      }
       default:
         return 0;
     }
