@@ -2,13 +2,40 @@
 // The backend is the single authority for who may connect — the UI is only a hint.
 import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 
-/** Calendar scopes homologated in Phase 4 (events owned by SoMA + minimal OIDC identity). */
+/**
+ * Phase 4 scopes (events owned by SoMA + minimal OIDC identity) kept unchanged,
+ * plus the Phase 4.3 Google Meet scopes:
+ *  - meetings.space.created  -> create/configure Meet spaces owned by SoMA
+ *  - meetings.space.readonly -> read conference records / future transcript artifacts
+ * The Google login of SoMA is a separate flow and is NOT affected by this list.
+ */
 export const GOOGLE_CALENDAR_SCOPES = [
   "openid",
   "email",
   "https://www.googleapis.com/auth/calendar.events.owned",
+  "https://www.googleapis.com/auth/meetings.space.created",
+  "https://www.googleapis.com/auth/meetings.space.readonly",
 ];
 export const GOOGLE_CALENDAR_SCOPE = GOOGLE_CALENDAR_SCOPES.join(" ");
+
+/** Scopes a connection MUST hold to be considered fully granted. */
+export const REQUIRED_GRANTED_SCOPES = [
+  "https://www.googleapis.com/auth/calendar.events.owned",
+  "https://www.googleapis.com/auth/meetings.space.created",
+  "https://www.googleapis.com/auth/meetings.space.readonly",
+];
+
+/** Google may return the email scope in either short or canonical form. */
+function normalizeScope(scope: string): string {
+  if (scope === "https://www.googleapis.com/auth/userinfo.email") return "email";
+  if (scope === "https://www.googleapis.com/auth/userinfo.profile") return "profile";
+  return scope;
+}
+
+export function hasAllRequiredScopes(granted: string[] | null | undefined): boolean {
+  const set = new Set((granted ?? []).map(normalizeScope));
+  return REQUIRED_GRANTED_SCOPES.every((s) => set.has(s));
+}
 
 export const GOOGLE_AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 export const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
