@@ -414,6 +414,11 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
           onSuccess: async (result) => {
             const parentId = result.parent_id;
 
+            if (parentId && effortPoints !== DEFAULT_EFFORT) {
+              await supabase.from("demands").update({ effort_points: effortPoints }).eq("id", parentId);
+            }
+
+
             if (assigneeIds.length > 0 && parentId) {
               const primary = primaryAssigneeId && assigneeIds.includes(primaryAssigneeId) ? primaryAssigneeId : assigneeIds[0];
               await supabase
@@ -504,6 +509,11 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
       {
         onSuccess: async (demand) => {
           const wasCreatedOffline = (demand as any)?._isOffline;
+
+          if (!wasCreatedOffline && demand && effortPoints !== DEFAULT_EFFORT) {
+            await supabase.from("demands").update({ effort_points: effortPoints }).eq("id", demand.id);
+          }
+
 
           if (!wasCreatedOffline && assigneeIds.length > 0 && demand) {
             const primary = primaryAssigneeId && assigneeIds.includes(primaryAssigneeId) ? primaryAssigneeId : assigneeIds[0];
