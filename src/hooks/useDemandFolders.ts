@@ -99,6 +99,39 @@ export function useDemandFolders(
   });
 }
 
+/**
+ * Links every active demand of a board into a project, ignoring demands that
+ * are already linked. Returns how many new links were created.
+ */
+export async function linkBoardDemandsToProject(projectId: string, boardId: string) {
+  const { data: boardDemands, error: demandsError } = await supabase
+    .from("demands")
+    .select("id")
+    .eq("board_id", boardId)
+    .eq("archived", false);
+  if (demandsError) throw demandsError;
+
+  const ids = (boardDemands || []).map((d: any) => d.id as string);
+  if (ids.length === 0) return 0;
+
+  const { data: existing, error: existingError } = await supabase
+    .from("project_demands")
+    .select("demand_id")
+    .eq("project_id", projectId);
+  if (existingError) throw existingError;
+
+  const already = new Set((existing || []).map((e: any) => e.demand_id as string));
+  const toInsert = ids.filter((id) => !already.has(id));
+  if (toInsert.length === 0) return 0;
+
+  const { error: insertError } = await supabase
+    .from("project_demands")
+    .insert(toInsert.map((demand_id) => ({ project_id: projectId, demand_id })));
+  if (insertError) throw insertError;
+
+  return toInsert.length;
+}
+
 export function useMoveFolderToBoard() {
   const qc = useQueryClient();
   return useMutation({
@@ -108,14 +141,30 @@ export function useMoveFolderToBoard() {
         .update({ board_id: params.board_id } as any)
         .eq("id", params.id);
       if (error) throw error;
+
+      if (!params.board_id) return { linked: 0 };
+      try {
+        const linked = await linkBoardDemandsToProject(params.id, params.board_id);
+        return { linked };
+      } catch {
+        return { linked: 0, linkFailed: true };
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result, vars) => {
       qc.invalidateQueries({ queryKey: ["demand-folders"] });
-      toast.success("Projeto movido de quadro");
+      qc.invalidateQueries({ queryKey: ["folder-demand-ids", vars.id] });
+      if ((result as any)?.linkFailed) {
+        toast.warning("Projeto movido, mas não foi possível incluir as demandas do quadro");
+      } else if (result?.linked) {
+        toast.success(`Projeto movido · ${result.linked} demanda(s) do quadro adicionadas`);
+      } else {
+        toast.success("Projeto movido de quadro");
+      }
     },
     onError: () => toast.error("Erro ao mover projeto de quadro"),
   });
 }
+
 
 
 
