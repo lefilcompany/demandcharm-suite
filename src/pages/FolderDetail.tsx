@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
 import { SEOHead } from "@/components/SEOHead";
 import { ProjectSnapshotDialog } from "@/components/ProjectSnapshotDialog";
+import { useRealtimeFolderDemands } from "@/hooks/useRealtimeFolderDemands";
 
 type ViewMode = "table" | "grid" | "calendar";
 const TABLET_BREAKPOINT = 1024;
@@ -112,6 +113,10 @@ export default function FolderDetail() {
   const folderBoardIds = useMemo(() => {
     return [...new Set(folderDemands.map((d: any) => d.board_id as string))];
   }, [folderDemands]);
+
+  // Keep statuses in sync with the real Kanban state of each board
+  useRealtimeFolderDemands(folderId || null, folderBoardIds as string[]);
+
 
   // Apply filters
   const filteredDemands = useMemo(() => {
