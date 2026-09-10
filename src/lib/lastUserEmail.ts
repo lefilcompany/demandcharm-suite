@@ -40,7 +40,7 @@ export function getRecentAccounts(): RecentAccount[] {
         email: String(a.email).toLowerCase(),
         name: typeof a.name === "string" ? a.name : undefined,
         avatarUrl: typeof a.avatarUrl === "string" ? a.avatarUrl : undefined,
-        method: a.method === "google" ? "google" : "password",
+        method: (a.method === "google" ? "google" : "password") as LastLoginMethod,
         at: typeof a.at === "number" ? a.at : 0,
       }))
       .sort((a, b) => b.at - a.at)
