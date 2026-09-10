@@ -132,6 +132,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         switch (event) {
           case "SIGNED_IN":
           case "TOKEN_REFRESHED":
+            // Rolling 30-day browser session
+            try {
+              localStorage.setItem("sessionExpiresAt", (Date.now() + SESSION_DURATION).toString());
+            } catch {
+              // ignore
+            }
+            if (currentSession?.user?.email) {
+              const meta = (currentSession.user.user_metadata ?? {}) as Record<string, unknown>;
+              rememberAccount({
+                email: currentSession.user.email,
+                name: (meta.full_name as string) || (meta.name as string) || undefined,
+                avatarUrl: (meta.avatar_url as string) || undefined,
+                method: currentSession.user.app_metadata?.provider === "google" ? "google" : "password",
+              });
+            }
             // Schedule next automatic refresh
             scheduleTokenRefresh(currentSession);
             break;
