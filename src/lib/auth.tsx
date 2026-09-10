@@ -114,8 +114,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [scheduleTokenRefresh]);
 
   useEffect(() => {
-    // Determine if session should be cleared based on remember me / time-based expiry
-    const rememberMe = localStorage.getItem("rememberMe") === "true";
+    // Determine if session should be cleared based on time-based expiry (30 days)
     const sessionExpiresAt = localStorage.getItem("sessionExpiresAt");
     const isSessionExpired = sessionExpiresAt && Date.now() > parseInt(sessionExpiresAt, 10);
     
