@@ -16,8 +16,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import { SEOHead } from "@/components/SEOHead";
-import { markSessionChecked, clearSessionChecked } from "@/lib/sessionCheck";
-import { getLastEmail, looksLikeClearedCache, isRecentPasswordLogin, rememberLastLoginMethod } from "@/lib/lastUserEmail";
+import { markSessionChecked } from "@/lib/sessionCheck";
+import { getLastEmail, looksLikeClearedCache, isRecentPasswordLogin, rememberLastLoginMethod, getRecentAccounts, forgetAccount, type RecentAccount } from "@/lib/lastUserEmail";
 import logoSomaDark from "@/assets/logo-soma-dark.png";
 import authBackground from "@/assets/auth-background.jpg";
 interface IBGEState {
@@ -53,6 +53,8 @@ export default function Auth() {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginStep, setLoginStep] = useState<"email" | "password">(() => {
+    // With saved accounts we show the account picker first (Google-style).
+    if (getRecentAccounts().length > 0) return "email";
     return getLastEmail() && isRecentPasswordLogin() ? "password" : "email";
   });
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
