@@ -343,7 +343,7 @@ export default function Auth() {
       } else {
         localStorage.removeItem("rememberMe");
       }
-      localStorage.setItem("sessionExpiresAt", (Date.now() + 30 * 24 * 60 * 60 * 1000).toString());
+      localStorage.setItem("sessionExpiresAt", (Date.now() + 24 * 60 * 60 * 1000).toString());
       await signIn(loginData.email, loginData.password);
       toast.success("Bem-vindo ao SoMA+", {
         description: "Login realizado com sucesso!"
