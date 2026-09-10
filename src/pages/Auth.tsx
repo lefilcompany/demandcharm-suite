@@ -223,49 +223,6 @@ export default function Auth() {
     }
   };
 
-  if (user && !isPasswordRecovery && hadInitialSession && !existingSessionAcknowledged) {
-    const displayName =
-      (user.user_metadata as Record<string, unknown> | undefined)?.full_name as string ||
-      (user.user_metadata as Record<string, unknown> | undefined)?.name as string ||
-      user.email?.split("@")[0] ||
-      "Sua conta";
-    const avatarUrl = (user.user_metadata as Record<string, unknown> | undefined)?.avatar_url as string | undefined;
-    const initials = displayName.trim().slice(0, 2).toUpperCase();
-
-    return <div className="relative flex min-h-screen items-center justify-center bg-sidebar p-4">
-        <SEOHead title="Entrar | SoMA+" description="Acesse sua conta SoMA+." />
-        <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: `url(${authBackground})` }} />
-        <div className="relative z-10 w-full max-w-md rounded-xl border border-border/60 bg-card p-8 shadow-xl">
-          <img src={logoSomaDark} alt="SoMA+" className="mx-auto mb-8 h-10 object-contain" />
-          <h1 className="text-center text-xl font-semibold text-foreground">Você já está conectado</h1>
-          <p className="mt-2 text-center text-sm text-muted-foreground">
-            Detectamos uma sessão ativa neste dispositivo. Deseja continuar com esta conta?
-          </p>
-
-          <div className="mt-6 flex items-center gap-3 rounded-lg border border-border/60 bg-muted/40 p-4">
-            {avatarUrl ? <img src={avatarUrl} alt={displayName} className="h-11 w-11 rounded-full object-cover" /> : <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
-                {initials}
-              </div>}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">{displayName}</p>
-              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            <Button className="w-full" onClick={continueToApp} disabled={isSwitchingAccount}>
-              Continuar como {displayName}
-            </Button>
-            <Button variant="outline" className="w-full" onClick={handleSwitchAccount} disabled={isSwitchingAccount}>
-              {isSwitchingAccount ? <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saindo...
-                </> : "Entrar com outra conta"}
-            </Button>
-          </div>
-        </div>
-      </div>;
-  }
-
   if (user && !isPasswordRecovery) {
     markSessionChecked();
     if (safeNext) {
