@@ -337,7 +337,7 @@ export default function Auth() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // Saved session lasts 30 days in this browser
+      // Saved session lasts 24 hours in this browser
       if (rememberMe) {
         localStorage.setItem("rememberMe", "true");
       } else {
