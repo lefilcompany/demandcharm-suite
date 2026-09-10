@@ -16,6 +16,72 @@ const ONE_YEAR_DAYS = 365;
 
 export type LastLoginMethod = "password" | "google";
 
+/** Recently used accounts, shown as a Google-style account picker on /auth. */
+export interface RecentAccount {
+  email: string;
+  name?: string;
+  avatarUrl?: string;
+  method: LastLoginMethod;
+  at: number;
+}
+
+const ACCOUNTS_KEY = "soma:recentAccounts";
+const MAX_ACCOUNTS = 4;
+
+export function getRecentAccounts(): RecentAccount[] {
+  try {
+    const raw = localStorage.getItem(ACCOUNTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((a) => a && typeof a.email === "string")
+      .map((a) => ({
+        email: String(a.email).toLowerCase(),
+        name: typeof a.name === "string" ? a.name : undefined,
+        avatarUrl: typeof a.avatarUrl === "string" ? a.avatarUrl : undefined,
+        method: a.method === "google" ? "google" : "password",
+        at: typeof a.at === "number" ? a.at : 0,
+      }))
+      .sort((a, b) => b.at - a.at)
+      .slice(0, MAX_ACCOUNTS);
+  } catch {
+    return [];
+  }
+}
+
+export function rememberAccount(account: Omit<RecentAccount, "at"> & { at?: number }) {
+  if (!account?.email) return;
+  const email = account.email.trim().toLowerCase();
+  try {
+    const existing = getRecentAccounts().filter((a) => a.email !== email);
+    const previous = getRecentAccounts().find((a) => a.email === email);
+    const next: RecentAccount[] = [
+      {
+        email,
+        name: account.name || previous?.name,
+        avatarUrl: account.avatarUrl || previous?.avatarUrl,
+        method: account.method,
+        at: account.at ?? Date.now(),
+      },
+      ...existing,
+    ].slice(0, MAX_ACCOUNTS);
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+}
+
+export function forgetAccount(email: string) {
+  try {
+    const target = email.trim().toLowerCase();
+    const next = getRecentAccounts().filter((a) => a.email !== target);
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+}
+
 export function rememberLastLoginMethod(method: LastLoginMethod) {
   try {
     localStorage.setItem(METHOD_KEY, method);
