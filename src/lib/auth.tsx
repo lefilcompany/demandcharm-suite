@@ -132,9 +132,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         switch (event) {
           case "SIGNED_IN":
           case "TOKEN_REFRESHED":
-            // Rolling 30-day browser session
+            // Absolute 24h session: set only at sign-in, never extended by refreshes
             try {
-              localStorage.setItem("sessionExpiresAt", (Date.now() + SESSION_DURATION).toString());
+              if (event === "SIGNED_IN" || !localStorage.getItem("sessionExpiresAt")) {
+                localStorage.setItem("sessionExpiresAt", (Date.now() + SESSION_DURATION).toString());
+              }
             } catch {
               // ignore
             }
