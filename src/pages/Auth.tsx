@@ -86,13 +86,8 @@ export default function Auth() {
     confirmPassword: ""
   });
   const [signupSuccessEmail, setSignupSuccessEmail] = useState<string | null>(null);
-  const [existingSessionAcknowledged, setExistingSessionAcknowledged] = useState(false);
-  const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
-  const hadInitialSessionRef = useRef<boolean | null>(null);
-  if (!loading && hadInitialSessionRef.current === null) {
-    hadInitialSessionRef.current = !!user;
-  }
-  const hadInitialSession = hadInitialSessionRef.current === true;
+  const [recentAccounts, setRecentAccounts] = useState<RecentAccount[]>(() => getRecentAccounts());
+  const [useAnotherAccount, setUseAnotherAccount] = useState(false);
 
 
 
@@ -200,29 +195,6 @@ export default function Auth() {
   const hashParams = new URLSearchParams(window.location.hash.substring(1));
   const isPasswordRecovery = hashParams.get("type") === "recovery" || hashParams.get("access_token");
   
-  const continueToApp = () => {
-    markSessionChecked();
-    if (safeNext) {
-      window.location.replace(safeNext);
-      return;
-    }
-    window.location.replace("/welcome");
-  };
-
-  const handleSwitchAccount = async () => {
-    setIsSwitchingAccount(true);
-    try {
-      await supabase.auth.signOut();
-      clearSessionChecked();
-      setExistingSessionAcknowledged(true);
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast.error("Não foi possível sair da conta. Tente novamente.");
-    } finally {
-      setIsSwitchingAccount(false);
-    }
-  };
-
   if (user && !isPasswordRecovery) {
     markSessionChecked();
     if (safeNext) {
