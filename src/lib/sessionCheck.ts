@@ -8,12 +8,12 @@
 
 const KEY = "soma:sessionChecked";
 
+/**
+ * The account confirmation screen was removed: a valid saved session signs the
+ * user straight in. Kept as a no-op so existing guards stay untouched.
+ */
 export function isSessionChecked(): boolean {
-  try {
-    return sessionStorage.getItem(KEY) === "true";
-  } catch {
-    return true; // never block access if storage is unavailable
-  }
+  return true;
 }
 
 export function markSessionChecked() {

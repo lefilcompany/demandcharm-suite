@@ -16,8 +16,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import { SEOHead } from "@/components/SEOHead";
-import { markSessionChecked, clearSessionChecked } from "@/lib/sessionCheck";
-import { getLastEmail, looksLikeClearedCache, isRecentPasswordLogin, rememberLastLoginMethod } from "@/lib/lastUserEmail";
+import { markSessionChecked } from "@/lib/sessionCheck";
+import { getLastEmail, looksLikeClearedCache, isRecentPasswordLogin, rememberLastLoginMethod, getRecentAccounts, forgetAccount, type RecentAccount } from "@/lib/lastUserEmail";
 import logoSomaDark from "@/assets/logo-soma-dark.png";
 import authBackground from "@/assets/auth-background.jpg";
 interface IBGEState {
@@ -53,6 +53,8 @@ export default function Auth() {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginStep, setLoginStep] = useState<"email" | "password">(() => {
+    // With saved accounts we show the account picker first (Google-style).
+    if (getRecentAccounts().length > 0) return "email";
     return getLastEmail() && isRecentPasswordLogin() ? "password" : "email";
   });
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
@@ -86,13 +88,8 @@ export default function Auth() {
     confirmPassword: ""
   });
   const [signupSuccessEmail, setSignupSuccessEmail] = useState<string | null>(null);
-  const [existingSessionAcknowledged, setExistingSessionAcknowledged] = useState(false);
-  const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
-  const hadInitialSessionRef = useRef<boolean | null>(null);
-  if (!loading && hadInitialSessionRef.current === null) {
-    hadInitialSessionRef.current = !!user;
-  }
-  const hadInitialSession = hadInitialSessionRef.current === true;
+  const [recentAccounts, setRecentAccounts] = useState<RecentAccount[]>(() => getRecentAccounts());
+  const [useAnotherAccount, setUseAnotherAccount] = useState(false);
 
 
 
@@ -200,72 +197,6 @@ export default function Auth() {
   const hashParams = new URLSearchParams(window.location.hash.substring(1));
   const isPasswordRecovery = hashParams.get("type") === "recovery" || hashParams.get("access_token");
   
-  const continueToApp = () => {
-    markSessionChecked();
-    if (safeNext) {
-      window.location.replace(safeNext);
-      return;
-    }
-    window.location.replace("/welcome");
-  };
-
-  const handleSwitchAccount = async () => {
-    setIsSwitchingAccount(true);
-    try {
-      await supabase.auth.signOut();
-      clearSessionChecked();
-      setExistingSessionAcknowledged(true);
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast.error("Não foi possível sair da conta. Tente novamente.");
-    } finally {
-      setIsSwitchingAccount(false);
-    }
-  };
-
-  if (user && !isPasswordRecovery && hadInitialSession && !existingSessionAcknowledged) {
-    const displayName =
-      (user.user_metadata as Record<string, unknown> | undefined)?.full_name as string ||
-      (user.user_metadata as Record<string, unknown> | undefined)?.name as string ||
-      user.email?.split("@")[0] ||
-      "Sua conta";
-    const avatarUrl = (user.user_metadata as Record<string, unknown> | undefined)?.avatar_url as string | undefined;
-    const initials = displayName.trim().slice(0, 2).toUpperCase();
-
-    return <div className="relative flex min-h-screen items-center justify-center bg-sidebar p-4">
-        <SEOHead title="Entrar | SoMA+" description="Acesse sua conta SoMA+." />
-        <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: `url(${authBackground})` }} />
-        <div className="relative z-10 w-full max-w-md rounded-xl border border-border/60 bg-card p-8 shadow-xl">
-          <img src={logoSomaDark} alt="SoMA+" className="mx-auto mb-8 h-10 object-contain" />
-          <h1 className="text-center text-xl font-semibold text-foreground">Você já está conectado</h1>
-          <p className="mt-2 text-center text-sm text-muted-foreground">
-            Detectamos uma sessão ativa neste dispositivo. Deseja continuar com esta conta?
-          </p>
-
-          <div className="mt-6 flex items-center gap-3 rounded-lg border border-border/60 bg-muted/40 p-4">
-            {avatarUrl ? <img src={avatarUrl} alt={displayName} className="h-11 w-11 rounded-full object-cover" /> : <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
-                {initials}
-              </div>}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">{displayName}</p>
-              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            <Button className="w-full" onClick={continueToApp} disabled={isSwitchingAccount}>
-              Continuar como {displayName}
-            </Button>
-            <Button variant="outline" className="w-full" onClick={handleSwitchAccount} disabled={isSwitchingAccount}>
-              {isSwitchingAccount ? <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saindo...
-                </> : "Entrar com outra conta"}
-            </Button>
-          </div>
-        </div>
-      </div>;
-  }
-
   if (user && !isPasswordRecovery) {
     markSessionChecked();
     if (safeNext) {
@@ -406,18 +337,13 @@ export default function Auth() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // Store remember me preference
+      // Saved session lasts 30 days in this browser
       if (rememberMe) {
         localStorage.setItem("rememberMe", "true");
-        // Long session: 5 days
-        const expiresAt = Date.now() + 5 * 24 * 60 * 60 * 1000;
-        localStorage.setItem("sessionExpiresAt", expiresAt.toString());
       } else {
         localStorage.removeItem("rememberMe");
-        // Short session: 16 hours
-        const expiresAt = Date.now() + 16 * 60 * 60 * 1000;
-        localStorage.setItem("sessionExpiresAt", expiresAt.toString());
       }
+      localStorage.setItem("sessionExpiresAt", (Date.now() + 30 * 24 * 60 * 60 * 1000).toString());
       await signIn(loginData.email, loginData.password);
       toast.success("Bem-vindo ao SoMA+", {
         description: "Login realizado com sucesso!"
@@ -788,7 +714,73 @@ export default function Auth() {
               )}
 
               <TabsContent value="login" className="mt-3.5 space-y-3.5 lg:flex-1 lg:min-h-0">
-                {loginStep === "email" ? (
+                {loginStep === "email" && recentAccounts.length > 0 && !useAnotherAccount ? (
+                  <div className="space-y-3">
+                    <p className="text-[12px] font-medium text-foreground/70">Escolha uma conta</p>
+                    <ul className="divide-y divide-border/60 rounded-lg border border-border/70 overflow-hidden">
+                      {recentAccounts.map((account) => {
+                        const label = account.name || account.email.split("@")[0];
+                        const initials = label.trim().slice(0, 2).toUpperCase();
+                        return (
+                          <li key={account.email} className="relative group">
+                            <button
+                              type="button"
+                              disabled={isGoogleLoading || isCheckingEmail}
+                              onClick={() => {
+                                if (account.method === "google") {
+                                  handleGoogleSignIn();
+                                  return;
+                                }
+                                setLoginData({ email: account.email, password: "" });
+                                setLoginStep("password");
+                              }}
+                              className="w-full flex items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:bg-muted/60"
+                            >
+                              {account.avatarUrl ? (
+                                <img src={account.avatarUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
+                              ) : (
+                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-[12px] font-semibold text-primary">
+                                  {initials}
+                                </span>
+                              )}
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-[13.5px] font-medium text-foreground">{label}</span>
+                                <span className="block truncate text-[12px] text-muted-foreground">{account.email}</span>
+                              </span>
+                              <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground mr-6">
+                                {account.method === "google" ? "Google" : "Senha"}
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Remover ${account.email} da lista`}
+                              onClick={() => {
+                                forgetAccount(account.email);
+                                const next = getRecentAccounts();
+                                setRecentAccounts(next);
+                                if (next.length === 0) setUseAnotherAccount(true);
+                              }}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground/60 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-11 text-[13.5px] font-medium rounded-lg"
+                      onClick={() => {
+                        setUseAnotherAccount(true);
+                        setLoginData({ email: "", password: "" });
+                      }}
+                    >
+                      Usar outra conta
+                    </Button>
+                  </div>
+                ) : loginStep === "email" ? (
                   <form onSubmit={handleEmailContinue} className="space-y-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="login-email" className="text-[12px] font-medium text-foreground/70">{t("common.email")}</Label>
@@ -814,7 +806,7 @@ export default function Auth() {
                       <Label htmlFor="login-email" className="text-[12px] font-medium text-foreground/70">{t("common.email")}</Label>
                       <button
                         type="button"
-                        onClick={() => { setLoginStep("email"); setLoginData({ ...loginData, password: "" }); }}
+                        onClick={() => { setLoginStep("email"); setUseAnotherAccount(recentAccounts.length === 0); setLoginData({ ...loginData, password: "" }); }}
                         className="w-full h-11 rounded-lg border border-input bg-muted/40 px-3 flex items-center justify-between text-[14px] text-foreground hover:bg-muted/60 transition-colors group"
                       >
                         <span className="truncate">{loginData.email}</span>

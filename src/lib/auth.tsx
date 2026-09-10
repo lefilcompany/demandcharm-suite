@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
-import { rememberLastEmail, rememberLastLoginMethod } from "@/lib/lastUserEmail";
+import { rememberLastEmail, rememberLastLoginMethod, rememberAccount } from "@/lib/lastUserEmail";
 
 interface AuthContextType {
   user: User | null;
@@ -23,10 +23,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Token refresh interval (5 minutes before expiry)
 const TOKEN_REFRESH_MARGIN = 5 * 60 * 1000; // 5 minutes in ms
 
-// Session duration without "remember me" (16 hours)
-const SHORT_SESSION_DURATION = 16 * 60 * 60 * 1000;
-// Session duration with "remember me" enabled (5 days)
-const LONG_SESSION_DURATION = 5 * 24 * 60 * 60 * 1000;
+// Saved session lifetime in the browser (30 days), with or without "remember me"
+const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000;
 
 // Clear per-user UI session state (e.g. Kanban filters) on logout / session expiry
 const clearUserSessionState = () => {
@@ -116,8 +114,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [scheduleTokenRefresh]);
 
   useEffect(() => {
-    // Determine if session should be cleared based on remember me / time-based expiry
-    const rememberMe = localStorage.getItem("rememberMe") === "true";
+    // Determine if session should be cleared based on time-based expiry (30 days)
     const sessionExpiresAt = localStorage.getItem("sessionExpiresAt");
     const isSessionExpired = sessionExpiresAt && Date.now() > parseInt(sessionExpiresAt, 10);
     
@@ -135,6 +132,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         switch (event) {
           case "SIGNED_IN":
           case "TOKEN_REFRESHED":
+            // Rolling 30-day browser session
+            try {
+              localStorage.setItem("sessionExpiresAt", (Date.now() + SESSION_DURATION).toString());
+            } catch {
+              // ignore
+            }
+            if (currentSession?.user?.email) {
+              const meta = (currentSession.user.user_metadata ?? {}) as Record<string, unknown>;
+              rememberAccount({
+                email: currentSession.user.email,
+                name: (meta.full_name as string) || (meta.name as string) || undefined,
+                avatarUrl: (meta.avatar_url as string) || undefined,
+                method: currentSession.user.app_metadata?.provider === "google" ? "google" : "password",
+              });
+            }
             // Schedule next automatic refresh
             scheduleTokenRefresh(currentSession);
             break;
