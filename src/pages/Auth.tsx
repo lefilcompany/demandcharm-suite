@@ -337,18 +337,13 @@ export default function Auth() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // Store remember me preference
+      // Saved session lasts 30 days in this browser
       if (rememberMe) {
         localStorage.setItem("rememberMe", "true");
-        // Long session: 5 days
-        const expiresAt = Date.now() + 5 * 24 * 60 * 60 * 1000;
-        localStorage.setItem("sessionExpiresAt", expiresAt.toString());
       } else {
         localStorage.removeItem("rememberMe");
-        // Short session: 16 hours
-        const expiresAt = Date.now() + 16 * 60 * 60 * 1000;
-        localStorage.setItem("sessionExpiresAt", expiresAt.toString());
       }
+      localStorage.setItem("sessionExpiresAt", (Date.now() + 30 * 24 * 60 * 60 * 1000).toString());
       await signIn(loginData.email, loginData.password);
       toast.success("Bem-vindo ao SoMA+", {
         description: "Login realizado com sucesso!"
@@ -811,7 +806,7 @@ export default function Auth() {
                       <Label htmlFor="login-email" className="text-[12px] font-medium text-foreground/70">{t("common.email")}</Label>
                       <button
                         type="button"
-                        onClick={() => { setLoginStep("email"); setLoginData({ ...loginData, password: "" }); }}
+                        onClick={() => { setLoginStep("email"); setUseAnotherAccount(recentAccounts.length === 0); setLoginData({ ...loginData, password: "" }); }}
                         className="w-full h-11 rounded-lg border border-input bg-muted/40 px-3 flex items-center justify-between text-[14px] text-foreground hover:bg-muted/60 transition-colors group"
                       >
                         <span className="truncate">{loginData.email}</span>
