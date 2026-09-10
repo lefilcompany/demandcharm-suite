@@ -719,7 +719,73 @@ export default function Auth() {
               )}
 
               <TabsContent value="login" className="mt-3.5 space-y-3.5 lg:flex-1 lg:min-h-0">
-                {loginStep === "email" ? (
+                {loginStep === "email" && recentAccounts.length > 0 && !useAnotherAccount ? (
+                  <div className="space-y-3">
+                    <p className="text-[12px] font-medium text-foreground/70">Escolha uma conta</p>
+                    <ul className="divide-y divide-border/60 rounded-lg border border-border/70 overflow-hidden">
+                      {recentAccounts.map((account) => {
+                        const label = account.name || account.email.split("@")[0];
+                        const initials = label.trim().slice(0, 2).toUpperCase();
+                        return (
+                          <li key={account.email} className="relative group">
+                            <button
+                              type="button"
+                              disabled={isGoogleLoading || isCheckingEmail}
+                              onClick={() => {
+                                if (account.method === "google") {
+                                  handleGoogleSignIn();
+                                  return;
+                                }
+                                setLoginData({ email: account.email, password: "" });
+                                setLoginStep("password");
+                              }}
+                              className="w-full flex items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:bg-muted/60"
+                            >
+                              {account.avatarUrl ? (
+                                <img src={account.avatarUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
+                              ) : (
+                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-[12px] font-semibold text-primary">
+                                  {initials}
+                                </span>
+                              )}
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-[13.5px] font-medium text-foreground">{label}</span>
+                                <span className="block truncate text-[12px] text-muted-foreground">{account.email}</span>
+                              </span>
+                              <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground mr-6">
+                                {account.method === "google" ? "Google" : "Senha"}
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Remover ${account.email} da lista`}
+                              onClick={() => {
+                                forgetAccount(account.email);
+                                const next = getRecentAccounts();
+                                setRecentAccounts(next);
+                                if (next.length === 0) setUseAnotherAccount(true);
+                              }}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground/60 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-11 text-[13.5px] font-medium rounded-lg"
+                      onClick={() => {
+                        setUseAnotherAccount(true);
+                        setLoginData({ email: "", password: "" });
+                      }}
+                    >
+                      Usar outra conta
+                    </Button>
+                  </div>
+                ) : loginStep === "email" ? (
                   <form onSubmit={handleEmailContinue} className="space-y-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="login-email" className="text-[12px] font-medium text-foreground/70">{t("common.email")}</Label>
