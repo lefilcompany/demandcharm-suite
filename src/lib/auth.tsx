@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
-import { rememberLastEmail, rememberLastLoginMethod } from "@/lib/lastUserEmail";
+import { rememberLastEmail, rememberLastLoginMethod, rememberAccount } from "@/lib/lastUserEmail";
 
 interface AuthContextType {
   user: User | null;
