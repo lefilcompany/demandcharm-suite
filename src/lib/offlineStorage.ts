@@ -415,6 +415,7 @@ export const checkRealConnectivity = async (): Promise<boolean> => {
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL as string | undefined;
+    const apiKey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
     const probeUrl = supabaseUrl
       ? `${supabaseUrl}/auth/v1/health?t=${Date.now()}`
       : `/?_probe=${Date.now()}`;
@@ -423,6 +424,8 @@ export const checkRealConnectivity = async (): Promise<boolean> => {
       method: 'GET',
       cache: 'no-store',
       mode: 'cors',
+      // Send the public key so the probe returns 200 instead of a noisy 401 in the console.
+      headers: supabaseUrl && apiKey ? { apikey: apiKey } : undefined,
       signal: controller.signal,
     });
 
