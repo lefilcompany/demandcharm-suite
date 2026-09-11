@@ -1,0 +1,2 @@
+DROP TRIGGER IF EXISTS trg_notify_demand_assignee_membership_change ON public.demand_assignees;
+DROP FUNCTION IF EXISTS public.notify_demand_assignee_membership_change();
