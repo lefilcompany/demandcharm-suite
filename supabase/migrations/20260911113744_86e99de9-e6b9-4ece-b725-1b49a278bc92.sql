@@ -1,0 +1,1 @@
+UPDATE demands SET original_due_date = due_date WHERE original_due_date IS NOT NULL AND due_date IS NOT NULL AND original_due_date::date = due_date::date AND original_due_date != due_date;
