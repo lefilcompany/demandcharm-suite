@@ -17,10 +17,8 @@ const priorityValues = ["baixa", "média", "alta", "urgente"] as const;
 export const DemandCreateSchema = z.object({
   title: nonEmptyString
     .max(500, "Título deve ter no máximo 500 caracteres"),
-  description: trimmedString
-    .max(50000, "Descrição deve ter no máximo 50000 caracteres")
-    .optional()
-    .nullable(),
+  description: nonEmptyString
+    .max(50000, "Descrição deve ter no máximo 50000 caracteres"),
   team_id: z.string().uuid("ID da equipe inválido"),
   board_id: z.string().uuid("ID do quadro inválido"),
   status_id: z.string().uuid("ID do status inválido"),
