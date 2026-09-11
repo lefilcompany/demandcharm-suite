@@ -216,6 +216,13 @@ export function useCreateDemandRequest() {
         service_id?: string;
         dependsOnIndex?: number;
       }>;
+      meeting_plan?: {
+        time: string;
+        duration: string;
+        customMinutes: number;
+        createGoogleMeet: boolean;
+        timezone: string;
+      } | null;
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
@@ -228,7 +235,7 @@ export function useCreateDemandRequest() {
 
       const requesterName = profile?.full_name || "Usuário";
 
-      const { subdemands_plan = [], ...rest } = data;
+      const { subdemands_plan = [], meeting_plan = null, ...rest } = data;
 
       const { data: result, error } = await supabase
         .from("demand_requests")
@@ -236,6 +243,7 @@ export function useCreateDemandRequest() {
           ...rest,
           created_by: user.id,
           subdemands_plan: subdemands_plan as any,
+          meeting_plan: meeting_plan as any,
         } as any)
         .select()
         .maybeSingle();
