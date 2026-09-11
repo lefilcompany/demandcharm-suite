@@ -202,7 +202,18 @@ export function filterAndSortDemands<T extends {
         return (b.board_sequence_number || 0) - (a.board_sequence_number || 0);
       }
       case "priority_score": {
-        return getPriorityScore(b) - getPriorityScore(a);
+        const scoreDifference = getPriorityScore(b) - getPriorityScore(a);
+        if (scoreDifference !== 0) return scoreDifference;
+
+        // Keep equal-score cards stable and predictable across periodic recalculations.
+        const dueA = a.due_date ? new Date(a.due_date).getTime() : Number.POSITIVE_INFINITY;
+        const dueB = b.due_date ? new Date(b.due_date).getTime() : Number.POSITIVE_INFINITY;
+        if (dueA !== dueB) return dueA - dueB;
+
+        const sequenceDifference = (a.board_sequence_number || 0) - (b.board_sequence_number || 0);
+        if (sequenceDifference !== 0) return sequenceDifference;
+
+        return String(a.id || "").localeCompare(String(b.id || ""));
       }
       default:
         return 0;
