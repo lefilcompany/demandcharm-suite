@@ -829,6 +829,159 @@ export type Database = {
           },
         ]
       }
+      demand_meeting_participants: {
+        Row: {
+          calendar_sync_status: string
+          created_at: string
+          email: string
+          google_account_email: string | null
+          google_event_id: string | null
+          google_response_status: string | null
+          id: string
+          last_sync_error: string | null
+          last_synced_at: string | null
+          meeting_id: string
+          next_retry_at: string | null
+          sync_attempts: number
+          user_id: string | null
+        }
+        Insert: {
+          calendar_sync_status?: string
+          created_at?: string
+          email: string
+          google_account_email?: string | null
+          google_event_id?: string | null
+          google_response_status?: string | null
+          id?: string
+          last_sync_error?: string | null
+          last_synced_at?: string | null
+          meeting_id: string
+          next_retry_at?: string | null
+          sync_attempts?: number
+          user_id?: string | null
+        }
+        Update: {
+          calendar_sync_status?: string
+          created_at?: string
+          email?: string
+          google_account_email?: string | null
+          google_event_id?: string | null
+          google_response_status?: string | null
+          id?: string
+          last_sync_error?: string | null
+          last_synced_at?: string | null
+          meeting_id?: string
+          next_retry_at?: string | null
+          sync_attempts?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_meeting_participants_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "demand_meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_meeting_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demand_meetings: {
+        Row: {
+          create_google_meet: boolean
+          created_at: string
+          demand_id: string
+          ends_at: string
+          google_calendar_id: string | null
+          google_event_id: string | null
+          google_event_url: string | null
+          google_ical_uid: string | null
+          google_meet_url: string | null
+          google_organizer_email: string | null
+          id: string
+          last_sync_error: string | null
+          last_synced_at: string | null
+          last_verified_at: string | null
+          meet_status: string
+          next_retry_at: string | null
+          organizer_user_id: string
+          starts_at: string
+          sync_attempts: number
+          sync_status: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          create_google_meet?: boolean
+          created_at?: string
+          demand_id: string
+          ends_at: string
+          google_calendar_id?: string | null
+          google_event_id?: string | null
+          google_event_url?: string | null
+          google_ical_uid?: string | null
+          google_meet_url?: string | null
+          google_organizer_email?: string | null
+          id?: string
+          last_sync_error?: string | null
+          last_synced_at?: string | null
+          last_verified_at?: string | null
+          meet_status?: string
+          next_retry_at?: string | null
+          organizer_user_id: string
+          starts_at: string
+          sync_attempts?: number
+          sync_status?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          create_google_meet?: boolean
+          created_at?: string
+          demand_id?: string
+          ends_at?: string
+          google_calendar_id?: string | null
+          google_event_id?: string | null
+          google_event_url?: string | null
+          google_ical_uid?: string | null
+          google_meet_url?: string | null
+          google_organizer_email?: string | null
+          id?: string
+          last_sync_error?: string | null
+          last_synced_at?: string | null
+          last_verified_at?: string | null
+          meet_status?: string
+          next_retry_at?: string | null
+          organizer_user_id?: string
+          starts_at?: string
+          sync_attempts?: number
+          sync_status?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_meetings_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: true
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_meetings_organizer_user_id_fkey"
+            columns: ["organizer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demand_request_attachments: {
         Row: {
           comment_id: string | null
@@ -972,6 +1125,7 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
+          meeting_plan: Json | null
           payment_required: boolean | null
           payment_status: string | null
           priority: string | null
@@ -992,6 +1146,7 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
+          meeting_plan?: Json | null
           payment_required?: boolean | null
           payment_status?: string | null
           priority?: string | null
@@ -1012,6 +1167,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
+          meeting_plan?: Json | null
           payment_required?: boolean | null
           payment_status?: string | null
           priority?: string | null
@@ -2699,6 +2855,7 @@ export type Database = {
       }
       services: {
         Row: {
+          behavior: string
           board_id: string | null
           catalog_key: string | null
           created_at: string
@@ -2720,6 +2877,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          behavior?: string
           board_id?: string | null
           catalog_key?: string | null
           created_at?: string
@@ -2741,6 +2899,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          behavior?: string
           board_id?: string | null
           catalog_key?: string | null
           created_at?: string
@@ -3630,6 +3789,10 @@ export type Database = {
         }
         Returns: Json
       }
+      can_access_demand: {
+        Args: { _demand_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_create_demand: { Args: { _team_id: string }; Returns: boolean }
       can_create_demand_with_service: {
         Args: { _board_id: string; _service_id: string }
@@ -3760,6 +3923,10 @@ export type Database = {
       }
       get_recurring_demands_cron_token: { Args: never; Returns: string }
       get_release_detection_cron_token: { Args: never; Returns: string }
+      get_request_meeting_readiness: {
+        Args: { p_request_id: string }
+        Returns: Json
+      }
       get_shared_board_summary: { Args: { p_token: string }; Returns: Json }
       get_team_active_plan: {
         Args: { _team_id: string }
@@ -4009,6 +4176,16 @@ export type Database = {
           p_trial_days: number
         }
         Returns: Json
+      }
+      upsert_demand_meeting: {
+        Args: {
+          p_create_google_meet: boolean
+          p_demand_id: string
+          p_ends_at: string
+          p_starts_at: string
+          p_timezone: string
+        }
+        Returns: string
       }
       verify_demand_share_token: {
         Args: { p_token: string }
