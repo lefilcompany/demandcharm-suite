@@ -74,7 +74,7 @@ export function ServiceSelector({
       const boardUsage = boardUsageMap.get(service.id);
       
       // If board has services configured, only show services linked to this board
-      if (hasBoardServices && !service.isCategory && !boardUsage) {
+      if (hasBoardServices && !service.isCategory && !boardUsage && service.id !== value) {
         return null;
       }
       

@@ -430,7 +430,7 @@ export function TeamDemandsFilters({ teamId, filters, onChange }: TeamDemandsFil
 
   const serviceOptions = [
     { value: "all", label: "Todos" },
-    ...(services?.map(s => ({ value: s.id, label: s.name })) || [])
+    ...(services?.map(s => ({ value: s.id, label: `${s.name}${s.is_active === false ? " (legado)" : ""}` })) || [])
   ];
 
   const positionOptions = [
