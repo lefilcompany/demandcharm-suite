@@ -26,8 +26,8 @@ export const DemandCreateSchema = z.object({
   title: nonEmptyString
     .max(500, "Título deve ter no máximo 500 caracteres"),
   description: nonEmptyString
-    .refine(hasMeaningfulRichText, "A descrição é obrigatória")
-    .max(50000, "Descrição deve ter no máximo 50000 caracteres"),
+    .max(50000, "Descrição deve ter no máximo 50000 caracteres")
+    .refine(hasMeaningfulRichText, "A descrição é obrigatória"),
   team_id: z.string().uuid("ID da equipe inválido"),
   board_id: z.string().uuid("ID do quadro inválido"),
   status_id: z.string().uuid("ID do status inválido"),
