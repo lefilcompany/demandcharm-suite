@@ -21,7 +21,7 @@ GRANT EXECUTE ON FUNCTION public.can_access_demand(uuid, uuid) TO authenticated,
 CREATE TABLE IF NOT EXISTS public.demand_meetings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   demand_id uuid NOT NULL UNIQUE REFERENCES public.demands(id) ON DELETE CASCADE,
-  organizer_user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  organizer_user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   starts_at timestamptz NOT NULL,
   ends_at timestamptz NOT NULL,
   timezone text NOT NULL DEFAULT 'America/Recife',
@@ -55,7 +55,7 @@ CREATE TRIGGER set_demand_meetings_updated_at BEFORE UPDATE ON public.demand_mee
 CREATE TABLE IF NOT EXISTS public.demand_meeting_participants (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   meeting_id uuid NOT NULL REFERENCES public.demand_meetings(id) ON DELETE CASCADE,
-  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   email text NOT NULL,
   calendar_sync_status text NOT NULL DEFAULT 'invited' CHECK (calendar_sync_status IN ('invited','pending_auto_accept','auto_accepted','no_google_connection','failed','reauth_required','removed')),
   google_account_email text,
@@ -76,12 +76,28 @@ CREATE POLICY "Accessible users can view meeting participants" ON public.demand_
 CREATE INDEX IF NOT EXISTS idx_demand_meetings_retry ON public.demand_meetings(next_retry_at) WHERE sync_status IN ('pending','failed');
 CREATE INDEX IF NOT EXISTS idx_dmp_meeting ON public.demand_meeting_participants(meeting_id);
 
+CREATE OR REPLACE FUNCTION public.get_request_meeting_readiness(p_request_id uuid)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT jsonb_build_object(
+    'is_meeting', dr.meeting_plan IS NOT NULL,
+    'organizer_connected', dr.meeting_plan IS NULL OR EXISTS (
+      SELECT 1 FROM public.google_calendar_connections c
+      WHERE c.user_id = dr.created_by AND c.status = 'connected'
+    )
+  )
+  FROM public.demand_requests dr
+  WHERE dr.id = p_request_id
+    AND public.is_board_admin_or_moderator(auth.uid(), dr.board_id)
+$$;
+REVOKE ALL ON FUNCTION public.get_request_meeting_readiness(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_request_meeting_readiness(uuid) TO authenticated;
+
 CREATE OR REPLACE FUNCTION public.upsert_demand_meeting(p_demand_id uuid, p_starts_at timestamptz, p_ends_at timestamptz, p_timezone text, p_create_google_meet boolean)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_creator uuid; v_meeting_id uuid;
 BEGIN
   SELECT created_by INTO v_creator FROM public.demands WHERE id = p_demand_id;
-  IF v_creator IS NULL OR v_creator <> auth.uid() OR NOT public.can_access_demand(auth.uid(), p_demand_id) THEN RAISE EXCEPTION 'Somente o solicitante pode organizar esta reunião'; END IF;
+  IF v_creator IS NULL OR NOT public.can_access_demand(auth.uid(), p_demand_id) THEN RAISE EXCEPTION 'Sem permissão para configurar esta reunião'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.google_calendar_connections WHERE user_id = v_creator AND status = 'connected') THEN RAISE EXCEPTION 'Conecte seu Google Calendar antes de criar esta reunião'; END IF;
 
   INSERT INTO public.demand_meetings (demand_id, organizer_user_id, starts_at, ends_at, timezone, create_google_meet, sync_status, meet_status)

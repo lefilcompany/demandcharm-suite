@@ -68,17 +68,13 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (meetingError || !meeting) return json({ error: "meeting_not_found" }, 404);
 
-    // Permission: caller must be able to access the demand AND be the organizer.
+    // Permission: caller must be able to access the demand. The organizer account is
+    // fixed by the database and never selected by the client.
     const { data: canAccess } = await admin.rpc("can_access_demand", {
       _user_id: userId,
       _demand_id: meeting.demand_id,
     });
     if (!canAccess) return json({ error: "forbidden" }, 403);
-    // "verify" is read-only: any user with access to the demand may run it.
-    // Only write actions (sync/cancel) are restricted to the organizer.
-    if (action !== "verify" && meeting.organizer_user_id !== userId) {
-      return json({ error: "not_organizer" }, 403);
-    }
 
     if (!isGoogleCalendarEnabled()) {
       return json({ skipped: true, reason: "google_calendar_disabled", sync_status: meeting.sync_status });
@@ -107,7 +103,7 @@ Deno.serve(async (req) => {
 
     const { data: demand } = await admin
       .from("demands")
-      .select("id, title, description, sequence_number")
+      .select("id, title, description, board_sequence_number")
       .eq("id", meeting.demand_id)
       .maybeSingle();
 
