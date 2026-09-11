@@ -79,6 +79,7 @@ interface Demand {
   description?: string | null;
   due_date?: string | null;
   priority?: string | null;
+  effort_points?: number | null;
   status_id: string;
   created_by?: string;
   created_at?: string;
@@ -256,10 +257,25 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
   const [optimisticUpdates, setOptimisticUpdates] = useState<Record<string, string>>({});
   const [columnSearches, setColumnSearches] = useState<Record<string, string>>({});
   const [columnSorts, setColumnSorts] = useState<Record<string, KanbanSortOption>>({});
+  const [scoreRefreshTick, setScoreRefreshTick] = useState(0);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [subReorderDragOverId, setSubReorderDragOverId] = useState<string | null>(null);
   const subReorderSourceIdRef = useState<{ current: string | null }>({ current: null })[0];
   const hoverOpenTimerRef = useRef<number | null>(null);
+
+  // Re-evaluate the dynamic queue regularly while the Kanban is open. Database
+  // changes still arrive immediately through Realtime; this interval does not
+  // issue requests and only refreshes the in-memory ordering.
+  useEffect(() => {
+    const refreshScoreQueue = () => setScoreRefreshTick((current) => current + 1);
+    const intervalId = window.setInterval(refreshScoreQueue, 60_000);
+    document.addEventListener("visibilitychange", refreshScoreQueue);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", refreshScoreQueue);
+    };
+  }, []);
 
   // State for parent-to-subdemand status propagation confirmation
   const [propagateDialog, setPropagateDialog] = useState<{
@@ -2085,7 +2101,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
   }, []);
   const getColumnSort = useCallback((columnKey: string): KanbanSortOption => {
     if (columnSorts[columnKey]) return columnSorts[columnKey];
-    return columnKey === "Entregue" ? "newest" : "due_date_asc";
+    return "priority_score";
   }, [columnSorts]);
   const setColumnSort = useCallback((columnKey: string, sort: KanbanSortOption) => {
     setColumnSorts(prev => ({ ...prev, [columnKey]: sort }));
@@ -2095,7 +2111,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
   const getFilteredDemandsForColumn = useCallback((columnKey: string) => {
     const raw = getDemandsForColumn(columnKey);
     return filterAndSortDemands(raw, getColumnSearch(columnKey), getColumnSort(columnKey), liveDependencyMap || undefined);
-  }, [getDemandsForColumn, columnSearches, columnSorts, liveDependencyMap]);
+  }, [getDemandsForColumn, columnSearches, columnSorts, liveDependencyMap, scoreRefreshTick]);
 
   // Render column content
   const renderColumnContent = (columnKey: string, showMoveMenu: boolean = false, columnAdjustmentType?: AdjustmentTypeColumn) => {
