@@ -1659,6 +1659,7 @@ export default function DemandDetail() {
                 board_id: demand.board_id,
                 created_by: demand.created_by,
                 original_due_date: (demand as any).original_due_date,
+                effort_points: demand.effort_points,
               }}
               onClose={() => setIsEditDialogOpen(false)}
               onSuccess={() => setIsEditDialogOpen(false)}

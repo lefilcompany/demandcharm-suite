@@ -51,11 +51,17 @@ export function formatServiceHours(service: Pick<Service, "estimated_hours" | "h
   return `${service.estimated_hours}h`;
 }
 
-export function useServices(teamId: string | null, boardId?: string | null) {
+interface UseServicesOptions {
+  includeInactive?: boolean;
+  includeServiceId?: string | null;
+}
+
+export function useServices(teamId: string | null, boardId?: string | null, options: UseServicesOptions = {}) {
   const { user } = useAuth();
+  const { includeInactive = false, includeServiceId = null } = options;
 
   return useQuery({
-    queryKey: ["services", teamId, boardId],
+    queryKey: ["services", teamId, boardId, includeInactive, includeServiceId],
     queryFn: async () => {
       if (!teamId) return [];
 
@@ -63,27 +69,36 @@ export function useServices(teamId: string | null, boardId?: string | null) {
         .from("services")
         .select("*")
         .eq("team_id", teamId)
-        .eq("is_active", true)
         .order("sort_order")
         .order("name");
 
-      // Filter by board_id: show services for this board OR team-wide services (board_id = null)
-      if (boardId) {
+      if (!includeInactive && !includeServiceId) {
+        query = query.eq("is_active", true);
+      }
+
+      // When a current legacy service is requested, filtering is completed below
+      // so that its existing value remains visible even if it left the board scope.
+      if (boardId && !includeServiceId) {
         query = query.or(`board_id.eq.${boardId},board_id.is.null`);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as unknown as Service[];
+      const services = (data || []) as unknown as Service[];
+      return services.filter((service) => {
+        if (service.id === includeServiceId) return true;
+        const isInBoardScope = !boardId || service.board_id === boardId || service.board_id === null;
+        return isInBoardScope && (includeInactive || service.is_active !== false);
+      });
     },
     enabled: !!user && !!teamId,
   });
 }
 
 // Hook to get hierarchical services with parent-child relationships
-export function useHierarchicalServices(teamId: string | null, boardId?: string | null) {
-  const { data: services, isLoading, error } = useServices(teamId, boardId);
+export function useHierarchicalServices(teamId: string | null, boardId?: string | null, options: UseServicesOptions = {}) {
+  const { data: services, isLoading, error } = useServices(teamId, boardId, options);
 
   const hierarchicalServices = useMemo(() => {
     if (!services) return [];

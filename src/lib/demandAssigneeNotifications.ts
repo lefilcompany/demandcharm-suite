@@ -124,20 +124,10 @@ export async function notifyDemandAssigneeChange(
   const wantPush = shouldNotifyUser(prefs, { ...ctx, channel: "push" });
   const wantEmail = shouldNotifyUser(prefs, { ...ctx, channel: "email" });
 
-  const inAppPromise = wantInApp
-    ? supabase
-        .from("notifications")
-        .insert({
-          user_id: params.userId,
-          title: msg.inAppTitle,
-          message: msg.inAppMessage,
-          type: msg.inAppType,
-          link: msg.link,
-        })
-        .then((res) => {
-          if (res.error) console.warn("[demandAssigneeNotifications] in-app failed:", res.error);
-        })
-    : Promise.resolve();
+  // The in-app notification is created by the database trigger attached to
+  // demand_assignees. Keeping this client-side insert would violate RLS and
+  // would duplicate notifications when the trigger succeeds.
+  const inAppPromise = Promise.resolve();
 
   const pushPromise = wantPush
     ? sendPushNotification({

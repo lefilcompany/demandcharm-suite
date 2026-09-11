@@ -224,7 +224,7 @@ export function DemandFilters({ boardId, filters, onChange, availableBoardIds }:
     : allBoards;
   const { data: statuses } = useDemandStatuses();
   const { data: members } = useBoardMembers(boardId);
-  const { data: services } = useServices(currentTeamId, boardId);
+  const { data: services } = useServices(currentTeamId, boardId, { includeInactive: true });
   const { data: positions } = useTeamPositions(currentTeamId);
 
   const activeFiltersCount = Object.values(filters).filter(Boolean).length;
@@ -258,7 +258,7 @@ export function DemandFilters({ boardId, filters, onChange, availableBoardIds }:
 
   const serviceOptions = [
     { value: "all", label: "Todos" },
-    ...(services?.map(s => ({ value: s.id, label: s.name })) || [])
+    ...(services?.map(s => ({ value: s.id, label: `${s.name}${s.is_active === false ? " (legado)" : ""}` })) || [])
   ];
 
   const positionOptions = [

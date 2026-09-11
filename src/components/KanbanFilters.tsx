@@ -216,7 +216,7 @@ export function KanbanFilters({ teamId, boardId, filters, onChange }: KanbanFilt
   const { user } = useAuth();
   const { data: positions } = useTeamPositions(teamId);
   const { data: members } = useBoardMembers(boardId || null);
-  const { data: hierarchicalServices, rawServices: services } = useHierarchicalServices(teamId, boardId);
+  const { data: hierarchicalServices, rawServices: services } = useHierarchicalServices(teamId, boardId, { includeInactive: true });
   
   const activeFiltersCount = 
     (filters.myTasks ? 1 : 0) + 
@@ -249,10 +249,10 @@ export function KanbanFilters({ teamId, boardId, filters, onChange }: KanbanFilt
     if (!hierarchicalServices) return opts;
     
     hierarchicalServices.forEach(service => {
-      opts.push({ value: service.id, label: service.name });
+      opts.push({ value: service.id, label: `${service.name}${service.is_active === false ? " (legado)" : ""}` });
       if (service.isCategory) {
         service.children.forEach(child => {
-          opts.push({ value: child.id, label: `  ${child.name}` });
+          opts.push({ value: child.id, label: `  ${child.name}${child.is_active === false ? " (legado)" : ""}` });
         });
       }
     });

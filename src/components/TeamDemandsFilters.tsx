@@ -379,7 +379,7 @@ export function SelectedBoardChips({
 
 export function TeamDemandsFilters({ teamId, filters, onChange }: TeamDemandsFiltersProps) {
   const [open, setOpen] = useState(false);
-  const { data: services } = useServices(teamId, null);
+  const { data: services } = useServices(teamId, null, { includeInactive: true });
   const { data: positions } = useTeamPositions(teamId);
   const { data: members } = useTeamMembers(teamId);
 
@@ -430,7 +430,7 @@ export function TeamDemandsFilters({ teamId, filters, onChange }: TeamDemandsFil
 
   const serviceOptions = [
     { value: "all", label: "Todos" },
-    ...(services?.map(s => ({ value: s.id, label: s.name })) || [])
+    ...(services?.map(s => ({ value: s.id, label: `${s.name}${s.is_active === false ? " (legado)" : ""}` })) || [])
   ];
 
   const positionOptions = [

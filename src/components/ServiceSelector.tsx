@@ -34,6 +34,7 @@ interface DisplayService {
   isLimitReached: boolean;
   isCategory?: boolean;
   parent_id?: string | null;
+  isActive: boolean;
 }
 
 export function ServiceSelector({
@@ -44,7 +45,9 @@ export function ServiceSelector({
   disabled = false,
   userRole,
 }: ServiceSelectorProps) {
-  const { data: hierarchicalServices, isLoading: servicesLoading, rawServices } = useHierarchicalServices(teamId, boardId);
+  const { data: hierarchicalServices, isLoading: servicesLoading, rawServices } = useHierarchicalServices(teamId, boardId, {
+    includeServiceId: value && value !== "none" ? value : null,
+  });
   const { hasBoardServices, isLoading: boardServicesLoading } = useHasBoardServices(boardId);
   const { data: boardServicesUsage, isLoading: usageLoading } = useBoardServicesWithUsage(boardId);
   
@@ -71,7 +74,7 @@ export function ServiceSelector({
       const boardUsage = boardUsageMap.get(service.id);
       
       // If board has services configured, only show services linked to this board
-      if (hasBoardServices && !service.isCategory && !boardUsage) {
+      if (hasBoardServices && !service.isCategory && !boardUsage && service.id !== value) {
         return null;
       }
       
@@ -88,6 +91,7 @@ export function ServiceSelector({
           isLimitReached: boardUsage.isLimitReached || false,
           isCategory: service.isCategory,
           parent_id: service.parent_id,
+          isActive: service.is_active !== false,
         };
       }
       
@@ -103,6 +107,7 @@ export function ServiceSelector({
         isLimitReached: false,
         isCategory: service.isCategory,
         parent_id: service.parent_id,
+        isActive: service.is_active !== false,
       };
     };
 
@@ -183,11 +188,12 @@ export function ServiceSelector({
     <SelectItem 
       key={service.id} 
       value={service.id}
-      disabled={service.isLimitReached}
+      disabled={service.isLimitReached || !service.isActive}
       className={`${service.isLimitReached ? "opacity-50" : ""} ${indented ? "pl-6 border-l-2 border-muted ml-2" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         <span className="font-medium truncate max-w-[120px] sm:max-w-none">{service.name}</span>
+        {!service.isActive && <span className="text-xs text-muted-foreground">(legado)</span>}
         {service.price_cents > 0 && (
           <span className="text-xs font-semibold text-primary flex items-center gap-0.5 whitespace-nowrap">
             {formatPrice(service.price_cents)}

@@ -101,7 +101,10 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
   const [recurrence, setRecurrence] = useState<RecurrenceData>(defaultRecurrenceData);
   const [matchedRecurringId, setMatchedRecurringId] = useState<string | null>(null);
   const [meetingForm, setMeetingForm] = useState<MeetingFormValue>(emptyMeetingForm());
-  const isMeetingService = services?.find((service) => service.id === serviceId)?.behavior === "meeting";
+  const selectedService = services?.find((service) => service.id === serviceId);
+  const isMeetingService = selectedService
+    ? selectedService.behavior === "meeting"
+    : serviceId === demand.service_id && !!meetingData?.meeting;
 
   // Subdemand state — only NEW subdemands to be added
   const [newSubdemands, setNewSubdemands] = useState<SubdemandFormData[]>([]);
@@ -401,13 +404,6 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
         });
       }
 
-      if (isMeetingService) {
-        const meetingId = await persistDemandMeeting({ demandId: demand.id, dueDate, form: meetingForm, timezone: meetingData?.meeting.timezone || userTimezone || "America/Recife" });
-        await requestMeetingSync(meetingId);
-      } else if (meetingData?.meeting && meetingData.meeting.sync_status !== "cancelled") {
-        await requestMeetingSync(meetingData.meeting.id, "cancel");
-      }
-
       // Add new subdemands
       const parentAssigneeSet = new Set(selectedAssignees);
       for (const sub of validSubs) {
@@ -431,6 +427,24 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
       }
 
       await handleRecurrence();
+
+      // Calendar synchronization is intentionally isolated from the demand save.
+      // A temporary Calendar problem must never prevent the remaining edits from completing.
+      try {
+        const serviceChanged = (serviceId && serviceId !== "none" ? serviceId : null) !== demand.service_id;
+        if (isMeetingService && (serviceChanged || !!meetingData?.meeting)) {
+          const meetingId = await persistDemandMeeting({ demandId: demand.id, dueDate, form: meetingForm, timezone: meetingData?.meeting.timezone || userTimezone || "America/Recife" });
+          await requestMeetingSync(meetingId);
+        } else if (serviceChanged && meetingData?.meeting && meetingData.meeting.sync_status !== "cancelled") {
+          await requestMeetingSync(meetingData.meeting.id, "cancel");
+        }
+      } catch (meetingError) {
+        console.error("Erro ao sincronizar reunião:", meetingError);
+        toast.warning("Demanda atualizada, mas a reunião não foi sincronizada", {
+          description: getErrorMessage(meetingError),
+        });
+      }
+
       clearDraft();
 
       const subMsg = validSubs.length > 0 ? ` e ${validSubs.length} subdemanda(s) criada(s)` : "";
