@@ -31,6 +31,10 @@ import type { SubdemandFormData } from "@/components/create-demand";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { EFFORT_OPTIONS, EFFORT_MULTIPLIERS, DEFAULT_EFFORT } from "@/lib/priorityScore";
+import { useServices } from "@/hooks/useServices";
+import { MeetingFields } from "@/components/meeting/MeetingFields";
+import { emptyMeetingForm, formatMeetingTime, meetingDurationMinutes, type MeetingFormValue } from "@/lib/meetingUtils";
+import { persistDemandMeeting, requestMeetingSync, useDemandMeeting, useUserTimezone } from "@/hooks/useDemandMeeting";
 
 interface DemandEditFormProps {
   demand: {
@@ -60,6 +64,9 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
   const { data: currentAssignees } = useDemandAssignees(demand.id);
   const { data: boardRole } = useBoardRole(demand.board_id);
   const { hasBoardServices } = useHasBoardServices(demand.board_id);
+  const { data: services } = useServices(demand.team_id, demand.board_id);
+  const { data: meetingData } = useDemandMeeting(demand.id);
+  const { data: userTimezone } = useUserTimezone();
 
   // Recurring demands
   const { data: recurringDemands } = useRecurringDemands(demand.board_id);
@@ -92,6 +99,8 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
   const [primaryAssignee, setPrimaryAssignee] = useState<string | null>(null);
   const [recurrence, setRecurrence] = useState<RecurrenceData>(defaultRecurrenceData);
   const [matchedRecurringId, setMatchedRecurringId] = useState<string | null>(null);
+  const [meetingForm, setMeetingForm] = useState<MeetingFormValue>(emptyMeetingForm());
+  const isMeetingService = services?.find((service) => service.id === serviceId)?.behavior === "meeting";
 
   // Subdemand state — only NEW subdemands to be added
   const [newSubdemands, setNewSubdemands] = useState<SubdemandFormData[]>([]);
@@ -134,6 +143,14 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
       setPrimaryAssignee(primary);
     }
   }, [currentAssignees]);
+
+  useEffect(() => {
+    const meeting = meetingData?.meeting;
+    if (!meeting) return;
+    const duration = Math.max(5, Math.round((new Date(meeting.ends_at).getTime() - new Date(meeting.starts_at).getTime()) / 60000));
+    const preset = [30, 45, 60, 90, 120].includes(duration) ? String(duration) : "custom";
+    setMeetingForm({ time: formatMeetingTime(meeting.starts_at, meeting.timezone), duration: preset, customMinutes: duration, createGoogleMeet: meeting.create_google_meet });
+  }, [meetingData]);
 
   // Load existing recurring demand — vincula primeiro por ID (vínculo robusto), depois fallback por título
   useEffect(() => {
@@ -383,6 +400,13 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
         });
       }
 
+      if (isMeetingService) {
+        const meetingId = await persistDemandMeeting({ demandId: demand.id, dueDate, form: meetingForm, timezone: meetingData?.meeting.timezone || userTimezone || "America/Recife" });
+        await requestMeetingSync(meetingId);
+      } else if (meetingData?.meeting && meetingData.meeting.sync_status !== "cancelled") {
+        await requestMeetingSync(meetingData.meeting.id, "cancel");
+      }
+
       // Add new subdemands
       const parentAssigneeSet = new Set(selectedAssignees);
       for (const sub of validSubs) {
@@ -560,7 +584,7 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                     <Package className="h-4 w-4" />
                     Serviço {hasBoardServices ? "*" : ""}
                   </Label>
-                  <ServiceSelector
+        <ServiceSelector
                     teamId={demand.team_id}
                     boardId={demand.board_id}
                     value={serviceId}
