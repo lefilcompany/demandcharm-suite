@@ -3873,17 +3873,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      create_demand_assignee_notification: {
-        Args: {
-          p_demand_id: string
-          p_link: string
-          p_message: string
-          p_title: string
-          p_type: string
-          p_user_id: string
-        }
-        Returns: string
-      }
       create_demand_with_subdemands: {
         Args: { p_dependencies?: Json; p_parent: Json; p_subdemands?: Json }
         Returns: Json
