@@ -3,9 +3,8 @@
 // No token value is ever logged or returned to the browser.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { appUrl, decryptToken, getAccessToken, isAutoAcceptEnabled, isGoogleCalendarEnabled } from "../_shared/google-calendar.ts";
-import { autoAcceptParticipant, connectedAccountsFor } from "../_shared/google-meeting-participants.ts";
-import type { ParticipantRow } from "../_shared/google-meeting-participants.ts";
+import { appUrl, getAccessToken, isAutoAcceptEnabled, isGoogleCalendarEnabled } from "../_shared/google-calendar/config.ts";
+
 
 const CALENDAR_ID = "primary";
 const BACKOFF_MINUTES = [0, 1, 5, 15, 60];
@@ -103,6 +102,7 @@ Deno.serve(async (req) => {
       await admin.from("demand_meetings").update({ sync_status: "syncing" }).eq("id", meetingId);
     }
 
+    const { decryptToken } = await import("../_shared/google-calendar/crypto.ts");
     const accessToken = await getAccessToken(await decryptToken(connection.refresh_token_encrypted));
 
     const { data: demand } = await admin
@@ -116,36 +116,9 @@ Deno.serve(async (req) => {
       .select("id, meeting_id, user_id, email, calendar_sync_status, sync_attempts")
       .eq("meeting_id", meetingId);
 
-    const participantRows = (participants ?? []) as ParticipantRow[];
-    // Prefer the Google account actually connected to SoMA (may differ from the profile e-mail),
-    // so the invite lands on the calendar we can later auto-accept.
-    const connectedAccounts = await connectedAccountsFor(
-      admin,
-      participantRows.map((p) => p.user_id).filter(Boolean) as string[],
-    );
-    const attendeeEmailFor = (p: ParticipantRow) => {
-      const connected = p.user_id ? connectedAccounts.get(p.user_id) : undefined;
-      return (connected?.email || p.email || "").trim();
-    };
-
-    // Domínios de teste/seed que não devem receber convite real (evita bounces em homologação).
-    const NON_DELIVERABLE_DOMAINS = ["somadev.test"];
-    const isNonDeliverable = (email: string) =>
-      NON_DELIVERABLE_DOMAINS.some((d) => email.toLowerCase().endsWith(`@${d}`));
-
-    const validEmails = participantRows
-      .map(attendeeEmailFor)
-      .filter((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
-
-    const skippedCount = validEmails.filter(isNonDeliverable).length;
-    if (skippedCount > 0) {
-      console.warn(`[meeting-sync] skipped ${skippedCount} non-deliverable test attendee(s)`);
-    }
-
-    const attendees = validEmails
-      .filter((e) => !isNonDeliverable(e))
-      .map((email) => ({ email }));
-
+    const participantRows = (participants ?? []) as Array<{ id: string; user_id: string | null; email: string; calendar_sync_status: string; sync_attempts: number }>;
+    const validEmails = Array.from(new Set(participantRows.map((participant) => participant.email.trim().toLowerCase()).filter((email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))));
+    const attendees = validEmails.map((email) => ({ email }));
 
     const eventId = meeting.google_event_id || deterministicEventId(meetingId);
     const base = `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events`;
@@ -361,34 +334,10 @@ Deno.serve(async (req) => {
       last_verified_at: new Date().toISOString(),
     }).eq("id", meetingId);
 
-    // ---- per-participant state (never affects the meeting's own sync_status) ----
-    const icalUid = confirmed.iCalUID ?? event.iCalUID ?? meeting.google_ical_uid ?? null;
-    const autoAccept = isAutoAcceptEnabled();
-    for (const p of participantRows) {
-      const hasConnection = !!p.user_id && connectedAccounts.has(p.user_id);
-      if (p.calendar_sync_status === "auto_accepted") continue;
-      await admin.from("demand_meeting_participants").update({
-        calendar_sync_status: hasConnection && autoAccept ? "pending_auto_accept" : (hasConnection ? "invited" : "no_google_connection"),
-        google_account_email: hasConnection ? (connectedAccounts.get(p.user_id!)?.email ?? null) : null,
-        next_retry_at: hasConnection && autoAccept ? new Date().toISOString() : null,
-      }).eq("id", p.id);
-    }
-
-    if (autoAccept && icalUid) {
-      const meetingRef = { id: meetingId, google_ical_uid: icalUid, google_event_id: confirmId };
-      for (const p of participantRows) {
-        if (!p.user_id || !connectedAccounts.has(p.user_id)) continue;
-        if (p.calendar_sync_status === "auto_accepted") continue;
-        try {
-          await autoAcceptParticipant(admin, meetingRef, { ...p, calendar_sync_status: "pending_auto_accept" });
-        } catch (err) {
-          console.error(JSON.stringify({
-            meeting_id: meetingId, participant_id: p.id, operation: "auto_accept",
-            error: err instanceof Error ? err.message : String(err),
-          }));
-        }
-      }
-    }
+    await admin.from("demand_meeting_participants").update({
+      calendar_sync_status: "invited",
+      next_retry_at: null,
+    }).eq("meeting_id", meetingId).neq("user_id", meeting.organizer_user_id);
 
     console.log(JSON.stringify({
       meeting_id: meetingId, demand_id: meeting.demand_id,

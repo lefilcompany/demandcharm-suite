@@ -12,7 +12,7 @@ import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 export const GOOGLE_CALENDAR_SCOPES = [
   "openid",
   "email",
-  "https://www.googleapis.com/auth/calendar.events.owned",
+  "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/meetings.space.created",
   "https://www.googleapis.com/auth/meetings.space.readonly",
 ];
@@ -20,7 +20,7 @@ export const GOOGLE_CALENDAR_SCOPE = GOOGLE_CALENDAR_SCOPES.join(" ");
 
 /** Scopes a connection MUST hold to be considered fully granted. */
 export const REQUIRED_GRANTED_SCOPES = [
-  "https://www.googleapis.com/auth/calendar.events.owned",
+  "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/meetings.space.created",
   "https://www.googleapis.com/auth/meetings.space.readonly",
 ];
@@ -44,6 +44,32 @@ export const GOOGLE_USERINFO_ENDPOINT = "https://openidconnect.googleapis.com/v1
 
 /** OAuth state time-to-live: 10 minutes. */
 export const STATE_TTL_MS = 10 * 60 * 1000;
+
+export function isGoogleCalendarEnabled(): boolean {
+  const raw = (Deno.env.get("GOOGLE_CALENDAR_ENABLED") ?? "").trim().toLowerCase();
+  return raw !== "false" && raw !== "0" && raw !== "off";
+}
+
+export function isAutoAcceptEnabled(): boolean {
+  const raw = (Deno.env.get("GOOGLE_CALENDAR_AUTO_ACCEPT_ENABLED") ?? "true").trim().toLowerCase();
+  return raw === "true" || raw === "1" || raw === "yes";
+}
+
+export async function getAccessToken(refreshToken: string): Promise<string> {
+  const client = googleOAuthClient();
+  if (!client) throw new Error("google_calendar_not_configured");
+  const response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
+    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ client_id: client.clientId, client_secret: client.clientSecret, refresh_token: refreshToken, grant_type: "refresh_token" }),
+  });
+  if (!response.ok) {
+    const details = await response.text();
+    throw Object.assign(new Error(`token_refresh_failed [${response.status}]: ${details}`), { reauth: response.status === 400 || response.status === 401 });
+  }
+  const data = await response.json() as { access_token?: string };
+  if (!data.access_token) throw new Error("token_refresh_no_access_token");
+  return data.access_token;
+}
 
 export function adminClient(): SupabaseClient {
   return createClient(
