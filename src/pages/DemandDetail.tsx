@@ -1192,7 +1192,8 @@ export default function DemandDetail() {
               </div>}
 
             {(demand as any).original_due_date &&
-              (demand as any).original_due_date !== demand.due_date && (
+              demand.due_date &&
+              (demand as any).original_due_date.substring(0, 10) !== demand.due_date.substring(0, 10) && (
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-muted-foreground">Prazo inicial:</span>
