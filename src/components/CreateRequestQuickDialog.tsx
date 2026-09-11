@@ -417,8 +417,6 @@ export function CreateRequestQuickDialog({
                 />
               </div>
 
-              {isMeetingService && <MeetingFields value={meetingForm} onChange={setMeetingForm} />}
-
               <div className="space-y-2">
                 <Label htmlFor="description">Descrição *</Label>
                 <RichTextEditor
@@ -470,6 +468,8 @@ export function CreateRequestQuickDialog({
                 </div>
 
               </div>
+
+              {isMeetingService && <MeetingFields value={meetingForm} onChange={setMeetingForm} />}
 
               <div className="space-y-2">
                 <Label>Anexos (opcional)</Label>

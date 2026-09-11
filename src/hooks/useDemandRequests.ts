@@ -394,6 +394,14 @@ export function useApproveDemandRequest() {
 
       const uniqueAssigneeIds = Array.from(new Set(assigneeIds.filter(Boolean)));
 
+      const { data: readiness, error: readinessError } = await (supabase as any).rpc("get_request_meeting_readiness", {
+        p_request_id: requestId,
+      });
+      if (readinessError) throw readinessError;
+      if (readiness?.is_meeting && !readiness?.organizer_connected) {
+        throw new Error("O solicitante precisa conectar o Google Calendar antes da aprovação.");
+      }
+
       const { data, error } = await supabase.rpc("approve_demand_request", {
         p_request_id: requestId,
         p_assignee_ids: uniqueAssigneeIds,

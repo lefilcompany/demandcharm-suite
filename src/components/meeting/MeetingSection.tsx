@@ -2,8 +2,8 @@ import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CalendarCheck, ExternalLink, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Info } from "lucide-react";
-import { useDemandMeeting, useSyncDemandMeeting, useSyncMeetingParticipants } from "@/hooks/useDemandMeeting";
-import { openOAuthPopup, useGoogleCalendarConnection } from "@/hooks/useGoogleCalendarConnection";
+import { useDemandMeeting, useSyncDemandMeeting } from "@/hooks/useDemandMeeting";
+import { useGoogleCalendarConnection } from "@/hooks/useGoogleCalendarConnection";
 import {
   PARTICIPANT_STATUS_LABELS,
   SYNC_STATUS_LABELS,
@@ -15,7 +15,6 @@ import {
 export function MeetingSection({ demandId }: { demandId: string }) {
   const { data } = useDemandMeeting(demandId);
   const sync = useSyncDemandMeeting();
-  const syncParticipants = useSyncMeetingParticipants();
   const { connect } = useGoogleCalendarConnection();
   const verifiedFor = useRef<string | null>(null);
 
@@ -29,23 +28,6 @@ export function MeetingSection({ demandId }: { demandId: string }) {
     verifiedFor.current = meetingId;
     sync.mutate({ meetingId, action: "verify" });
   }, [meetingId, shouldVerify]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Invite propagation to a guest calendar is not instantaneous. Respect the server's
-  // next_retry_at and retry all due participants; the server still derives their IDs/tokens.
-  const pendingParticipants = (data?.participants ?? []).filter(
-    (participant) => participant.calendar_sync_status === "pending_auto_accept",
-  );
-  const nextParticipantRetryAt = pendingParticipants.reduce<number | null>((earliest, participant) => {
-    const retryAt = participant.next_retry_at ? new Date(participant.next_retry_at).getTime() : Date.now();
-    if (!Number.isFinite(retryAt)) return earliest;
-    return earliest === null ? retryAt : Math.min(earliest, retryAt);
-  }, null);
-  useEffect(() => {
-    if (!meetingId || nextParticipantRetryAt === null) return;
-    const delay = Math.max(0, nextParticipantRetryAt - Date.now());
-    const timeout = window.setTimeout(() => syncParticipants.mutate(meetingId), delay);
-    return () => window.clearTimeout(timeout);
-  }, [meetingId, nextParticipantRetryAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!data?.meeting) return null;
   const { meeting, participants } = data;
@@ -141,7 +123,7 @@ export function MeetingSection({ demandId }: { demandId: string }) {
         )}
 
         {meeting.sync_status === "not_connected" && (
-          <Button size="sm" variant="outline" className="h-8" onClick={() => connect.mutate(openOAuthPopup())}>
+          <Button size="sm" variant="outline" className="h-8" onClick={() => connect.mutate()}>
             Conectar Google Calendar
           </Button>
         )}
