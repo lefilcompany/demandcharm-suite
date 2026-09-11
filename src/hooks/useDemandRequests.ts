@@ -216,6 +216,13 @@ export function useCreateDemandRequest() {
         service_id?: string;
         dependsOnIndex?: number;
       }>;
+      meeting_plan?: {
+        time: string;
+        duration: string;
+        customMinutes: number;
+        createGoogleMeet: boolean;
+        timezone: string;
+      } | null;
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
@@ -228,7 +235,7 @@ export function useCreateDemandRequest() {
 
       const requesterName = profile?.full_name || "Usuário";
 
-      const { subdemands_plan = [], ...rest } = data;
+      const { subdemands_plan = [], meeting_plan = null, ...rest } = data;
 
       const { data: result, error } = await supabase
         .from("demand_requests")
@@ -236,6 +243,7 @@ export function useCreateDemandRequest() {
           ...rest,
           created_by: user.id,
           subdemands_plan: subdemands_plan as any,
+          meeting_plan: meeting_plan as any,
         } as any)
         .select()
         .maybeSingle();
@@ -394,9 +402,27 @@ export function useApproveDemandRequest() {
 
       if (error) throw error;
 
-      const result = data as { parent_id?: string; subdemand_ids?: string[]; already_approved?: boolean } | null;
+       const result = data as { parent_id?: string; subdemand_ids?: string[]; already_approved?: boolean } | null;
       if (!result?.parent_id) {
         throw new Error("A aprovação não retornou a demanda criada.");
+      }
+
+      const { data: request } = await (supabase as any)
+        .from("demand_requests")
+        .select("meeting_plan")
+        .eq("id", requestId)
+        .maybeSingle();
+
+      if (request?.meeting_plan && dueDate) {
+        const plan = request.meeting_plan as { time: string; duration: string; customMinutes: number; createGoogleMeet: boolean; timezone?: string };
+        const { emptyMeetingForm } = await import("@/lib/meetingUtils");
+        const { persistDemandMeeting } = await import("@/hooks/useDemandMeeting");
+        await persistDemandMeeting({
+          demandId: result.parent_id,
+          dueDate,
+          form: { ...emptyMeetingForm(), ...plan },
+          timezone: plan.timezone || "America/Recife",
+        });
       }
 
       return result;

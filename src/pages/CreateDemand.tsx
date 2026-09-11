@@ -61,6 +61,11 @@ import {
   ReviewStep,
 } from "@/components/create-demand";
 import type { SubdemandFormData } from "@/components/create-demand";
+import { MeetingFields } from "@/components/meeting/MeetingFields";
+import { emptyMeetingForm, type MeetingFormValue } from "@/lib/meetingUtils";
+import { persistDemandMeeting, requestMeetingSync, useUserTimezone } from "@/hooks/useDemandMeeting";
+import { useGoogleCalendarConnection } from "@/hooks/useGoogleCalendarConnection";
+import { useServices } from "@/hooks/useServices";
 
 export default function CreateDemand({ open, onClose }: { open?: boolean; onClose?: () => void }) {
   const { t } = useTranslation();
@@ -126,6 +131,9 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   const { hasBoardServices } = useHasBoardServices(activeBoardId);
 
   const canAssignResponsibles = boardRole !== "requester";
+  const { data: services } = useServices(selectedTeamId, activeBoardId);
+  const { connection: calendarConnection } = useGoogleCalendarConnection();
+  const { data: userTimezone } = useUserTimezone();
 
   // Parent form state
   const [title, setTitle] = useState("");
@@ -143,6 +151,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   const [serviceId, setServiceId] = useState("");
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [primaryAssigneeId, setPrimaryAssigneeId] = useState<string | null>(null);
+  const [meetingForm, setMeetingForm] = useState<MeetingFormValue>(emptyMeetingForm());
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [recurrence, setRecurrence] = useState<RecurrenceData>(defaultRecurrenceData);
   const [selectedFolderId, setSelectedFolderId] = useState("");
@@ -162,6 +171,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   const uploadAttachment = useUploadAttachment();
   const createRecurringDemand = useCreateRecurringDemand();
   const createDemandWithSubdemands = useCreateDemandWithSubdemands();
+  const isMeetingService = services?.find((service) => service.id === serviceId)?.behavior === "meeting";
 
   const { canCreate: canCreateWithService, serviceInfo } = useCanCreateWithService(
     activeBoardId,
@@ -227,6 +237,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     setDueDate("");
     setServiceId("");
     setAssigneeIds([]);
+    setMeetingForm(emptyMeetingForm());
     setPendingFiles([]);
     setRecurrence(defaultRecurrenceData);
     setSelectedFolderId("");
@@ -305,6 +316,17 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     if (error) console.error("Error saving approval recipients:", error);
   };
 
+  const saveMeetingForDemand = async (demandId: string) => {
+    if (!isMeetingService || !dueDate) return;
+    const meetingId = await persistDemandMeeting({
+      demandId,
+      dueDate,
+      form: meetingForm,
+      timezone: userTimezone || "America/Recife",
+    });
+    await requestMeetingSync(meetingId);
+  };
+
   const submitDemand = async (
     assigneeIds: string[],
     primaryAssigneeId: string | null,
@@ -333,6 +355,10 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     }
     if (!dueDate && !isBacklogSelected) {
       toast.error("Defina a data de entrega da demanda");
+      return;
+    }
+    if (isMeetingService && !calendarConnection?.connected) {
+      toast.error("Conecte seu Google Calendar antes de criar uma demanda de reunião.");
       return;
     }
 
@@ -470,6 +496,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
 
             if (parentId) {
               await persistApprovalRecipients(parentId);
+              await saveMeetingForDemand(parentId);
             }
 
             setSuccessState({
@@ -590,6 +617,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
 
           if (!wasCreatedOffline && demand?.id) {
             await persistApprovalRecipients(demand.id);
+            await saveMeetingForDemand(demand.id);
           }
 
           setSuccessState({
@@ -1012,6 +1040,14 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                         </div>
                       )}
                     </div>
+
+                    {isMeetingService && (
+                      <MeetingFields
+                        value={meetingForm}
+                        onChange={setMeetingForm}
+                        participantNames={assigneeIds.map(memberName)}
+                      />
+                    )}
 
                     {/* Status + Data de Entrega + Prioridade */}
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">

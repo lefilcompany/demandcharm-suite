@@ -65,6 +65,7 @@ import { Lock, Link2, GripVertical, FileText } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
 import { isFinalizationStatus, analyzeSubdemandsForPropagation } from "@/lib/subdemandStatusPropagation";
 import { patchDemandStatusByIds, patchParentAggregatedTime } from "@/lib/demandRealtimeCache";
+import { MeetingSection } from "@/components/meeting/MeetingSection";
 export default function DemandDetail() {
   const {
     id
@@ -1151,6 +1152,8 @@ export default function DemandDetail() {
                 />
               </div>
             </div>}
+
+          <MeetingSection demandId={demand.id} />
 
           <div className="grid gap-4 md:grid-cols-2">
             {/* Creator info with board role */}

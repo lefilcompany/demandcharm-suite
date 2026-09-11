@@ -35,6 +35,12 @@ import { RecurrenceConfig, RecurrenceData, defaultRecurrenceData } from "@/compo
 import { useCreateRecurringDemand } from "@/hooks/useRecurringDemands";
 import { toast } from "sonner";
 import { Calendar, Loader2 } from "lucide-react";
+import { useServices } from "@/hooks/useServices";
+import { useGoogleCalendarConnection } from "@/hooks/useGoogleCalendarConnection";
+import { MeetingFields } from "@/components/meeting/MeetingFields";
+import { emptyMeetingForm, type MeetingFormValue } from "@/lib/meetingUtils";
+import { persistDemandMeeting, requestMeetingSync, useUserTimezone } from "@/hooks/useDemandMeeting";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 
 interface CreateDemandQuickDialogProps {
   open: boolean;
@@ -67,8 +73,15 @@ export function CreateDemandQuickDialog({
   const [primaryAssigneeId, setPrimaryAssigneeId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<string>("");
   const [recurrence, setRecurrence] = useState<RecurrenceData>(defaultRecurrenceData);
+  const [meetingForm, setMeetingForm] = useState<MeetingFormValue>(emptyMeetingForm());
 
   const createRecurringDemand = useCreateRecurringDemand();
+  const { data: services } = useServices(currentTeamId, selectedBoardId);
+  const { connection: calendarConnection } = useGoogleCalendarConnection();
+  const { data: userTimezone } = useUserTimezone();
+  const { data: teamMembers } = useTeamMembers(currentTeamId);
+  const isMeetingService = services?.find((service) => service.id === serviceId)?.behavior === "meeting";
+  const participantNames = assigneeIds.map((id) => teamMembers?.find((member) => member.user_id === id)?.profile.full_name || "Usuário");
 
   // Draft persistence
   const draftFields = useMemo(
@@ -142,6 +155,10 @@ export function CreateDemandQuickDialog({
       toast.error("Defina a data de entrega");
       return;
     }
+    if (isMeetingService && !calendarConnection?.connected) {
+      toast.error("Conecte seu Google Calendar antes de criar uma demanda de reunião.");
+      return;
+    }
 
     try {
       const result = await createDemand.mutateAsync({
@@ -169,6 +186,11 @@ export function CreateDemandQuickDialog({
               : "Demanda criada, mas houve um erro ao atribuir responsáveis"
           );
         }
+      }
+
+      if (result?.id && isMeetingService && dueDate) {
+        const meetingId = await persistDemandMeeting({ demandId: result.id, dueDate, form: meetingForm, timezone: userTimezone || "America/Recife" });
+        await requestMeetingSync(meetingId);
       }
 
       // Clear draft on success
@@ -237,6 +259,7 @@ export function CreateDemandQuickDialog({
     setAssigneeIds([]);
     setDueDate("");
     setRecurrence(defaultRecurrenceData);
+    setMeetingForm(emptyMeetingForm());
   };
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -392,6 +415,8 @@ export function CreateDemandQuickDialog({
               </Select>
             </div>
           )}
+
+          {isMeetingService && <MeetingFields value={meetingForm} onChange={setMeetingForm} participantNames={participantNames} />}
 
           {/* Recurrence Config */}
           <RecurrenceConfig value={recurrence} onChange={setRecurrence} compact />

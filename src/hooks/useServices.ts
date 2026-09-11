@@ -23,6 +23,7 @@ export interface Service {
   hours_unit?: string | null;
   sort_order?: number;
   catalog_key?: string | null;
+  behavior?: "standard" | "meeting";
 }
 
 export interface ServiceWithHierarchy extends Service {

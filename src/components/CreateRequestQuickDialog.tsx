@@ -38,6 +38,10 @@ import {
   RequestSubdemandFormData,
 } from "@/components/request-wizard/RequestSubdemandStepForm";
 import { RequestReviewStep } from "@/components/request-wizard/RequestReviewStep";
+import { useServices } from "@/hooks/useServices";
+import { useGoogleCalendarConnection } from "@/hooks/useGoogleCalendarConnection";
+import { MeetingFields } from "@/components/meeting/MeetingFields";
+import { emptyMeetingForm, type MeetingFormValue } from "@/lib/meetingUtils";
 
 interface CreateRequestQuickDialogProps {
   open: boolean;
@@ -67,6 +71,10 @@ export function CreateRequestQuickDialog({
   const [priority, setPriority] = useState<string>("média");
   const [serviceId, setServiceId] = useState<string>("");
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
+  const [meetingForm, setMeetingForm] = useState<MeetingFormValue>(emptyMeetingForm());
+  const { data: services } = useServices(currentTeamId, selectedBoardId);
+  const { connection: calendarConnection } = useGoogleCalendarConnection();
+  const isMeetingService = services?.find((service) => service.id === serviceId)?.behavior === "meeting";
 
   // Wizard state
   const [subdemands, setSubdemands] = useState<RequestSubdemandFormData[]>([]);
@@ -174,6 +182,8 @@ export function CreateRequestQuickDialog({
     if (!serviceId || serviceId === "none") failed.push("service_missing");
     if (!selectedBoardId) failed.push("board_missing");
     if (!currentTeamId) failed.push("team_missing");
+    if (isMeetingService && !meetingForm.time) failed.push("meeting_time_missing");
+    if (isMeetingService && !calendarConnection?.connected) failed.push("calendar_not_connected");
     return failed;
   };
 
@@ -265,6 +275,13 @@ export function CreateRequestQuickDialog({
           service_id: s.service_id,
           dependsOnIndex: s.dependsOnIndex,
         })),
+        meeting_plan: isMeetingService ? {
+          time: meetingForm.time,
+          duration: meetingForm.duration,
+          customMinutes: meetingForm.customMinutes,
+          createGoogleMeet: meetingForm.createGoogleMeet,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Recife",
+        } : null,
       });
 
       // Upload parent + subdemand attachments
@@ -322,6 +339,7 @@ export function CreateRequestQuickDialog({
     setDescription("");
     setPriority("média");
     setServiceId("");
+    setMeetingForm(emptyMeetingForm());
     pendingFiles.forEach((pf) => {
       if (pf.preview) URL.revokeObjectURL(pf.preview);
     });
@@ -398,6 +416,8 @@ export function CreateRequestQuickDialog({
                   autoFocus
                 />
               </div>
+
+              {isMeetingService && <MeetingFields value={meetingForm} onChange={setMeetingForm} />}
 
               <div className="space-y-2">
                 <Label htmlFor="description">Descrição *</Label>
