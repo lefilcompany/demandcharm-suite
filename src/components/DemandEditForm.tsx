@@ -105,6 +105,16 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
   const isMeetingService = selectedService
     ? selectedService.behavior === "meeting"
     : serviceId === demand.service_id && !!meetingData?.meeting;
+  const meetingDetailsChanged = useMemo(() => {
+    const meeting = meetingData?.meeting;
+    if (!meeting) return false;
+    const duration = Math.max(5, Math.round((new Date(meeting.ends_at).getTime() - new Date(meeting.starts_at).getTime()) / 60000));
+    const preset = [30, 45, 60, 90, 120].includes(duration) ? String(duration) : "custom";
+    return meetingForm.time !== formatMeetingTime(meeting.starts_at, meeting.timezone)
+      || meetingForm.duration !== preset
+      || (preset === "custom" && meetingForm.customMinutes !== duration)
+      || meetingForm.createGoogleMeet !== meeting.create_google_meet;
+  }, [meetingData, meetingForm]);
 
   // Subdemand state — only NEW subdemands to be added
   const [newSubdemands, setNewSubdemands] = useState<SubdemandFormData[]>([]);
@@ -432,7 +442,12 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
       // A temporary Calendar problem must never prevent the remaining edits from completing.
       try {
         const serviceChanged = (serviceId && serviceId !== "none" ? serviceId : null) !== demand.service_id;
-        if (isMeetingService && (serviceChanged || !!meetingData?.meeting)) {
+        const currentAssigneeIds = (currentAssignees || []).map((assignee) => assignee.user_id).sort();
+        const nextAssigneeIds = [...selectedAssignees].sort();
+        const assigneesChanged = currentAssigneeIds.length !== nextAssigneeIds.length
+          || currentAssigneeIds.some((id, index) => id !== nextAssigneeIds[index]);
+        const meetingNeedsSync = !meetingData?.meeting || serviceChanged || dueDateChanged || meetingDetailsChanged || assigneesChanged;
+        if (isMeetingService && meetingNeedsSync) {
           const meetingId = await persistDemandMeeting({ demandId: demand.id, dueDate, form: meetingForm, timezone: meetingData?.meeting.timezone || userTimezone || "America/Recife" });
           await requestMeetingSync(meetingId);
         } else if (serviceChanged && meetingData?.meeting && meetingData.meeting.sync_status !== "cancelled") {

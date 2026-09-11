@@ -86,8 +86,14 @@ export function useServices(teamId: string | null, boardId?: string | null, opti
 
       if (error) throw error;
       const services = (data || []) as unknown as Service[];
+      const retainedIds = new Set<string>();
+      let ancestorId = includeServiceId;
+      while (ancestorId) {
+        retainedIds.add(ancestorId);
+        ancestorId = services.find((service) => service.id === ancestorId)?.parent_id || null;
+      }
       return services.filter((service) => {
-        if (service.id === includeServiceId) return true;
+        if (retainedIds.has(service.id)) return true;
         const isInBoardScope = !boardId || service.board_id === boardId || service.board_id === null;
         return isInBoardScope && (includeInactive || service.is_active !== false);
       });
