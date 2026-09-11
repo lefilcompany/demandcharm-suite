@@ -26,7 +26,7 @@ export function useBoardServices(boardId: string | null | undefined) {
   return useQuery({
     queryKey: ["board-services", boardId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("board_services")
         .select(`
           *,
@@ -41,7 +41,7 @@ export function useBoardServices(boardId: string | null | undefined) {
         .eq("board_id", boardId!);
 
       if (error) throw error;
-      return data as BoardService[];
+      return (data ?? []) as BoardService[];
     },
     enabled: !!boardId,
   });

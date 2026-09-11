@@ -3,7 +3,7 @@
 // No token value is ever logged or returned to the browser.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { appUrl, getAccessToken, isAutoAcceptEnabled, isGoogleCalendarEnabled } from "../_shared/google-calendar/config.ts";
+import { appUrl, getAccessToken, isGoogleCalendarEnabled } from "../_shared/google-calendar/config.ts";
 
 
 const CALENDAR_ID = "primary";
