@@ -20,9 +20,14 @@ export const GOOGLE_CALENDAR_SCOPE = GOOGLE_CALENDAR_SCOPES.join(" ");
 
 /** Scopes a connection MUST hold to be considered fully granted. */
 export const REQUIRED_GRANTED_SCOPES = [
-  "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/meetings.space.created",
   "https://www.googleapis.com/auth/meetings.space.readonly",
+];
+
+/** Google may downgrade `calendar.events` to `calendar.events.owned`; either is fine. */
+export const CALENDAR_EVENTS_SCOPES = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.events.owned",
 ];
 
 /** Google may return the email scope in either short or canonical form. */
@@ -34,6 +39,7 @@ function normalizeScope(scope: string): string {
 
 export function hasAllRequiredScopes(granted: string[] | null | undefined): boolean {
   const set = new Set((granted ?? []).map(normalizeScope));
+  if (!CALENDAR_EVENTS_SCOPES.some((s) => set.has(s))) return false;
   return REQUIRED_GRANTED_SCOPES.every((s) => set.has(s));
 }
 
