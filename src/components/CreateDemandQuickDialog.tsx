@@ -41,6 +41,7 @@ import { MeetingFields } from "@/components/meeting/MeetingFields";
 import { emptyMeetingForm, type MeetingFormValue } from "@/lib/meetingUtils";
 import { persistDemandMeeting, requestMeetingSync, useUserTimezone } from "@/hooks/useDemandMeeting";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { hasMeaningfulRichText } from "@/lib/validations";
 
 interface CreateDemandQuickDialogProps {
   open: boolean;
@@ -136,6 +137,11 @@ export function CreateDemandQuickDialog({
       return;
     }
 
+    if (!hasMeaningfulRichText(description)) {
+      toast.error("A descrição é obrigatória");
+      return;
+    }
+
     if (!selectedBoardId || !currentTeamId) {
       toast.error("Selecione um quadro primeiro");
       return;
@@ -163,7 +169,7 @@ export function CreateDemandQuickDialog({
     try {
       const result = await createDemand.mutateAsync({
         title: title.trim(),
-        description: description.trim() || null,
+        description: description.trim(),
         priority,
         status_id: statusId || defaultStatusId,
         due_date: dueDate || null,
@@ -305,11 +311,11 @@ export function CreateDemandQuickDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description">Descrição *</Label>
             <RichTextEditor
               value={description}
               onChange={setDescription}
-              placeholder="Descreva a demanda (opcional)"
+              placeholder="Descreva os detalhes da demanda"
               minHeight="100px"
             />
           </div>
@@ -429,7 +435,7 @@ export function CreateDemandQuickDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={createDemand.isPending}>
+            <Button type="submit" disabled={createDemand.isPending || !title.trim() || !hasMeaningfulRichText(description)}>
               {createDemand.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}

@@ -230,7 +230,7 @@ export function useCreateDemand() {
   return useMutation({
     mutationFn: async (data: {
       title: string;
-      description?: string;
+      description: string;
       team_id: string;
       board_id: string;
       status_id: string;

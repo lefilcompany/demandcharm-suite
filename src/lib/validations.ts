@@ -9,6 +9,14 @@ import { z } from "zod";
 const trimmedString = z.string().trim();
 const nonEmptyString = trimmedString.min(1, "Este campo é obrigatório");
 
+export function hasMeaningfulRichText(value: string): boolean {
+  return value
+    .replace(/<img\b[^>]*>/gi, " imagem ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .trim().length > 0;
+}
+
 // Priority values allowed in the system
 const priorityValues = ["baixa", "média", "alta", "urgente"] as const;
 
@@ -17,10 +25,9 @@ const priorityValues = ["baixa", "média", "alta", "urgente"] as const;
 export const DemandCreateSchema = z.object({
   title: nonEmptyString
     .max(500, "Título deve ter no máximo 500 caracteres"),
-  description: trimmedString
+  description: nonEmptyString
     .max(50000, "Descrição deve ter no máximo 50000 caracteres")
-    .optional()
-    .nullable(),
+    .refine(hasMeaningfulRichText, "A descrição é obrigatória"),
   team_id: z.string().uuid("ID da equipe inválido"),
   board_id: z.string().uuid("ID do quadro inválido"),
   status_id: z.string().uuid("ID do status inválido"),

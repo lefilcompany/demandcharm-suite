@@ -20,6 +20,7 @@ import { useBoards } from "@/hooks/useBoards";
 import { useDemandFolders, useAddDemandToFolder } from "@/hooks/useDemandFolders";
 import { ServiceSelector } from "@/components/ServiceSelector";
 import { AssigneeSelector } from "@/components/AssigneeSelector";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import { ApprovalNotificationsModal } from "@/components/ApprovalNotificationsModal";
 import { ScopeProgressBar } from "@/components/ScopeProgressBar";
 import { InlineFileUploader, PendingFile, uploadPendingFiles } from "@/components/InlineFileUploader";
@@ -34,7 +35,7 @@ import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
 import { SEOHead } from "@/components/SEOHead";
 import { calculateBusinessDueDate, formatDueDateForInput } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
-import { EFFORT_OPTIONS, EFFORT_MULTIPLIERS, DEFAULT_EFFORT } from "@/lib/priorityScore";
+import { EFFORT_OPTIONS, DEFAULT_EFFORT } from "@/lib/priorityScore";
 import { parseAssigneeUnavailableError, findBlockingAbsence } from "@/lib/assigneeAvailability";
 import { useTeamAbsences, ABSENCE_TYPE_LABELS, type Absence } from "@/hooks/useAbsences";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -66,6 +67,7 @@ import { emptyMeetingForm, type MeetingFormValue } from "@/lib/meetingUtils";
 import { persistDemandMeeting, requestMeetingSync, useUserTimezone } from "@/hooks/useDemandMeeting";
 import { useGoogleCalendarConnection } from "@/hooks/useGoogleCalendarConnection";
 import { useServices } from "@/hooks/useServices";
+import { hasMeaningfulRichText } from "@/lib/validations";
 
 export default function CreateDemand({ open, onClose }: { open?: boolean; onClose?: () => void }) {
   const { t } = useTranslation();
@@ -334,6 +336,12 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   ) => {
     if (!title.trim() || !selectedTeamId || !activeBoardId || !statusId || !canCreate) return;
 
+    if (!hasMeaningfulRichText(description)) {
+      toast.error("A descrição é obrigatória");
+      setCurrentStep(0);
+      return;
+    }
+
     if (hasBoardServices && (!serviceId || serviceId === "none")) {
       toast.error("Selecione um serviço para esta demanda");
       return;
@@ -380,7 +388,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
       }
     }
 
-    let finalDescription = description.trim() || undefined;
+    let finalDescription = description.trim();
     if (finalDescription && finalDescription.includes('data:image')) {
       try {
         const { uploadInlineImages } = await import("@/lib/imageUploadUtils");
@@ -693,7 +701,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   const canGoNext = () => {
     if (currentStep === 0) {
       // Parent step — require minimum fields + assignees + priority + due date
-      const baseValid = !!(title.trim() && statusId && activeBoardId && canCreate !== false && (hasBoardServices ? isServiceValid() : true));
+      const baseValid = !!(title.trim() && hasMeaningfulRichText(description) && statusId && activeBoardId && canCreate !== false && (hasBoardServices ? isServiceValid() : true));
       const assigneesValid = canAssignResponsibles ? assigneeIds.length > 0 : true;
       return baseValid && assigneesValid && !!priority && (!!dueDate || isBacklogSelected);
     }
@@ -753,7 +761,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   const isSubmitting = createDemand.isPending || createDemandWithSubdemands.isPending;
 
   const parentFormValid = !!(
-    title.trim() && statusId && activeBoardId && canCreate !== false &&
+    title.trim() && hasMeaningfulRichText(description) && statusId && activeBoardId && canCreate !== false &&
     (hasBoardServices ? isServiceValid() : true) &&
     (canAssignResponsibles ? assigneeIds.length > 0 : true) &&
     !!priority && (!!dueDate || isBacklogSelected)
@@ -981,7 +989,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
 
                     {/* Description — moved right below Title */}
                     <div className="space-y-2">
-                      <Label htmlFor="description">Descrição</Label>
+                      <Label htmlFor="description">Descrição *</Label>
                       <RichTextEditor
                         value={description}
                         onChange={setDescription}
@@ -1096,7 +1104,10 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="effort">Esforço (Fibonacci)</Label>
+                        <div className="flex items-center gap-1.5">
+                          <Label htmlFor="effort">Esforço (Fibonacci)</Label>
+                          <InfoTooltip text="1–3: pouco esforço; 5–8: esforço médio; 13–21: esforço alto." />
+                        </div>
                         <Select value={String(effortPoints)} onValueChange={(v) => setEffortPoints(Number(v))}>
                           <SelectTrigger className="h-8">
                             <SelectValue />
@@ -1104,7 +1115,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                           <SelectContent>
                             {EFFORT_OPTIONS.map((v) => (
                               <SelectItem key={v} value={String(v)}>
-                                {v} (x{EFFORT_MULTIPLIERS[v].toFixed(1).replace(".", ",")})
+                                {v}
                               </SelectItem>
                             ))}
                           </SelectContent>

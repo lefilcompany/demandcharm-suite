@@ -7,6 +7,7 @@ import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useDemandStatuses, useUpdateDemand } from "@/hooks/useDemands";
 import { ServiceSelector } from "@/components/ServiceSelector";
 import { AssigneeSelector } from "@/components/AssigneeSelector";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import { useDemandAssignees, useSetAssignees } from "@/hooks/useDemandAssignees";
 import { useBoardRole } from "@/hooks/useBoardMembers";
 import { useBoardStatuses } from "@/hooks/useBoardStatuses";
@@ -30,7 +31,7 @@ import { StepProgress, SubdemandStepForm } from "@/components/create-demand";
 import type { SubdemandFormData } from "@/components/create-demand";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { EFFORT_OPTIONS, EFFORT_MULTIPLIERS, DEFAULT_EFFORT } from "@/lib/priorityScore";
+import { EFFORT_OPTIONS, DEFAULT_EFFORT } from "@/lib/priorityScore";
 import { useServices } from "@/hooks/useServices";
 import { MeetingFields } from "@/components/meeting/MeetingFields";
 import { emptyMeetingForm, formatMeetingTime, type MeetingFormValue } from "@/lib/meetingUtils";
@@ -655,7 +656,10 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="edit-effort">Esforço (Fibonacci)</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Label htmlFor="edit-effort">Esforço (Fibonacci)</Label>
+                    <InfoTooltip text="1–3: pouco esforço; 5–8: esforço médio; 13–21: esforço alto." />
+                  </div>
                   <Select value={String(effortPoints)} onValueChange={(v) => setEffortPoints(Number(v))}>
                     <SelectTrigger className="h-8">
                       <SelectValue />
@@ -663,7 +667,7 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                     <SelectContent>
                       {EFFORT_OPTIONS.map((v) => (
                         <SelectItem key={v} value={String(v)}>
-                          {v} (x{EFFORT_MULTIPLIERS[v].toFixed(1).replace(".", ",")})
+                          {v}
                         </SelectItem>
                       ))}
                     </SelectContent>
