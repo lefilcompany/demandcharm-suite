@@ -14,8 +14,6 @@ export interface MeetingFormValue {
   duration: string; // minutes or "custom"
   customMinutes: number;
   createGoogleMeet: boolean;
-  participantEmails: string[];
-  participantUserIds: string[];
 }
 
 export const emptyMeetingForm = (): MeetingFormValue => ({
@@ -23,8 +21,6 @@ export const emptyMeetingForm = (): MeetingFormValue => ({
   duration: "60",
   customMinutes: 60,
   createGoogleMeet: true,
-  participantEmails: [],
-  participantUserIds: [],
 });
 
 export function meetingDurationMinutes(value: MeetingFormValue): number {

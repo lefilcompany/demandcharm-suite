@@ -13,6 +13,7 @@ export interface BoardService {
     name: string;
     estimated_hours: number;
     description: string | null;
+    behavior?: "standard" | "meeting";
   };
 }
 
@@ -33,7 +34,8 @@ export function useBoardServices(boardId: string | null | undefined) {
             id,
             name,
             estimated_hours,
-            description
+            description,
+            behavior
           )
         `)
         .eq("board_id", boardId!);
