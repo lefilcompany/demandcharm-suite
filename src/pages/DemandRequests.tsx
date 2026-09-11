@@ -58,6 +58,7 @@ import { SubdemandCountStep } from "@/components/create-demand";
 
 import { Plus as PlusIcon, Trash2 as TrashIcon } from "lucide-react";
 import { safeDateTimestamp } from "@/lib/demandViewSafety";
+import { requestMeetingSync } from "@/hooks/useDemandMeeting";
 
 const priorityColors: Record<string, string> = {
   baixa: "bg-blue-500/20 text-blue-700 border-blue-500/30",
@@ -373,7 +374,11 @@ export default function DemandRequests() {
       assigneeIds,
       dueDate: dueDate || undefined
     }, {
-      onSuccess: () => {
+      onSuccess: async (result) => {
+        if ((approving as any)?.meeting_plan && result?.parent_id) {
+          const { data: meeting } = await (supabase as any).from("demand_meetings").select("id").eq("demand_id", result.parent_id).maybeSingle();
+          if (meeting?.id) await requestMeetingSync(meeting.id);
+        }
         toast.success("Demanda criada com sucesso!");
         setApproving(null);
         navigate("/demands");
