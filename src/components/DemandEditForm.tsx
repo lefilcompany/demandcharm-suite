@@ -613,6 +613,15 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                 )}
               </div>
 
+              {isMeetingService && (
+                <MeetingFields
+                  value={meetingForm}
+                  onChange={setMeetingForm}
+                  participantNames={selectedAssignees.map((id) => currentAssignees?.find((assignee) => assignee.user_id === id)?.profile?.full_name || "Usuário")}
+                  requireCurrentUserConnection={demand.created_by === user?.id}
+                />
+              )}
+
               {/* Status + Priority + Due Date */}
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
                 <div className="space-y-2">
