@@ -137,7 +137,7 @@ export default function Kanban() {
   
   // Fetch members with selected position for filtering
   const { data: membersByPosition } = useMembersByPosition(currentTeamId, filters.position);
-  const { data: allServices } = useServices(currentTeamId, selectedBoardId);
+  const { data: allServices } = useServices(currentTeamId, selectedBoardId, { includeInactive: true });
   
   // Build a map of parent service ID -> array of child service IDs
   const serviceChildMap = useMemo(() => {

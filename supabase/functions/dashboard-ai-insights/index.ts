@@ -98,8 +98,10 @@ Deno.serve(async (req) => {
     // Demands where the user is assignee (primary or follower)
     const { data: assigneeRows } = await supabase
       .from("demand_assignees")
-      .select("demand_id, is_primary")
-      .eq("user_id", userId);
+      .select("demand_id, is_primary, demands!inner(board_id, archived)")
+      .eq("user_id", userId)
+      .eq("demands.board_id", board_id)
+      .eq("demands.archived", false);
 
     const assigneeMap = new Map<string, boolean>();
     for (const row of assigneeRows || []) {

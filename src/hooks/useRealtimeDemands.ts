@@ -45,6 +45,7 @@ export function useRealtimeDemands(boardId?: string) {
           queryClient.invalidateQueries({ queryKey: ["demands-list", boardId] });
           queryClient.invalidateQueries({ queryKey: ["demands"] });
           queryClient.invalidateQueries({ queryKey: ["all-team-demands"] });
+          queryClient.invalidateQueries({ queryKey: ["archived-demands"] });
           queryClient.invalidateQueries({ queryKey: ["subdemands"] });
           queryClient.invalidateQueries({ queryKey: ["batch-dependency-info"] });
           queryClient.invalidateQueries({ queryKey: ["demand-dependency-info"] });
@@ -112,6 +113,7 @@ export function useRealtimeAllDemands() {
           queryClient.invalidateQueries({ queryKey: ["demands"] });
           queryClient.invalidateQueries({ queryKey: ["demands-list"] });
           queryClient.invalidateQueries({ queryKey: ["all-team-demands"] });
+          queryClient.invalidateQueries({ queryKey: ["archived-demands"] });
           queryClient.invalidateQueries({ queryKey: ["subdemands"] });
           queryClient.invalidateQueries({ queryKey: ["batch-dependency-info"] });
           queryClient.invalidateQueries({ queryKey: ["demand-dependency-info"] });

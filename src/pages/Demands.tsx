@@ -246,7 +246,7 @@ export default function Demands() {
     return map;
   }, [currentBoardStatuses]);
 
-  const { rawServices: currentBoardServices } = useHierarchicalServices(currentTeamId, selectedBoardId);
+  const { rawServices: currentBoardServices } = useHierarchicalServices(currentTeamId, selectedBoardId, { includeInactive: true });
   const serviceNameById = useMemo(() => {
     const map = new Map<string, string>();
     (currentBoardServices || []).forEach((s: any) => {

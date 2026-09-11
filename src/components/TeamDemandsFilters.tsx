@@ -379,7 +379,7 @@ export function SelectedBoardChips({
 
 export function TeamDemandsFilters({ teamId, filters, onChange }: TeamDemandsFiltersProps) {
   const [open, setOpen] = useState(false);
-  const { data: services } = useServices(teamId, null);
+  const { data: services } = useServices(teamId, null, { includeInactive: true });
   const { data: positions } = useTeamPositions(teamId);
   const { data: members } = useTeamMembers(teamId);
 
