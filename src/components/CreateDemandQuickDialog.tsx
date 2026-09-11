@@ -41,6 +41,7 @@ import { MeetingFields } from "@/components/meeting/MeetingFields";
 import { emptyMeetingForm, type MeetingFormValue } from "@/lib/meetingUtils";
 import { persistDemandMeeting, requestMeetingSync, useUserTimezone } from "@/hooks/useDemandMeeting";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { hasMeaningfulRichText } from "@/lib/validations";
 
 interface CreateDemandQuickDialogProps {
   open: boolean;
@@ -136,7 +137,7 @@ export function CreateDemandQuickDialog({
       return;
     }
 
-    if (!description.trim()) {
+    if (!hasMeaningfulRichText(description)) {
       toast.error("A descrição é obrigatória");
       return;
     }
@@ -434,7 +435,7 @@ export function CreateDemandQuickDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={createDemand.isPending || !title.trim() || !description.trim()}>
+            <Button type="submit" disabled={createDemand.isPending || !title.trim() || !hasMeaningfulRichText(description)}>
               {createDemand.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
