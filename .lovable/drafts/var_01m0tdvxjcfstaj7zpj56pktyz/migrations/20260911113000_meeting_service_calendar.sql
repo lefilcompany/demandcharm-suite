@@ -74,6 +74,7 @@ CREATE POLICY "Accessible users can view demand meetings" ON public.demand_meeti
 CREATE POLICY "Organizer can create demand meetings" ON public.demand_meetings FOR INSERT TO authenticated WITH CHECK (public.can_access_demand(auth.uid(), demand_id) AND organizer_user_id = auth.uid());
 CREATE POLICY "Organizer can update demand meetings" ON public.demand_meetings FOR UPDATE TO authenticated USING (organizer_user_id = auth.uid()) WITH CHECK (organizer_user_id = auth.uid());
 CREATE POLICY "Organizer can delete demand meetings" ON public.demand_meetings FOR DELETE TO authenticated USING (organizer_user_id = auth.uid());
+DROP TRIGGER IF EXISTS set_demand_meetings_updated_at ON public.demand_meetings;
 CREATE TRIGGER set_demand_meetings_updated_at BEFORE UPDATE ON public.demand_meetings FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 CREATE TABLE IF NOT EXISTS public.demand_meeting_participants (

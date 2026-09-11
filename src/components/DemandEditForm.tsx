@@ -33,7 +33,7 @@ import { useAuth } from "@/lib/auth";
 import { EFFORT_OPTIONS, EFFORT_MULTIPLIERS, DEFAULT_EFFORT } from "@/lib/priorityScore";
 import { useServices } from "@/hooks/useServices";
 import { MeetingFields } from "@/components/meeting/MeetingFields";
-import { emptyMeetingForm, formatMeetingTime, meetingDurationMinutes, type MeetingFormValue } from "@/lib/meetingUtils";
+import { emptyMeetingForm, formatMeetingTime, type MeetingFormValue } from "@/lib/meetingUtils";
 import { persistDemandMeeting, requestMeetingSync, useDemandMeeting, useUserTimezone } from "@/hooks/useDemandMeeting";
 
 interface DemandEditFormProps {
