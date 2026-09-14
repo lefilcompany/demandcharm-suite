@@ -700,7 +700,7 @@ export default function Auth() {
                     variant="outline"
                     className="w-full h-11 text-[13.5px] font-medium gap-2.5 bg-background border-border/80 hover:bg-muted/40 hover:border-border rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
                     disabled={isLoading || isGoogleLoading}
-                    onClick={handleGoogleSignIn}
+                    onClick={() => handleGoogleSignIn()}
                   >
                     {isGoogleLoading ? (
                       <Loader2 className="h-[18px] w-[18px] animate-spin" />
