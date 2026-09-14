@@ -59,7 +59,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-/** service role, segredo de release ou admin global autenticado. */
+/** service role, segredo de release, token do cron ou admin global autenticado. */
 async function isAuthorized(req: Request): Promise<boolean> {
   const secret = req.headers.get("x-release-secret") ?? "";
   if (RELEASE_EVENT_SECRET && secret && safeEqual(secret, RELEASE_EVENT_SECRET)) return true;
@@ -68,6 +68,11 @@ async function isAuthorized(req: Request): Promise<boolean> {
   const bearer = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7) : "";
   if (!bearer) return false;
   if (SERVICE_ROLE_KEY && safeEqual(bearer, SERVICE_ROLE_KEY)) return true;
+
+  const { data: cronToken } = await supabase.rpc("get_release_detection_cron_token");
+  if (typeof cronToken === "string" && cronToken && safeEqual(bearer, cronToken)) return true;
+
+
 
   const { data: userData } = await supabase.auth.getUser(bearer);
   const userId = userData?.user?.id;
