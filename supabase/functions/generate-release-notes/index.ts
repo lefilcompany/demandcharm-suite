@@ -199,6 +199,23 @@ Deno.serve(async (req) => {
     return json({ generated: true, ingested: false, reason: "ingest_failed", status: res.status, payload }, 200);
   }
 
+  // Anúncio aprovado automaticamente: dispara o processador para que as
+  // notificações internas saiam sem depender de aprovação manual.
+  let processed: unknown = null;
+  try {
+    const procRes = await fetch(`${SUPABASE_URL}/functions/v1/process-platform-events`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ eventId: (payload as Record<string, unknown>).eventId }),
+    });
+    processed = await procRes.json().catch(() => ({}));
+    if (!procRes.ok) log("warn", "processor returned error", { releaseKey, status: procRes.status, processed });
+  } catch (error) {
+    // Falha aqui não perde o anúncio: o evento segue pendente no outbox.
+    log("warn", "processor call failed", { releaseKey, error: (error as Error).message });
+  }
+
   log("info", "patch notes announced", { releaseKey, notes: notes.length });
+
   return json({ generated: true, ingested: true, releaseKey, notes, ...(payload as Record<string, unknown>) });
 });
