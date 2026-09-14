@@ -743,7 +743,7 @@ export default function Auth() {
                               disabled={isGoogleLoading || isCheckingEmail}
                               onClick={() => {
                                 if (account.method === "google") {
-                                  handleGoogleSignIn();
+                                  handleGoogleSignIn({ loginHint: account.email, silent: true });
                                   return;
                                 }
                                 setLoginData({ email: account.email, password: "" });
