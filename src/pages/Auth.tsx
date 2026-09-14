@@ -161,16 +161,30 @@ export default function Auth() {
     return raw;
   })();
 
-  const handleGoogleSignIn = useCallback(async () => {
+  const handleGoogleSignIn = useCallback(async (options?: { loginHint?: string; silent?: boolean }) => {
     setIsGoogleLoading(true);
     try {
       rememberLastLoginMethod("google");
       const redirectUri = safeNext
         ? `${window.location.origin}/auth?next=${encodeURIComponent(safeNext)}`
         : window.location.origin;
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: redirectUri,
-      });
+
+      const start = (extraParams?: Record<string, string>) =>
+        lovable.auth.signInWithOAuth("google", {
+          redirect_uri: redirectUri,
+          ...(extraParams ? { extraParams } : {}),
+        });
+
+      // "Continuar como <conta>": tenta entrar sem nova interação usando a conta já
+      // autenticada no Google. Se o Google exigir interação, refaz com a tela normal.
+      if (options?.silent && options.loginHint) {
+        const silentResult = await start({ login_hint: options.loginHint, prompt: "none" });
+        if (!silentResult?.error) return;
+      }
+
+      const { error } = await start(
+        options?.loginHint ? { login_hint: options.loginHint } : undefined
+      );
       if (error) {
         toast.error("Erro ao entrar com Google", {
           description: error.message || "Tente novamente.",
@@ -184,6 +198,7 @@ export default function Auth() {
       setIsGoogleLoading(false);
     }
   }, [safeNext]);
+
 
 
   if (loading) {
