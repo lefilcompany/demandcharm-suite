@@ -16,6 +16,28 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
  * observa para saber que houve uma publicação em produção (commit/push não
  * alteram o que o domínio serve).
  */
+/**
+ * Lista de mudanças da versão publicada (commits recentes). É a matéria-prima
+ * das notas de atualização geradas automaticamente pela Edge Function
+ * `generate-release-notes`. Ambientes sem git simplesmente publicam [].
+ */
+function readRecentChanges(): { sha: string; subject: string }[] {
+  try {
+    const raw = execSync("git log -n 60 --no-merges --pretty=format:%H%x1f%s", {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      cwd: fileURLToPath(new URL(".", import.meta.url)),
+    });
+    return raw
+      .split("\n")
+      .map((line) => line.split("\u001f"))
+      .filter((parts) => parts.length === 2 && parts[0] && parts[1])
+      .map(([sha, subject]) => ({ sha: sha.trim(), subject: subject.trim() }));
+  } catch {
+    return [];
+  }
+}
+
 function releaseBuildInfoPlugin(): Plugin {
   return {
     name: "soma-release-build-info",
@@ -23,10 +45,12 @@ function releaseBuildInfoPlugin(): Plugin {
     generateBundle(_options, bundle) {
       const fingerprintSource = Object.keys(bundle).sort().join("\n");
       const buildId = createHash("sha256").update(fingerprintSource).digest("hex").slice(0, 16);
+      const changes = readRecentChanges();
       const commitSha =
         process.env.COMMIT_SHA ||
         process.env.GITHUB_SHA ||
         process.env.VERCEL_GIT_COMMIT_SHA ||
+        changes[0]?.sha ||
         null;
       const deploymentId = process.env.DEPLOYMENT_ID || process.env.LOVABLE_DEPLOYMENT_ID || null;
 
@@ -34,11 +58,12 @@ function releaseBuildInfoPlugin(): Plugin {
         type: "asset",
         fileName: "build-info.json",
         source: JSON.stringify(
-          { buildId, builtAt: new Date().toISOString(), commitSha, deploymentId },
+          { buildId, builtAt: new Date().toISOString(), commitSha, deploymentId, changes },
           null,
           2,
         ),
       });
+
 
       let manifest = '{"version":1,"features":[]}';
       try {
