@@ -161,16 +161,30 @@ export default function Auth() {
     return raw;
   })();
 
-  const handleGoogleSignIn = useCallback(async () => {
+  const handleGoogleSignIn = useCallback(async (options?: { loginHint?: string; silent?: boolean }) => {
     setIsGoogleLoading(true);
     try {
       rememberLastLoginMethod("google");
       const redirectUri = safeNext
         ? `${window.location.origin}/auth?next=${encodeURIComponent(safeNext)}`
         : window.location.origin;
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: redirectUri,
-      });
+
+      const start = (extraParams?: Record<string, string>) =>
+        lovable.auth.signInWithOAuth("google", {
+          redirect_uri: redirectUri,
+          ...(extraParams ? { extraParams } : {}),
+        });
+
+      // "Continuar como <conta>": tenta entrar sem nova interação usando a conta já
+      // autenticada no Google. Se o Google exigir interação, refaz com a tela normal.
+      if (options?.silent && options.loginHint) {
+        const silentResult = await start({ login_hint: options.loginHint, prompt: "none" });
+        if (!silentResult?.error) return;
+      }
+
+      const { error } = await start(
+        options?.loginHint ? { login_hint: options.loginHint } : undefined
+      );
       if (error) {
         toast.error("Erro ao entrar com Google", {
           description: error.message || "Tente novamente.",
@@ -184,6 +198,7 @@ export default function Auth() {
       setIsGoogleLoading(false);
     }
   }, [safeNext]);
+
 
 
   if (loading) {
@@ -685,7 +700,7 @@ export default function Auth() {
                     variant="outline"
                     className="w-full h-11 text-[13.5px] font-medium gap-2.5 bg-background border-border/80 hover:bg-muted/40 hover:border-border rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
                     disabled={isLoading || isGoogleLoading}
-                    onClick={handleGoogleSignIn}
+                    onClick={() => handleGoogleSignIn()}
                   >
                     {isGoogleLoading ? (
                       <Loader2 className="h-[18px] w-[18px] animate-spin" />
@@ -728,7 +743,7 @@ export default function Auth() {
                               disabled={isGoogleLoading || isCheckingEmail}
                               onClick={() => {
                                 if (account.method === "google") {
-                                  handleGoogleSignIn();
+                                  handleGoogleSignIn({ loginHint: account.email, silent: true });
                                   return;
                                 }
                                 setLoginData({ email: account.email, password: "" });
