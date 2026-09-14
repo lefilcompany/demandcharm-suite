@@ -164,10 +164,66 @@ Deno.serve(async (req) => {
   }
 
   if (validation.data.features.length === 0) {
-    log("info", "release without features, nothing to announce", { releaseKey });
-    await record({ status: "skipped", prod_url: prodUrl, release_key: releaseKey, error: null });
-    return json({ detected: true, ingested: false, reason: "no_features", releaseKey });
+    // Sem manifest escrito à mão: o próprio sistema redige as notas da versão
+    // (patch notes) a partir das mudanças embarcadas na build publicada.
+    const changes = Array.isArray((buildInfo as Record<string, unknown>).changes)
+      ? (buildInfo as Record<string, unknown>).changes
+      : [];
+
+    if (!Array.isArray(changes) || changes.length === 0) {
+      log("info", "release without features or changes, nothing to announce", { releaseKey });
+      await record({ status: "skipped", prod_url: prodUrl, release_key: releaseKey, error: null });
+      return json({ detected: true, ingested: false, reason: "no_features", releaseKey });
+    }
+
+    try {
+      const genHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      };
+      if (RELEASE_EVENT_SECRET) genHeaders["X-Release-Secret"] = RELEASE_EVENT_SECRET;
+
+      const genRes = await fetch(`${SUPABASE_URL}/functions/v1/generate-release-notes`, {
+        method: "POST",
+        headers: genHeaders,
+        body: JSON.stringify({
+          releaseKey,
+          commitSha,
+          publishedAt,
+          deploymentId: typeof buildInfo.deploymentId === "string" ? buildInfo.deploymentId : undefined,
+          changes,
+        }),
+      });
+      const genPayload = (await genRes.json().catch(() => ({}))) as Record<string, unknown>;
+
+      if (!genRes.ok || genPayload.ingested !== true) {
+        log("warn", "auto patch notes not announced", { releaseKey, status: genRes.status, genPayload });
+        await record({
+          status: genPayload.reason === "no_changes" || genPayload.reason === "no_notes" ? "skipped" : "failed",
+          prod_url: prodUrl,
+          release_key: releaseKey,
+          error: genRes.ok ? String(genPayload.reason ?? "auto_notes_skipped") : `auto notes HTTP ${genRes.status}`,
+        });
+        return json({ detected: true, ingested: false, reason: "auto_notes_skipped", releaseKey, ...genPayload }, 200);
+      }
+
+      log("info", "auto patch notes announced", { releaseKey });
+      await record({
+        status: "ingested",
+        prod_url: prodUrl,
+        release_key: releaseKey,
+        release_id: (genPayload.releaseId as string | null) ?? null,
+        error: null,
+      });
+      return json({ detected: true, ingested: true, source: "auto_notes", releaseKey, ...genPayload });
+    } catch (error) {
+      const message = (error as Error).message;
+      log("error", "auto patch notes threw", { releaseKey, error: message });
+      await record({ status: "failed", prod_url: prodUrl, release_key: releaseKey, error: message });
+      return json({ detected: true, ingested: false, reason: "auto_notes_error", releaseKey }, 200);
+    }
   }
+
 
   // 4) Disparar o evento real (mesma Edge Function do fluxo oficial).
   const headers: Record<string, string> = {
