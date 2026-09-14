@@ -217,5 +217,5 @@ Deno.serve(async (req) => {
 
   log("info", "patch notes announced", { releaseKey, notes: notes.length });
 
-  return json({ generated: true, ingested: true, releaseKey, notes, ...(payload as Record<string, unknown>) });
+  return json({ generated: true, ingested: true, releaseKey, notes, processed, ...(payload as Record<string, unknown>) });
 });
