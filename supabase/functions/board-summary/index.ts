@@ -357,6 +357,17 @@ Deno.serve(async (req: Request) => {
           if (diffDays <= 0) {
             // Delivered on time or early
             onTime++;
+            if (onTimeDetails.length < 20) {
+              onTimeDetails.push({
+                title: d.title,
+                daysEarly: Math.abs(diffDays),
+                dueDate: d.due_date,
+                deliveredAt: d.delivered_at,
+                deliveredDateEstimated: !!d.deliveredEstimated,
+                assignees: getAssigneeNames(d.assignees),
+                priority: d.priority || "normal",
+              });
+            }
           } else {
             // Delivered late
             late++;
