@@ -546,13 +546,14 @@ export function useCreateCustomStatus() {
   });
 }
 
-// Sort board statuses ensuring "Backlog" is always first and "Entregue" is always last
+// Sort board statuses: "Solicitações" first, then "Backlog", "Entregue" always last
 export function sortWithFixedBoundaries(statuses: BoardStatus[]): BoardStatus[] {
+  const rank = (name: string) =>
+    name === "Solicitações" ? 0 : name === BACKLOG_STATUS_NAME ? 1 : 2;
   return [...statuses].sort((a, b) => {
-    const aIsStart = a.status.name === BACKLOG_STATUS_NAME;
-    const bIsStart = b.status.name === BACKLOG_STATUS_NAME;
-    if (aIsStart && !bIsStart) return -1;
-    if (bIsStart && !aIsStart) return 1;
+    const aRank = rank(a.status.name);
+    const bRank = rank(b.status.name);
+    if (aRank !== bRank) return aRank - bRank;
 
     const aIsEnd = a.status.name === FIXED_END_STATUS;
     const bIsEnd = b.status.name === FIXED_END_STATUS;
