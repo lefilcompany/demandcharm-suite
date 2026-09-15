@@ -109,12 +109,16 @@ export function selectAnnounceableChanges(
     const subject = (change?.subject ?? "").trim();
     if (!subject) continue;
     if (NOISE_PATTERNS.some((re) => re.test(subject))) continue;
-    const key = subject.toLowerCase();
+    const files = meaningfulFiles(change?.files);
+    // Assunto genérico só entra se houver arquivos que dêem contexto.
+    if (GENERIC_SUBJECT.test(subject) && files.length === 0) continue;
+    const key = `${subject.toLowerCase()}|${files.join(",")}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    result.push({ sha: change.sha ?? "", subject });
+    result.push({ sha: change.sha ?? "", subject, ...(files.length ? { files } : {}) });
     if (result.length >= MAX_CHANGES) break;
   }
+
   return result;
 }
 
