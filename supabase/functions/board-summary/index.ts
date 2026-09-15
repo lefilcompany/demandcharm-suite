@@ -636,7 +636,18 @@ Deno.serve(async (req: Request) => {
       }
     });
 
+    const focusMemberRow = memberId
+      ? (members || []).find((m: any) => m.user_id === memberId)
+      : null;
+    const focusMemberName = (focusMemberRow?.profile as any)?.full_name || null;
+    const focusMemberStats = focusMemberName
+      ? memberPerformance.find((m) => m.name === focusMemberName) || null
+      : null;
+
     const analytics: BoardAnalytics = {
+      focusMember: memberId
+        ? { id: memberId, name: focusMemberName || "Participante", role: focusMemberRow?.role || "executor" }
+        : null,
       board: {
         name: board.name,
         description: board.description,
