@@ -396,7 +396,7 @@ export function CreateDemandQuickDialog({
                         className="w-2 h-2 rounded-full"
                         style={{ backgroundColor: status.color }}
                       />
-                      {status.name}
+                      {status.name === "Backlog" ? "Backlog (A iniciar)" : status.name}
                     </div>
                   </SelectItem>
                 ))}
