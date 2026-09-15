@@ -29,6 +29,13 @@ describe("selectAnnounceableChanges", () => {
     );
     expect(result.map((c) => c.subject)).toEqual(["Nova lixeira"]);
   });
+
+  it("limita à janela recente quando não há corte confiável", () => {
+    const many = Array.from({ length: 30 }, (_, i) => change(`sha${i}`, `Mudança número ${i}`));
+    expect(selectAnnounceableChanges(many).length).toBe(8);
+    // sha anunciado que não existe nesta build também usa a janela
+    expect(selectAnnounceableChanges(many, "deadbeefdead").length).toBe(8);
+  });
 });
 
 describe("parseGeneratedNotes", () => {
