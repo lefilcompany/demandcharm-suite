@@ -84,6 +84,7 @@ interface TimeTrackingStats {
 }
 
 interface BoardAnalytics {
+  focusMember: { id: string; name: string; role: string } | null;
   board: { name: string; description: string | null; monthlyLimit: number | null };
   period: { start: string; end: string; days: number };
   demands: DemandMetrics;
