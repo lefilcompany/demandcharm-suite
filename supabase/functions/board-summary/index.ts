@@ -118,7 +118,7 @@ Deno.serve(async (req: Request) => {
 
     const userId = user.id;
 
-    const { boardId } = await req.json();
+    const { boardId, memberId } = await req.json();
     
     if (!boardId) {
       return new Response(
