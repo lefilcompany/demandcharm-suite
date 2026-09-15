@@ -24,6 +24,7 @@ import { Package, Users, Loader2, Link2, Lock, X, GitBranch, Unlink2 } from "luc
 import { supabase } from "@/integrations/supabase/client";
 import { useConvertToSubdemand } from "@/hooks/useSubdemands";
 import { LinkAsSubdemandDialog } from "@/components/LinkAsSubdemandDialog";
+import { SendSubdemandToRequestsDialog } from "@/components/SendSubdemandToRequestsDialog";
 import {
   AlertDialog,
   AlertDialogAction,
