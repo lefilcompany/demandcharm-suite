@@ -750,9 +750,65 @@ REGRAS FINAIS:
 - Priorize insights acionáveis sobre descrições genéricas
 - Mantenha tom profissional mas acessível`;
 
-    const userPrompt = `Analise os seguintes dados do quadro "${board.name}" dos últimos 90 dias.
+    const memberSystemPrompt = `Você é um especialista em análise de produtividade individual em equipes de projeto.
+Sua tarefa é produzir um relatório INDIVIDUAL, em português brasileiro, sobre UM participante de um quadro Kanban.
+
+DEFINIÇÕES CRÍTICAS:
+- "onTime" (No Prazo): demandas entregues NA ou ANTES da data prevista.
+- "late" (Atrasadas): demandas ENTREGUES depois da data prevista.
+- "overdue" (Vencidas): demandas AINDA NÃO ENTREGUES com a data prevista já ultrapassada.
+- "onTimeDetails", "lateDetails" e "overdueDetails" trazem os títulos reais das demandas — cite-os.
+- "deliveredEstimatedCount": entregas cuja data veio da última mudança de etapa. Mencione como observação quando maior que zero.
+- Todos os dados já estão FILTRADOS para as demandas em que este participante é responsável ou seguidor.
+
+REGRAS DE PRECISÃO:
+- Use apenas os números exatos fornecidos; nunca invente dados.
+- Cite títulos de demandas e datas exatamente como aparecem.
+
+ESTRUTURA OBRIGATÓRIA:
+
+## 👤 Visão Geral do Participante
+[Nome, papel no quadro e 2-3 frases sobre o desempenho no período]
+
+## 🎯 Números do Período
+- Demandas atribuídas: X | Entregues: Y | No prazo: Z | Atrasadas: W | Vencidas em aberto: V
+- Taxa de pontualidade: X%
+- Tempo médio de conclusão: X dias | Horas registradas: Y
+
+## ✅ Entregas no Prazo
+[Liste as demandas de onTimeDetails com título, data prevista, data de entrega e dias de antecedência]
+
+## ⚠️ Atrasos e Pendências
+### Vencidas em aberto
+[Liste overdueDetails com título, dias vencidos, status atual e prioridade]
+### Entregues com atraso
+[Liste lateDetails com título e dias de atraso]
+
+## 📈 Padrões de Trabalho
+- Distribuição por prioridade e por etapa
+- Tendência semanal de entregas
+
+## 💪 Pontos Fortes
+## 🎯 Pontos de Atenção
+## 💡 Recomendações para este participante
+
+Mantenha tom profissional, construtivo e direto.`;
+
+    const systemPrompt = memberId ? memberSystemPrompt : boardSystemPrompt;
+
+    const userPrompt = memberId
+      ? `Analise os dados do participante "${focusMemberName || "Participante"}" no quadro "${board.name}" nos últimos 90 dias.
+
+Resumo individual consolidado: ${JSON.stringify(focusMemberStats)}
+
+DADOS COMPLETOS (já filtrados para este participante):
+${JSON.stringify(analytics, null, 2)}
+
+Gere o relatório individual seguindo exatamente a estrutura definida, citando títulos e números exatos.`
+      : `Analise os seguintes dados do quadro "${board.name}" dos últimos 90 dias.
 
 ATENÇÃO: Os dados incluem informações detalhadas sobre:
+- demands.onTimeDetails: Lista de demandas entregues DENTRO DO PRAZO
 - demands.lateDetails: Lista de demandas entregues COM ATRASO (após a data prevista)
 - demands.overdueDetails: Lista de demandas VENCIDAS que ainda não foram entregues
 - members[].onTimeCount e lateCount: Performance individual de pontualidade
