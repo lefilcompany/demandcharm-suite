@@ -18,7 +18,10 @@ import type { ReleaseFeature, ReleasePriority } from "./releaseManifest.ts";
 export interface BuildChange {
   sha: string;
   subject: string;
+  /** Arquivos alterados no commit (sinal usado quando o assunto é genérico). */
+  files?: string[];
 }
+
 
 export type PatchNoteType = "feature" | "fix" | "improvement";
 
