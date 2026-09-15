@@ -193,16 +193,22 @@ Deno.serve(async (req: Request) => {
         is_overdue,
         archived,
         time_in_progress_seconds,
+        status_changed_at,
         status:demand_statuses(name),
         service:services(name),
         assignees:demand_assignees(
           user_id,
+          is_primary,
           profile:profiles(full_name)
         )
       `)
       .eq("board_id", boardId)
       .eq("archived", false)
-      .gte("created_at", startDate.toISOString())
+      // Include anything created, delivered OR moved within the period so that
+      // demands created before the window but delivered inside it still count
+      .or(
+        `created_at.gte.${startDate.toISOString()},delivered_at.gte.${startDate.toISOString()},status_changed_at.gte.${startDate.toISOString()}`
+      )
       .order("created_at", { ascending: false });
 
     if (demandsError) {
