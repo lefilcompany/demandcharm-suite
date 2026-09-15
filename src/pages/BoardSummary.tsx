@@ -475,7 +475,7 @@ export default function BoardSummary() {
                     <SelectItem value="all">Quadro inteiro</SelectItem>
                     {(boardMembers || []).map((m: any) => (
                       <SelectItem key={m.user_id} value={m.user_id}>
-                        {m.profiles?.full_name || "Participante"}
+                        {m.profile?.full_name || "Participante"}
                       </SelectItem>
                     ))}
                   </SelectContent>
