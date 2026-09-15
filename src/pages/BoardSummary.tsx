@@ -585,6 +585,42 @@ export default function BoardSummary() {
           </div>
         )}
 
+        {/* On-time deliveries detail */}
+        {analytics && (analytics.demands.onTimeDetails?.length ?? 0) > 0 && (
+          <Card>
+            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500" />
+                <CardTitle className="text-sm sm:text-base">Entregues no Prazo</CardTitle>
+              </div>
+              <CardDescription className="text-xs sm:text-sm">
+                {analytics.demands.onTime} entregas dentro do prazo no período
+                {(analytics.demands.deliveredEstimatedCount ?? 0) > 0 &&
+                  ` · ${analytics.demands.deliveredEstimatedCount} com data estimada pela mudança de etapa`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-1.5 sm:space-y-2 max-h-64 overflow-y-auto px-3 sm:px-6 pb-3 sm:pb-6">
+              {analytics.demands.onTimeDetails!.map((d, i) => (
+                <div
+                  key={i}
+                  className="flex items-start justify-between gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-medium truncate">{d.title}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {d.assignees?.join(", ") || "Sem responsável"}
+                      {d.deliveredDateEstimated && " · data estimada"}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    {d.daysEarly > 0 ? `${d.daysEarly}d antes` : "no prazo"}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Additional Stats */}
         {analytics && (
           <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
