@@ -1207,7 +1207,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
       return;
     }
 
-    if (newStatusKey !== "A Iniciar" && previousStatusName === "A Iniciar") {
+    if (newStatusKey !== "Backlog" && previousStatusName === "Backlog") {
       const depCheck = await checkDependencyBeforeStatusChange(demandId);
       if (depCheck.blocked) {
         toast.error("Não é possível alterar o status", {

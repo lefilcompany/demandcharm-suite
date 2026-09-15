@@ -38,7 +38,7 @@ interface DemandHierarchyTableProps {
 }
 
 const priorityOrder: Record<string, number> = { baixa: 1, média: 2, alta: 3 };
-const statusOrder: Record<string, number> = { "A Iniciar": 1, "Fazendo": 2, "Aprovação do Cliente": 3, "Em Ajuste": 4, "Entregue": 5 };
+const statusOrder: Record<string, number> = { "Backlog": 0, "A Iniciar": 1, "Fazendo": 2, "Aprovação do Cliente": 3, "Em Ajuste": 4, "Entregue": 5 };
 
 type SortKey = "code" | "title" | "service" | "creator" | "status" | "due_date" | "board" | "priority";
 type SortDir = "asc" | "desc";

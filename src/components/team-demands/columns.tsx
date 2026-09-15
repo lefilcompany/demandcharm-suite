@@ -272,6 +272,7 @@ export const teamDemandColumns: ColumnDef<TeamDemandTableRow>[] = [
     accessorFn: row => row.demand_statuses?.name || "",
     sortingFn: (rowA, rowB) => {
       const statusOrder: Record<string, number> = {
+        "Backlog": 0,
         "A Iniciar": 1,
         "Fazendo": 2,
         "Aprovação do Cliente": 3,
