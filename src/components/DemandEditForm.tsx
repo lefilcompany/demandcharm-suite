@@ -687,7 +687,7 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5">
                     <Label htmlFor="edit-effort">Esforço (Fibonacci)</Label>
-                    <InfoTooltip text="1–3: pouco esforço; 5–8: esforço médio; 13–21: esforço alto." />
+                    <InfoTooltip text="1–3: baixo esforço; 5–8: médio esforço; 13–21: alto esforço." />
                   </div>
                   <Select value={String(effortPoints)} onValueChange={(v) => setEffortPoints(Number(v))}>
                     <SelectTrigger className="h-8">
