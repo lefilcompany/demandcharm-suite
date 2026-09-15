@@ -1068,7 +1068,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                           <SelectContent>
                             {statuses?.map((status) => (
                               <SelectItem key={status.id} value={status.id}>
-                                {status.name}
+                                {status.name === "Backlog" ? "Backlog (A iniciar)" : status.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
