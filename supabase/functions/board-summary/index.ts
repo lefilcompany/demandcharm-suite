@@ -311,6 +311,7 @@ Deno.serve(async (req: Request) => {
 
     const lateDetails: LateDemandDetail[] = [];
     const overdueDetails: OverdueDemandDetail[] = [];
+    const onTimeDetails: OnTimeDemandDetail[] = [];
     const statusCounts: Record<string, number> = {};
     const priorityCounts: Record<string, number> = {};
 
