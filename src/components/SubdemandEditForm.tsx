@@ -91,6 +91,7 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
   const [parentInfo, setParentInfo] = useState<{ id: string; title: string; seq: number | null } | null>(null);
   const [showChangeParent, setShowChangeParent] = useState(false);
   const [showUnlinkParent, setShowUnlinkParent] = useState(false);
+  const [showSendToRequests, setShowSendToRequests] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -524,7 +525,7 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Trocar a demanda pai move esta subdemanda para outra demanda principal do mesmo quadro. Desvincular a transforma em demanda principal.
+                  Trocar a demanda pai move esta subdemanda para outra demanda principal do mesmo quadro. Desvincular a transforma em demanda principal. Enviar para Solicitações tira a subdemanda do quadro e a coloca na fila de aprovação.
                 </p>
               </div>
             )}
