@@ -76,7 +76,7 @@ export function isTimerStage(statusName: string | null | undefined): boolean {
 
 // Default columns fallback (matches current static columns)
 export const DEFAULT_COLUMNS: KanbanColumn[] = [
-  { key: "A Iniciar", label: "A Iniciar", color: "bg-muted", shortLabel: "Iniciar", statusId: "", adjustmentType: "none" },
+  { key: "Backlog", label: "Backlog", color: "bg-slate-500/10", shortLabel: "Backlog", statusId: "", adjustmentType: "none" },
   { key: "Tarefas Internas", label: "Tarefas Internas", color: "bg-violet-500/10", shortLabel: "Internas", statusId: "", adjustmentType: "none" },
   { key: "Fazendo", label: "Fazendo", color: "bg-blue-500/10", shortLabel: "Fazendo", statusId: "", adjustmentType: "none" },
   { key: "Em Ajuste", label: "Em Ajuste", color: "bg-purple-500/10", shortLabel: "Ajuste", statusId: "", adjustmentType: "none" },

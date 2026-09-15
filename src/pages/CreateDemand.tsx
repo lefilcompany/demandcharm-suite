@@ -211,7 +211,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
 
   useEffect(() => {
     if (statuses && statuses.length > 0 && !statusId) {
-      const defaultStatus = statuses.find(s => s.name === "A Iniciar") || statuses[0];
+      const defaultStatus = statuses.find(s => s.name === "Backlog") || statuses[0];
       setStatusId(defaultStatus.id);
     }
   }, [statuses, statusId]);
@@ -515,7 +515,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
             });
             resetForm();
             if (statuses && statuses.length > 0) {
-              const defaultStatus = statuses.find(s => s.name === "A Iniciar") || statuses[0];
+              const defaultStatus = statuses.find(s => s.name === "Backlog") || statuses[0];
               setStatusId(defaultStatus.id);
             }
           },
@@ -637,7 +637,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
 
           resetForm();
           if (statuses && statuses.length > 0) {
-            const defaultStatus = statuses.find(s => s.name === "A Iniciar") || statuses[0];
+            const defaultStatus = statuses.find(s => s.name === "Backlog") || statuses[0];
             setStatusId(defaultStatus.id);
           }
         },

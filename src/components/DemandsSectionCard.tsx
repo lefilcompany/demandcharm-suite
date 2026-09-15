@@ -89,7 +89,7 @@ const CustomAreaTooltip = ({ active, payload, label }: any) => {
 function normalizeStatus(statusName: string): string {
   const lower = statusName.toLowerCase();
   if (lower === "entregue" || lower.includes("conclu")) return "Entregue";
-  if (lower === "a iniciar" || lower.includes("pendente") || lower.includes("solicit")) return "A Iniciar";
+  if (lower === "a iniciar" || lower === "backlog" || lower.includes("pendente") || lower.includes("solicit")) return "A Iniciar";
   return "Em Andamento";
 }
 
