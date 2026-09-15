@@ -42,8 +42,30 @@ const NOISE_PATTERNS: RegExp[] = [
   /^bump\b/i,
   /^lint\b/i,
   /^format\b/i,
-  /^(changes|update|updates|ajustes?|alteraç(ão|ões))\.?$/i,
 ];
+
+/**
+ * Assuntos genéricos (o Lovable comita tudo como "Changes"). Só entram no
+ * anúncio quando o commit traz arquivos alterados que dêem algum contexto.
+ */
+const GENERIC_SUBJECT = /^(changes?|update|updates|ajustes?|alteraç(ão|ões))\.?$/i;
+
+/** Arquivos que não dizem nada sobre o que o usuário vai ver. */
+const IGNORED_FILE_PATTERNS: RegExp[] = [
+  /(^|\/)(package(-lock)?\.json|bun\.lockb?|pnpm-lock\.yaml|yarn\.lock)$/i,
+  /\.(test|spec)\.[tj]sx?$/i,
+  /^(\.github|\.lovable|docs|tests_selenium)\//i,
+  /(^|\/)(tsconfig|eslint\.config|postcss\.config|vitest\.config)\./i,
+  /^supabase\/migrations/i,
+];
+
+function meaningfulFiles(files?: string[]): string[] {
+  return (files ?? [])
+    .map((f) => (typeof f === "string" ? f.trim() : ""))
+    .filter((f) => f && !IGNORED_FILE_PATTERNS.some((re) => re.test(f)))
+    .slice(0, 12);
+}
+
 
 export const MAX_CHANGES = 60;
 export const MAX_NOTES = 6;
