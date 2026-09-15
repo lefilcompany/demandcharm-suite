@@ -607,6 +607,14 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SendSubdemandToRequestsDialog
+        open={showSendToRequests}
+        onOpenChange={setShowSendToRequests}
+        demandId={demand.id}
+        demandTitle={demand.title}
+        onSuccess={onSuccess}
+      />
     </>
   );
 }
