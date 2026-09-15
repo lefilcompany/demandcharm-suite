@@ -685,6 +685,8 @@ IMPORTANTE - DEFINIÇÕES CRÍTICAS:
 - "avgDaysOverdue": Média de dias que as demandas vencidas estão pendentes.
 - "lateDetails": Lista detalhada das demandas entregues com atraso (título, dias de atraso, responsáveis).
 - "overdueDetails": Lista detalhada das demandas vencidas pendentes (título, dias vencidos, responsáveis, status atual).
+- "onTimeDetails": Lista detalhada das demandas ENTREGUES DENTRO DO PRAZO (título, dias de antecedência, data prevista, data de entrega, responsáveis). SEMPRE cite esses itens explicitamente.
+- "deliveredEstimatedCount": Quantidade de entregas cuja data foi obtida pela última mudança de etapa (a demanda está em "Entregue" sem data registrada). Mencione isso como observação de qualidade dos dados quando for maior que zero.
 
 ANÁLISE DE MEMBROS:
 - Cada membro tem "onTimeCount" (entregas no prazo) e "lateCount" (entregas atrasadas).
