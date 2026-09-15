@@ -55,8 +55,18 @@ const TYPE_LABEL: Record<PatchNoteType, string> = {
 };
 
 /**
+ * Janela usada quando não há como saber onde o último anúncio parou
+ * (primeiro anúncio automático, ou sha anunciado fora dos commits da build).
+ * Evita despejar o histórico inteiro como "novidades desta versão".
+ */
+export const FALLBACK_WINDOW = 8;
+
+/**
  * Mantém apenas os commits ainda não anunciados (mais recentes que
  * `lastAnnouncedSha`) e descarta ruído de manutenção.
+ *
+ * Sem ponto de corte confiável, considera apenas os commits mais recentes
+ * (`FALLBACK_WINDOW`) em vez da lista inteira.
  */
 export function selectAnnounceableChanges(
   changes: BuildChange[],
@@ -66,7 +76,7 @@ export function selectAnnounceableChanges(
   const cutIndex = lastAnnouncedSha
     ? list.findIndex((c) => c.sha && lastAnnouncedSha.startsWith(c.sha.slice(0, 7)))
     : -1;
-  const fresh = cutIndex >= 0 ? list.slice(0, cutIndex) : list;
+  const fresh = cutIndex >= 0 ? list.slice(0, cutIndex) : list.slice(0, FALLBACK_WINDOW);
 
   const seen = new Set<string>();
   const result: BuildChange[] = [];
