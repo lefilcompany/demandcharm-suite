@@ -459,7 +459,7 @@ export default function BoardSummary() {
                       <>
                         {" · "}
                         <span className="font-medium text-foreground">
-                          {boardMembers?.find((m: any) => m.user_id === scopeMemberId)?.profiles?.full_name || "Participante"}
+                          {boardMembers?.find((m: any) => m.user_id === scopeMemberId)?.profile?.full_name || "Participante"}
                         </span>
                       </>
                     )}
