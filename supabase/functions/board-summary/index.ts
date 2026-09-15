@@ -453,8 +453,10 @@ Deno.serve(async (req: Request) => {
       withDueDate,
       withoutDueDate,
       onTimeRate,
+      deliveredEstimatedCount,
       lateDetails,
       overdueDetails,
+      onTimeDetails,
       byStatus: Object.entries(statusCounts).map(([status, count]) => ({ status, count })),
       byPriority: Object.entries(priorityCounts).map(([priority, count]) => ({ priority, count })),
     };
