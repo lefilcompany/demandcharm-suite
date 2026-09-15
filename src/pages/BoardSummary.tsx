@@ -23,6 +23,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SEOHead } from "@/components/SEOHead";
+import { useBoardMembers } from "@/hooks/useBoardMembers";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface LateDemandDetail {
   title: string;
@@ -42,7 +50,18 @@ interface OverdueDemandDetail {
   status: string;
 }
 
+interface OnTimeDemandDetail {
+  title: string;
+  daysEarly: number;
+  dueDate: string;
+  deliveredAt: string;
+  deliveredDateEstimated?: boolean;
+  assignees: string[];
+  priority: string;
+}
+
 interface BoardAnalytics {
+  focusMember?: { id: string; name: string; role: string } | null;
   board: { name: string; description: string | null; monthlyLimit: number | null };
   period: { start: string; end: string; days: number };
   demands: {
@@ -57,8 +76,10 @@ interface BoardAnalytics {
     withDueDate?: number;
     withoutDueDate?: number;
     onTimeRate?: number;
+    deliveredEstimatedCount?: number;
     lateDetails?: LateDemandDetail[];
     overdueDetails?: OverdueDemandDetail[];
+    onTimeDetails?: OnTimeDemandDetail[];
     byStatus: { status: string; count: number }[];
     byPriority: { priority: string; count: number }[];
   };
@@ -228,6 +249,8 @@ export default function BoardSummary() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentSummaryId, setCurrentSummaryId] = useState<string | null>(null);
+  const [scopeMemberId, setScopeMemberId] = useState<string>("all");
+  const { data: boardMembers } = useBoardMembers(currentBoard?.id ?? null);
   
   const { saveSummary, createShareToken } = useBoardSummaryHistory(currentBoard?.id);
 
@@ -258,7 +281,10 @@ export default function BoardSummary() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ boardId: currentBoard.id }),
+          body: JSON.stringify({
+            boardId: currentBoard.id,
+            memberId: scopeMemberId === "all" ? null : scopeMemberId,
+          }),
         }
       );
 
@@ -335,7 +361,7 @@ export default function BoardSummary() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentBoard?.id, saveSummary]);
+  }, [currentBoard?.id, saveSummary, scopeMemberId]);
 
   const handleSelectFromHistory = (item: BoardSummaryHistoryItem) => {
     setSummary(item.summary_text);
@@ -429,10 +455,31 @@ export default function BoardSummary() {
                   <h1 className="text-lg sm:text-xl font-bold text-foreground">Análise Inteligente</h1>
                   <p className="text-xs sm:text-sm text-muted-foreground truncate max-w-[200px] sm:max-w-none">
                     Quadro: <span className="font-medium text-foreground">{currentBoard.name}</span>
+                    {scopeMemberId !== "all" && (
+                      <>
+                        {" · "}
+                        <span className="font-medium text-foreground">
+                          {boardMembers?.find((m: any) => m.user_id === scopeMemberId)?.profile?.full_name || "Participante"}
+                        </span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 self-end sm:self-auto">
+              <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+                <Select value={scopeMemberId} onValueChange={setScopeMemberId} disabled={isLoading}>
+                  <SelectTrigger className="h-8 sm:h-9 w-[190px] text-xs sm:text-sm bg-background">
+                    <SelectValue placeholder="Escopo da análise" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="all">Quadro inteiro</SelectItem>
+                    {(boardMembers || []).map((m: any) => (
+                      <SelectItem key={m.user_id} value={m.user_id}>
+                        {m.profile?.full_name || "Participante"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <SummaryHistoryDrawer 
                   boardId={currentBoard.id} 
                   onSelectSummary={handleSelectFromHistory} 
@@ -536,6 +583,42 @@ export default function BoardSummary() {
               variant="default"
             />
           </div>
+        )}
+
+        {/* On-time deliveries detail */}
+        {analytics && (analytics.demands.onTimeDetails?.length ?? 0) > 0 && (
+          <Card>
+            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500" />
+                <CardTitle className="text-sm sm:text-base">Entregues no Prazo</CardTitle>
+              </div>
+              <CardDescription className="text-xs sm:text-sm">
+                {analytics.demands.onTime} entregas dentro do prazo no período
+                {(analytics.demands.deliveredEstimatedCount ?? 0) > 0 &&
+                  ` · ${analytics.demands.deliveredEstimatedCount} com data estimada pela mudança de etapa`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-1.5 sm:space-y-2 max-h-64 overflow-y-auto px-3 sm:px-6 pb-3 sm:pb-6">
+              {analytics.demands.onTimeDetails!.map((d, i) => (
+                <div
+                  key={i}
+                  className="flex items-start justify-between gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-medium truncate">{d.title}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {d.assignees?.join(", ") || "Sem responsável"}
+                      {d.deliveredDateEstimated && " · data estimada"}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    {d.daysEarly > 0 ? `${d.daysEarly}d antes` : "no prazo"}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         )}
 
         {/* Additional Stats */}

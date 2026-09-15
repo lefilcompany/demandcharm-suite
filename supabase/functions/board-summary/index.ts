@@ -25,6 +25,17 @@ interface OverdueDemandDetail {
   status: string;
 }
 
+// Detailed on-time delivery info
+interface OnTimeDemandDetail {
+  title: string;
+  daysEarly: number;
+  dueDate: string;
+  deliveredAt: string;
+  deliveredDateEstimated: boolean;
+  assignees: string[];
+  priority: string;
+}
+
 interface DemandMetrics {
   total: number;
   delivered: number;
@@ -37,8 +48,10 @@ interface DemandMetrics {
   withDueDate: number; // Total demands that have a due date
   withoutDueDate: number; // Total demands without due date
   onTimeRate: number; // Percentage of on-time deliveries (with due date)
+  deliveredEstimatedCount: number; // Deliveries whose date came from the last status change
   lateDetails: LateDemandDetail[]; // Detailed info about late demands
   overdueDetails: OverdueDemandDetail[]; // Detailed info about overdue demands
+  onTimeDetails: OnTimeDemandDetail[]; // Detailed info about on-time deliveries
   byStatus: { status: string; count: number }[];
   byPriority: { priority: string; count: number }[];
 }
@@ -71,6 +84,7 @@ interface TimeTrackingStats {
 }
 
 interface BoardAnalytics {
+  focusMember: { id: string; name: string; role: string } | null;
   board: { name: string; description: string | null; monthlyLimit: number | null };
   period: { start: string; end: string; days: number };
   demands: DemandMetrics;
@@ -118,7 +132,7 @@ Deno.serve(async (req: Request) => {
 
     const userId = user.id;
 
-    const { boardId } = await req.json();
+    const { boardId, memberId } = await req.json();
     
     if (!boardId) {
       return new Response(
@@ -189,20 +203,27 @@ Deno.serve(async (req: Request) => {
         priority,
         created_at,
         delivered_at,
+        updated_at,
         due_date,
         is_overdue,
         archived,
         time_in_progress_seconds,
+        status_changed_at,
         status:demand_statuses(name),
         service:services(name),
         assignees:demand_assignees(
           user_id,
+          is_primary,
           profile:profiles(full_name)
         )
       `)
       .eq("board_id", boardId)
       .eq("archived", false)
-      .gte("created_at", startDate.toISOString())
+      // Include anything created, delivered OR moved within the period so that
+      // demands created before the window but delivered inside it still count
+      .or(
+        `created_at.gte.${startDate.toISOString()},delivered_at.gte.${startDate.toISOString()},status_changed_at.gte.${startDate.toISOString()}`
+      )
       .order("created_at", { ascending: false });
 
     if (demandsError) {
@@ -260,8 +281,37 @@ Deno.serve(async (req: Request) => {
       console.error("Requests error:", requestsError);
     }
 
+    // Normalize delivery data: many demands sit in the "Entregue" stage without a
+    // delivered_at timestamp. Fall back to the last status change so deliveries
+    // (and on-time deliveries) are not silently dropped from the analysis.
+    const isDeliveredStatus = (name?: string | null) => {
+      const n = (name || "").toLowerCase();
+      return n.includes("entregue") || n.includes("concluí") || n.includes("conclui");
+    };
+
+    let deliveredEstimatedCount = 0;
+    const allDemands = (demands || []).map((d: any) => {
+      let deliveredAt = d.delivered_at;
+      let estimated = false;
+      if (!deliveredAt && isDeliveredStatus(d.status?.name)) {
+        deliveredAt = d.status_changed_at || d.updated_at || null;
+        if (deliveredAt) {
+          estimated = true;
+          deliveredEstimatedCount++;
+        }
+      }
+      return { ...d, delivered_at: deliveredAt, deliveredEstimated: estimated };
+    });
+
+    // Optional scope: single board participant (responsible or follower)
+    const scopedDemands = memberId
+      ? allDemands.filter((d: any) =>
+          (d.assignees || []).some((a: any) => a.user_id === memberId)
+        )
+      : allDemands;
+
     // Calculate demand metrics with detailed late/overdue tracking
-    const demandsList = demands || [];
+    const demandsList = scopedDemands;
     const now = new Date();
     
     let delivered = 0;
@@ -276,6 +326,7 @@ Deno.serve(async (req: Request) => {
 
     const lateDetails: LateDemandDetail[] = [];
     const overdueDetails: OverdueDemandDetail[] = [];
+    const onTimeDetails: OnTimeDemandDetail[] = [];
     const statusCounts: Record<string, number> = {};
     const priorityCounts: Record<string, number> = {};
 
@@ -322,6 +373,17 @@ Deno.serve(async (req: Request) => {
           if (diffDays <= 0) {
             // Delivered on time or early
             onTime++;
+            if (onTimeDetails.length < 20) {
+              onTimeDetails.push({
+                title: d.title,
+                daysEarly: Math.abs(diffDays),
+                dueDate: d.due_date,
+                deliveredAt: d.delivered_at,
+                deliveredDateEstimated: !!d.deliveredEstimated,
+                assignees: getAssigneeNames(d.assignees),
+                priority: d.priority || "normal",
+              });
+            }
           } else {
             // Delivered late
             late++;
@@ -379,6 +441,7 @@ Deno.serve(async (req: Request) => {
     // Sort late/overdue by severity (most days first)
     lateDetails.sort((a, b) => b.daysLate - a.daysLate);
     overdueDetails.sort((a, b) => b.daysOverdue - a.daysOverdue);
+    onTimeDetails.sort((a, b) => b.daysEarly - a.daysEarly);
 
     const demandMetrics: DemandMetrics = {
       total: demandsList.length,
@@ -392,8 +455,10 @@ Deno.serve(async (req: Request) => {
       withDueDate,
       withoutDueDate,
       onTimeRate,
+      deliveredEstimatedCount,
       lateDetails,
       overdueDetails,
+      onTimeDetails,
       byStatus: Object.entries(statusCounts).map(([status, count]) => ({ status, count })),
       byPriority: Object.entries(priorityCounts).map(([priority, count]) => ({ priority, count })),
     };
@@ -573,7 +638,18 @@ Deno.serve(async (req: Request) => {
       }
     });
 
+    const focusMemberRow = memberId
+      ? (members || []).find((m: any) => m.user_id === memberId)
+      : null;
+    const focusMemberName = (focusMemberRow?.profile as any)?.full_name || null;
+    const focusMemberStats = focusMemberName
+      ? memberPerformance.find((m) => m.name === focusMemberName) || null
+      : null;
+
     const analytics: BoardAnalytics = {
+      focusMember: memberId
+        ? { id: memberId, name: focusMemberName || "Participante", role: focusMemberRow?.role || "executor" }
+        : null,
       board: {
         name: board.name,
         description: board.description,
@@ -585,7 +661,9 @@ Deno.serve(async (req: Request) => {
         days: 90,
       },
       demands: demandMetrics,
-      members: memberPerformance,
+      members: memberId
+        ? memberPerformance.filter((m) => m.name === focusMemberName)
+        : memberPerformance,
       requesters: requesterStats,
       timeTracking: timeTrackingStats,
       trends: {
@@ -598,7 +676,7 @@ Deno.serve(async (req: Request) => {
       },
     };
 
-    const systemPrompt = `Você é um especialista em análise de gestão de projetos e produtividade de equipes. 
+    const boardSystemPrompt = `Você é um especialista em análise de gestão de projetos e produtividade de equipes. 
 Sua tarefa é analisar os dados de um quadro Kanban e produzir um relatório executivo completo e preciso em português brasileiro.
 
 IMPORTANTE - DEFINIÇÕES CRÍTICAS:
@@ -610,6 +688,8 @@ IMPORTANTE - DEFINIÇÕES CRÍTICAS:
 - "avgDaysOverdue": Média de dias que as demandas vencidas estão pendentes.
 - "lateDetails": Lista detalhada das demandas entregues com atraso (título, dias de atraso, responsáveis).
 - "overdueDetails": Lista detalhada das demandas vencidas pendentes (título, dias vencidos, responsáveis, status atual).
+- "onTimeDetails": Lista detalhada das demandas ENTREGUES DENTRO DO PRAZO (título, dias de antecedência, data prevista, data de entrega, responsáveis). SEMPRE cite esses itens explicitamente.
+- "deliveredEstimatedCount": Quantidade de entregas cuja data foi obtida pela última mudança de etapa (a demanda está em "Entregue" sem data registrada). Mencione isso como observação de qualidade dos dados quando for maior que zero.
 
 ANÁLISE DE MEMBROS:
 - Cada membro tem "onTimeCount" (entregas no prazo) e "lateCount" (entregas atrasadas).
@@ -633,6 +713,9 @@ ESTRUTURA OBRIGATÓRIA DO RELATÓRIO:
 - Média de dias de atraso (quando atrasadas): X dias
 - Média de dias vencidas (demandas pendentes): X dias
 - Demandas sem data definida: X (impacto na previsibilidade)
+
+## ✅ Entregues no Prazo (Destaques)
+[Liste as demandas de onTimeDetails com: título, data prevista, data de entrega, dias de antecedência e responsáveis. Se a lista estiver vazia mas onTime > 0, diga o número total de entregas no prazo.]
 
 ## 🚨 Demandas Críticas
 ### Vencidas (Pendentes - Ação Imediata)
@@ -670,9 +753,65 @@ REGRAS FINAIS:
 - Priorize insights acionáveis sobre descrições genéricas
 - Mantenha tom profissional mas acessível`;
 
-    const userPrompt = `Analise os seguintes dados do quadro "${board.name}" dos últimos 90 dias.
+    const memberSystemPrompt = `Você é um especialista em análise de produtividade individual em equipes de projeto.
+Sua tarefa é produzir um relatório INDIVIDUAL, em português brasileiro, sobre UM participante de um quadro Kanban.
+
+DEFINIÇÕES CRÍTICAS:
+- "onTime" (No Prazo): demandas entregues NA ou ANTES da data prevista.
+- "late" (Atrasadas): demandas ENTREGUES depois da data prevista.
+- "overdue" (Vencidas): demandas AINDA NÃO ENTREGUES com a data prevista já ultrapassada.
+- "onTimeDetails", "lateDetails" e "overdueDetails" trazem os títulos reais das demandas — cite-os.
+- "deliveredEstimatedCount": entregas cuja data veio da última mudança de etapa. Mencione como observação quando maior que zero.
+- Todos os dados já estão FILTRADOS para as demandas em que este participante é responsável ou seguidor.
+
+REGRAS DE PRECISÃO:
+- Use apenas os números exatos fornecidos; nunca invente dados.
+- Cite títulos de demandas e datas exatamente como aparecem.
+
+ESTRUTURA OBRIGATÓRIA:
+
+## 👤 Visão Geral do Participante
+[Nome, papel no quadro e 2-3 frases sobre o desempenho no período]
+
+## 🎯 Números do Período
+- Demandas atribuídas: X | Entregues: Y | No prazo: Z | Atrasadas: W | Vencidas em aberto: V
+- Taxa de pontualidade: X%
+- Tempo médio de conclusão: X dias | Horas registradas: Y
+
+## ✅ Entregas no Prazo
+[Liste as demandas de onTimeDetails com título, data prevista, data de entrega e dias de antecedência]
+
+## ⚠️ Atrasos e Pendências
+### Vencidas em aberto
+[Liste overdueDetails com título, dias vencidos, status atual e prioridade]
+### Entregues com atraso
+[Liste lateDetails com título e dias de atraso]
+
+## 📈 Padrões de Trabalho
+- Distribuição por prioridade e por etapa
+- Tendência semanal de entregas
+
+## 💪 Pontos Fortes
+## 🎯 Pontos de Atenção
+## 💡 Recomendações para este participante
+
+Mantenha tom profissional, construtivo e direto.`;
+
+    const systemPrompt = memberId ? memberSystemPrompt : boardSystemPrompt;
+
+    const userPrompt = memberId
+      ? `Analise os dados do participante "${focusMemberName || "Participante"}" no quadro "${board.name}" nos últimos 90 dias.
+
+Resumo individual consolidado: ${JSON.stringify(focusMemberStats)}
+
+DADOS COMPLETOS (já filtrados para este participante):
+${JSON.stringify(analytics, null, 2)}
+
+Gere o relatório individual seguindo exatamente a estrutura definida, citando títulos e números exatos.`
+      : `Analise os seguintes dados do quadro "${board.name}" dos últimos 90 dias.
 
 ATENÇÃO: Os dados incluem informações detalhadas sobre:
+- demands.onTimeDetails: Lista de demandas entregues DENTRO DO PRAZO
 - demands.lateDetails: Lista de demandas entregues COM ATRASO (após a data prevista)
 - demands.overdueDetails: Lista de demandas VENCIDAS que ainda não foram entregues
 - members[].onTimeCount e lateCount: Performance individual de pontualidade
