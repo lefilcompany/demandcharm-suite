@@ -504,6 +504,15 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
                     </Button>
                     <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7"
+                      onClick={() => setShowSendToRequests(true)}
+                    >
+                      Enviar para Solicitações
+                    </Button>
+                    <Button
+                      type="button"
                       variant="ghost"
                       size="sm"
                       className="h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
