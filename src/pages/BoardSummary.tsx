@@ -23,6 +23,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SEOHead } from "@/components/SEOHead";
+import { useBoardMembers } from "@/hooks/useBoardMembers";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface LateDemandDetail {
   title: string;
@@ -42,7 +50,18 @@ interface OverdueDemandDetail {
   status: string;
 }
 
+interface OnTimeDemandDetail {
+  title: string;
+  daysEarly: number;
+  dueDate: string;
+  deliveredAt: string;
+  deliveredDateEstimated?: boolean;
+  assignees: string[];
+  priority: string;
+}
+
 interface BoardAnalytics {
+  focusMember?: { id: string; name: string; role: string } | null;
   board: { name: string; description: string | null; monthlyLimit: number | null };
   period: { start: string; end: string; days: number };
   demands: {
@@ -57,8 +76,10 @@ interface BoardAnalytics {
     withDueDate?: number;
     withoutDueDate?: number;
     onTimeRate?: number;
+    deliveredEstimatedCount?: number;
     lateDetails?: LateDemandDetail[];
     overdueDetails?: OverdueDemandDetail[];
+    onTimeDetails?: OnTimeDemandDetail[];
     byStatus: { status: string; count: number }[];
     byPriority: { priority: string; count: number }[];
   };
@@ -228,6 +249,8 @@ export default function BoardSummary() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentSummaryId, setCurrentSummaryId] = useState<string | null>(null);
+  const [scopeMemberId, setScopeMemberId] = useState<string>("all");
+  const { data: boardMembers } = useBoardMembers(currentBoard?.id ?? null);
   
   const { saveSummary, createShareToken } = useBoardSummaryHistory(currentBoard?.id);
 
@@ -258,7 +281,10 @@ export default function BoardSummary() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ boardId: currentBoard.id }),
+          body: JSON.stringify({
+            boardId: currentBoard.id,
+            memberId: scopeMemberId === "all" ? null : scopeMemberId,
+          }),
         }
       );
 
@@ -335,7 +361,7 @@ export default function BoardSummary() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentBoard?.id, saveSummary]);
+  }, [currentBoard?.id, saveSummary, scopeMemberId]);
 
   const handleSelectFromHistory = (item: BoardSummaryHistoryItem) => {
     setSummary(item.summary_text);
