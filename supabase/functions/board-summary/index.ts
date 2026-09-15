@@ -48,8 +48,10 @@ interface DemandMetrics {
   withDueDate: number; // Total demands that have a due date
   withoutDueDate: number; // Total demands without due date
   onTimeRate: number; // Percentage of on-time deliveries (with due date)
+  deliveredEstimatedCount: number; // Deliveries whose date came from the last status change
   lateDetails: LateDemandDetail[]; // Detailed info about late demands
   overdueDetails: OverdueDemandDetail[]; // Detailed info about overdue demands
+  onTimeDetails: OnTimeDemandDetail[]; // Detailed info about on-time deliveries
   byStatus: { status: string; count: number }[];
   byPriority: { priority: string; count: number }[];
 }
