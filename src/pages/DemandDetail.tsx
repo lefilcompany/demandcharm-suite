@@ -1089,15 +1089,24 @@ export default function DemandDetail() {
                   {canEdit && (
                     <>
                       <DropdownMenuSeparator />
-                      {demand.parent_demand_id ? (
-                        <DropdownMenuItem
-                          onSelect={() => setShowUnlinkParentDialog(true)}
-                          className="text-sm"
-                        >
-                          <GitBranch className="h-4 w-4 mr-2 text-[#F28705]" />
-                          Desvincular da demanda pai
-                        </DropdownMenuItem>
-                      ) : (subdemands?.length ?? 0) === 0 ? (
+                       {demand.parent_demand_id ? (
+                         <>
+                           <DropdownMenuItem
+                             onSelect={() => setShowUnlinkParentDialog(true)}
+                             className="text-sm"
+                           >
+                             <GitBranch className="h-4 w-4 mr-2 text-[#F28705]" />
+                             Desvincular da demanda pai
+                           </DropdownMenuItem>
+                           <DropdownMenuItem
+                             onSelect={() => setShowSendToRequestsDialog(true)}
+                             className="text-sm"
+                           >
+                             <Inbox className="h-4 w-4 mr-2 text-[#F28705]" />
+                             Enviar para Solicitações
+                           </DropdownMenuItem>
+                         </>
+                       ) : (subdemands?.length ?? 0) === 0 ? (
                         <DropdownMenuItem
                           onSelect={() => setShowLinkParentDialog(true)}
                           className="text-sm"
