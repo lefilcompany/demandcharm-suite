@@ -203,6 +203,7 @@ Deno.serve(async (req: Request) => {
         priority,
         created_at,
         delivered_at,
+        updated_at,
         due_date,
         is_overdue,
         archived,
