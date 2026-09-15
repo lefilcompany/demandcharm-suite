@@ -455,10 +455,31 @@ export default function BoardSummary() {
                   <h1 className="text-lg sm:text-xl font-bold text-foreground">Análise Inteligente</h1>
                   <p className="text-xs sm:text-sm text-muted-foreground truncate max-w-[200px] sm:max-w-none">
                     Quadro: <span className="font-medium text-foreground">{currentBoard.name}</span>
+                    {scopeMemberId !== "all" && (
+                      <>
+                        {" · "}
+                        <span className="font-medium text-foreground">
+                          {boardMembers?.find((m: any) => m.user_id === scopeMemberId)?.profiles?.full_name || "Participante"}
+                        </span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 self-end sm:self-auto">
+              <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+                <Select value={scopeMemberId} onValueChange={setScopeMemberId} disabled={isLoading}>
+                  <SelectTrigger className="h-8 sm:h-9 w-[190px] text-xs sm:text-sm bg-background">
+                    <SelectValue placeholder="Escopo da análise" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="all">Quadro inteiro</SelectItem>
+                    {(boardMembers || []).map((m: any) => (
+                      <SelectItem key={m.user_id} value={m.user_id}>
+                        {m.profiles?.full_name || "Participante"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <SummaryHistoryDrawer 
                   boardId={currentBoard.id} 
                   onSelectSummary={handleSelectFromHistory} 
