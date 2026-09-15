@@ -87,6 +87,7 @@ export const DEFAULT_COLUMNS: KanbanColumn[] = [
 
 // Map status names to colors
 const statusColorMap: Record<string, string> = {
+  "Solicitações": "bg-orange-500/10",
   "Backlog": "bg-slate-500/10",
   "A Iniciar": "bg-muted",
   "Tarefas Internas": "bg-violet-500/10",
@@ -99,6 +100,7 @@ const statusColorMap: Record<string, string> = {
 
 // Map status names to short labels
 const statusShortLabelMap: Record<string, string> = {
+  "Solicitações": "Solicitações",
   "Backlog": "Backlog",
   "A Iniciar": "Iniciar",
   "Tarefas Internas": "Internas",
