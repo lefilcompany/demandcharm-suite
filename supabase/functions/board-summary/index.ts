@@ -673,7 +673,7 @@ Deno.serve(async (req: Request) => {
       },
     };
 
-    const systemPrompt = `Você é um especialista em análise de gestão de projetos e produtividade de equipes. 
+    const boardSystemPrompt = `Você é um especialista em análise de gestão de projetos e produtividade de equipes. 
 Sua tarefa é analisar os dados de um quadro Kanban e produzir um relatório executivo completo e preciso em português brasileiro.
 
 IMPORTANTE - DEFINIÇÕES CRÍTICAS:
