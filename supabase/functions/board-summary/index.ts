@@ -266,8 +266,37 @@ Deno.serve(async (req: Request) => {
       console.error("Requests error:", requestsError);
     }
 
+    // Normalize delivery data: many demands sit in the "Entregue" stage without a
+    // delivered_at timestamp. Fall back to the last status change so deliveries
+    // (and on-time deliveries) are not silently dropped from the analysis.
+    const isDeliveredStatus = (name?: string | null) => {
+      const n = (name || "").toLowerCase();
+      return n.includes("entregue") || n.includes("concluí") || n.includes("conclui");
+    };
+
+    let deliveredEstimatedCount = 0;
+    const allDemands = (demands || []).map((d: any) => {
+      let deliveredAt = d.delivered_at;
+      let estimated = false;
+      if (!deliveredAt && isDeliveredStatus(d.status?.name)) {
+        deliveredAt = d.status_changed_at || d.updated_at || null;
+        if (deliveredAt) {
+          estimated = true;
+          deliveredEstimatedCount++;
+        }
+      }
+      return { ...d, delivered_at: deliveredAt, deliveredEstimated: estimated };
+    });
+
+    // Optional scope: single board participant (responsible or follower)
+    const scopedDemands = memberId
+      ? allDemands.filter((d: any) =>
+          (d.assignees || []).some((a: any) => a.user_id === memberId)
+        )
+      : allDemands;
+
     // Calculate demand metrics with detailed late/overdue tracking
-    const demandsList = demands || [];
+    const demandsList = scopedDemands;
     const now = new Date();
     
     let delivered = 0;
