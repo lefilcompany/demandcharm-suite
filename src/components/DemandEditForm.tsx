@@ -663,7 +663,7 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
                     <SelectContent>
                       {statusOptions?.map((status) => (
                         <SelectItem key={status.id} value={status.id}>
-                          {status.name}
+                          {status.name === "Backlog" ? "Backlog (A iniciar)" : status.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

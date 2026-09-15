@@ -189,7 +189,7 @@ export function CreateSubdemandDialog({
                 <SelectContent>
                   {statuses.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.name}
+                      {s.name === "Backlog" ? "Backlog (A iniciar)" : s.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
