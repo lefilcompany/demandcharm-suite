@@ -439,6 +439,7 @@ Deno.serve(async (req: Request) => {
     // Sort late/overdue by severity (most days first)
     lateDetails.sort((a, b) => b.daysLate - a.daysLate);
     overdueDetails.sort((a, b) => b.daysOverdue - a.daysOverdue);
+    onTimeDetails.sort((a, b) => b.daysEarly - a.daysEarly);
 
     const demandMetrics: DemandMetrics = {
       total: demandsList.length,
