@@ -711,6 +711,9 @@ ESTRUTURA OBRIGATÓRIA DO RELATÓRIO:
 - Média de dias vencidas (demandas pendentes): X dias
 - Demandas sem data definida: X (impacto na previsibilidade)
 
+## ✅ Entregues no Prazo (Destaques)
+[Liste as demandas de onTimeDetails com: título, data prevista, data de entrega, dias de antecedência e responsáveis. Se a lista estiver vazia mas onTime > 0, diga o número total de entregas no prazo.]
+
 ## 🚨 Demandas Críticas
 ### Vencidas (Pendentes - Ação Imediata)
 [Liste cada demanda de overdueDetails com: título, dias vencidos, responsáveis, status atual, prioridade]
