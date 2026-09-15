@@ -156,7 +156,7 @@ function getColumnBackgroundStyle(color: string): { className: string; style?: R
 
 // Default columns (fallback)
 const DEFAULT_COLUMNS: KanbanColumn[] = [
-  { key: "A Iniciar", label: "A Iniciar", color: "bg-muted", shortLabel: "Iniciar", adjustmentType: "none" },
+  { key: "Backlog", label: "Backlog", color: "bg-slate-500/10", shortLabel: "Backlog", adjustmentType: "none" },
   { key: "Fazendo", label: "Fazendo", color: "bg-blue-500/10", shortLabel: "Fazendo", adjustmentType: "none" },
   { key: "Em Ajuste", label: "Em Ajuste", color: "bg-purple-500/10", shortLabel: "Ajuste", adjustmentType: "none" },
   { key: "Aprovação Interna", label: "Aprovação Interna", color: "bg-blue-500/10", shortLabel: "Apr. Int.", adjustmentType: "internal" },
@@ -582,7 +582,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     // If sub-demand is moving BACK (e.g. to A Iniciar), check if NO sibling is in active statuses
     // If so, move parent back to A Iniciar
     const activeStatuses = ["Fazendo", "Em Ajuste", "Ajuste", "Aprovação do Cliente", "Entregue"];
-    if (!activeStatuses.includes(newStatusKey) && parentStatusName !== "A Iniciar") {
+    if (!activeStatuses.includes(newStatusKey) && parentStatusName !== "Backlog") {
       const { data: siblings } = await supabase
         .from("demands")
         .select("id, demand_statuses(name)")
@@ -595,7 +595,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
       });
 
       if (!anySiblingActive) {
-        await autoMoveParent(demand.parent_demand_id, "A Iniciar");
+        await autoMoveParent(demand.parent_demand_id, "Backlog");
       }
     }
   }, [statuses, updateDemand, user, autoMoveParent]);
@@ -990,7 +990,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     setOptimisticUpdates(prev => ({ ...prev, [demandId]: columnKey }));
 
     // Check dependency before allowing status change (except going back to "A Iniciar")
-    if (columnKey !== "A Iniciar" && previousStatusName === "A Iniciar") {
+    if (columnKey !== "Backlog" && previousStatusName === "Backlog") {
       const depCheck = await checkDependencyBeforeStatusChange(demandId);
       if (depCheck.blocked) {
         // Roll back optimistic update
@@ -1207,7 +1207,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
       return;
     }
 
-    if (newStatusKey !== "A Iniciar" && previousStatusName === "A Iniciar") {
+    if (newStatusKey !== "Backlog" && previousStatusName === "Backlog") {
       const depCheck = await checkDependencyBeforeStatusChange(demandId);
       if (depCheck.blocked) {
         toast.error("Não é possível alterar o status", {

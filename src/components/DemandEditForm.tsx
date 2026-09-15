@@ -146,7 +146,7 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
   }, [boardStatuses, statuses]);
 
   const defaultSubStatusId = useMemo(() => {
-    const initial = statusOptions.find((s) => s.name === "A Iniciar");
+    const initial = statusOptions.find((s) => s.name === "Backlog");
     return initial?.id || statusOptions[0]?.id || statusId;
   }, [statusOptions, statusId]);
 

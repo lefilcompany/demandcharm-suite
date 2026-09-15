@@ -985,7 +985,7 @@ export default function DemandDetail() {
                       const previousStatusName = demand.demand_statuses?.name;
 
                       // Check dependency before allowing status change
-                      if (status.name !== "A Iniciar" && previousStatusName === "A Iniciar") {
+                      if (status.name !== "Backlog" && previousStatusName === "Backlog") {
                         const depCheck = await checkDependencyBeforeStatusChange(demand.id);
                         if (depCheck.blocked) {
                           toast.error("Não é possível alterar o status", {
@@ -1351,7 +1351,7 @@ export default function DemandDetail() {
                 onClose={() => setShowSubdemandDialog(false)}
                 onSave={async (data: SubdemandFormData) => {
                   if (!demand) return;
-                  const defaultStatus = statuses?.find(s => s.name === "A Iniciar") || statuses?.[0];
+                  const defaultStatus = statuses?.find(s => s.name === "Backlog") || statuses?.[0];
                   if (!defaultStatus) return;
                   try {
                     const result = await addSubdemand.mutateAsync({
@@ -1432,7 +1432,7 @@ export default function DemandDetail() {
                   status_id: s.status_id,
                 }))}
                 statuses={statuses}
-                defaultStatusId={statuses?.find(s => s.name === "A Iniciar")?.id || statuses?.[0]?.id || ""}
+                defaultStatusId={statuses?.find(s => s.name === "Backlog")?.id || statuses?.[0]?.id || ""}
                 teamId={demand?.team_id || null}
                 boardId={demand?.board_id || null}
                 parentServiceId={demand?.service_id || undefined}
@@ -1446,7 +1446,7 @@ export default function DemandDetail() {
                     const statusName = sub.demand_statuses?.name || "";
                     const statusColor = sub.demand_statuses?.color || "#9CA3AF";
                     const isDelivered = statusName === "Entregue";
-                    const isNotStarted = statusName === "A Iniciar";
+                    const isNotStarted = statusName === "Backlog";
                     const bgColor = statusColor !== "#9CA3AF" ? statusColor
                       : isDelivered ? "#10B981"
                       : isNotStarted ? "#9CA3AF"

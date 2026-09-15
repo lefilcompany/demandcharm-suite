@@ -52,7 +52,7 @@ function getStage(d: any): Exclude<Stage, "all"> {
     }
     return "delivered";
   }
-  if (statusName === "A Iniciar") return "todo";
+  if (statusName === "A Iniciar" || statusName === "Backlog") return "todo";
   return "doing";
 }
 

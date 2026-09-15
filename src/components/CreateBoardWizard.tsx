@@ -221,7 +221,7 @@ const makeStageId = () =>
     : `stage-${Math.random().toString(36).slice(2)}-${Date.now()}`;
 
 const DEFAULT_STAGES: Stage[] = [
-  { id: makeStageId(), name: "A Iniciar", color: "#6B7280", adjustment_type: "none" },
+  { id: makeStageId(), name: "Backlog", color: "#64748B", adjustment_type: "none" },
   { id: makeStageId(), name: "Fazendo", color: "#3B82F6", adjustment_type: "none" },
   { id: makeStageId(), name: "Aprovação Interna", color: "#3B82F6", adjustment_type: "internal" },
   { id: makeStageId(), name: "Em Ajuste", color: "#9333EA", adjustment_type: "none" },
