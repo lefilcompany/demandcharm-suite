@@ -18,7 +18,10 @@ import type { ReleaseFeature, ReleasePriority } from "./releaseManifest.ts";
 export interface BuildChange {
   sha: string;
   subject: string;
+  /** Arquivos alterados no commit (sinal usado quando o assunto é genérico). */
+  files?: string[];
 }
+
 
 export type PatchNoteType = "feature" | "fix" | "improvement";
 
@@ -39,8 +42,30 @@ const NOISE_PATTERNS: RegExp[] = [
   /^bump\b/i,
   /^lint\b/i,
   /^format\b/i,
-  /^(changes|update|updates|ajustes?|alteraç(ão|ões))\.?$/i,
 ];
+
+/**
+ * Assuntos genéricos (o Lovable comita tudo como "Changes"). Só entram no
+ * anúncio quando o commit traz arquivos alterados que dêem algum contexto.
+ */
+const GENERIC_SUBJECT = /^(changes?|update|updates|ajustes?|alteraç(ão|ões))\.?$/i;
+
+/** Arquivos que não dizem nada sobre o que o usuário vai ver. */
+const IGNORED_FILE_PATTERNS: RegExp[] = [
+  /(^|\/)(package(-lock)?\.json|bun\.lockb?|pnpm-lock\.yaml|yarn\.lock)$/i,
+  /\.(test|spec)\.[tj]sx?$/i,
+  /^(\.github|\.lovable|docs|tests_selenium)\//i,
+  /(^|\/)(tsconfig|eslint\.config|postcss\.config|vitest\.config)\./i,
+  /^supabase\/migrations/i,
+];
+
+function meaningfulFiles(files?: string[]): string[] {
+  return (files ?? [])
+    .map((f) => (typeof f === "string" ? f.trim() : ""))
+    .filter((f) => f && !IGNORED_FILE_PATTERNS.some((re) => re.test(f)))
+    .slice(0, 12);
+}
+
 
 export const MAX_CHANGES = 60;
 export const MAX_NOTES = 6;
@@ -84,20 +109,25 @@ export function selectAnnounceableChanges(
     const subject = (change?.subject ?? "").trim();
     if (!subject) continue;
     if (NOISE_PATTERNS.some((re) => re.test(subject))) continue;
-    const key = subject.toLowerCase();
+    const files = meaningfulFiles(change?.files);
+    // Assunto genérico só entra se houver arquivos que dêem contexto.
+    if (GENERIC_SUBJECT.test(subject) && files.length === 0) continue;
+    const key = `${subject.toLowerCase()}|${files.join(",")}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    result.push({ sha: change.sha ?? "", subject });
+    result.push({ sha: change.sha ?? "", subject, ...(files.length ? { files } : {}) });
     if (result.length >= MAX_CHANGES) break;
   }
+
   return result;
 }
 
 export const PATCH_NOTES_SYSTEM_PROMPT = [
   "Você escreve as notas de atualização (patch notes) do SoMA, um sistema de gestão de demandas em português do Brasil.",
-  "Receberá mensagens técnicas de commits de uma publicação e deve traduzi-las em avisos curtos para usuários não técnicos.",
+  "Receberá mensagens técnicas de commits de uma publicação (e, quando a mensagem for genérica, os arquivos alterados) e deve traduzi-las em avisos curtos para usuários não técnicos.",
   "Regras:",
   "- Agrupe mudanças relacionadas em um único item; no máximo " + MAX_NOTES + " itens.",
+  "- Quando a mensagem for genérica, deduza a área afetada pelos caminhos dos arquivos (ex.: Kanban, demandas, notificações) e descreva o benefício provável de forma cautelosa.",
   "- Ignore mudanças internas sem efeito visível (refatorações, testes, dependências, configuração).",
   "- Se nada for relevante para o usuário, devolva uma lista vazia.",
   '- "type" deve ser "feature" (novidade), "fix" (correção) ou "improvement" (melhoria).',
@@ -109,7 +139,12 @@ export const PATCH_NOTES_SYSTEM_PROMPT = [
 export function buildPatchNotesPrompt(changes: BuildChange[]): string {
   return [
     "Mudanças publicadas nesta versão:",
-    ...changes.map((c) => `- ${c.subject}`),
+    ...changes.map((c) =>
+      c.files && c.files.length
+        ? `- ${c.subject} (arquivos: ${c.files.join(", ")})`
+        : `- ${c.subject}`,
+    ),
+
     "",
     "Gere as notas de atualização em JSON.",
   ].join("\n");

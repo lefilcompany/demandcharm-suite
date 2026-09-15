@@ -23,22 +23,39 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
  * das notas de atualização geradas automaticamente pela Edge Function
  * `generate-release-notes`. Ambientes sem git simplesmente publicam [].
  */
-function readRecentChanges(): { sha: string; subject: string }[] {
+function readRecentChanges(): { sha: string; subject: string; files?: string[] }[] {
   try {
-    const raw = execSync("git log -n 60 --no-merges --pretty=format:%H%x1f%s", {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-      cwd: fileURLToPath(new URL(".", import.meta.url)),
-    });
+    // %x1f separa sha/assunto; %x1e separa commits. `--name-only` traz os
+    // arquivos alterados: as mensagens automáticas do Lovable são genéricas
+    // ("Changes"), então os caminhos são o único sinal real do que mudou.
+    const raw = execSync(
+      "git log -n 40 --no-merges --name-only --pretty=format:%x1e%H%x1f%s%x1f",
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+        cwd: fileURLToPath(new URL(".", import.meta.url)),
+        maxBuffer: 10 * 1024 * 1024,
+      },
+    );
     return raw
-      .split("\n")
-      .map((line) => line.split("\u001f"))
-      .filter((parts) => parts.length === 2 && parts[0] && parts[1])
-      .map(([sha, subject]) => ({ sha: sha.trim(), subject: subject.trim() }));
+      .split("\u001e")
+      .map((block) => block.trim())
+      .filter(Boolean)
+      .map((block) => {
+        const [sha, subject, rest = ""] = block.split("\u001f");
+        const files = rest
+          .split("\n")
+          .map((f) => f.trim())
+          .filter(Boolean)
+          .slice(0, 12);
+        return { sha: (sha || "").trim(), subject: (subject || "").trim(), files };
+      })
+      .filter((c) => c.sha && c.subject);
   } catch {
     return [];
   }
 }
+
 
 function releaseBuildInfoPlugin(): Plugin {
   return {
