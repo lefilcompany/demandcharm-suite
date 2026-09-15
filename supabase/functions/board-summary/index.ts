@@ -25,6 +25,17 @@ interface OverdueDemandDetail {
   status: string;
 }
 
+// Detailed on-time delivery info
+interface OnTimeDemandDetail {
+  title: string;
+  daysEarly: number;
+  dueDate: string;
+  deliveredAt: string;
+  deliveredDateEstimated: boolean;
+  assignees: string[];
+  priority: string;
+}
+
 interface DemandMetrics {
   total: number;
   delivered: number;
