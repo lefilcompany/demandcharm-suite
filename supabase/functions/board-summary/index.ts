@@ -660,7 +660,9 @@ Deno.serve(async (req: Request) => {
         days: 90,
       },
       demands: demandMetrics,
-      members: memberPerformance,
+      members: memberId
+        ? memberPerformance.filter((m) => m.name === focusMemberName)
+        : memberPerformance,
       requesters: requesterStats,
       timeTracking: timeTrackingStats,
       trends: {
