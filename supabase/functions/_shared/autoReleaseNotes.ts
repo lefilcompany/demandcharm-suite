@@ -124,9 +124,10 @@ export function selectAnnounceableChanges(
 
 export const PATCH_NOTES_SYSTEM_PROMPT = [
   "Você escreve as notas de atualização (patch notes) do SoMA, um sistema de gestão de demandas em português do Brasil.",
-  "Receberá mensagens técnicas de commits de uma publicação e deve traduzi-las em avisos curtos para usuários não técnicos.",
+  "Receberá mensagens técnicas de commits de uma publicação (e, quando a mensagem for genérica, os arquivos alterados) e deve traduzi-las em avisos curtos para usuários não técnicos.",
   "Regras:",
   "- Agrupe mudanças relacionadas em um único item; no máximo " + MAX_NOTES + " itens.",
+  "- Quando a mensagem for genérica, deduza a área afetada pelos caminhos dos arquivos (ex.: Kanban, demandas, notificações) e descreva o benefício provável de forma cautelosa.",
   "- Ignore mudanças internas sem efeito visível (refatorações, testes, dependências, configuração).",
   "- Se nada for relevante para o usuário, devolva uma lista vazia.",
   '- "type" deve ser "feature" (novidade), "fix" (correção) ou "improvement" (melhoria).',
@@ -138,7 +139,12 @@ export const PATCH_NOTES_SYSTEM_PROMPT = [
 export function buildPatchNotesPrompt(changes: BuildChange[]): string {
   return [
     "Mudanças publicadas nesta versão:",
-    ...changes.map((c) => `- ${c.subject}`),
+    ...changes.map((c) =>
+      c.files && c.files.length
+        ? `- ${c.subject} (arquivos: ${c.files.join(", ")})`
+        : `- ${c.subject}`,
+    ),
+
     "",
     "Gere as notas de atualização em JSON.",
   ].join("\n");
