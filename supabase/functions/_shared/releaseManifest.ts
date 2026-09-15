@@ -16,7 +16,7 @@ export const RELEASE_AUDIENCE_SCOPES = ["global", "team", "board"] as const;
 export type ReleaseAudienceScope = (typeof RELEASE_AUDIENCE_SCOPES)[number];
 
 /** Global roles come from the existing `app_role` taxonomy (public.user_roles). */
-export const GLOBAL_ROLES = ["admin", "moderator", "user"] as const;
+export const GLOBAL_ROLES = ["admin", "moderator", "member", "user"] as const;
 export type GlobalRole = (typeof GLOBAL_ROLES)[number];
 
 /** Team/board roles reuse the current taxonomy. Do not invent new ones. */

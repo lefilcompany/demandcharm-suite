@@ -134,7 +134,28 @@ export function createSupabaseAudienceSource(client: SupabaseLike): AudienceData
   }
 
   return {
-    listGlobalRoleUserIds: (roles) => collect("user_roles", (q) => q.in("role", roles)),
+    async listGlobalRoleUserIds(roles) {
+      // "user" significa TODAS as pessoas da plataforma: quem não tem linha em
+      // user_roles (e quem é "member") também precisa receber o anúncio.
+      if (roles.includes("user")) {
+        const all: string[] = [];
+        for (let from = 0; ; from += CHUNK) {
+          const { data, error } = await client
+            .from("profiles")
+            .select("id")
+            .range(from, from + CHUNK - 1);
+          if (error) throw new Error(`[resolveFeatureAudience] profiles: ${error.message}`);
+          const rows = data ?? [];
+          for (const row of rows) if (row?.id) all.push(row.id as string);
+          if (rows.length < CHUNK) break;
+        }
+        return all;
+      }
+      // Apenas papéis existentes no enum app_role chegam ao banco.
+      const dbRoles = roles.filter((r) => r === "admin" || r === "member");
+      if (dbRoles.length === 0) return [];
+      return collect("user_roles", (q) => q.in("role", dbRoles));
+    },
     listTeamMemberUserIds: (teamId, roles) =>
       collect("team_members", (q) => q.eq("team_id", teamId).in("role", roles)),
     listBoardMemberUserIds: (boardId, roles) =>
