@@ -3823,6 +3823,10 @@ export type Database = {
         Args: { _email: string }
         Returns: undefined
       }
+      convert_subdemand_to_request: {
+        Args: { p_demand_id: string }
+        Returns: string
+      }
       create_approval_notifications: {
         Args: {
           p_demand_id: string

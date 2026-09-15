@@ -24,6 +24,7 @@ import { Package, Users, Loader2, Link2, Lock, X, GitBranch, Unlink2 } from "luc
 import { supabase } from "@/integrations/supabase/client";
 import { useConvertToSubdemand } from "@/hooks/useSubdemands";
 import { LinkAsSubdemandDialog } from "@/components/LinkAsSubdemandDialog";
+import { SendSubdemandToRequestsDialog } from "@/components/SendSubdemandToRequestsDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,6 +92,7 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
   const [parentInfo, setParentInfo] = useState<{ id: string; title: string; seq: number | null } | null>(null);
   const [showChangeParent, setShowChangeParent] = useState(false);
   const [showUnlinkParent, setShowUnlinkParent] = useState(false);
+  const [showSendToRequests, setShowSendToRequests] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -504,6 +506,15 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
                     </Button>
                     <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7"
+                      onClick={() => setShowSendToRequests(true)}
+                    >
+                      Enviar para Solicitações
+                    </Button>
+                    <Button
+                      type="button"
                       variant="ghost"
                       size="sm"
                       className="h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -515,7 +526,7 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Trocar a demanda pai move esta subdemanda para outra demanda principal do mesmo quadro. Desvincular a transforma em demanda principal.
+                  Trocar a demanda pai move esta subdemanda para outra demanda principal do mesmo quadro. Desvincular a transforma em demanda principal. Enviar para Solicitações tira a subdemanda do quadro e a coloca na fila de aprovação.
                 </p>
               </div>
             )}
@@ -596,6 +607,14 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SendSubdemandToRequestsDialog
+        open={showSendToRequests}
+        onOpenChange={setShowSendToRequests}
+        demandId={demand.id}
+        demandTitle={demand.title}
+        onSuccess={onSuccess}
+      />
     </>
   );
 }

@@ -78,6 +78,34 @@ export function useReorderSubdemands() {
   });
 }
 
+/**
+ * Desvincula uma subdemanda da demanda pai e a envia para a seção de Solicitações
+ * como solicitação pendente. A subdemanda vai para a lixeira (30 dias).
+ */
+export function useSendSubdemandToRequests() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ demandId }: { demandId: string; parentDemandId?: string | null; boardId?: string }) => {
+      const { data, error } = await supabase.rpc("convert_subdemand_to_request", {
+        p_demand_id: demandId,
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subdemands"] });
+      queryClient.invalidateQueries({ queryKey: ["demands"] });
+      queryClient.invalidateQueries({ queryKey: ["demands-list"] });
+      queryClient.invalidateQueries({ queryKey: ["demand-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["archived-demands"] });
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      queryClient.invalidateQueries({ queryKey: ["all-boards-kanban-columns"] });
+      queryClient.invalidateQueries({ queryKey: ["batch-dependency-info"] });
+    },
+  });
+}
+
 export function useDemandDependencies(demandId: string | null) {
   return useQuery({
     queryKey: ["demand-dependencies", demandId],
