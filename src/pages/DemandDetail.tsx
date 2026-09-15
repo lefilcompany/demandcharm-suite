@@ -61,7 +61,8 @@ import { SubdemandTimer } from "@/components/SubdemandTimer";
 import { CreateSubdemandDialog, type SubdemandFormData } from "@/components/CreateSubdemandDialog";
 import { ParentDemandTimeDisplay } from "@/components/ParentDemandTimeDisplay";
 import { checkDependencyBeforeStatusChange, useDemandDependencyInfo, useBatchDependencyInfo } from "@/hooks/useDependencyCheck";
-import { Lock, Link2, GripVertical, FileText } from "lucide-react";
+import { Lock, Link2, GripVertical, FileText, Inbox } from "lucide-react";
+import { SendSubdemandToRequestsDialog } from "@/components/SendSubdemandToRequestsDialog";
 import { SEOHead } from "@/components/SEOHead";
 import { isFinalizationStatus, analyzeSubdemandsForPropagation } from "@/lib/subdemandStatusPropagation";
 import { patchDemandStatusByIds, patchParentAggregatedTime } from "@/lib/demandRealtimeCache";
@@ -187,6 +188,7 @@ export default function DemandDetail() {
   const [dragOverSubId, setDragOverSubId] = useState<string | null>(null);
   const [showLinkParentDialog, setShowLinkParentDialog] = useState(false);
   const [showUnlinkParentDialog, setShowUnlinkParentDialog] = useState(false);
+  const [showSendToRequestsDialog, setShowSendToRequestsDialog] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
 
   const convertToSubdemand = useConvertToSubdemand();
@@ -1698,6 +1700,17 @@ export default function DemandDetail() {
           demandId={demand.id}
           boardId={demand.board_id}
           demandTitle={demand.title}
+        />
+      )}
+
+      {/* Send subdemand to requests */}
+      {demand && demand.parent_demand_id && (
+        <SendSubdemandToRequestsDialog
+          open={showSendToRequestsDialog}
+          onOpenChange={setShowSendToRequestsDialog}
+          demandId={demand.id}
+          demandTitle={demand.title}
+          onSuccess={() => navigate(`/demands/${demand.parent_demand_id}`)}
         />
       )}
 
