@@ -9,12 +9,22 @@ import { z } from "zod";
 const trimmedString = z.string().trim();
 const nonEmptyString = trimmedString.min(1, "Este campo é obrigatório");
 
-export function hasMeaningfulRichText(value: string): boolean {
+export function meaningfulRichTextLength(value: string): number {
   return value
     .replace(/<img\b[^>]*>/gi, " imagem ")
     .replace(/<[^>]*>/g, " ")
     .replace(/&nbsp;|&#160;/gi, " ")
-    .trim().length > 0;
+    .trim().length;
+}
+
+export function hasMeaningfulRichText(value: string): boolean {
+  return meaningfulRichTextLength(value) > 0;
+}
+
+export const DEMAND_DESCRIPTION_MIN_LENGTH = 30;
+
+export function hasMinMeaningfulRichText(value: string): boolean {
+  return meaningfulRichTextLength(value) >= DEMAND_DESCRIPTION_MIN_LENGTH;
 }
 
 // Priority values allowed in the system
@@ -27,7 +37,8 @@ export const DemandCreateSchema = z.object({
     .max(500, "Título deve ter no máximo 500 caracteres"),
   description: nonEmptyString
     .max(50000, "Descrição deve ter no máximo 50000 caracteres")
-    .refine(hasMeaningfulRichText, "A descrição é obrigatória"),
+    .refine(hasMeaningfulRichText, "A descrição é obrigatória")
+    .refine(hasMinMeaningfulRichText, "A descrição precisa ter pelo menos 30 caracteres"),
   team_id: z.string().uuid("ID da equipe inválido"),
   board_id: z.string().uuid("ID do quadro inválido"),
   status_id: z.string().uuid("ID do status inválido"),
