@@ -8,6 +8,20 @@
       "when": 1789988864607,
       "tag": "0000_solicitacoes_first_stage_new_boards",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790015164641,
+      "tag": "0001_create_demo_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790015555569,
+      "tag": "0002_add_demo_request_internal_notes",
+      "breakpoints": true
     }
   ]
 }
