@@ -67,7 +67,7 @@ import { emptyMeetingForm, type MeetingFormValue } from "@/lib/meetingUtils";
 import { persistDemandMeeting, requestMeetingSync, useUserTimezone } from "@/hooks/useDemandMeeting";
 import { useGoogleCalendarConnection } from "@/hooks/useGoogleCalendarConnection";
 import { useServices } from "@/hooks/useServices";
-import { hasMeaningfulRichText } from "@/lib/validations";
+import { hasMinMeaningfulRichText } from "@/lib/validations";
 
 export default function CreateDemand({ open, onClose }: { open?: boolean; onClose?: () => void }) {
   const { t } = useTranslation();
@@ -336,8 +336,8 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   ) => {
     if (!title.trim() || !selectedTeamId || !activeBoardId || !statusId || !canCreate) return;
 
-    if (!hasMeaningfulRichText(description)) {
-      toast.error("A descrição é obrigatória");
+    if (!hasMinMeaningfulRichText(description)) {
+      toast.error("A descrição precisa ter pelo menos 30 caracteres");
       setCurrentStep(0);
       return;
     }
@@ -701,7 +701,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   const canGoNext = () => {
     if (currentStep === 0) {
       // Parent step — require minimum fields + assignees + priority + due date
-      const baseValid = !!(title.trim() && hasMeaningfulRichText(description) && statusId && activeBoardId && canCreate !== false && (hasBoardServices ? isServiceValid() : true));
+      const baseValid = !!(title.trim() && hasMinMeaningfulRichText(description) && statusId && activeBoardId && canCreate !== false && (hasBoardServices ? isServiceValid() : true));
       const assigneesValid = canAssignResponsibles ? assigneeIds.length > 0 : true;
       return baseValid && assigneesValid && !!priority && (!!dueDate || isBacklogSelected);
     }
@@ -761,7 +761,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
   const isSubmitting = createDemand.isPending || createDemandWithSubdemands.isPending;
 
   const parentFormValid = !!(
-    title.trim() && hasMeaningfulRichText(description) && statusId && activeBoardId && canCreate !== false &&
+    title.trim() && hasMinMeaningfulRichText(description) && statusId && activeBoardId && canCreate !== false &&
     (hasBoardServices ? isServiceValid() : true) &&
     (canAssignResponsibles ? assigneeIds.length > 0 : true) &&
     !!priority && (!!dueDate || isBacklogSelected)
