@@ -105,8 +105,8 @@ Deno.test("buildDeadlineReminder produces deterministic copy and event key", () 
   );
 
   assertEquals(reminder.eventKey, "deadline_day_before:demand-1:2026-07-15");
-  assertEquals(reminder.link, "/demands/demand-1");
-  assertEquals(reminder.actionUrl, "https://pla.soma.lefil.com.br/demands/demand-1");
+  assertEquals(reminder.link, "/app/demands/demand-1");
+  assertEquals(reminder.actionUrl, "https://pla.soma.lefil.com.br/app/demands/demand-1");
   assertEquals(reminder.userName, "Maria");
   assertEquals(reminder.message.includes("vence amanhã (15/07/2026)"), true);
 });
