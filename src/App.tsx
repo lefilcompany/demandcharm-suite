@@ -77,10 +77,12 @@ const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const AdminEmailTest = lazy(() => import("./pages/admin/AdminEmailTest"));
 const AdminPushTest = lazy(() => import("./pages/admin/AdminPushTest"));
 const AdminEmailLogs = lazy(() => import("./pages/admin/AdminEmailLogs"));
+const AdminDemoRequests = lazy(() => import("./pages/admin/AdminDemoRequests"));
 const AdminReleaseTest = lazy(() => import("./pages/admin/AdminReleaseTest"));
 const AdminReleases = lazy(() => import("./pages/admin/AdminReleases"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const McpDocs = lazy(() => import("./pages/McpDocs"));
+const Landing = lazy(() => import("./pages/Landing"));
 
 function CreateDemandGlobal() {
   return <CreateDemand />;
@@ -141,6 +143,8 @@ const App = () => {
                               <Route path="/auth" element={<Auth />} />
                               <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                               <Route path="/get-started" element={<GetStarted />} />
+                              <Route path="/lp" element={<Landing />} />
+                              <Route path="/landing" element={<Landing />} />
                               <Route path="/shared/:token" element={<SharedDemand />} />
                               <Route path="/shared/note/:token" element={<SharedNote />} />
                               <Route path="/shared/summary/:token" element={<SharedBoardSummary />} />
@@ -161,6 +165,7 @@ const App = () => {
                                 <Route path="email-test" element={<AdminEmailTest />} />
                                 <Route path="push-test" element={<AdminPushTest />} />
                                 <Route path="email-logs" element={<AdminEmailLogs />} />
+                                <Route path="demo-requests" element={<AdminDemoRequests />} />
                                 <Route path="release-test" element={<AdminReleaseTest />} />
                                 <Route path="releases" element={<AdminReleases />} />
                               </Route>
