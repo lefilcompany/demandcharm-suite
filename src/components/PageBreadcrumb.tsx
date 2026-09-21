@@ -30,11 +30,11 @@ export function PageBreadcrumb({ items, showHome = true }: PageBreadcrumbProps) 
   const { currentBoard } = useSelectedBoardSafe();
 
   const isTeamView =
-    location.pathname === "/team-demands" ||
-    location.pathname === "/boards" ||
-    location.pathname.startsWith("/boards/") ||
-    location.pathname === "/teams" ||
-    location.pathname.startsWith("/teams/");
+    location.pathname === "/app/team-demands" ||
+    location.pathname === "/app/boards" ||
+    location.pathname.startsWith("/app/boards/") ||
+    location.pathname === "/app/teams" ||
+    location.pathname.startsWith("/app/teams/");
 
   return (
     <Breadcrumb className="mb-4">

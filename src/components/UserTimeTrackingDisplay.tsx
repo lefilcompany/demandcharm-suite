@@ -54,14 +54,14 @@ function UserTimeRow({
     )}>
       <Avatar 
         className="h-5 w-5 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
-        onClick={() => navigate(`/user/${userId}`)}
+        onClick={() => navigate(`/app/user/${userId}`)}
       >
         <AvatarImage src={profile.avatar_url || undefined} />
         <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
       </Avatar>
       <button
         type="button"
-        onClick={() => navigate(`/user/${userId}`)}
+        onClick={() => navigate(`/app/user/${userId}`)}
         className="text-xs text-muted-foreground flex-1 truncate text-left hover:text-primary hover:underline cursor-pointer transition-colors"
       >
         {profile.full_name}

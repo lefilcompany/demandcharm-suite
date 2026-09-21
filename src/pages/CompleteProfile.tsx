@@ -114,7 +114,7 @@ export default function CompleteProfile() {
   if (authLoading || checkingProfile) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <SEOHead title="Completar Perfil" path="/complete-profile" />
+        <SEOHead title="Completar Perfil" path="/app/complete-profile" />
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
@@ -125,7 +125,7 @@ export default function CompleteProfile() {
   }
 
   if (profileComplete) {
-    return <Navigate to="/welcome" replace />;
+    return <Navigate to="/app/welcome" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -145,7 +145,7 @@ export default function CompleteProfile() {
       if (error) throw error;
 
       toast.success("Perfil completado com sucesso!");
-      navigate("/welcome", { replace: true });
+      navigate("/app/welcome", { replace: true });
     } catch (error: any) {
       toast.error("Erro ao salvar perfil", {
         description: error?.message || "Tente novamente.",
@@ -160,7 +160,7 @@ export default function CompleteProfile() {
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen">
-      <SEOHead title="Completar Perfil" path="/complete-profile" />
+      <SEOHead title="Completar Perfil" path="/app/complete-profile" />
       {/* Mobile Header */}
       <div
         className="lg:hidden relative h-40 sm:h-48 overflow-hidden"

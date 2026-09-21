@@ -57,30 +57,30 @@ export function AppSidebar() {
 
   // Detect "team view" routes - the team dropdown items
   const isTeamView =
-    location.pathname === "/team-demands" ||
-    location.pathname === "/boards" ||
-    location.pathname.startsWith("/boards/") ||
-    location.pathname.startsWith("/teams/") ||
-    location.pathname === "/teams" ||
-    location.pathname === "/projects" ||
-    location.pathname.startsWith("/projects/") ||
-    location.pathname.startsWith("/folders/");
+    location.pathname === "/app/team-demands" ||
+    location.pathname === "/app/boards" ||
+    location.pathname.startsWith("/app/boards/") ||
+    location.pathname.startsWith("/app/teams/") ||
+    location.pathname === "/app/teams" ||
+    location.pathname === "/app/projects" ||
+    location.pathname.startsWith("/app/projects/") ||
+    location.pathname.startsWith("/app/folders/");
 
   const lastBoardRoute = "/";
 
   const teamViewMenuItems: any[] = isTeamView
     ? [
         
-        { title: "Visão Geral", url: "/team-demands", icon: Layers },
-        { title: "Meus Quadros", url: "/boards", icon: LayoutGrid },
-        { title: "Projetos", url: "/projects", icon: Briefcase },
+        { title: "Visão Geral", url: "/app/team-demands", icon: Layers },
+        { title: "Meus Quadros", url: "/app/boards", icon: LayoutGrid },
+        { title: "Projetos", url: "/app/projects", icon: Briefcase },
         ...(selectedTeamId
-          ? [{ title: "Participantes", url: `/teams/${selectedTeamId}`, icon: UsersRound, end: true }]
+          ? [{ title: "Participantes", url: `/app/teams/${selectedTeamId}`, icon: UsersRound, end: true }]
           : []),
         ...(isTeamAdminOrModerator && selectedTeamId
           ? [
-              { title: "Serviços", url: `/teams/${selectedTeamId}/services`, icon: Settings },
-              { title: "Solicitações", url: `/teams/${selectedTeamId}/requests`, icon: UserPlus, showJoinRequestBadge: true },
+              { title: "Serviços", url: `/app/teams/${selectedTeamId}/services`, icon: Settings },
+              { title: "Solicitações", url: `/app/teams/${selectedTeamId}/requests`, icon: UserPlus, showJoinRequestBadge: true },
             ]
           : []),
       ]
@@ -92,11 +92,11 @@ export function AppSidebar() {
     icon: LayoutDashboard
   }, {
     title: t("kanban.title"),
-    url: "/kanban",
+    url: "/app/kanban",
     icon: Kanban
   }, {
     title: t("demands.title"),
-    url: "/demands",
+    url: "/app/demands",
     icon: LayoutList
   }];
 
@@ -104,13 +104,13 @@ export function AppSidebar() {
   const adminMenuItems = (isBoardAdminModeratorOrExecutor || isRequester) ? [
     {
       title: "Solicitações de Demanda",
-      url: "/demand-requests",
+      url: "/app/demand-requests",
       icon: Send,
       showDemandRequestBadge: true
     },
     ...((isBoardAdminOrModerator) ? [{
       title: "Gerenciamento de Tempo",
-      url: "/time-management",
+      url: "/app/time-management",
       icon: Clock
     }] : [])
   ] : [];
@@ -122,7 +122,7 @@ export function AppSidebar() {
   const aiMenuItems = [
     {
       title: "Resumo IA",
-      url: "/board-summary",
+      url: "/app/board-summary",
       icon: Sparkles
     }
   ];
@@ -135,7 +135,7 @@ export function AppSidebar() {
   const menuItems = isTeamView ? teamViewMenuItems : boardMenuItems;
 
   // Keep team section expanded if on team/board routes
-  const isOnTeamRoute = location.pathname.startsWith("/boards") || location.pathname.startsWith("/team-config") || location.pathname.includes("/services") || location.pathname.includes("/requests") || location.pathname === "/team-demands" || location.pathname === "/my-demands";
+  const isOnTeamRoute = location.pathname.startsWith("/app/boards") || location.pathname.startsWith("/app/team-config") || location.pathname.includes("/services") || location.pathname.includes("/requests") || location.pathname === "/app/team-demands" || location.pathname === "/app/my-demands";
   const [teamOpen, setTeamOpen] = useState(isOnTeamRoute);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
@@ -216,8 +216,8 @@ export function AppSidebar() {
             <SidebarMenu className="gap-1">
               {menuItems.map(item => {
               const tourId = !isTeamView && item.url === "/" ? "dashboard-link" 
-                  : item.url === "/kanban" ? "kanban-link"
-                  : item.url === "/demands" ? "demands-link"
+                  : item.url === "/app/kanban" ? "kanban-link"
+                  : item.url === "/app/demands" ? "demands-link"
                   : undefined;
                 const isBack = (item as any).isBackAction;
                 const hasBadge = (item as any).showDemandRequestBadge || (item as any).showJoinRequestBadge || (item as any).showReturnedBadge;
@@ -389,7 +389,7 @@ export function AppSidebar() {
                     {/* Menu items with icons */}
                     <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
                       <NavLink 
-                        to="/team-demands" 
+                        to="/app/team-demands" 
                         onClick={() => { setPopoverOpen(false); closeMobileSidebar(); }} 
                         className="flex items-center gap-3 cursor-pointer py-2.5 px-3 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-zinc-800 w-full" 
                         activeClassName="bg-gray-100 dark:bg-zinc-800 text-primary font-medium"
@@ -402,7 +402,7 @@ export function AppSidebar() {
                     
                     <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
                       <NavLink 
-                        to="/boards" 
+                        to="/app/boards" 
                         onClick={() => { setPopoverOpen(false); closeMobileSidebar(); }} 
                         className="flex items-center gap-3 cursor-pointer py-2.5 px-3 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-zinc-800 w-full" 
                         activeClassName="bg-gray-100 dark:bg-zinc-800 text-primary font-medium"
@@ -414,7 +414,7 @@ export function AppSidebar() {
 
                     <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
                       <NavLink
-                        to="/projects"
+                        to="/app/projects"
                         onClick={() => { setPopoverOpen(false); closeMobileSidebar(); }}
                         className="flex items-center gap-3 cursor-pointer py-2.5 px-3 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-zinc-800 w-full"
                         activeClassName="bg-gray-100 dark:bg-zinc-800 text-primary font-medium"
@@ -427,7 +427,7 @@ export function AppSidebar() {
                     {selectedTeamId && (
                       <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
                         <NavLink 
-                          to={`/teams/${selectedTeamId}`} 
+                          to={`/app/teams/${selectedTeamId}`} 
                           end 
                           onClick={() => { setPopoverOpen(false); closeMobileSidebar(); }} 
                           className="flex items-center gap-3 cursor-pointer py-2.5 px-3 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-zinc-800 w-full" 
@@ -442,7 +442,7 @@ export function AppSidebar() {
                     {isTeamAdminOrModerator && selectedTeamId && (
                       <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
                         <NavLink 
-                          to={`/teams/${selectedTeamId}/services`} 
+                          to={`/app/teams/${selectedTeamId}/services`} 
                           onClick={() => { setPopoverOpen(false); closeMobileSidebar(); }} 
                           className="flex items-center gap-3 cursor-pointer py-2.5 px-3 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-zinc-800 w-full" 
                           activeClassName="bg-gray-100 dark:bg-zinc-800 text-primary font-medium"
@@ -456,7 +456,7 @@ export function AppSidebar() {
                     {isTeamAdminOrModerator && selectedTeamId && (
                       <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
                         <NavLink 
-                          to={`/teams/${selectedTeamId}/requests`} 
+                          to={`/app/teams/${selectedTeamId}/requests`} 
                           onClick={() => { setPopoverOpen(false); closeMobileSidebar(); }} 
                           className="flex items-center gap-3 cursor-pointer py-2.5 px-3 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-zinc-800 w-full" 
                           activeClassName="bg-gray-100 dark:bg-zinc-800 text-primary font-medium"

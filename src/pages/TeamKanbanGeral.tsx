@@ -112,7 +112,7 @@ export default function TeamKanbanGeral() {
         <KanbanBoard
           demands={filteredDemands as any}
           columns={allBoardsKanbanColumns}
-          onDemandClick={(id) => navigate(`/demands/${id}`, { state: { from: "team-kanban" } })}
+          onDemandClick={(id) => navigate(`/app/demands/${id}`, { state: { from: "team-kanban" } })}
           readOnly={true}
           showBoardBadge
           initialColumnsOpen

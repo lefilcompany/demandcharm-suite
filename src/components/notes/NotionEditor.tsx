@@ -473,7 +473,7 @@ export function NotionEditor({ content, onChange, placeholder = "Pressione '/' p
       editor.chain()
         .focus()
         .deleteRange({ from: deleteFrom, to: from })
-        .insertContent(`<a href="/user/${userId}" data-mention="user" class="inline-flex items-center gap-0.5 bg-primary/10 text-primary border border-primary/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-primary/20 transition-colors">@${userName}</a> `)
+        .insertContent(`<a href="/app/user/${userId}" data-mention="user" class="inline-flex items-center gap-0.5 bg-primary/10 text-primary border border-primary/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-primary/20 transition-colors">@${userName}</a> `)
         .run();
     }
     setShowSlashMenu(false);
@@ -490,7 +490,7 @@ export function NotionEditor({ content, onChange, placeholder = "Pressione '/' p
       editor.chain()
         .focus()
         .deleteRange({ from: deleteFrom, to: from })
-        .insertContent(`<a href="/demands/${demandId}" data-mention="demand" class="inline-flex items-center gap-0.5 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-cyan-500/20 transition-colors">#${demandCode}</a> `)
+        .insertContent(`<a href="/app/demands/${demandId}" data-mention="demand" class="inline-flex items-center gap-0.5 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-cyan-500/20 transition-colors">#${demandCode}</a> `)
         .run();
     }
     setShowSlashMenu(false);
@@ -507,7 +507,7 @@ export function NotionEditor({ content, onChange, placeholder = "Pressione '/' p
       editor.chain()
         .focus()
         .deleteRange({ from: deleteFrom, to: from })
-        .insertContent(`<a href="/notes/${noteId}" data-mention="note" class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-amber-500/20 transition-colors">${noteIcon} ${noteTitle}</a> `)
+        .insertContent(`<a href="/app/notes/${noteId}" data-mention="note" class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-amber-500/20 transition-colors">${noteIcon} ${noteTitle}</a> `)
         .run();
     }
     setShowSlashMenu(false);

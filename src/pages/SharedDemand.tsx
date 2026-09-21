@@ -59,7 +59,7 @@ export default function SharedDemand() {
             teamContext.setSelectedTeamId(demand.team_id);
           }
           setSelectedBoardId(demand.board_id);
-          navigate(`/demands/${demand.id}`, { replace: true });
+          navigate(`/app/demands/${demand.id}`, { replace: true });
           return;
         }
 
@@ -76,7 +76,7 @@ export default function SharedDemand() {
                 teamContext.setSelectedTeamId(demand.team_id);
               }
               setSelectedBoardId(demand.board_id);
-              navigate(`/demands/${demand.id}`, { replace: true });
+              navigate(`/app/demands/${demand.id}`, { replace: true });
               return;
             }
             setAutoJoinReason(result?.reason ?? "unknown");

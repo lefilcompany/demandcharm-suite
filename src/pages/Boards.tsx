@@ -68,7 +68,7 @@ function BoardCard({ board }: { board: { id: string; name: string; description: 
     <>
       <Card 
         className="cursor-pointer hover:shadow-lg transition-all hover:border-primary/50 min-w-0 group relative"
-        onClick={() => navigate(`/boards/${board.id}`)}
+        onClick={() => navigate(`/app/boards/${board.id}`)}
       >
         {canDelete && (
           <Button
@@ -186,7 +186,7 @@ export default function Boards() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <SEOHead title="Quadros" path="/boards" />
+        <SEOHead title="Quadros" path="/app/boards" />
         <div className="flex items-center justify-between">
           <div>
             <Skeleton className="h-8 w-48 mb-2" />
@@ -204,7 +204,7 @@ export default function Boards() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <SEOHead title="Quadros" path="/boards" />
+      <SEOHead title="Quadros" path="/app/boards" />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">

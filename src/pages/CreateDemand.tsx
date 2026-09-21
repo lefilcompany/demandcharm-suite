@@ -693,7 +693,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     if (successState) {
       setSelectedBoardId(successState.boardId);
       handleClose();
-      navigate("/demands");
+      navigate("/app/demands");
     }
   };
 
@@ -810,7 +810,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
                   onClick={() => {
                     if (successState?.demandId) {
                       handleClose();
-                      navigate(`/demands/${successState.demandId}`);
+                      navigate(`/app/demands/${successState.demandId}`);
                     }
                   }}
                 >

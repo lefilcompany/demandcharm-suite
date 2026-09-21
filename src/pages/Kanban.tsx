@@ -250,7 +250,7 @@ export default function Kanban() {
 
   return (
     <div className="flex flex-col h-full animate-fade-in space-y-4">
-      <SEOHead title="Kanban" path="/kanban" />
+      <SEOHead title="Kanban" path="/app/kanban" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between shrink-0 pb-4 md:pb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
@@ -357,7 +357,7 @@ export default function Kanban() {
           <KanbanBoard 
             demands={visibleDemands} 
             columns={kanbanColumns}
-            onDemandClick={id => navigate(`/demands/${id}`, { state: { from: "kanban" } })} 
+            onDemandClick={id => navigate(`/app/demands/${id}`, { state: { from: "kanban" } })} 
             readOnly={isReadOnly}
             userRole={role || undefined}
             boardName={currentBoard?.name}
@@ -373,7 +373,7 @@ export default function Kanban() {
         notifications={notifications}
         onClear={clearNotification}
         onClearAll={clearAllNotifications}
-        onDemandClick={(id) => navigate(`/demands/${id}`, { state: { from: "kanban" } })}
+        onDemandClick={(id) => navigate(`/app/demands/${id}`, { state: { from: "kanban" } })}
       />
     </div>
   );

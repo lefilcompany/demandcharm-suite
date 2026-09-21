@@ -325,7 +325,7 @@ export function CreateRequestQuickDialog({
       });
       onOpenChange(false);
       resetForm();
-      navigate("/demand-requests");
+      navigate("/app/demand-requests");
     } catch (error) {
       toast.error("Erro ao criar solicitação", {
         description: getErrorMessage(error),

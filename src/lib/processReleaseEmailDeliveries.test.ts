@@ -19,7 +19,7 @@ const feature: EmailDeliveryFeature = {
   title: "Projetos por quadro",
   summary: "Resumo curto",
   email_body: "Corpo completo do e-mail",
-  cta_path: "/demands",
+  cta_path: "/app/demands",
   cta_label: "Ver projetos",
 };
 

@@ -71,7 +71,7 @@ export function TrialBanner() {
       <Button
         variant="outline"
         size="sm"
-        onClick={() => navigate("/pricing")}
+        onClick={() => navigate("/app/pricing")}
         className="gap-2 bg-background/80 hover:bg-background shrink-0"
       >
         {t("trial.viewPlans")}

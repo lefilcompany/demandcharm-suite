@@ -124,7 +124,7 @@ export default function NoteDetail() {
               title: "Você foi mencionado",
               message: `${mentionerName} mencionou você na nota "${noteTitle}"`,
               type: "mention",
-              link: `/notes/${noteId}`,
+              link: `/app/notes/${noteId}`,
             }));
             await supabase.from("notifications").insert(mentionNotifs);
             for (const uid of newMentions) {
@@ -154,7 +154,7 @@ export default function NoteDetail() {
   const handleDelete = () => {
     if (confirm("Tem certeza que deseja excluir esta nota?")) {
       deleteNote.mutate(noteId!, {
-        onSuccess: () => navigate("/notes"),
+        onSuccess: () => navigate("/app/notes"),
       });
     }
   };
@@ -163,14 +163,14 @@ export default function NoteDetail() {
     if (noteId) {
       updateNote.mutate(
         { noteId, archived: true },
-        { onSuccess: () => navigate("/notes") }
+        { onSuccess: () => navigate("/app/notes") }
       );
     }
   };
   const handleLeaveNote = () => {
     if (confirm("Tem certeza que deseja sair desta nota compartilhada?")) {
       leaveNote.mutate(noteId!, {
-        onSuccess: () => navigate("/notes"),
+        onSuccess: () => navigate("/app/notes"),
       });
     }
   };
@@ -227,7 +227,7 @@ export default function NoteDetail() {
     return (
       <div className="container max-w-4xl mx-auto px-4 py-6 text-center">
         <p className="text-muted-foreground">Nota não encontrada</p>
-        <Button variant="link" onClick={() => navigate("/notes")}>
+        <Button variant="link" onClick={() => navigate("/app/notes")}>
           Voltar para notas
         </Button>
       </div>
@@ -271,7 +271,7 @@ export default function NoteDetail() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => navigate("/notes")}
+            onClick={() => navigate("/app/notes")}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar

@@ -107,7 +107,7 @@ export function TrashDemandsModal({ open, onOpenChange, isReadOnly = false }: Tr
                       className="cursor-pointer hover:shadow-md transition-shadow opacity-80 hover:opacity-100"
                       onClick={() => {
                         onOpenChange(false);
-                        navigate(`/demands/${demand.id}`);
+                        navigate(`/app/demands/${demand.id}`);
                       }}
                     >
                       <CardHeader className="pb-2">

@@ -35,7 +35,7 @@ function makeSource(pending: PendingInAppDelivery[], opts: { missingFeature?: bo
     getFeatures: async () =>
       opts.missingFeature
         ? new Map()
-        : new Map([[FEATURE, { id: FEATURE, title: "Novo recurso", summary: "Resumo", cta_path: "/demands" }]]),
+        : new Map([[FEATURE, { id: FEATURE, title: "Novo recurso", summary: "Resumo", cta_path: "/app/demands" }]]),
     insertNotifications: async (rows) => {
       if (opts.failInsert) throw new Error("insert boom");
       inserted.push(...rows);

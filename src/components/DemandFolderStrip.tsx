@@ -83,7 +83,7 @@ export function DemandFolderStrip({ teamId, boardId, selectedFolderId, onSelectF
   };
 
   const handleFolderClick = (folder: DemandFolder) => {
-    navigate(`/folders/${folder.id}`);
+    navigate(`/app/folders/${folder.id}`);
   };
 
   return (

@@ -116,8 +116,8 @@ export default function BoardMembers() {
       <SEOHead title={board ? `Membros - ${board.name}` : "Membros do Quadro"} />
       <PageBreadcrumb
         items={[
-          { label: "Quadros", href: "/boards", icon: LayoutGrid },
-          { label: board?.name || "", href: `/boards/${boardId}` },
+          { label: "Quadros", href: "/app/boards", icon: LayoutGrid },
+          { label: board?.name || "", href: `/app/boards/${boardId}` },
           { label: "Membros", icon: Users, isCurrent: true },
         ]}
       />
@@ -174,7 +174,7 @@ export default function BoardMembers() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/user/${member.user_id}`);
+                            navigate(`/app/user/${member.user_id}`);
                           }}
                           className="truncate hover:text-primary hover:underline cursor-pointer transition-colors"
                         >

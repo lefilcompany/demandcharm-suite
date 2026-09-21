@@ -43,7 +43,7 @@ export function UserProfileLink({
     if (onClick) {
       onClick(e);
     }
-    navigate(`/user/${userId}`);
+    navigate(`/app/user/${userId}`);
   };
 
   return (

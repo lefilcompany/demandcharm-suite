@@ -218,7 +218,7 @@ export default function Auth() {
       window.location.replace(safeNext);
       return null;
     }
-    return <Navigate to="/welcome" replace />;
+    return <Navigate to="/app/welcome" replace />;
   }
 
   const formatPhone = (value: string): string => {

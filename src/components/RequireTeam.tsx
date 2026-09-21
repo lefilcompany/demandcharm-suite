@@ -179,7 +179,7 @@ export function RequireTeam({ children }: RequireTeamProps) {
   // Redirect to welcome if user has no teams (regardless of role).
   // This prevents users — including misclassified admins — from being stuck on a loading screen.
   if (!hasTeams) {
-    return <Navigate to="/welcome" replace />;
+    return <Navigate to="/app/welcome" replace />;
   }
 
   // Show select team prompt if no team selected

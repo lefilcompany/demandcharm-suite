@@ -130,12 +130,12 @@ export function UserDetailTimeRow({ userData, isExpanded, onToggle }: UserDetail
                     tabIndex={0}
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/user/${userData.userId}`);
+                      navigate(`/app/user/${userData.userId}`);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.stopPropagation();
-                        navigate(`/user/${userData.userId}`);
+                        navigate(`/app/user/${userData.userId}`);
                       }
                     }}
                     className="font-medium truncate hover:text-primary hover:underline cursor-pointer transition-colors"
@@ -246,7 +246,7 @@ export function UserDetailTimeRow({ userData, isExpanded, onToggle }: UserDetail
                         size="sm"
                         asChild
                       >
-                        <Link to={`/demands/${demand.id}`}>
+                        <Link to={`/app/demands/${demand.id}`}>
                           <ExternalLink className="h-4 w-4" />
                         </Link>
                       </Button>

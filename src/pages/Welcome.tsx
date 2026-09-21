@@ -62,7 +62,7 @@ export default function Welcome() {
   if (isLoading || checkingProfile || roleLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <SEOHead title="Bem-vindo" path="/welcome" />
+        <SEOHead title="Bem-vindo" path="/app/welcome" />
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
@@ -75,7 +75,7 @@ export default function Welcome() {
 
   // Redirect to complete profile if missing fields
   if (profileIncomplete) {
-    return <Navigate to="/complete-profile" replace />;
+    return <Navigate to="/app/complete-profile" replace />;
   }
 
   // If user already has teams, redirect to home
@@ -162,7 +162,7 @@ export default function Welcome() {
           <div className="space-y-4">
             {/* Create Team Option */}
             <button
-              onClick={() => navigate("/teams/create")}
+              onClick={() => navigate("/app/teams/create")}
               className="group w-full bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 border-2 border-primary/20 hover:border-primary/40 rounded-2xl p-5 text-left transition-all duration-300"
             >
               <div className="flex items-start gap-4">
@@ -183,7 +183,7 @@ export default function Welcome() {
 
             {/* Join Team Option */}
             <button
-              onClick={() => navigate("/teams/join")}
+              onClick={() => navigate("/app/teams/join")}
               className="group w-full bg-muted/50 hover:bg-muted border-2 border-border hover:border-primary/30 rounded-2xl p-5 text-left transition-all duration-300"
             >
               <div className="flex items-start gap-4">

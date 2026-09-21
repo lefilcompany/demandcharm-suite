@@ -58,7 +58,7 @@ export function useGoogleCalendarConnection() {
   const connect = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("google-calendar-oauth-start", {
-        body: { redirect_path: "/settings?tab=integrations" },
+        body: { redirect_path: "/app/settings?tab=integrations" },
       });
       if (error) throw error;
       const url = (data as { url?: string })?.url;

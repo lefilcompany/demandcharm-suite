@@ -169,7 +169,7 @@ export default function JoinTeam() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/welcome")}
+            onClick={() => navigate("/app/welcome")}
             className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -275,7 +275,7 @@ export default function JoinTeam() {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => navigate("/welcome")}
+                        onClick={() => navigate("/app/welcome")}
                         className="flex-1 h-12"
                       >
                         Cancelar

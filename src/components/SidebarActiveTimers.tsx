@@ -89,7 +89,7 @@ function ActiveTimerItem({ demand, isCollapsed, isMobile, onClose }: ActiveTimer
   return (
     <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20">
       <NavLink
-        to={`/demands/${demand.id}`}
+        to={`/app/demands/${demand.id}`}
         onClick={onClose}
         className="flex items-center gap-2 flex-1 min-w-0"
       >

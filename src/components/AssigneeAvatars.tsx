@@ -43,7 +43,7 @@ export function AssigneeAvatars({ assignees, maxVisible = 3, size = "md", clicka
   const handleAvatarClick = (e: React.MouseEvent, userId: string) => {
     if (!clickable || userId === "legacy") return;
     e.stopPropagation();
-    navigate(`/user/${userId}`);
+    navigate(`/app/user/${userId}`);
   };
 
   return (

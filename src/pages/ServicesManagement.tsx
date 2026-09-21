@@ -85,7 +85,7 @@ export default function ServicesManagement() {
       <div className="text-center py-12">
         <SEOHead title="Catálogo de Serviços" path="/services" />
         <h2 className="text-xl font-semibold">Equipe não encontrada</h2>
-        <Button onClick={() => navigate("/teams")} className="mt-4">
+        <Button onClick={() => navigate("/app/teams")} className="mt-4">
           Voltar para Equipes
         </Button>
       </div>
@@ -104,8 +104,8 @@ export default function ServicesManagement() {
       <SEOHead title="Catálogo de Serviços" path="/services" />
       <PageBreadcrumb
         items={[
-          { label: "Equipes", href: "/teams", icon: Users },
-          { label: team.name, href: `/teams/${team.id}` },
+          { label: "Equipes", href: "/app/teams", icon: Users },
+          { label: team.name, href: `/app/teams/${team.id}` },
           { label: "Serviços", icon: ShoppingBag },
         ]}
       />

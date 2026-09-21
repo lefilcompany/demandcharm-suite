@@ -69,11 +69,11 @@ export function BoardSelector() {
 
   const getReturnRoute = () => {
     const from = (location.state as any)?.from;
-    if (from === "kanban") return "/kanban";
-    if (from === "my-demands") return "/my-demands";
-    if (from === "team-demands") return "/team-demands";
+    if (from === "kanban") return "/app/kanban";
+    if (from === "my-demands") return "/app/my-demands";
+    if (from === "team-demands") return "/app/team-demands";
     if (from === "team-kanban") return "/team-kanban";
-    return "/demands";
+    return "/app/demands";
   };
 
   const executeChange = (newBoardId: string) => {

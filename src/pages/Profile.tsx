@@ -192,7 +192,7 @@ export default function Profile() {
   if (profileLoading || statsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <SEOHead title="Meu Perfil" path="/profile" />
+        <SEOHead title="Meu Perfil" path="/app/profile" />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -200,7 +200,7 @@ export default function Profile() {
 
   return (
     <div className="space-y-6 animate-fade-in pb-8">
-      <SEOHead title="Meu Perfil" path="/profile" />
+      <SEOHead title="Meu Perfil" path="/app/profile" />
       <PageBreadcrumb
         items={[
           { label: "Meu Perfil", icon: User, isCurrent: true },
@@ -208,7 +208,7 @@ export default function Profile() {
       />
       {/* Header */}
       <div className="flex items-center justify-end">
-        <Button onClick={() => navigate("/settings?tab=profile")}>
+        <Button onClick={() => navigate("/app/settings?tab=profile")}>
           <Settings className="mr-2 h-4 w-4" />
           Editar Perfil
         </Button>

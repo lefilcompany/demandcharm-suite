@@ -199,7 +199,7 @@ export function DashboardAIInsights({ boardId }: DashboardAIInsightsProps) {
           <Button
             size="sm"
             className="mt-3 w-full gap-1.5 text-xs bg-white text-primary hover:bg-white/90 font-semibold"
-            onClick={() => navigate("/board-summary")}
+            onClick={() => navigate("/app/board-summary")}
           >
             Gerar Resumo
             <ArrowRight className="h-3 w-3" />

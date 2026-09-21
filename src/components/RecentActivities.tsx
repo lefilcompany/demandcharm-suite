@@ -238,9 +238,9 @@ export function RecentActivities() {
 
   const handleClick = (activity: BoardActivity) => {
     if (activity.demandId) {
-      navigate(`/demands/${activity.demandId}`);
+      navigate(`/app/demands/${activity.demandId}`);
     } else if (activity.requestId) {
-      navigate(`/demand-requests`);
+      navigate(`/app/demand-requests`);
     }
   };
 

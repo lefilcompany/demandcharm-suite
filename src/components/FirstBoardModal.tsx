@@ -52,7 +52,7 @@ export function FirstBoardModal() {
           <DialogFooter>
             <Button
               onClick={() => {
-                if (selectedTeamId) navigate(`/teams/${selectedTeamId}/services`);
+                if (selectedTeamId) navigate(`/app/teams/${selectedTeamId}/services`);
               }}
             >
               Cadastrar serviços

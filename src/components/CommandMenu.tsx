@@ -49,11 +49,11 @@ export function CommandMenu() {
   const quickActions = [
     { icon: Plus, label: "Nova Demanda", action: () => window.dispatchEvent(new CustomEvent("open-create-demand")) },
     { icon: LayoutDashboard, label: "Dashboard", action: () => navigate("/") },
-    { icon: Kanban, label: "Kanban", action: () => navigate("/kanban") },
-    { icon: FileText, label: "Demandas", action: () => navigate("/demands") },
-    { icon: Users, label: "Equipes", action: () => navigate("/teams") },
-    { icon: Trash2, label: "Lixeira", action: () => navigate("/demands?trash=1") },
-    { icon: Settings, label: "Configurações", action: () => navigate("/settings") },
+    { icon: Kanban, label: "Kanban", action: () => navigate("/app/kanban") },
+    { icon: FileText, label: "Demandas", action: () => navigate("/app/demands") },
+    { icon: Users, label: "Equipes", action: () => navigate("/app/teams") },
+    { icon: Trash2, label: "Lixeira", action: () => navigate("/app/demands?trash=1") },
+    { icon: Settings, label: "Configurações", action: () => navigate("/app/settings") },
   ];
 
   const getIcon = (type: string) => {

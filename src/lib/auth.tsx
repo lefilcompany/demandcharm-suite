@@ -317,7 +317,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       rememberLastEmail(email);
       // New signups never have a team yet — send them straight to /welcome to avoid
       // a flash of loading on / while RequireTeam decides where to send them.
-      navigate("/welcome");
+      navigate("/app/welcome");
     } catch (error: any) {
       throw error;
     }

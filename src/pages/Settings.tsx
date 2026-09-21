@@ -83,7 +83,7 @@ export default function Settings() {
 
   return (
     <div ref={topRef} className="space-y-6 animate-fade-in pb-8">
-      <SEOHead title="Configurações" path="/settings" />
+      <SEOHead title="Configurações" path="/app/settings" />
       <PageBreadcrumb items={[{ label: t("settings.title"), icon: SettingsIcon, isCurrent: true }]} />
 
       <div>

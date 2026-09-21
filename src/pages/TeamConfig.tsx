@@ -212,8 +212,8 @@ export default function TeamConfig() {
       <SEOHead title="Configurações da Equipe" />
       <PageBreadcrumb
         items={[
-          { label: t("teams.title"), href: "/teams", icon: Users },
-          { label: team?.name || "", href: `/teams/${selectedTeamId}` },
+          { label: t("teams.title"), href: "/app/teams", icon: Users },
+          { label: team?.name || "", href: `/app/teams/${selectedTeamId}` },
           { label: "Configurações", icon: Settings, isCurrent: true },
         ]}
       />

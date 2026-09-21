@@ -113,7 +113,7 @@ export function RequesterRequestsCarousel() {
                 <div
                   key={req.id}
                   className="min-w-[240px] md:min-w-[280px] snap-start flex-shrink-0 rounded-xl border bg-card p-4 hover:shadow-md transition-shadow cursor-pointer space-y-2.5"
-                  onClick={() => navigate(`/demand-requests?highlight=${req.id}`)}
+                  onClick={() => navigate(`/app/demand-requests?highlight=${req.id}`)}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-medium text-sm leading-tight line-clamp-2 flex-1">

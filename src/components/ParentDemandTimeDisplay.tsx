@@ -37,7 +37,7 @@ function SubdemandTimeRow({ sub }: { sub: SubdemandTimeInfo }) {
       />
       <button
         type="button"
-        onClick={() => navigate(`/demands/${sub.id}`)}
+        onClick={() => navigate(`/app/demands/${sub.id}`)}
         className="text-xs text-muted-foreground flex-1 truncate text-left hover:text-primary hover:underline cursor-pointer transition-colors"
       >
         {sub.board_sequence_number ? `#${String(sub.board_sequence_number).padStart(4, "0")} ` : ""}

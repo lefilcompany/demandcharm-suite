@@ -138,7 +138,7 @@ export function ProtectedLayout() {
   }
 
   // Show no-boards screen when user has no boards (except profile/settings)
-  const allowedWithoutBoards = ["/profile", "/settings", "/teams", "/boards"];
+  const allowedWithoutBoards = ["/app/profile", "/app/settings", "/app/teams", "/app/boards"];
   const isAllowedRoute = allowedWithoutBoards.some(r => location.pathname.startsWith(r));
   if (!boardsLoading && !hasBoards && !isAllowedRoute) {
     return <NoBoardsScreen />;
@@ -170,7 +170,7 @@ export function ProtectedLayout() {
               <SidebarTrigger className="text-foreground hover:bg-muted shrink-0 h-7 w-7" />
               {(() => {
                 const p = location.pathname;
-                const isTeamView = p === "/team-demands" || p === "/boards" || p.startsWith("/boards/") || p === "/teams" || p.startsWith("/teams/");
+                const isTeamView = p === "/app/team-demands" || p === "/app/boards" || p.startsWith("/app/boards/") || p === "/app/teams" || p.startsWith("/app/teams/");
                 if (isTeamView) return null;
                 return (
                   <>
@@ -221,11 +221,11 @@ export function ProtectedLayout() {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                  <DropdownMenuItem onClick={() => navigate("/app/profile")}>
                     <User className="h-4 w-4 mr-2" />
                     Meu Perfil
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/settings")}>
+                  <DropdownMenuItem onClick={() => navigate("/app/settings")}>
                     <Settings className="h-4 w-4 mr-2" />
                     Configurações
                   </DropdownMenuItem>

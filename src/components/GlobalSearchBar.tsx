@@ -343,11 +343,11 @@ export function GlobalSearchBar() {
                 <p className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Ações rápidas</p>
                 {[
                   { icon: <Plus className="h-4 w-4" />, label: "Nova Demanda", action: () => { closeModal(); openCreateDemand(); } },
-                  { icon: <Columns3 className="h-4 w-4" />, label: "Kanban", action: () => { closeModal(); navigate("/kanban"); } },
-                  { icon: <ClipboardList className="h-4 w-4" />, label: "Demandas", action: () => { closeModal(); navigate("/demands"); } },
+                  { icon: <Columns3 className="h-4 w-4" />, label: "Kanban", action: () => { closeModal(); navigate("/app/kanban"); } },
+                  { icon: <ClipboardList className="h-4 w-4" />, label: "Demandas", action: () => { closeModal(); navigate("/app/demands"); } },
                   { icon: <LayoutDashboard className="h-4 w-4" />, label: "Dashboard", action: () => { closeModal(); navigate("/"); } },
-                  { icon: <Clock className="h-4 w-4" />, label: "Gerenciamento de Tempo", action: () => { closeModal(); navigate("/time-management"); } },
-                  { icon: <StickyNote className="h-4 w-4" />, label: "Notas", action: () => { closeModal(); navigate("/notes"); } },
+                  { icon: <Clock className="h-4 w-4" />, label: "Gerenciamento de Tempo", action: () => { closeModal(); navigate("/app/time-management"); } },
+                  { icon: <StickyNote className="h-4 w-4" />, label: "Notas", action: () => { closeModal(); navigate("/app/notes"); } },
                 ].map((item) => (
                   <button
                     key={item.label}

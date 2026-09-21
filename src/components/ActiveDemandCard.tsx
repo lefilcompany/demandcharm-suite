@@ -58,7 +58,7 @@ export function ActiveDemandCard({ entry, demandTotalSeconds }: ActiveDemandCard
           <div className="flex-1 min-w-0">
             {/* User name */}
             <Link 
-              to={`/user/${entry.user_id}`}
+              to={`/app/user/${entry.user_id}`}
               className="font-semibold text-emerald-700 dark:text-emerald-400 hover:underline text-base"
             >
               {entry.profile.full_name}
@@ -66,7 +66,7 @@ export function ActiveDemandCard({ entry, demandTotalSeconds }: ActiveDemandCard
             
             {/* Demand title */}
             <Link 
-              to={`/demands/${entry.demand.id}`}
+              to={`/app/demands/${entry.demand.id}`}
               className="block text-sm text-foreground/80 hover:text-foreground truncate mt-0.5 group-hover:text-primary transition-colors"
               title={entry.demand.title}
             >
@@ -118,7 +118,7 @@ export function ActiveDemandCard({ entry, demandTotalSeconds }: ActiveDemandCard
               className="mt-2 text-xs h-7 px-2 text-muted-foreground hover:text-primary"
               asChild
             >
-              <Link to={`/demands/${entry.demand.id}`}>
+              <Link to={`/app/demands/${entry.demand.id}`}>
                 <ExternalLink className="h-3 w-3 mr-1" />
                 Abrir
               </Link>

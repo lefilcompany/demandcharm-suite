@@ -22,7 +22,7 @@ export function TeamCard({ team }: TeamCardProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/teams/${team.id}`);
+    navigate(`/app/teams/${team.id}`);
   };
   return (
     <Card

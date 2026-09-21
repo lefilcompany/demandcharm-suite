@@ -82,7 +82,7 @@ export function LiveUserTimeRow({ stats, rank, maxTime }: LiveUserTimeRowProps) 
       <div className="flex items-center gap-4">
         {getRankElement()}
         
-        <Link to={`/user/${stats.userId}`} className="flex items-center gap-3 flex-1 min-w-0">
+        <Link to={`/app/user/${stats.userId}`} className="flex items-center gap-3 flex-1 min-w-0">
           <div className="relative shrink-0">
             <Avatar className={cn(
               "h-12 w-12 ring-2 ring-offset-2 ring-offset-background transition-all",
