@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.firebase-public-config]
 verify_jwt = false
+
+[functions.request-demo]
+verify_jwt = false

@@ -4,4 +4,4 @@
 - [x] Criar envio público de solicitação com e-mail para o time comercial.
 - [x] Criar landing page pública SoMA+ sem preços.
 - [x] Criar gestão administrativa das solicitações.
-- [ ] Verificar funcionamento e corrigir erros pendentes.
+- [x] Verificar funcionamento e corrigir erros pendentes.
