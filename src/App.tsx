@@ -20,6 +20,8 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { SwipeNavigationProvider } from "@/components/SwipeNavigationProvider";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { UpdateModal } from "@/components/UpdateModal";
+import { LegacyRedirect, LEGACY_APP_PATHS } from "@/components/LegacyRedirect";
+
 import { lazy, Suspense, useEffect } from "react";
 import { PageSkeleton } from "@/components/skeletons/PageSkeleton";
 import { prefetchAppRoutes } from "@/lib/routePrefetch";
@@ -179,7 +181,7 @@ const App = () => {
                               <Route path="/app/subscription/success" element={<RequireAuth><SubscriptionSuccess /></RequireAuth>} />
 
                               <Route element={<RequireTeam><ProtectedLayout /></RequireTeam>}>
-                                <Route path="/" element={<Index />} />
+                                <Route path="/app" element={<Index />} />
                                 <Route path="/app/teams" element={<Teams />} />
                                 <Route path="/app/teams/:id" element={<TeamDetail />} />
                                 <Route path="/app/teams/:id/requests" element={<TeamRequests />} />
@@ -211,7 +213,15 @@ const App = () => {
                                 <Route path="/app/pricing" element={<Pricing />} />
                               </Route>
 
+                              {LEGACY_APP_PATHS.map((p) => (
+                                <Route key={p} path={`/${p}/*`} element={<LegacyRedirect />} />
+                              ))}
+                              {LEGACY_APP_PATHS.map((p) => (
+                                <Route key={`${p}-exact`} path={`/${p}`} element={<LegacyRedirect />} />
+                              ))}
+
                               <Route path="*" element={<NotFound />} />
+
                             </Routes>
                             </Suspense>
                             </PipTimerProvider>
