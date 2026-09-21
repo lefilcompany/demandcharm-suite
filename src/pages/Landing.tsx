@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { DemoRequestForm } from "@/components/landing/DemoRequestForm";
 import heroImage from "@/assets/landing/soma-lp-hero.png";
 import kanbanLoop from "@/assets/landing/soma-kanban-loop.mp4.asset.json";
-import logoDark from "@/assets/logo-soma-dark.png";
+import logoDark from "@/assets/logo-soma.png";
 
 const stats = [
   { value: "105+", label: "usuários mapeados" },
