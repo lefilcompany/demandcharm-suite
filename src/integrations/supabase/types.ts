@@ -1620,6 +1620,7 @@ export type Database = {
           email_error: string | null
           email_status: string
           id: string
+          internal_notes: string | null
           message: string | null
           name: string
           phone: string | null
@@ -1640,6 +1641,7 @@ export type Database = {
           email_error?: string | null
           email_status?: string
           id?: string
+          internal_notes?: string | null
           message?: string | null
           name: string
           phone?: string | null
@@ -1660,6 +1662,7 @@ export type Database = {
           email_error?: string | null
           email_status?: string
           id?: string
+          internal_notes?: string | null
           message?: string | null
           name?: string
           phone?: string | null
