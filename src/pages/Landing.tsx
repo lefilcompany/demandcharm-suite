@@ -1,4 +1,4 @@
-import { ArrowRight, BarChart3, BellRing, CalendarClock, CheckCircle2, ChevronRight, Clock3, Columns3, FileBarChart, FolderKanban, LockKeyhole, MessageCircle, Sparkles, Timer, UsersRound } from "lucide-react";
+import { ArrowRight, BarChart3, BellRing, CalendarClock, CheckCircle2, ChevronRight, Clock3, Columns3, FileBarChart, FolderKanban, LockKeyhole, MessageCircle, Sparkles, Timer } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";

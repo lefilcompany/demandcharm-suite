@@ -19,16 +19,16 @@ import { cn } from "@/lib/utils";
 
 const STATUS_META: Record<DemoRequestStatus, { label: string; className: string }> = {
   new: { label: "Nova", className: "border-primary/30 bg-primary/10 text-primary" },
-  contacted: { label: "Contato feito", className: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300" },
-  scheduled: { label: "Demo agendada", className: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300" },
-  won: { label: "Convertida", className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+  contacted: { label: "Contato feito", className: "border-secondary/30 bg-secondary/10 text-secondary" },
+  scheduled: { label: "Demo agendada", className: "border-warning/30 bg-warning/10 text-warning" },
+  won: { label: "Convertida", className: "border-success/30 bg-success/10 text-success" },
   lost: { label: "Perdida", className: "border-destructive/30 bg-destructive/10 text-destructive" },
   archived: { label: "Arquivada", className: "border-border bg-muted text-muted-foreground" },
 };
 
 const EMAIL_META = {
-  pending: { label: "Pendente", className: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300" },
-  sent: { label: "Enviado", className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+  pending: { label: "Pendente", className: "border-warning/30 bg-warning/10 text-warning" },
+  sent: { label: "Enviado", className: "border-success/30 bg-success/10 text-success" },
   failed: { label: "Falhou", className: "border-destructive/30 bg-destructive/10 text-destructive" },
 };
 
