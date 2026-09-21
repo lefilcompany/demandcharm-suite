@@ -80,7 +80,7 @@ export default function Welcome() {
 
   // If user already has teams, redirect to home
   if (hasTeams) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/app" replace />;
   }
 
   return (

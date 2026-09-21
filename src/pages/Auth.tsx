@@ -167,7 +167,7 @@ export default function Auth() {
       rememberLastLoginMethod("google");
       const redirectUri = safeNext
         ? `${window.location.origin}/auth?next=${encodeURIComponent(safeNext)}`
-        : window.location.origin;
+        : `${window.location.origin}/auth`;
 
       const start = (extraParams?: Record<string, string>) =>
         lovable.auth.signInWithOAuth("google", {

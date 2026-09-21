@@ -305,7 +305,7 @@ export default function JoinTeam() {
                 {hasBlockingRequest && (
                   <Button
                     variant="outline"
-                    onClick={() => navigate("/")}
+                    onClick={() => navigate("/app")}
                     className="w-full h-12"
                   >
                     Voltar ao Dashboard

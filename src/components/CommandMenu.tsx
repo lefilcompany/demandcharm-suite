@@ -48,7 +48,7 @@ export function CommandMenu() {
 
   const quickActions = [
     { icon: Plus, label: "Nova Demanda", action: () => window.dispatchEvent(new CustomEvent("open-create-demand")) },
-    { icon: LayoutDashboard, label: "Dashboard", action: () => navigate("/") },
+    { icon: LayoutDashboard, label: "Dashboard", action: () => navigate("/app") },
     { icon: Kanban, label: "Kanban", action: () => navigate("/app/kanban") },
     { icon: FileText, label: "Demandas", action: () => navigate("/app/demands") },
     { icon: Users, label: "Equipes", action: () => navigate("/app/teams") },

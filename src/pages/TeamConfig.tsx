@@ -79,7 +79,7 @@ export default function TeamConfig() {
 
   // Redirect non-admins/moderators
   if (!roleLoading && !isAdminOrModerator && selectedTeamId) {
-    navigate("/");
+    navigate("/app");
     return null;
   }
 

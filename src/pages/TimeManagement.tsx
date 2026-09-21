@@ -400,7 +400,7 @@ export default function TimeManagement() {
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
               Apenas administradores e coordenadores podem acessar o gerenciamento de tempo da equipe.
             </p>
-            <Button onClick={() => navigate("/")} variant="outline" className="gap-2">
+            <Button onClick={() => navigate("/app")} variant="outline" className="gap-2">
               <ArrowLeft className="h-4 w-4" />
               Voltar ao Dashboard
             </Button>

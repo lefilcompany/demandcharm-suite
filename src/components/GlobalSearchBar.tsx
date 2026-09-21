@@ -345,7 +345,7 @@ export function GlobalSearchBar() {
                   { icon: <Plus className="h-4 w-4" />, label: "Nova Demanda", action: () => { closeModal(); openCreateDemand(); } },
                   { icon: <Columns3 className="h-4 w-4" />, label: "Kanban", action: () => { closeModal(); navigate("/app/kanban"); } },
                   { icon: <ClipboardList className="h-4 w-4" />, label: "Demandas", action: () => { closeModal(); navigate("/app/demands"); } },
-                  { icon: <LayoutDashboard className="h-4 w-4" />, label: "Dashboard", action: () => { closeModal(); navigate("/"); } },
+                  { icon: <LayoutDashboard className="h-4 w-4" />, label: "Dashboard", action: () => { closeModal(); navigate("/app"); } },
                   { icon: <Clock className="h-4 w-4" />, label: "Gerenciamento de Tempo", action: () => { closeModal(); navigate("/app/time-management"); } },
                   { icon: <StickyNote className="h-4 w-4" />, label: "Notas", action: () => { closeModal(); navigate("/app/notes"); } },
                 ].map((item) => (

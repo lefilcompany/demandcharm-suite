@@ -333,7 +333,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       rememberLastEmail(email);
       rememberLastLoginMethod("password");
-      navigate("/");
+      navigate("/app");
     } catch (error: any) {
       throw error;
     }

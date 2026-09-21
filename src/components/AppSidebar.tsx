@@ -66,7 +66,7 @@ export function AppSidebar() {
     location.pathname.startsWith("/app/projects/") ||
     location.pathname.startsWith("/app/folders/");
 
-  const lastBoardRoute = "/";
+  const lastBoardRoute = "/app";
 
   const teamViewMenuItems: any[] = isTeamView
     ? [
@@ -88,7 +88,7 @@ export function AppSidebar() {
 
   const baseMenuItems = [{
     title: t("dashboard.title"),
-    url: "/",
+    url: "/app",
     icon: LayoutDashboard
   }, {
     title: t("kanban.title"),
@@ -151,7 +151,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" data-tour="sidebar">
       <SidebarContent className="overflow-y-auto flex flex-col">
-        <NavLink to="/" onClick={closeMobileSidebar} className={`items-center justify-center flex flex-col hover:opacity-80 transition-opacity cursor-pointer my-4 md:my-6 ${isCollapsed && !isMobile ? 'mx-auto w-full' : 'px-0 py-0 mx-0'}`}>
+        <NavLink to="/app" onClick={closeMobileSidebar} className={`items-center justify-center flex flex-col hover:opacity-80 transition-opacity cursor-pointer my-4 md:my-6 ${isCollapsed && !isMobile ? 'mx-auto w-full' : 'px-0 py-0 mx-0'}`}>
           {/* Both logos are always mounted to avoid reload flicker when toggling sidebar */}
           <img
             alt="SoMA"
@@ -215,7 +215,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {menuItems.map(item => {
-              const tourId = !isTeamView && item.url === "/" ? "dashboard-link" 
+              const tourId = !isTeamView && item.url === "/app" ? "dashboard-link" 
                   : item.url === "/app/kanban" ? "kanban-link"
                   : item.url === "/app/demands" ? "demands-link"
                   : undefined;

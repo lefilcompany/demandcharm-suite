@@ -20,7 +20,7 @@ export default function SubscriptionSuccess() {
   // Auto-redirect to dashboard after 5 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("/");
+      navigate("/app");
     }, 5000);
     return () => clearTimeout(timer);
   }, [navigate]);
@@ -100,7 +100,7 @@ export default function SubscriptionSuccess() {
           </div>
 
           <div className="flex gap-3 justify-center pt-4">
-            <Button variant="outline" onClick={() => navigate("/")}>
+            <Button variant="outline" onClick={() => navigate("/app")}>
               {t("subscription.success.goToDashboard")}
             </Button>
             <Button onClick={() => navigate("/app/boards")} className="gap-2">

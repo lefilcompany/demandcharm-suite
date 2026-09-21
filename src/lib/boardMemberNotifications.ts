@@ -141,7 +141,7 @@ export async function notifyBoardMemberChange(
         userIds: [params.userId],
         title: msg.pushTitle,
         body: msg.pushBody,
-        link: msg.link ?? "/",
+        link: msg.link ?? "/app",
         data: {
           type: `board_member_${params.event}`,
           boardId: params.boardId,

@@ -244,7 +244,7 @@ export function ProtectedLayout() {
                     Alternar tema
                   </DropdownMenuItem>
                   {hasCompleted && (
-                    <DropdownMenuItem onClick={() => resetOnboarding(() => navigate("/"))}>
+                    <DropdownMenuItem onClick={() => resetOnboarding(() => navigate("/app"))}>
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Rever Tour Guiado
                     </DropdownMenuItem>

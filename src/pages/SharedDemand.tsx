@@ -167,7 +167,7 @@ export default function SharedDemand() {
           </div>
           {session?.user ? (
             <Button variant="outline" size="sm" asChild>
-              <Link to="/">Voltar ao sistema</Link>
+              <Link to="/app">Voltar ao sistema</Link>
             </Button>
           ) : (
             <Button variant="outline" size="sm" asChild>

@@ -131,7 +131,7 @@ export default function OAuthConsent() {
                 ? "Esta solicitação de autorização expirou ou não existe mais. Volte ao seu cliente MCP e tente conectar novamente."
                 : error}
             </p>
-            <Button variant="outline" onClick={() => (window.location.href = "/")}>Voltar</Button>
+            <Button variant="outline" onClick={() => (window.location.href = "/app")}>Voltar</Button>
           </div>
         ) : !details ? (
           <div className="flex flex-col items-center gap-3 py-8">
