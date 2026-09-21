@@ -1612,6 +1612,77 @@ export type Database = {
           },
         ]
       }
+      demo_requests: {
+        Row: {
+          company: string
+          created_at: string
+          email: string
+          email_error: string | null
+          email_status: string
+          id: string
+          message: string | null
+          name: string
+          phone: string | null
+          provider_message_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role: string | null
+          source_path: string | null
+          status: string
+          team_size: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          email: string
+          email_error?: string | null
+          email_status?: string
+          id?: string
+          message?: string | null
+          name: string
+          phone?: string | null
+          provider_message_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role?: string | null
+          source_path?: string | null
+          status?: string
+          team_size?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          email?: string
+          email_error?: string | null
+          email_status?: string
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+          provider_message_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role?: string | null
+          source_path?: string | null
+          status?: string
+          team_size?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
