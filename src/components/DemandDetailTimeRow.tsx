@@ -94,12 +94,12 @@ export function DemandDetailTimeRow({ demandData, isExpanded, onToggle }: Demand
                     tabIndex={0}
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/demands/${demandData.demand.id}`);
+                      navigate(`/app/demands/${demandData.demand.id}`);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.stopPropagation();
-                        navigate(`/demands/${demandData.demand.id}`);
+                        navigate(`/app/demands/${demandData.demand.id}`);
                       }
                     }}
                     className="font-medium truncate hover:text-primary hover:underline cursor-pointer transition-colors"
@@ -200,7 +200,7 @@ export function DemandDetailTimeRow({ demandData, isExpanded, onToggle }: Demand
                           size="sm"
                           asChild
                         >
-                          <Link to={`/user/${userId}`}>
+                          <Link to={`/app/user/${userId}`}>
                             <ExternalLink className="h-4 w-4" />
                           </Link>
                         </Button>

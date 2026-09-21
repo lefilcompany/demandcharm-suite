@@ -12,7 +12,7 @@ export default function Teams() {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-fade-in">
-      <SEOHead title="Equipes" path="/teams" />
+      <SEOHead title="Equipes" path="/app/teams" />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -22,12 +22,12 @@ export default function Teams() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => navigate("/teams/join")} variant="outline" className="flex-1 sm:flex-none">
+          <Button onClick={() => navigate("/app/teams/join")} variant="outline" className="flex-1 sm:flex-none">
             <UsersIcon className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Entrar em Equipe</span>
             <span className="sm:hidden">Entrar</span>
           </Button>
-          <Button onClick={() => navigate("/teams/create")} className="flex-1 sm:flex-none">
+          <Button onClick={() => navigate("/app/teams/create")} className="flex-1 sm:flex-none">
             <Plus className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Criar Equipe</span>
             <span className="sm:hidden">Criar</span>
@@ -53,11 +53,11 @@ export default function Teams() {
             Comece criando uma nova equipe ou entre com um código de acesso.
           </p>
           <div className="mt-6 flex flex-col sm:flex-row gap-2 justify-center">
-            <Button onClick={() => navigate("/teams/create")}>
+            <Button onClick={() => navigate("/app/teams/create")}>
               <Plus className="mr-2 h-4 w-4" />
               Criar Equipe
             </Button>
-            <Button onClick={() => navigate("/teams/join")} variant="outline">
+            <Button onClick={() => navigate("/app/teams/join")} variant="outline">
               <UsersIcon className="mr-2 h-4 w-4" />
               Entrar em Equipe
             </Button>

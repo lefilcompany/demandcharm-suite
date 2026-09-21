@@ -105,7 +105,7 @@ export function DemandHistorySection({ userId, isPublic, embedded = false }: Pro
   const skipConfirm = typeof window !== "undefined" && localStorage.getItem(SKIP_KEY) === "1";
 
   const goToDemand = (_boardId: string | null | undefined, demandId: string) => {
-    navigate(`/demands/${demandId}`);
+    navigate(`/app/demands/${demandId}`);
   };
 
   const handleOpenDemand = (d: any) => {

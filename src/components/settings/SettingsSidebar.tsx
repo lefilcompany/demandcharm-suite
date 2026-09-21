@@ -69,7 +69,7 @@ export function SettingsSidebar({ items, active, onChange }: SettingsSidebarProp
             variant="ghost"
             size="sm"
             className="mt-3 w-full text-xs"
-            onClick={() => navigate("/profile")}
+            onClick={() => navigate("/app/profile")}
           >
             <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
             Ver perfil público

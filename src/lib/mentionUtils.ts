@@ -163,7 +163,7 @@ export function hasLinks(text: string): boolean {
 }
 
 // Extrai IDs de usuários mencionados em conteúdo HTML (usado em notas com TipTap)
-// Formato: <a href="/user/UUID" data-mention="user">@Nome</a>
+// Formato: <a href="/app/user/UUID" data-mention="user">@Nome</a>
 const HTML_USER_MENTION_REGEX = /href="\/user\/([a-f0-9-]+)"\s+data-mention="user"/g;
 
 export function extractMentionedUserIdsFromHtml(html: string): string[] {

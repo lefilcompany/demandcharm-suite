@@ -83,7 +83,7 @@ export default function DemandDetail() {
     viewMode?: string;
     calendarMonth?: string;
   } | null;
-  const cameFromKanban = fromState?.from === "kanban" || document.referrer.includes("/kanban");
+  const cameFromKanban = fromState?.from === "kanban" || document.referrer.includes("/app/kanban");
   const demandsViewMode = fromState?.viewMode || "table";
   const calendarMonth = fromState?.calendarMonth;
 
@@ -99,7 +99,7 @@ export default function DemandDetail() {
       return {
         label: "Kanban",
         icon: Kanban,
-        path: "/kanban"
+        path: "/app/kanban"
       };
     }
     switch (demandsViewMode) {
@@ -107,7 +107,7 @@ export default function DemandDetail() {
         return {
           label: "Calendário",
           icon: CalendarDays,
-          path: "/demands",
+          path: "/app/demands",
           viewMode: "calendar",
           calendarMonth
         };
@@ -115,7 +115,7 @@ export default function DemandDetail() {
         return {
           label: "Blocos",
           icon: LayoutGrid,
-          path: "/demands",
+          path: "/app/demands",
           viewMode: "grid"
         };
       case "table":
@@ -123,7 +123,7 @@ export default function DemandDetail() {
         return {
           label: "Lista",
           icon: List,
-          path: "/demands",
+          path: "/app/demands",
           viewMode: "table"
         };
     }
@@ -474,7 +474,7 @@ export default function DemandDetail() {
           title: notificationTitle,
           message: notificationMessage,
           type: "warning",
-          link: `/demands/${id}`
+          link: `/app/demands/${id}`
         }));
         await supabase.from("notifications").insert(notifications);
 
@@ -759,7 +759,7 @@ export default function DemandDetail() {
         </p>
         <div className="flex gap-2 justify-center">
           <Button variant="outline" onClick={() => navigate(-1)}>Voltar</Button>
-          <Button onClick={() => navigate("/")}>Ir para o início</Button>
+          <Button onClick={() => navigate("/app")}>Ir para o início</Button>
         </div>
       </div>;
   }
@@ -776,13 +776,13 @@ export default function DemandDetail() {
       {/* Breadcrumbs */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <PageBreadcrumb items={[
-          { label: "Kanban", icon: Kanban, href: "/kanban", state: { highlightDemandId: id } },
+          { label: "Kanban", icon: Kanban, href: "/app/kanban", state: { highlightDemandId: id } },
 
           ...(demand?.parent_demand_id && parentDemand ? [{
             label: parentDemand.board_sequence_number
               ? `${formatDemandCode(parentDemand.board_sequence_number)} ${parentDemand.title}`
               : parentDemand.title,
-            href: `/demands/${parentDemand.id}`,
+            href: `/app/demands/${parentDemand.id}`,
             icon: FileText,
           }] : []),
           {
@@ -1315,7 +1315,7 @@ export default function DemandDetail() {
                 variant="link"
                 size="sm"
                 className="h-auto p-0 text-primary font-medium"
-                onClick={() => navigate(`/demands/${demand.parent_demand_id}`)}
+                onClick={() => navigate(`/app/demands/${demand.parent_demand_id}`)}
               >
                 {parentDemand?.board_sequence_number ? `#${String(parentDemand.board_sequence_number).padStart(4, "0")} ` : ""}
                 {parentDemand?.title || "Demanda pai"}
@@ -1466,7 +1466,7 @@ export default function DemandDetail() {
                     return (
                       <div key={sub.id} className="relative group">
                         <button
-                          onClick={() => navigate(`/demands/${sub.id}`)}
+                          onClick={() => navigate(`/app/demands/${sub.id}`)}
                           draggable={hasEditPermission}
                           onDragStart={(e) => {
                             if (!hasEditPermission) return;
@@ -1590,12 +1590,12 @@ export default function DemandDetail() {
                               align="end"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <DropdownMenuItem onSelect={() => navigate(`/demands/${sub.id}`)}>
+                              <DropdownMenuItem onSelect={() => navigate(`/app/demands/${sub.id}`)}>
                                 <ExternalLink className="h-4 w-4" />
                                 Abrir
                               </DropdownMenuItem>
                               {hasEditPermission && (
-                                <DropdownMenuItem onSelect={() => navigate(`/demands/${sub.id}?edit=1`)}>
+                                <DropdownMenuItem onSelect={() => navigate(`/app/demands/${sub.id}?edit=1`)}>
                                   <Pencil className="h-4 w-4" />
                                   Editar
                                 </DropdownMenuItem>
@@ -1710,7 +1710,7 @@ export default function DemandDetail() {
           onOpenChange={setShowSendToRequestsDialog}
           demandId={demand.id}
           demandTitle={demand.title}
-          onSuccess={() => navigate(`/demands/${demand.parent_demand_id}`)}
+          onSuccess={() => navigate(`/app/demands/${demand.parent_demand_id}`)}
         />
       )}
 

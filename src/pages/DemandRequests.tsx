@@ -381,7 +381,7 @@ export default function DemandRequests() {
         }
         toast.success("Demanda criada com sucesso!");
         setApproving(null);
-        navigate("/demands");
+        navigate("/app/demands");
       },
       onError: (error: any) => {
         toast.error("Erro ao aprovar", {
@@ -455,7 +455,7 @@ export default function DemandRequests() {
               title: "Você foi mencionado",
               message: `${mentionerName} mencionou você em um comentário da solicitação "${viewing.title}"`,
               type: "mention",
-              link: `/demand-requests?view=${viewing.id}`,
+              link: `/app/demand-requests?view=${viewing.id}`,
             }));
             await supabase.from("notifications").insert(mentionNotifs);
             for (const uid of mentionedIds) {
@@ -644,7 +644,7 @@ export default function DemandRequests() {
       case "approved":
         return (
           <Badge className="bg-green-500/20 text-green-700 border border-green-500/30">
-            <SEOHead title="Solicitações de Demanda" path="/demand-requests" />
+            <SEOHead title="Solicitações de Demanda" path="/app/demand-requests" />
             <CheckCircle className="h-3 w-3 mr-1" />
             Aprovada
           </Badge>
@@ -652,7 +652,7 @@ export default function DemandRequests() {
       case "returned":
         return (
           <Badge className="bg-orange-500/20 text-orange-700 border border-orange-500/30">
-            <SEOHead title="Solicitações de Demanda" path="/demand-requests" />
+            <SEOHead title="Solicitações de Demanda" path="/app/demand-requests" />
             <XCircle className="h-3 w-3 mr-1" />
             Devolvida
           </Badge>
@@ -660,7 +660,7 @@ export default function DemandRequests() {
       case "rejected":
         return (
           <Badge className="bg-destructive/20 text-destructive border border-destructive/30">
-            <SEOHead title="Solicitações de Demanda" path="/demand-requests" />
+            <SEOHead title="Solicitações de Demanda" path="/app/demand-requests" />
             <XCircle className="h-3 w-3 mr-1" />
             Rejeitada
           </Badge>
@@ -668,7 +668,7 @@ export default function DemandRequests() {
       default:
         return (
           <Badge className="bg-yellow-500/20 text-yellow-700 border border-yellow-500/30">
-            <SEOHead title="Solicitações de Demanda" path="/demand-requests" />
+            <SEOHead title="Solicitações de Demanda" path="/app/demand-requests" />
             <Clock className="h-3 w-3 mr-1" />
             Pendente
           </Badge>
@@ -725,7 +725,7 @@ export default function DemandRequests() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/user/${request.created_by}`);
+                  navigate(`/app/user/${request.created_by}`);
                 }}
                 className="hover:text-primary hover:underline cursor-pointer transition-colors"
               >
@@ -868,7 +868,7 @@ export default function DemandRequests() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/user/${request.responded_by}`);
+                      navigate(`/app/user/${request.responded_by}`);
                     }}
                     className="font-medium hover:text-primary hover:underline cursor-pointer transition-colors"
                   >
@@ -921,7 +921,7 @@ export default function DemandRequests() {
   const renderPaginationBar = (page: number, setPage: (fn: (p: number) => number) => void, totalPages: number, totalItems: number) => {
     return (
       <div className="flex items-center justify-between border-t border-border pt-3 mt-4">
-        <SEOHead title="Solicitações de Demanda" path="/demand-requests" />
+        <SEOHead title="Solicitações de Demanda" path="/app/demand-requests" />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Itens por página</span>
           <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
@@ -956,7 +956,7 @@ export default function DemandRequests() {
     if (totalPages <= 1) return null;
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <SEOHead title="Solicitações de Demanda" path="/demand-requests" />
+        <SEOHead title="Solicitações de Demanda" path="/app/demand-requests" />
         <span>Página {page} de {totalPages}</span>
         <div className="flex items-center">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
@@ -987,7 +987,7 @@ export default function DemandRequests() {
   const renderUnifiedAdminToolbar = () => {
     return (
       <div className="space-y-3">
-        <SEOHead title="Solicitações de Demanda" path="/demand-requests" />
+        <SEOHead title="Solicitações de Demanda" path="/app/demand-requests" />
         {/* Horizontal filter row with search */}
         <div className="flex items-center gap-2">
           {/* Search button */}
@@ -1139,7 +1139,7 @@ export default function DemandRequests() {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-fade-in">
-      <SEOHead title="Solicitações de Demanda" path="/demand-requests" />
+      <SEOHead title="Solicitações de Demanda" path="/app/demand-requests" />
       <PageBreadcrumb
         items={[
           { label: pageTitle, icon: Send, isCurrent: true },
@@ -1360,7 +1360,7 @@ export default function DemandRequests() {
                     ) : (
                       <>
                         <p>Você ainda não tem solicitações neste quadro</p>
-                        <Button className="mt-4" onClick={() => navigate("/demands/request")}>
+                        <Button className="mt-4" onClick={() => navigate("/app/demands/request")}>
                           <Plus className="mr-2 h-4 w-4" />
                           Criar Solicitação
                         </Button>
@@ -1613,7 +1613,7 @@ export default function DemandRequests() {
               <span>
                 <button
                   type="button"
-                  onClick={() => viewing?.created_by && navigate(`/user/${viewing.created_by}`)}
+                  onClick={() => viewing?.created_by && navigate(`/app/user/${viewing.created_by}`)}
                   className="hover:text-primary hover:underline cursor-pointer transition-colors"
                 >
                   {viewing?.creator?.full_name}
@@ -1659,7 +1659,7 @@ export default function DemandRequests() {
                 <span className="font-medium">{viewing.status === "approved" ? "Aprovada" : "Devolvida"}</span> por{" "}
                 <button
                   type="button"
-                  onClick={() => viewing?.responded_by && navigate(`/user/${viewing.responded_by}`)}
+                  onClick={() => viewing?.responded_by && navigate(`/app/user/${viewing.responded_by}`)}
                   className="font-medium hover:text-primary hover:underline cursor-pointer transition-colors"
                 >
                   {viewing.responder.full_name}
@@ -1739,7 +1739,7 @@ export default function DemandRequests() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/user/${comment.user_id}`);
+                                navigate(`/app/user/${comment.user_id}`);
                               }}
                               className="text-sm font-medium hover:text-primary hover:underline cursor-pointer transition-colors"
                             >

@@ -589,7 +589,7 @@ function processMentions(text: string): string {
       return escapeHtml(match);
     }
     const escapedName = escapeHtml(name);
-    return `<a href="/user/${userId}" data-mention="user" class="inline-flex items-center gap-0.5 bg-primary/10 text-primary border border-primary/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-primary/20 transition-colors">@${escapedName}</a>`;
+    return `<a href="/app/user/${userId}" data-mention="user" class="inline-flex items-center gap-0.5 bg-primary/10 text-primary border border-primary/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-primary/20 transition-colors">@${escapedName}</a>`;
   });
   
   const demandMentionRegex = /\{\{([^:]+):(#[^\}]+)\}\}/g;
@@ -598,7 +598,7 @@ function processMentions(text: string): string {
       return escapeHtml(match);
     }
     const escapedCode = escapeHtml(code);
-    return `<a href="/demands/${demandId}" data-mention="demand" class="inline-flex items-center gap-0.5 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-cyan-500/20 transition-colors">${escapedCode}</a>`;
+    return `<a href="/app/demands/${demandId}" data-mention="demand" class="inline-flex items-center gap-0.5 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-cyan-500/20 transition-colors">${escapedCode}</a>`;
   });
   
   return text;
@@ -632,12 +632,12 @@ function processTextContent(text: string): string {
   
   const userMentionRegex = /\[\[([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):([^\]]+)\]\]/gi;
   result = result.replace(userMentionRegex, (_, userId, name) => {
-    return `<a href="/user/${userId}" data-mention="user" class="inline-flex items-center gap-0.5 bg-primary/10 text-primary border border-primary/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-primary/20 transition-colors">@${name}</a>`;
+    return `<a href="/app/user/${userId}" data-mention="user" class="inline-flex items-center gap-0.5 bg-primary/10 text-primary border border-primary/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-primary/20 transition-colors">@${name}</a>`;
   });
   
   const demandMentionRegex = /\{\{([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):(#\d{1,6})\}\}/gi;
   result = result.replace(demandMentionRegex, (_, demandId, code) => {
-    return `<a href="/demands/${demandId}" data-mention="demand" class="inline-flex items-center gap-0.5 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-cyan-500/20 transition-colors">${code}</a>`;
+    return `<a href="/app/demands/${demandId}" data-mention="demand" class="inline-flex items-center gap-0.5 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20 rounded-md px-1.5 py-0.5 text-xs font-medium mx-0.5 no-underline hover:bg-cyan-500/20 transition-colors">${code}</a>`;
   });
   
   const urlRegex = /(https?:\/\/[^\s]+?)(?=&lt;|&gt;|\s|$)/g;

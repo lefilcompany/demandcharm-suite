@@ -92,7 +92,7 @@ export function useGlobalSearch(query: string, boardId: string | null) {
               title: d.title,
               subtitle: parts.join(" · "),
               extra: extraParts.length > 0 ? extraParts.join(" · ") : undefined,
-              link: `/demands/${d.id}`,
+              link: `/app/demands/${d.id}`,
               priority: d.priority || undefined,
               statusColor: statusColor || undefined,
             };
@@ -123,7 +123,7 @@ export function useGlobalSearch(query: string, boardId: string | null) {
                 id: profile.id,
                 title: profile.full_name,
                 subtitle: profile.job_title || "Membro do quadro",
-                link: `/user/${profile.id}`,
+                link: `/app/user/${profile.id}`,
                 avatarUrl: profile.avatar_url || undefined,
               };
             })
@@ -148,7 +148,7 @@ export function useGlobalSearch(query: string, boardId: string | null) {
             id: u.id,
             title: u.full_name || "Usuário",
             subtitle: u.job_title || "Usuário do sistema",
-            link: `/user/${u.id}`,
+            link: `/app/user/${u.id}`,
             avatarUrl: u.avatar_url || undefined,
           }))
         );

@@ -30,7 +30,7 @@ export function DuplicateSuccessModal({
   const handleGoToDemand = () => {
     if (!newDemandId) return;
     onOpenChange(false);
-    navigate(`/demands/${newDemandId}`);
+    navigate(`/app/demands/${newDemandId}`);
   };
 
   const handleClose = () => onOpenChange(false);

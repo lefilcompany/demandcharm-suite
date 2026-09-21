@@ -179,7 +179,7 @@ export default function MyDemands() {
     if (isLoading) {
       return (
         <>
-          <SEOHead title="Minhas Demandas" path="/my-demands" />
+          <SEOHead title="Minhas Demandas" path="/app/my-demands" />
           <ListSkeleton rows={8} />
         </>
       );
@@ -189,7 +189,7 @@ export default function MyDemands() {
       if (searchQuery) {
         return (
           <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-muted/20">
-            <SEOHead title="Minhas Demandas" path="/my-demands" />
+            <SEOHead title="Minhas Demandas" path="/app/my-demands" />
             <Search className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold text-foreground">
               {t("common.noResults")}
@@ -202,7 +202,7 @@ export default function MyDemands() {
       }
       return (
         <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-muted/20">
-          <SEOHead title="Minhas Demandas" path="/my-demands" />
+          <SEOHead title="Minhas Demandas" path="/app/my-demands" />
           <User className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-semibold text-foreground">
             Nenhuma demanda encontrada
@@ -218,7 +218,7 @@ export default function MyDemands() {
       return (
         <DemandsCalendarView
           demands={demandList}
-          onDemandClick={(demandId) => navigate(`/demands/${demandId}`, { state: { from: "my-demands", viewMode: "calendar" } })}
+          onDemandClick={(demandId) => navigate(`/app/demands/${demandId}`, { state: { from: "my-demands", viewMode: "calendar" } })}
           onDayClick={() => {}}
           isRequester={false}
         />
@@ -228,12 +228,12 @@ export default function MyDemands() {
     if (effectiveViewMode === "table") {
       return (
         <Card className="border-border/50 shadow-sm">
-          <SEOHead title="Minhas Demandas" path="/my-demands" />
+          <SEOHead title="Minhas Demandas" path="/app/my-demands" />
           <CardContent className="p-0">
             <DataTable
               columns={teamDemandColumns}
               data={demandList as unknown as TeamDemandTableRow[]}
-              onRowClick={(row) => navigate(`/demands/${row.id}`, { state: { from: "my-demands", viewMode: "table" } })}
+              onRowClick={(row) => navigate(`/app/demands/${row.id}`, { state: { from: "my-demands", viewMode: "table" } })}
               defaultSorting={[{ id: "due_date", desc: false }]}
             />
           </CardContent>
@@ -243,12 +243,12 @@ export default function MyDemands() {
 
     return (
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <SEOHead title="Minhas Demandas" path="/my-demands" />
+        <SEOHead title="Minhas Demandas" path="/app/my-demands" />
         {demandList.map((demand: any) => (
           <DemandCard
             key={demand.id}
             demand={demand}
-            onClick={() => navigate(`/demands/${demand.id}`, { state: { from: "my-demands", viewMode: "grid" } })}
+            onClick={() => navigate(`/app/demands/${demand.id}`, { state: { from: "my-demands", viewMode: "grid" } })}
             showFullDetails
           />
         ))}
@@ -259,7 +259,7 @@ export default function MyDemands() {
   if (!selectedTeamId) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <SEOHead title="Minhas Demandas" path="/my-demands" />
+        <SEOHead title="Minhas Demandas" path="/app/my-demands" />
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <User className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -277,7 +277,7 @@ export default function MyDemands() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <SEOHead title="Minhas Demandas" path="/my-demands" />
+      <SEOHead title="Minhas Demandas" path="/app/my-demands" />
       <PageBreadcrumb
         items={[
           { label: "Minhas Demandas", icon: User, isCurrent: true },

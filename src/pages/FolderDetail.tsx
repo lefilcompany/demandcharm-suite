@@ -186,7 +186,7 @@ export default function FolderDetail() {
 
   const handleDemandClick = (demandId: string, boardId?: string) => {
     if (boardId && boardId !== selectedBoardId) setSelectedBoardId(boardId);
-    navigate(`/demands/${demandId}`, { state: { from: "folder", folderId } });
+    navigate(`/app/demands/${demandId}`, { state: { from: "folder", folderId } });
   };
 
   const deliveredCount = folderDemands.filter((d: any) => d.demand_statuses?.name === "Entregue").length;
@@ -219,7 +219,7 @@ export default function FolderDetail() {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <p className="text-muted-foreground">Projeto não encontrado</p>
-        <Button variant="outline" onClick={() => navigate("/demands")}>
+        <Button variant="outline" onClick={() => navigate("/app/demands")}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Voltar para demandas
         </Button>
       </div>
@@ -231,7 +231,7 @@ export default function FolderDetail() {
       <SEOHead title={`Projeto - ${folder.name}`} />
       <PageBreadcrumb
         items={[
-          { label: "Projetos", href: "/projects", icon: Briefcase },
+          { label: "Projetos", href: "/app/projects", icon: Briefcase },
           { label: folder.name, icon: FolderOpen, isCurrent: true },
         ]}
       />

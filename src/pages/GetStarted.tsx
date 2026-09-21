@@ -31,7 +31,7 @@ export default function GetStarted() {
   // If user is already authenticated and has a team, jump straight to the app
   useEffect(() => {
     if (user && existingTeamId) {
-      navigate("/", { replace: true });
+      navigate("/app", { replace: true });
     }
   }, [user, existingTeamId, navigate]);
 
@@ -60,7 +60,7 @@ export default function GetStarted() {
         });
       }
 
-      navigate("/", { replace: true });
+      navigate("/app", { replace: true });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Erro ao criar equipe";
       toast.error(msg);

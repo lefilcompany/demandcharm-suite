@@ -156,7 +156,7 @@ export function useRemoveMember() {
           localStorage.removeItem("selectedTeamId");
         }
         localStorage.removeItem("selectedBoardId");
-        window.location.href = "/";
+        window.location.href = "/app";
       }
     },
   });

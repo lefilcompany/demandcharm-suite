@@ -19,7 +19,7 @@ export const useSwipeGesture = (config: SwipeConfig = {}) => {
   const isEdgeSwipe = useRef<boolean>(false);
 
   // Pages where back swipe should be disabled
-  const noBackPages = ["/", "/auth", "/welcome"];
+  const noBackPages = ["/", "/auth", "/app/welcome"];
 
   const canGoBack = useCallback(() => {
     return !noBackPages.includes(location.pathname);

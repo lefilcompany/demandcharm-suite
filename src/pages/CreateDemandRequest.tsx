@@ -175,14 +175,14 @@ export default function CreateDemandRequest() {
     toast.success("Solicitação enviada com sucesso!", {
       description: "Aguarde a aprovação de um administrador ou coordenador.",
     });
-    navigate("/demand-requests");
+    navigate("/app/demand-requests");
   };
 
   // If request was created, show attachment step
   if (createdRequestId) {
     return (
       <div className="max-w-2xl mx-auto space-y-4 md:space-y-6 animate-fade-in px-1">
-        <SEOHead title="Nova Solicitação" path="/demand-requests/new" />
+        <SEOHead title="Nova Solicitação" path="/app/demand-requests/new" />
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Adicionar Anexos</h1>
           <p className="text-sm md:text-base text-muted-foreground">
@@ -224,7 +224,7 @@ export default function CreateDemandRequest() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 md:space-y-6 animate-fade-in px-1">
-      <SEOHead title="Nova Solicitação" path="/demand-requests/new" />
+      <SEOHead title="Nova Solicitação" path="/app/demand-requests/new" />
       {/* Unsaved Changes Dialog */}
       <UnsavedChangesDialog
         open={isBlocked}
@@ -235,7 +235,7 @@ export default function CreateDemandRequest() {
 
       <PageBreadcrumb
         items={[
-          { label: "Solicitações", href: "/demand-requests", icon: Send },
+          { label: "Solicitações", href: "/app/demand-requests", icon: Send },
           { label: "Nova Solicitação", icon: Plus, isCurrent: true },
         ]}
       />

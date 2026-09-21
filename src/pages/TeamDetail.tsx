@@ -122,7 +122,7 @@ export default function TeamDetail() {
     deleteTeam.mutate(id, {
       onSuccess: () => {
         toast.success("Equipe excluída com sucesso!");
-        navigate("/teams");
+        navigate("/app/teams");
       },
       onError: (error: any) => {
         toast.error("Erro ao excluir equipe", {
@@ -141,7 +141,7 @@ export default function TeamDetail() {
   if (!team) {
     return <div className="text-center py-12">
         <h2 className="text-xl font-semibold">Equipe não encontrada</h2>
-        <Button onClick={() => navigate("/teams")} className="mt-4">
+        <Button onClick={() => navigate("/app/teams")} className="mt-4">
           Voltar para Equipes
         </Button>
       </div>;

@@ -20,6 +20,8 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { SwipeNavigationProvider } from "@/components/SwipeNavigationProvider";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { UpdateModal } from "@/components/UpdateModal";
+import { LegacyRedirect, LEGACY_APP_PATHS } from "@/components/LegacyRedirect";
+
 import { lazy, Suspense, useEffect } from "react";
 import { PageSkeleton } from "@/components/skeletons/PageSkeleton";
 import { prefetchAppRoutes } from "@/lib/routePrefetch";
@@ -143,8 +145,10 @@ const App = () => {
                               <Route path="/auth" element={<Auth />} />
                               <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                               <Route path="/get-started" element={<GetStarted />} />
+                              <Route path="/" element={<Landing />} />
                               <Route path="/lp" element={<Landing />} />
                               <Route path="/landing" element={<Landing />} />
+
                               <Route path="/shared/:token" element={<SharedDemand />} />
                               <Route path="/shared/note/:token" element={<SharedNote />} />
                               <Route path="/shared/summary/:token" element={<SharedBoardSummary />} />
@@ -170,46 +174,54 @@ const App = () => {
                                 <Route path="releases" element={<AdminReleases />} />
                               </Route>
 
-                              <Route path="/welcome" element={<RequireAuth><Welcome /></RequireAuth>} />
-                              <Route path="/complete-profile" element={<RequireAuth><CompleteProfile /></RequireAuth>} />
-                              <Route path="/teams/create" element={<RequireAuth><CreateTeam /></RequireAuth>} />
-                              <Route path="/teams/join" element={<RequireAuth><JoinTeam /></RequireAuth>} />
-                              <Route path="/subscription/success" element={<RequireAuth><SubscriptionSuccess /></RequireAuth>} />
+                              <Route path="/app/welcome" element={<RequireAuth><Welcome /></RequireAuth>} />
+                              <Route path="/app/complete-profile" element={<RequireAuth><CompleteProfile /></RequireAuth>} />
+                              <Route path="/app/teams/create" element={<RequireAuth><CreateTeam /></RequireAuth>} />
+                              <Route path="/app/teams/join" element={<RequireAuth><JoinTeam /></RequireAuth>} />
+                              <Route path="/app/subscription/success" element={<RequireAuth><SubscriptionSuccess /></RequireAuth>} />
 
                               <Route element={<RequireTeam><ProtectedLayout /></RequireTeam>}>
-                                <Route path="/" element={<Index />} />
-                                <Route path="/teams" element={<Teams />} />
-                                <Route path="/teams/:id" element={<TeamDetail />} />
-                                <Route path="/teams/:id/requests" element={<TeamRequests />} />
-                                <Route path="/teams/:id/services" element={<ServicesManagement />} />
-                                <Route path="/boards" element={<Boards />} />
-                                <Route path="/boards/:boardId" element={<BoardDetail />} />
-                                <Route path="/boards/:boardId/members" element={<BoardMembers />} />
-                                <Route path="/team-config" element={<TeamConfig />} />
-                                <Route path="/demands" element={<Demands />} />
-                                <Route path="/folders/:folderId" element={<FolderDetail />} />
-                                <Route path="/projects" element={<Projects />} />
-                                <Route path="/projects/:folderId" element={<FolderDetail />} />
-                                <Route path="/demands/create" element={<CreateDemandRoute />} />
-                                <Route path="/demands/request" element={<CreateDemandRequest />} />
-                                <Route path="/demands/:id" element={<DemandDetail />} />
-                                <Route path="/demand-requests" element={<DemandRequests />} />
-                                <Route path="/store" element={<Store />} />
-                                <Route path="/kanban" element={<Kanban />} />
-                                <Route path="/time-management" element={<TimeManagement />} />
-                                <Route path="/board-summary" element={<BoardSummary />} />
-                                <Route path="/user/:userId" element={<UserProfile />} />
-                                <Route path="/team-demands" element={<TeamDemands />} />
-                                <Route path="/my-demands" element={<MyDemands />} />
-                                <Route path="/notes" element={<Notes />} />
-                                <Route path="/notes/:noteId" element={<NoteDetail />} />
-                                <Route path="/reports" element={<Reports />} />
-                                <Route path="/profile" element={<Profile />} />
-                                <Route path="/settings" element={<Settings />} />
-                                <Route path="/pricing" element={<Pricing />} />
+                                <Route path="/app" element={<Index />} />
+                                <Route path="/app/teams" element={<Teams />} />
+                                <Route path="/app/teams/:id" element={<TeamDetail />} />
+                                <Route path="/app/teams/:id/requests" element={<TeamRequests />} />
+                                <Route path="/app/teams/:id/services" element={<ServicesManagement />} />
+                                <Route path="/app/boards" element={<Boards />} />
+                                <Route path="/app/boards/:boardId" element={<BoardDetail />} />
+                                <Route path="/app/boards/:boardId/members" element={<BoardMembers />} />
+                                <Route path="/app/team-config" element={<TeamConfig />} />
+                                <Route path="/app/demands" element={<Demands />} />
+                                <Route path="/app/folders/:folderId" element={<FolderDetail />} />
+                                <Route path="/app/projects" element={<Projects />} />
+                                <Route path="/app/projects/:folderId" element={<FolderDetail />} />
+                                <Route path="/app/demands/create" element={<CreateDemandRoute />} />
+                                <Route path="/app/demands/request" element={<CreateDemandRequest />} />
+                                <Route path="/app/demands/:id" element={<DemandDetail />} />
+                                <Route path="/app/demand-requests" element={<DemandRequests />} />
+                                <Route path="/app/store" element={<Store />} />
+                                <Route path="/app/kanban" element={<Kanban />} />
+                                <Route path="/app/time-management" element={<TimeManagement />} />
+                                <Route path="/app/board-summary" element={<BoardSummary />} />
+                                <Route path="/app/user/:userId" element={<UserProfile />} />
+                                <Route path="/app/team-demands" element={<TeamDemands />} />
+                                <Route path="/app/my-demands" element={<MyDemands />} />
+                                <Route path="/app/notes" element={<Notes />} />
+                                <Route path="/app/notes/:noteId" element={<NoteDetail />} />
+                                <Route path="/app/reports" element={<Reports />} />
+                                <Route path="/app/profile" element={<Profile />} />
+                                <Route path="/app/settings" element={<Settings />} />
+                                <Route path="/app/pricing" element={<Pricing />} />
                               </Route>
 
+                              {LEGACY_APP_PATHS.map((p) => (
+                                <Route key={p} path={`/${p}/*`} element={<LegacyRedirect />} />
+                              ))}
+                              {LEGACY_APP_PATHS.map((p) => (
+                                <Route key={`${p}-exact`} path={`/${p}`} element={<LegacyRedirect />} />
+                              ))}
+
                               <Route path="*" element={<NotFound />} />
+
                             </Routes>
                             </Suspense>
                             </PipTimerProvider>

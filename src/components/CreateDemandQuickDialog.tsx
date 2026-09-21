@@ -244,7 +244,7 @@ export function CreateDemandQuickDialog({
 
       // Navigate to the new demand
       if (result?.id) {
-        navigate(`/demands/${result.id}`);
+        navigate(`/app/demands/${result.id}`);
       }
     } catch (error) {
       // The useCreateDemand hook already shows a friendly toast for plan-limit errors.

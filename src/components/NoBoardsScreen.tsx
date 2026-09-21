@@ -101,16 +101,16 @@ export function NoBoardsScreen() {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/profile")}>
+                <DropdownMenuItem onClick={() => navigate("/app/profile")}>
                   <User className="h-4 w-4 mr-2" />
                   Meu Perfil
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/settings")}>
+                <DropdownMenuItem onClick={() => navigate("/app/settings")}>
                   <Settings className="h-4 w-4 mr-2" />
                   Configurações
                 </DropdownMenuItem>
                 {currentTeam && (
-                  <DropdownMenuItem onClick={() => navigate(`/teams/${currentTeam.id}`)}>
+                  <DropdownMenuItem onClick={() => navigate(`/app/teams/${currentTeam.id}`)}>
                     <Users className="h-4 w-4 mr-2" />
                     Detalhes da Equipe
                   </DropdownMenuItem>
@@ -151,7 +151,7 @@ export function NoBoardsScreen() {
             </div>
 
             {currentTeam && (
-              <Button variant="outline" size="sm" onClick={() => navigate(`/teams/${currentTeam.id}`)} className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate(`/app/teams/${currentTeam.id}`)} className="gap-2">
                 <Users className="h-4 w-4" />
                 Ver detalhes da equipe
               </Button>
@@ -163,7 +163,7 @@ export function NoBoardsScreen() {
                   Como administrador, você pode criar um quadro:
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  <Button onClick={() => navigate("/boards")} className="gap-2">
+                  <Button onClick={() => navigate("/app/boards")} className="gap-2">
                     <LayoutGrid className="h-4 w-4" />
                     Criar Quadro
                   </Button>

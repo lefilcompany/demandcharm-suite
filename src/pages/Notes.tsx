@@ -108,7 +108,7 @@ export default function Notes() {
     if (!ok) return;
     const note = await createNote.mutateAsync({});
     if (note) {
-      navigate(`/notes/${note.id}`);
+      navigate(`/app/notes/${note.id}`);
     }
   };
 
@@ -143,7 +143,7 @@ export default function Notes() {
           >
             <NoteCard 
               note={note} 
-              onClick={() => navigate(`/notes/${note.id}`)}
+              onClick={() => navigate(`/app/notes/${note.id}`)}
               isShared={showOwner}
               onLeave={showOwner ? () => openLeaveDialog(note.id, note.title) : undefined}
             />
@@ -188,7 +188,7 @@ export default function Notes() {
         notesList.map((note) => (
           <div
             key={note.id}
-            onClick={() => navigate(`/notes/${note.id}`)}
+            onClick={() => navigate(`/app/notes/${note.id}`)}
             className={cn(
               "flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-all duration-300",
               leavingNoteId === note.id && "opacity-0 scale-95 pointer-events-none"
@@ -262,10 +262,10 @@ export default function Notes() {
 
   return (
     <div className="container max-w-6xl mx-auto px-4 py-6">
-      <SEOHead title="Notas" path="/notes" />
+      <SEOHead title="Notas" path="/app/notes" />
       <PageBreadcrumb 
         items={[
-          { label: "Soma Notes", href: "/notes", icon: StickyNote }
+          { label: "Soma Notes", href: "/app/notes", icon: StickyNote }
         ]} 
       />
 

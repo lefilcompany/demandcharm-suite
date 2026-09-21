@@ -293,7 +293,7 @@ export default function UserProfile() {
       {/* Header */}
       <div className="flex items-center justify-end">
         {isOwnProfile && (
-          <Button onClick={() => navigate("/profile")} variant="outline" size="sm">
+          <Button onClick={() => navigate("/app/profile")} variant="outline" size="sm">
             <Edit className="mr-2 h-4 w-4" />
             Editar Perfil
           </Button>

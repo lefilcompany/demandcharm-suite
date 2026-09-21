@@ -125,7 +125,7 @@ export function PipTimerProvider({ children }: { children: ReactNode }) {
     } catch {
       // ignore
     }
-    if (id) navigate(`/demands/${id}`);
+    if (id) navigate(`/app/demands/${id}`);
   }, [pipDemandId, closePip, navigate]);
 
   // Cleanup on unmount / tab close

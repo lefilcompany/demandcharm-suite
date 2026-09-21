@@ -49,7 +49,7 @@ function truncate(value: string, max = 60): string {
 function buildMessages(params: NotifyDemandAssigneeChangeParams): BuiltMessages {
   const { event, demandId, demandTitle, boardName, actorName } = params;
   const boardPrefix = boardName ? `[${boardName}] ` : "";
-  const link = `/demands/${demandId}`;
+  const link = `/app/demands/${demandId}`;
   const shortTitle = truncate(demandTitle, 50);
 
   switch (event) {

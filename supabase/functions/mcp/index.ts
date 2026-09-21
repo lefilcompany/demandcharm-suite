@@ -119,12 +119,12 @@ var APP_URL = typeof process !== "undefined" && process.env?.PUBLIC_APP_URL || "
 var base = () => APP_URL.replace(/\/$/, "");
 var urls = {
   team: (id) => `${base()}/teams/${id}`,
-  board: (id) => `${base()}/boards/${id}`,
-  boardKanban: (id) => `${base()}/boards/${id}/kanban`,
-  demand: (id) => `${base()}/demands/${id}`,
+  board: (id) => `${base()}/app/boards/${id}`,
+  boardKanban: (id) => `${base()}/app/boards/${id}/kanban`,
+  demand: (id) => `${base()}/app/demands/${id}`,
   request: (id) => `${base()}/requests/${id}`,
-  note: (id) => `${base()}/notes/${id}`,
-  project: (id) => `${base()}/projects/${id}`,
+  note: (id) => `${base()}/app/notes/${id}`,
+  project: (id) => `${base()}/app/projects/${id}`,
   profile: (id) => `${base()}/user/${id}`,
   service: (id) => `${base()}/services/${id}`,
   reports: () => `${base()}/reports`,

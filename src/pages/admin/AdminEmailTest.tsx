@@ -30,7 +30,7 @@ const PRODUCT_UPDATE_DEFAULTS = {
   message:
     "Agora ficou mais fácil acompanhar a performance da sua operação. Conheça os novos recursos disponíveis no SoMA+.",
   actionText: "Conhecer novidade",
-  ctaPath: "/reports",
+  ctaPath: "/app/reports",
 };
 
 export default function AdminEmailTest() {
@@ -292,7 +292,7 @@ export default function AdminEmailTest() {
                 <Label htmlFor="pu-cta">Caminho do CTA</Label>
                 <Input
                   id="pu-cta"
-                  placeholder="/reports"
+                  placeholder="/app/reports"
                   maxLength={200}
                   value={fields.ctaPath}
                   onChange={(e) => setFields((f) => ({ ...f, ctaPath: e.target.value }))}

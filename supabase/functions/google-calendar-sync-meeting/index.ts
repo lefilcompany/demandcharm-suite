@@ -206,7 +206,7 @@ Deno.serve(async (req) => {
     }
 
     // ---------- insert / patch ----------
-    const demandUrl = `${appUrl()}/demands/${meeting.demand_id}`;
+    const demandUrl = `${appUrl()}/app/demands/${meeting.demand_id}`;
     const descriptionParts = [
       demand?.description ? String(demand.description).replace(/<[^>]+>/g, " ").trim().slice(0, 2000) : "",
       `Demanda no SoMA: ${demandUrl}`,

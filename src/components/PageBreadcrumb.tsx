@@ -30,11 +30,11 @@ export function PageBreadcrumb({ items, showHome = true }: PageBreadcrumbProps) 
   const { currentBoard } = useSelectedBoardSafe();
 
   const isTeamView =
-    location.pathname === "/team-demands" ||
-    location.pathname === "/boards" ||
-    location.pathname.startsWith("/boards/") ||
-    location.pathname === "/teams" ||
-    location.pathname.startsWith("/teams/");
+    location.pathname === "/app/team-demands" ||
+    location.pathname === "/app/boards" ||
+    location.pathname.startsWith("/app/boards/") ||
+    location.pathname === "/app/teams" ||
+    location.pathname.startsWith("/app/teams/");
 
   return (
     <Breadcrumb className="mb-4">
@@ -48,7 +48,7 @@ export function PageBreadcrumb({ items, showHome = true }: PageBreadcrumbProps) 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Link
-                          to="/"
+                          to="/app"
                           aria-label="Voltar ao quadro"
                           className="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground bg-muted/40 border border-border transition-colors duration-200 hover:bg-primary hover:text-primary-foreground hover:border-primary"
                         >
@@ -67,7 +67,7 @@ export function PageBreadcrumb({ items, showHome = true }: PageBreadcrumbProps) 
               <>
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link to="/" className="flex items-center gap-1 transition-colors duration-200 hover:text-primary">
+                    <Link to="/app" className="flex items-center gap-1 transition-colors duration-200 hover:text-primary">
                       <Home className="h-3.5 w-3.5" />
                       <span className="sr-only sm:not-sr-only">Dashboard</span>
                     </Link>

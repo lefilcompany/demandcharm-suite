@@ -5,3 +5,5 @@
 - [x] Criar landing page pública SoMA+ sem preços.
 - [x] Criar gestão administrativa das solicitações.
 - [x] Verificar funcionamento e corrigir erros pendentes.
+- [x] Landing na raiz e sistema em /app, com redirecionamento dos endereços antigos.
+

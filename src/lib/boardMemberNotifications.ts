@@ -45,7 +45,7 @@ function buildMessages(params: NotifyBoardMemberChangeParams): BuiltMessages {
   const { event, boardName, newRole, oldRole, actorName } = params;
   const newRoleLabel = getBoardRoleLabel(newRole);
   const oldRoleLabel = oldRole ? getBoardRoleLabel(oldRole) : undefined;
-  const link = `/boards/${params.boardId}`;
+  const link = `/app/boards/${params.boardId}`;
 
   switch (event) {
     case "added":
@@ -141,7 +141,7 @@ export async function notifyBoardMemberChange(
         userIds: [params.userId],
         title: msg.pushTitle,
         body: msg.pushBody,
-        link: msg.link ?? "/",
+        link: msg.link ?? "/app",
         data: {
           type: `board_member_${params.event}`,
           boardId: params.boardId,

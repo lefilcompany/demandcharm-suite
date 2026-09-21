@@ -141,7 +141,7 @@ export function MemberCard({
 
   const handleNameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/user/${member.user_id}`);
+    navigate(`/app/user/${member.user_id}`);
   };
 
   const handlePositionChange = (positionId: string | null) => {

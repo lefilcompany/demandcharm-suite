@@ -105,7 +105,7 @@ export async function sendAdjustmentPushNotification({
     userIds: assigneeIds,
     title,
     body,
-    link: `/demands/${demandId}`,
+    link: `/app/demands/${demandId}`,
     data: {
       demandId,
       type: isInternal ? "internal_adjustment" : "external_adjustment",
@@ -142,7 +142,7 @@ export async function sendAdjustmentCompletionPushNotification({
     userIds: Array.from(allIds),
     title: `✅ ${boardPrefix}Ajuste concluído`,
     body: `O ajuste na demanda "${demandTitle.substring(0, 50)}${demandTitle.length > 50 ? "..." : ""}" foi finalizado`,
-    link: `/demands/${demandId}`,
+    link: `/app/demands/${demandId}`,
     data: {
       demandId,
       type: "adjustment_completed",
@@ -172,7 +172,7 @@ export async function sendAssignmentPushNotification({
     userIds: [assigneeId],
     title: `📌 ${boardPrefix}Você foi atribuído a uma demanda`,
     body: `Você foi designado para trabalhar na demanda "${demandTitle.substring(0, 50)}${demandTitle.length > 50 ? "..." : ""}"`,
-    link: `/demands/${demandId}`,
+    link: `/app/demands/${demandId}`,
     data: {
       demandId,
       type: "demand_assigned",
@@ -209,7 +209,7 @@ export async function sendStatusChangePushNotification({
     userIds,
     title,
     body,
-    link: `/demands/${demandId}`,
+    link: `/app/demands/${demandId}`,
     data: {
       demandId,
       type: "status_changed",
@@ -254,7 +254,7 @@ export async function sendDeadlinePushNotification({
     userIds,
     title,
     body,
-    link: `/demands/${demandId}`,
+    link: `/app/demands/${demandId}`,
     data: {
       demandId,
       type: isOverdue ? "deadline_overdue" : "deadline_approaching",
@@ -286,7 +286,7 @@ export async function sendNewDemandPushNotification({
     userIds: teamMemberIds,
     title: `📝 ${boardPrefix}Nova demanda criada`,
     body: `${creatorName} criou "${demandTitle.substring(0, 50)}${demandTitle.length > 50 ? "..." : ""}"`,
-    link: `/demands/${demandId}`,
+    link: `/app/demands/${demandId}`,
     data: {
       demandId,
       type: "new_demand",
@@ -317,7 +317,7 @@ export async function sendMentionPushNotification({
     userIds: [mentionedUserId],
     title: `💬 ${boardPrefix}Você foi mencionado`,
     body: `${mentionerName} mencionou você na demanda "${demandTitle.substring(0, 40)}${demandTitle.length > 40 ? "..." : ""}"`,
-    link: `/demands/${demandId}`,
+    link: `/app/demands/${demandId}`,
     data: {
       demandId,
       type: "mention",
@@ -350,7 +350,7 @@ export async function sendCommentPushNotification({
     userIds,
     title: `💬 ${boardPrefix}Novo comentário`,
     body: `${commenterName} comentou em "${demandTitle.substring(0, 30)}...": ${commentPreview.substring(0, 50)}${commentPreview.length > 50 ? "..." : ""}`,
-    link: `/demands/${demandId}`,
+    link: `/app/demands/${demandId}`,
     data: {
       demandId,
       type: "new_comment",
@@ -376,7 +376,7 @@ export async function sendTeamJoinRequestPushNotification({
     userIds: adminIds,
     title: "👤 Nova solicitação de entrada",
     body: `${requesterName} solicitou entrada na equipe "${teamName}"`,
-    link: "/teams/requests",
+    link: "/app/teams/requests",
     data: {
       type: "team_join_request",
     },
@@ -405,7 +405,7 @@ export async function sendDemandRequestPushNotification({
     userIds: adminIds,
     title: `📋 ${boardPrefix}Nova solicitação de demanda`,
     body: `${requesterName} solicitou: "${requestTitle.substring(0, 50)}${requestTitle.length > 50 ? "..." : ""}"`,
-    link: "/demand-requests",
+    link: "/app/demand-requests",
     data: {
       type: "demand_request",
       boardName: boardName || "",
@@ -440,7 +440,7 @@ export async function sendDemandRequestStatusPushNotification({
     approved: {
       title: `✅ ${boardPrefix}Solicitação aprovada!`,
       body: `Sua solicitação "${requestTitle.substring(0, 40)}..." foi aprovada por ${responderName}`,
-      link: "/demands",
+      link: "/app/demands",
     },
     rejected: {
       title: `❌ ${boardPrefix}Solicitação rejeitada`,

@@ -96,7 +96,7 @@ export default function Store() {
   }, [hierarchicalServices, rawServices, boardServicesUsage, hasBoardServices]);
 
   const handleRequestService = (serviceId: string) => {
-    navigate(`/demands/request?serviceId=${serviceId}`);
+    navigate(`/app/demands/request?serviceId=${serviceId}`);
   };
 
   const renderServiceCard = (service: DisplayService) => (
@@ -169,7 +169,7 @@ export default function Store() {
   if (isLoading) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <SEOHead title="Loja" path="/store" />
+        <SEOHead title="Loja" path="/app/store" />
         <div className="flex items-center gap-3">
           <Skeleton className="h-8 w-8" />
           <Skeleton className="h-8 w-48" />
@@ -187,7 +187,7 @@ export default function Store() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <SEOHead title="Loja" path="/store" />
+      <SEOHead title="Loja" path="/app/store" />
       <PageBreadcrumb
         items={[
           { label: "Loja de Serviços", icon: ShoppingCart, isCurrent: true },

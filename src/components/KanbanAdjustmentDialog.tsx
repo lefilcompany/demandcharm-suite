@@ -199,7 +199,7 @@ export const KanbanAdjustmentDialog = React.memo(function KanbanAdjustmentDialog
             title: notificationTitle,
             message: notificationMessage,
             type: "warning",
-            link: `/demands/${demandId}`,
+            link: `/app/demands/${demandId}`,
           }));
           await supabase.from("notifications").insert(notifications);
         }

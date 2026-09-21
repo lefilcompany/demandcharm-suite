@@ -43,7 +43,7 @@ export default function AdminLayout() {
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
-    if (!authLoading && !roleLoading && role !== "admin") navigate("/");
+    if (!authLoading && !roleLoading && role !== "admin") navigate("/app");
   }, [authLoading, roleLoading, user, role, navigate]);
 
   if (authLoading || roleLoading) {

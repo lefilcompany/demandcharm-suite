@@ -19,7 +19,7 @@ const feature: EmailDeliveryFeature = {
   title: "Projetos por quadro",
   summary: "Resumo curto",
   email_body: "Corpo completo do e-mail",
-  cta_path: "/demands",
+  cta_path: "/app/demands",
   cta_label: "Ver projetos",
 };
 
@@ -72,7 +72,7 @@ describe("buildSendEmailPayload", () => {
     expect(p.to).toBe(U(1));
     expect(p.eventType).toBe("productUpdates");
     expect(p.subject).toBe("Novidade no SoMA+: Projetos por quadro");
-    expect(p.templateData.actionUrl).toBe("https://pla.soma.lefil.com.br/demands");
+    expect(p.templateData.actionUrl).toBe("https://pla.soma.lefil.com.br/app/demands");
     expect(p.templateData.message).toBe("Corpo completo do e-mail");
     expect(p.templateData.actionText).toBe("Ver projetos");
     expect(p.templateData.type).toBe("success");

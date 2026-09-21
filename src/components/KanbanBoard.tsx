@@ -1501,7 +1501,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   title: `Demanda concluída: ${demand.title}`,
                   message: `O cliente marcou a demanda "${demand.title}" como concluída.`,
                   type: "success",
-                  link: `/demands/${demandId}`,
+                  link: `/app/demands/${demandId}`,
                 }));
                 await supabase.from("notifications").insert(notifications);
               }

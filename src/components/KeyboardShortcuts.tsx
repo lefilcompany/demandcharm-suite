@@ -22,9 +22,9 @@ export function KeyboardShortcutsProvider({ children }: { children: React.ReactN
     { keys: ["Ctrl", "K"], description: "Busca global" },
     { keys: ["Ctrl", "Shift", "D"], description: "Nova demanda", action: () => { window.dispatchEvent(new CustomEvent("open-create-demand")); } },
     { keys: ["?"], description: "Mostrar atalhos" },
-    { keys: ["G", "D"], description: "Ir para Dashboard", action: () => navigate("/") },
-    { keys: ["G", "K"], description: "Ir para Kanban", action: () => navigate("/kanban") },
-    { keys: ["G", "T"], description: "Ir para Equipes", action: () => navigate("/teams") },
+    { keys: ["G", "D"], description: "Ir para Dashboard", action: () => navigate("/app") },
+    { keys: ["G", "K"], description: "Ir para Kanban", action: () => navigate("/app/kanban") },
+    { keys: ["G", "T"], description: "Ir para Equipes", action: () => navigate("/app/teams") },
     { keys: ["Esc"], description: "Fechar modais" },
   ];
 
@@ -71,15 +71,15 @@ export function KeyboardShortcutsProvider({ children }: { children: React.ReactN
         switch (e.key) {
           case "d":
             e.preventDefault();
-            navigate("/");
+            navigate("/app");
             break;
           case "k":
             e.preventDefault();
-            navigate("/kanban");
+            navigate("/app/kanban");
             break;
           case "t":
             e.preventDefault();
-            navigate("/teams");
+            navigate("/app/teams");
             break;
         }
       }

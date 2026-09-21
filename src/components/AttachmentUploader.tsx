@@ -318,7 +318,7 @@ export function AttachmentUploader({ demandId, readOnly = false, demandTitle, de
         title: "Novo arquivo anexado",
         message: `${uploaderName} anexou "${fileName}" na demanda "${demandTitle}"`,
         type: "info",
-        link: `/demands/${demandId}`,
+        link: `/app/demands/${demandId}`,
       });
 
       // Send email notification with public link

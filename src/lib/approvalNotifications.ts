@@ -48,7 +48,7 @@ export async function notifyApproval({
 
   const title = buildTitle(approvalType, boardName);
   const message = buildMessage(approvalType, demandTitle);
-  const link = `/demands/${demandId}`;
+  const link = `/app/demands/${demandId}`;
 
   // Filtra recipientes por canal usando as preferências de cada um
   const filtered = await filterRecipientsByChannel({

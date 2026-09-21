@@ -313,7 +313,7 @@ export function DemandChat({
           title: "Nova mensagem",
           message: `${name} enviou uma mensagem na demanda "${demandTitle}"`,
           type: "info",
-          link: `/demands/${demandId}`,
+          link: `/app/demands/${demandId}`,
         }));
         await supabase.from("notifications").insert(notifications);
       }
@@ -374,7 +374,7 @@ export function DemandChat({
           title: "Você foi mencionado",
           message: `${mName} mencionou você na demanda "${demandTitle.substring(0, 100)}"`,
           type: "info",
-          link: `/demands/${demandId}`,
+          link: `/app/demands/${demandId}`,
         }));
         const { error: mentionInsertError } = await supabase.from("notifications").insert(mentionNotifications);
         if (mentionInsertError) console.error("Erro ao criar notificações de menção:", mentionInsertError);
@@ -506,7 +506,7 @@ export function DemandChat({
                   editingContent={editingContent}
                   onEditingContentChange={setEditingContent}
                   isSavingEdit={updateInteraction.isPending}
-                  onNavigateUser={(userId) => navigate(`/user/${userId}`)}
+                  onNavigateUser={(userId) => navigate(`/app/user/${userId}`)}
                   isHighlighted={highlightedId === interaction.id}
                   onJumpToMessage={handleJumpToMessage}
                   onReply={(target) =>

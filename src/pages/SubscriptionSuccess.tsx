@@ -20,7 +20,7 @@ export default function SubscriptionSuccess() {
   // Auto-redirect to dashboard after 5 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("/");
+      navigate("/app");
     }, 5000);
     return () => clearTimeout(timer);
   }, [navigate]);
@@ -40,7 +40,7 @@ export default function SubscriptionSuccess() {
   if (teamsLoading || subLoading) {
     return (
       <div className="container max-w-2xl py-12 flex items-center justify-center min-h-[60vh]">
-        <SEOHead title="Assinatura Ativada" path="/subscription-success" />
+        <SEOHead title="Assinatura Ativada" path="/app/subscription-success" />
         <div className="text-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
           <p className="text-muted-foreground">{t("common.loading")}</p>
@@ -51,7 +51,7 @@ export default function SubscriptionSuccess() {
 
   return (
     <div className="container max-w-2xl py-12">
-      <SEOHead title="Assinatura Ativada" path="/subscription-success" />
+      <SEOHead title="Assinatura Ativada" path="/app/subscription-success" />
       <Card className="text-center">
         <CardHeader className="pb-4">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10 success-animation">
@@ -100,10 +100,10 @@ export default function SubscriptionSuccess() {
           </div>
 
           <div className="flex gap-3 justify-center pt-4">
-            <Button variant="outline" onClick={() => navigate("/")}>
+            <Button variant="outline" onClick={() => navigate("/app")}>
               {t("subscription.success.goToDashboard")}
             </Button>
-            <Button onClick={() => navigate("/boards")} className="gap-2">
+            <Button onClick={() => navigate("/app/boards")} className="gap-2">
               {t("subscription.success.createBoard")}
               <ArrowRight className="h-4 w-4" />
             </Button>

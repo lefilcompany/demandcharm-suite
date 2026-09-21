@@ -389,7 +389,7 @@ export default function TimeManagement() {
   if (!roleLoading && !canManage && selectedBoardId) {
     return (
       <div className="container mx-auto py-6">
-        <SEOHead title="Gerenciamento de Tempo" path="/time-management" />
+        <SEOHead title="Gerenciamento de Tempo" path="/app/time-management" />
         <PageBreadcrumb items={[{ label: "Gerenciamento de Tempo", icon: Clock }]} />
         <Card className="mt-6 border-destructive/50 bg-gradient-to-br from-destructive/5 to-transparent">
           <CardContent className="py-16 text-center">
@@ -400,7 +400,7 @@ export default function TimeManagement() {
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
               Apenas administradores e coordenadores podem acessar o gerenciamento de tempo da equipe.
             </p>
-            <Button onClick={() => navigate("/")} variant="outline" className="gap-2">
+            <Button onClick={() => navigate("/app")} variant="outline" className="gap-2">
               <ArrowLeft className="h-4 w-4" />
               Voltar ao Dashboard
             </Button>
@@ -412,7 +412,7 @@ export default function TimeManagement() {
 
   return (
     <div className="container mx-auto space-y-6 px-0">
-      <SEOHead title="Gerenciamento de Tempo" path="/time-management" />
+      <SEOHead title="Gerenciamento de Tempo" path="/app/time-management" />
       <PageBreadcrumb items={[{ label: "Gerenciamento de Tempo", icon: Clock }]} />
 
       {/* Header */}

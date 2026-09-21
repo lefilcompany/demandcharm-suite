@@ -14,7 +14,7 @@ export function TeamSelector() {
 
   if (!hasTeams) {
     return (
-      <Button variant="outline" size="sm" onClick={() => navigate("/welcome")} className="gap-2">
+      <Button variant="outline" size="sm" onClick={() => navigate("/app/welcome")} className="gap-2">
         <UserPlus className="h-4 w-4" />
         Entrar em Equipe
       </Button>

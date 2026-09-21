@@ -7,12 +7,12 @@ const base = () => APP_URL.replace(/\/$/, "");
 
 export const urls = {
   team: (id: string) => `${base()}/teams/${id}`,
-  board: (id: string) => `${base()}/boards/${id}`,
-  boardKanban: (id: string) => `${base()}/boards/${id}/kanban`,
-  demand: (id: string) => `${base()}/demands/${id}`,
+  board: (id: string) => `${base()}/app/boards/${id}`,
+  boardKanban: (id: string) => `${base()}/app/boards/${id}/kanban`,
+  demand: (id: string) => `${base()}/app/demands/${id}`,
   request: (id: string) => `${base()}/requests/${id}`,
-  note: (id: string) => `${base()}/notes/${id}`,
-  project: (id: string) => `${base()}/projects/${id}`,
+  note: (id: string) => `${base()}/app/notes/${id}`,
+  project: (id: string) => `${base()}/app/projects/${id}`,
   profile: (id: string) => `${base()}/user/${id}`,
   service: (id: string) => `${base()}/services/${id}`,
   reports: () => `${base()}/reports`,

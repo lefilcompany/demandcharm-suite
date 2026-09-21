@@ -44,7 +44,7 @@ export function UpgradePrompt({
 
   const handleUpgrade = () => {
     onOpenChange?.(false);
-    navigate("/pricing");
+    navigate("/app/pricing");
   };
 
   return (
@@ -146,7 +146,7 @@ export function UpgradeBanner({
         <Button
           size="sm"
           variant={isAtLimit ? "destructive" : "default"}
-          onClick={() => navigate("/pricing")}
+          onClick={() => navigate("/app/pricing")}
           className="ml-4"
         >
           {t("pricing.upgrade")}

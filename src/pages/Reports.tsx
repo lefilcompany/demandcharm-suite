@@ -144,7 +144,7 @@ export default function Reports() {
   if (!selectedTeamId) {
     return (
       <div className="text-center py-12">
-        <SEOHead title="Relatórios" path="/reports" />
+        <SEOHead title="Relatórios" path="/app/reports" />
         <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground" />
         <h3 className="mt-4 text-lg font-semibold">Selecione uma equipe</h3>
         <p className="text-muted-foreground">Use o seletor no menu para ver relatórios</p>
@@ -154,7 +154,7 @@ export default function Reports() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <SEOHead title="Relatórios" path="/reports" />
+      <SEOHead title="Relatórios" path="/app/reports" />
       {/* Breadcrumbs */}
       <PageBreadcrumb
         items={[

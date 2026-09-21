@@ -42,7 +42,7 @@ export function TeamSection() {
   const switchAfterLeave = () => {
     const remaining = teams?.filter((t) => t.id !== selectedTeamId);
     if (remaining && remaining.length > 0) setSelectedTeamId(remaining[0].id);
-    else { setSelectedTeamId(null); navigate("/welcome"); }
+    else { setSelectedTeamId(null); navigate("/app/welcome"); }
   };
 
   const transferAndLeave = async () => {

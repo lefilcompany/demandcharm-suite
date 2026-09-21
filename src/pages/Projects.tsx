@@ -148,7 +148,7 @@ export default function Projects() {
                 boardName={project.board_id ? boardNameById.get(project.board_id) : undefined}
                 memberMap={memberMap}
                 ownerProfile={memberMap.get(project.created_by)}
-                onOpen={() => navigate(`/projects/${project.id}`)}
+                onOpen={() => navigate(`/app/projects/${project.id}`)}
                 onEdit={() => setEditing(project)}
                 onShare={() => setSharing(project)}
                 onDelete={() => setDeleting(project)}

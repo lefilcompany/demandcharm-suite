@@ -323,7 +323,7 @@ export default function BoardDetail() {
     try {
       await deleteBoard.mutateAsync({ boardId: board.id, teamId: board.team_id });
       toast.success("Quadro excluído com sucesso!");
-      navigate("/boards");
+      navigate("/app/boards");
     } catch (error) {
       toast.error("Erro ao excluir quadro");
     }
@@ -366,7 +366,7 @@ export default function BoardDetail() {
       <div className="text-center py-12">
         <LayoutGrid className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         <h2 className="text-xl font-semibold mb-2">Quadro não encontrado</h2>
-        <Button onClick={() => navigate("/boards")} variant="outline">
+        <Button onClick={() => navigate("/app/boards")} variant="outline">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar para Quadros
         </Button>
@@ -382,7 +382,7 @@ export default function BoardDetail() {
         {/* Breadcrumbs */}
         <PageBreadcrumb
           items={[
-            { label: "Quadros", href: "/boards", icon: LayoutGrid },
+            { label: "Quadros", href: "/app/boards", icon: LayoutGrid },
             { label: board.name, isCurrent: true },
           ]}
         />
@@ -477,7 +477,7 @@ export default function BoardDetail() {
       {/* Breadcrumbs */}
       <PageBreadcrumb
         items={[
-          { label: "Quadros", href: "/boards", icon: LayoutGrid },
+          { label: "Quadros", href: "/app/boards", icon: LayoutGrid },
           { label: board.name, isCurrent: true },
         ]}
       />
@@ -621,8 +621,8 @@ export default function BoardDetail() {
             <Card
               role="button"
               tabIndex={0}
-              onClick={() => navigate(`/kanban/${board.id}`)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/kanban/${board.id}`); } }}
+              onClick={() => navigate(`/app/kanban/${board.id}`)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/app/kanban/${board.id}`); } }}
               className="group relative cursor-pointer transition-all hover:border-primary hover:shadow-md hover:-translate-y-0.5"
             >
               <ArrowUpRight className="absolute top-3 right-3 h-4 w-4 text-muted-foreground transition-all group-hover:text-primary group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -907,7 +907,7 @@ export default function BoardDetail() {
                           <div className="pt-9 sm:pt-10 text-center flex flex-col items-center gap-1 sm:gap-1.5">
                             <button
                               type="button"
-                              onClick={() => navigate(`/user/${member.user_id}`)}
+                              onClick={() => navigate(`/app/user/${member.user_id}`)}
                               className="font-semibold text-xs sm:text-sm line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] leading-tight w-full text-center hover:text-primary hover:underline decoration-primary cursor-pointer transition-colors"
                             >
                               {member.profile?.full_name || "Usuário"}

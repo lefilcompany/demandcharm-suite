@@ -15,7 +15,7 @@ export function DemandMentionTag({ demandId, code, readOnly, className }: Demand
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/demands/${demandId}`);
+    navigate(`/app/demands/${demandId}`);
   };
 
   return (

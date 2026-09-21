@@ -70,7 +70,7 @@ export default function Landing() {
       <SEOHead
         title="SoMA+ - Gestão de demandas para marketing"
         description="Organize escopo, demandas, prazos, responsáveis, tempo e relatórios de marketing em uma plataforma feita para operações com clientes."
-        path="/lp"
+        path="/"
       />
 
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">

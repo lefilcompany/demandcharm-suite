@@ -214,7 +214,7 @@ function reminderBase(
   userName?: string | null,
 ) {
   const safeTitle = truncate(demand.title.trim() || "Demanda sem título", 90);
-  const link = `/demands/${demand.id}`;
+  const link = `/app/demands/${demand.id}`;
   return {
     safeTitle,
     formattedDate: formatDateForPtBr(dueDateKey),
