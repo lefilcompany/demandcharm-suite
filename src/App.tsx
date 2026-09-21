@@ -143,8 +143,10 @@ const App = () => {
                               <Route path="/auth" element={<Auth />} />
                               <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                               <Route path="/get-started" element={<GetStarted />} />
+                              <Route path="/" element={<Landing />} />
                               <Route path="/lp" element={<Landing />} />
                               <Route path="/landing" element={<Landing />} />
+
                               <Route path="/shared/:token" element={<SharedDemand />} />
                               <Route path="/shared/note/:token" element={<SharedNote />} />
                               <Route path="/shared/summary/:token" element={<SharedBoardSummary />} />
