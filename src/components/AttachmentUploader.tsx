@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { buildPublicDemandUrl } from "@/lib/demandShareUtils";
 import { DocumentPreviewDialog, isPreviewable } from "@/components/DocumentPreviewDialog";
+import { ImagePreviewDialog } from "@/components/ImagePreviewDialog";
+
 import { Checkbox } from "@/components/ui/checkbox";
 
 const SKIP_ATTACH_DELETE_KEY = "skip-attachment-delete-confirm";
@@ -204,37 +206,14 @@ function AttachmentItem({ attachment, readOnly, onDelete, onAvailabilityChange }
       </div>
 
       {isImage && (
-        <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-          <DialogContent className="max-w-[90vw] max-h-[90vh] p-4 flex flex-col items-center justify-center gap-3">
-            {url && (
-              <img
-                src={url}
-                alt={attachment.file_name}
-                className="max-w-full max-h-[78vh] object-contain rounded-md"
-              />
-            )}
-            <div className="flex items-center justify-between w-full px-1">
-              <span className="text-sm text-muted-foreground truncate max-w-[70%]">
-                {attachment.file_name}
-              </span>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" disabled={!url || copying} onClick={async () => {
-                  if (!url) return;
-                  setCopying(true);
-                  try { await copyImageToClipboard(url); } finally { setCopying(false); }
-                }}>
-                  {copying ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Copy className="h-4 w-4 mr-1" />}
-                  Copiar
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => url && downloadFileFromUrl(url, attachment.file_name)}>
-                  <Download className="h-4 w-4 mr-1" />
-                  Baixar
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ImagePreviewDialog
+          open={isExpanded}
+          onOpenChange={setIsExpanded}
+          url={url}
+          fileName={attachment.file_name}
+        />
       )}
+
 
       {canPreview && !isImage && (
         <DocumentPreviewDialog
