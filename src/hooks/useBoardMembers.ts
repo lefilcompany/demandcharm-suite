@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { notifyBoardMemberChange } from "@/lib/boardMemberNotifications";
 import { usePlansModal } from "@/contexts/PlansModalContext";
 import { showPlanLimitToast } from "@/lib/planLimitErrors";
+import { cachedRead } from "@/lib/cachedFetch";
 
 export type BoardRole = "admin" | "moderator" | "executor" | "requester";
 
@@ -53,27 +54,33 @@ export function useBoardMembers(boardId: string | null) {
     queryFn: async () => {
       if (!boardId) return [];
 
-      const { data, error } = await supabase
+      const { data: rows, error } = await supabase
         .from("board_members")
-        .select(`
-          id,
-          board_id,
-          user_id,
-          role,
-          added_by,
-          joined_at,
-          profiles:user_id (
-            id,
-            full_name,
-            avatar_url,
-            email,
-            job_title
-          )
-        `)
+        .select("id, board_id, user_id, role, added_by, joined_at")
         .eq("board_id", boardId)
         .order("joined_at", { ascending: true });
 
       if (error) throw error;
+
+      const userIds = Array.from(new Set((rows ?? []).map((m: any) => m.user_id)));
+
+      const profiles = userIds.length
+        ? await cachedRead<any>(
+            { resource: "profiles", userIds },
+            async () => {
+              const { data: profileRows, error: profileError } = await supabase
+                .from("profiles")
+                .select("id, full_name, avatar_url, email, job_title")
+                .in("id", userIds);
+              if (profileError) throw profileError;
+              return profileRows ?? [];
+            },
+          )
+        : [];
+
+      const profileById = new Map(profiles.map((p: any) => [p.id, p]));
+      const data = (rows ?? []).map((m: any) => ({ ...m, profiles: profileById.get(m.user_id) ?? null }));
+
 
       const roleOrder: Record<string, number> = {
         admin: 0,
