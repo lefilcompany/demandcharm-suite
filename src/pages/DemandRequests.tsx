@@ -533,7 +533,7 @@ export default function DemandRequests() {
   };
 
   const setEditSubdemandCount = (count: number) => {
-    const bounded = Math.max(0, Math.min(20, count));
+    const bounded = Math.max(0, Math.min(50, count));
     setEditSubdemands((prev) => {
       if (bounded === prev.length) return prev;
       if (bounded > prev.length) {
