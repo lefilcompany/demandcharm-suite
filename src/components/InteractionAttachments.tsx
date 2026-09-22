@@ -10,6 +10,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DocumentPreviewDialog, isPreviewable } from "@/components/DocumentPreviewDialog";
+import { ImagePreviewDialog } from "@/components/ImagePreviewDialog";
+
 
 interface Attachment {
   id: string;
@@ -165,37 +167,14 @@ function AttachmentItem({ attachment }: { attachment: Attachment }) {
       </div>
 
       {isImage && (
-        <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-          <DialogContent className="max-w-[90vw] max-h-[90vh] p-4 flex flex-col items-center justify-center gap-3">
-            {imageUrl && (
-              <img
-                src={imageUrl}
-                alt={attachment.file_name}
-                className="max-w-full max-h-[78vh] object-contain rounded-md"
-              />
-            )}
-            <div className="flex items-center justify-between w-full px-1">
-              <span className="text-sm text-muted-foreground truncate max-w-[70%]">
-                {attachment.file_name}
-              </span>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" disabled={!imageUrl || copying} onClick={async () => {
-                  if (!imageUrl) return;
-                  setCopying(true);
-                  try { await copyImageToClipboard(imageUrl); } finally { setCopying(false); }
-                }}>
-                  {copying ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Copy className="h-4 w-4 mr-1" />}
-                  Copiar
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => imageUrl && downloadFileFromUrl(imageUrl, attachment.file_name)}>
-                  <Download className="h-4 w-4 mr-1" />
-                  Baixar
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ImagePreviewDialog
+          open={isExpanded}
+          onOpenChange={setIsExpanded}
+          url={imageUrl}
+          fileName={attachment.file_name}
+        />
       )}
+
       {canPreview && !isImage && (
         <DocumentPreviewDialog
           open={previewOpen}
