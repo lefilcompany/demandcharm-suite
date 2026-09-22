@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cachedRead, invalidateServerCache } from "@/lib/cachedFetch";
 
 export interface BoardService {
   id: string;
@@ -22,28 +23,36 @@ interface SelectedServiceInput {
   monthlyLimit: number;
 }
 
+async function fetchBoardServicesDirect(boardId: string): Promise<BoardService[]> {
+  const { data, error } = await (supabase as any)
+    .from("board_services")
+    .select(`
+      *,
+      service:services (
+        id,
+        name,
+        estimated_hours,
+        description,
+        behavior
+      )
+    `)
+    .eq("board_id", boardId);
+
+  if (error) throw error;
+  return (data ?? []) as BoardService[];
+}
+
 export function useBoardServices(boardId: string | null | undefined) {
   return useQuery({
     queryKey: ["board-services", boardId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("board_services")
-        .select(`
-          *,
-          service:services (
-            id,
-            name,
-            estimated_hours,
-            description,
-            behavior
-          )
-        `)
-        .eq("board_id", boardId!);
-
-      if (error) throw error;
-      return (data ?? []) as BoardService[];
-    },
+    queryFn: async () =>
+      cachedRead<BoardService>(
+        { resource: "services", boardId: boardId! },
+        () => fetchBoardServicesDirect(boardId!),
+      ),
     enabled: !!boardId,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 }
 
