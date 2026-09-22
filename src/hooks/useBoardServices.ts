@@ -134,6 +134,7 @@ export function useAddBoardServices() {
       return data;
     },
     onSuccess: async (_, { boardId }) => {
+      await invalidateServerCache({ resource: "services", boardId });
       await queryClient.invalidateQueries({ queryKey: ["board-services", boardId] });
       await queryClient.invalidateQueries({ queryKey: ["board-services-usage", boardId] });
     },
@@ -164,6 +165,7 @@ export function useUpdateBoardServiceLimit() {
       return data;
     },
     onSuccess: async (_, { boardId }) => {
+      await invalidateServerCache({ resource: "services", boardId });
       await queryClient.invalidateQueries({ queryKey: ["board-services", boardId] });
       await queryClient.invalidateQueries({ queryKey: ["board-services-usage", boardId] });
       toast.success("Limite atualizado");
@@ -193,6 +195,7 @@ export function useRemoveBoardService() {
       if (error) throw error;
     },
     onSuccess: async (_, { boardId }) => {
+      await invalidateServerCache({ resource: "services", boardId });
       await queryClient.invalidateQueries({ queryKey: ["board-services", boardId] });
       await queryClient.invalidateQueries({ queryKey: ["board-services-usage", boardId] });
       toast.success("Serviço removido do quadro");
