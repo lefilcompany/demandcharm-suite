@@ -225,6 +225,7 @@ export function useBoardStatuses(boardId: string | null) {
           filter: `board_id=eq.${boardId}`,
         },
         () => {
+          void invalidateServerCache({ resource: "board_statuses", boardId });
           queryClient.invalidateQueries({ queryKey: ["board-statuses", boardId] });
         }
       )
@@ -322,6 +323,7 @@ export function useToggleBoardStatus() {
       return { boardStatusId, isActive };
     },
     onSuccess: (_, variables) => {
+      void invalidateServerCache({ resource: "board_statuses", boardId: variables.boardId });
       queryClient.invalidateQueries({ queryKey: ["board-statuses", variables.boardId] });
       queryClient.invalidateQueries({ queryKey: ["board-statuses-all", variables.boardId] });
     },
@@ -364,6 +366,7 @@ export function useUpdateBoardStatusPositions() {
     },
     onSuccess: (_, variables) => {
       // Use refetchQueries to immediately refetch, not just invalidate
+      void invalidateServerCache({ resource: "board_statuses", boardId: variables.boardId });
       queryClient.refetchQueries({ queryKey: ["board-statuses", variables.boardId] });
       queryClient.refetchQueries({ queryKey: ["board-statuses-all", variables.boardId] });
     },
@@ -401,6 +404,7 @@ export function useAddBoardStatus() {
       return data;
     },
     onSuccess: (_, variables) => {
+      void invalidateServerCache({ resource: "board_statuses", boardId: variables.boardId });
       queryClient.invalidateQueries({ queryKey: ["board-statuses", variables.boardId] });
       queryClient.invalidateQueries({ queryKey: ["board-statuses-all", variables.boardId] });
     },
@@ -458,6 +462,7 @@ export function useDeleteBoardStatus() {
       return true;
     },
     onSuccess: (_, variables) => {
+      void invalidateServerCache({ resource: "board_statuses", boardId: variables.boardId });
       queryClient.invalidateQueries({ queryKey: ["board-statuses", variables.boardId] });
       queryClient.invalidateQueries({ queryKey: ["board-statuses-all", variables.boardId] });
       queryClient.invalidateQueries({ queryKey: ["available-statuses"] });
@@ -550,6 +555,7 @@ export function useCreateCustomStatus() {
       return { ...newStatus, boardStatusId: boardStatus.id };
     },
     onSuccess: (_, variables) => {
+      void invalidateServerCache({ resource: "board_statuses", boardId: variables.boardId });
       queryClient.invalidateQueries({ queryKey: ["board-statuses", variables.boardId] });
       queryClient.invalidateQueries({ queryKey: ["board-statuses-all", variables.boardId] });
       queryClient.invalidateQueries({ queryKey: ["available-statuses"] });
