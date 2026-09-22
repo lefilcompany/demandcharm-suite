@@ -219,7 +219,8 @@ export function SubdemandEditForm({ demand, onClose, onSuccess }: SubdemandEditF
     setServiceId(newServiceId);
     if (newServiceId !== "none" && estimatedHours) {
       const calculatedDate = calculateBusinessDueDate(estimatedHours);
-      setDueDate(formatDueDateForInput(calculatedDate));
+      // Não sobrescreve uma data já definida pelo usuário.
+      setDueDate((prev) => (prev ? prev : formatDueDateForInput(calculatedDate)));
     }
   };
 

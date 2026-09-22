@@ -222,7 +222,8 @@ export function DemandEditForm({ demand, onClose, onSuccess }: DemandEditFormPro
     setServiceId(newServiceId);
     if (newServiceId !== "none" && estimatedHours) {
       const calculatedDate = calculateBusinessDueDate(estimatedHours);
-      setDueDate(formatDueDateForInput(calculatedDate));
+      // Não sobrescreve uma data já definida pelo usuário.
+      setDueDate((prev) => (prev ? prev : formatDueDateForInput(calculatedDate)));
     }
   };
 
