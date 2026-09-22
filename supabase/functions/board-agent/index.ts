@@ -14,9 +14,15 @@ import { createOpenAI } from "npm:@ai-sdk/openai@4.0.72";
 import { z } from "npm:zod@3.25.76";
 import { buildBoardTools } from "./tools.ts";
 import { buildSystemPrompt } from "./prompt.ts";
+import {
+  createLovableAiGatewayRunIdFetch,
+  getLovableAiGatewayResponseHeaders,
+  getLovableAiGatewayRunId,
+  withLovableAiGatewayRunIdHeader,
+} from "./gateway.ts";
 
 const DEFAULT_TZ = "America/Fortaleza";
-const DEFAULT_MODEL = "google/gemini-3-flash-preview";
+const MODEL_ID = "openai/gpt-6-astra";
 const MAX_HISTORY_MESSAGES = 30;
 const MAX_TEXT_CHARS = 8000;
 
@@ -153,7 +159,7 @@ Deno.serve(async (req) => {
         .filter((p) => (m.role === "user" ? p.type === "text" : true))
         .map((p) =>
           p.type === "text" && typeof (p as { text?: unknown }).text === "string"
-            ? { ...p, text: ((p as { text: string }).text).slice(0, MAX_TEXT_CHARS) }
+            ? { ...p, text: ((p as unknown as { text: string }).text).slice(0, MAX_TEXT_CHARS) }
             : p,
         ),
     })) as UIMessage[];
@@ -177,20 +183,37 @@ Deno.serve(async (req) => {
       monthStart: `${today.slice(0, 7)}-01`,
     });
 
-    const gateway = createOpenAI({
+    // Provider criado dentro da requisição: o wrapper de fetch guarda o run id por chamada.
+    const initialRunId = getLovableAiGatewayRunId(req);
+    const runIdFetch = createLovableAiGatewayRunIdFetch(initialRunId);
+    const lovable = createOpenAI({
       baseURL: "https://ai.gateway.lovable.dev/v1",
       apiKey: lovableApiKey,
-      headers: { "X-Lovable-AIG-SDK": "ai-sdk" },
+      headers: {
+        "Lovable-API-Key": lovableApiKey,
+        "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+      },
+      fetch: runIdFetch.fetch,
     });
-    const modelId = Deno.env.get("BOARD_AGENT_MODEL") || DEFAULT_MODEL;
 
     const result = streamText({
-      model: gateway.chat(modelId),
+      model: lovable.responses(MODEL_ID),
       system,
       messages: modelMessages,
       tools: buildBoardTools({ supabase, boardId, tz }),
       stopWhen: isStepCount(50),
       abortSignal: req.signal,
+      providerOptions: {
+        openai: {
+          // Ids com prefixo do gateway não são reconhecidos como modelos de raciocínio: força o pedido.
+          forceReasoning: true,
+          reasoningEffort: "low",
+          reasoningSummary: "auto",
+          // Gateway é stateless: cada passo de ferramenta reenvia os itens anteriores inline.
+          store: false,
+          include: ["reasoning.encrypted_content"],
+        },
+      },
       onError: ({ error }) => {
         const e = error as GatewayErrorLike;
         console.error("board-agent model error:", e?.name, e?.message, e?.statusCode);
@@ -200,14 +223,22 @@ Deno.serve(async (req) => {
     const uiStream = toUIMessageStream({
       stream: result.stream,
       originalMessages: history,
-      sendReasoning: false,
+      sendReasoning: true,
       onError: friendlyError,
     });
 
-    return createUIMessageStreamResponse({
-      stream: uiStream,
-      headers: corsHeaders,
+    // Mantém os headers do stream (SSE) e acrescenta CORS + run id do gateway.
+    const base = createUIMessageStreamResponse({ stream: uiStream });
+    const headers = getLovableAiGatewayResponseHeaders(base.headers, {
+      ...corsHeaders,
+      ...(initialRunId ? { "X-Lovable-AIG-Run-ID": initialRunId } : {}),
     });
+    base.headers.forEach((value, name) => {
+      if (!headers.has(name)) headers.set(name, value);
+    });
+    const response = new Response(base.body, { status: base.status, statusText: base.statusText, headers });
+
+    return await withLovableAiGatewayRunIdHeader(response, runIdFetch, corsHeaders);
   } catch (error) {
     console.error("board-agent fatal error:", error);
     return json({ error: "Erro interno do assistente." }, 500);

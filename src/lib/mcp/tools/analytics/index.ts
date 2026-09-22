@@ -5,38 +5,43 @@ import { ok, okList, fromPgError, requireAuth } from "../../_shared/envelope";
 import { urls } from "../../_shared/urls";
 import { zUuid } from "../../_shared/zod-common";
 
-/** Cheap in-handler aggregations. When a proper SQL function is available, prefer it. */
+/**
+ * Board-scoped metrics come from the canonical SQL module (`get_board_metrics`),
+ * shared with the in-app board assistant. Team-scoped tools below still aggregate
+ * in the handler because the SQL module is per board.
+ */
+
+const zIsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "use YYYY-MM-DD");
 
 export const boardSummaryStatsTool = defineTool({
   name: "board_summary_stats",
   title: "Board summary stats",
-  description: "Return demand counts by status, priority, overdue and delivered for a board.",
-  inputSchema: { board_id: zUuid },
+  description:
+    "Canonical board metrics: current state (open, delivered, overdue, due soon, by stage/priority/service/responsible), " +
+    "period flow (created, delivered on time vs late, on-time rate, requests by status) and the monthly creation limit. " +
+    "Same numbers the in-app assistant and dashboards use. Omit from/to for the full history.",
+  inputSchema: {
+    board_id: zUuid,
+    from: zIsoDate.optional(),
+    to: zIsoDate.optional(),
+    member_id: zUuid.optional(),
+    timezone: z.string().min(1).max(64).optional(),
+  },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ board_id }, ctx) => {
+  handler: async ({ board_id, from, to, member_id, timezone }, ctx) => {
     const a = requireAuth(ctx); if (a) return a;
-    const client = sb(ctx);
-    const [{ data: demands, error }, { data: statuses }] = await Promise.all([
-      client.from("demands").select("id, status_id, priority, is_overdue, delivered_at, archived").eq("board_id", board_id).eq("archived", false),
-      client.from("board_statuses").select("id, name").eq("board_id", board_id),
-    ]);
+    const { data, error } = await sb(ctx).rpc("get_board_metrics", {
+      p_board_id: board_id,
+      p_from: from ?? null,
+      p_to: to ?? null,
+      p_member_id: member_id ?? null,
+      p_tz: timezone ?? "America/Fortaleza",
+    });
     if (error) return fromPgError(error);
-    const byStatus: Record<string, number> = {};
-    const byPriority: Record<string, number> = {};
-    let overdue = 0, delivered = 0, active = 0;
-    for (const d of demands ?? []) {
-      byStatus[d.status_id] = (byStatus[d.status_id] ?? 0) + 1;
-      if (d.priority) byPriority[d.priority] = (byPriority[d.priority] ?? 0) + 1;
-      if (d.is_overdue) overdue++;
-      if (d.delivered_at) delivered++; else active++;
+    if (!data || typeof data !== "object") {
+      return { content: [{ type: "text", text: "NOT_FOUND: board not found or not accessible" }], isError: true } as any;
     }
-    const status_map = Object.fromEntries((statuses ?? []).map(s => [s.id, s.name]));
-    return ok({
-      board_id,
-      counts: { total: demands?.length ?? 0, active, delivered, overdue },
-      by_status: Object.entries(byStatus).map(([id, n]) => ({ status_id: id, status_name: status_map[id] ?? "?", count: n })),
-      by_priority: byPriority,
-    }, { open_url: urls.board(board_id) });
+    return ok(data as Record<string, unknown>, { open_url: urls.board(board_id) });
   },
 });
 
