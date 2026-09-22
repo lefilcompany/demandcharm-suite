@@ -29,6 +29,12 @@ type Props = {
   boardName: string;
 };
 
+function thinkingMessage(isStreaming: boolean, duration?: number) {
+  if (isStreaming || duration === 0) return <Shimmer duration={1}>Pensando...</Shimmer>;
+  if (duration === undefined) return <p>Raciocínio</p>;
+  return <p>Pensou por {duration} segundo{duration === 1 ? "" : "s"}</p>;
+}
+
 // Erros não-stream chegam como texto bruto (às vezes JSON {"error": "..."}); extrai a mensagem legível.
 function readableError(error: Error): string {
   const raw = error.message?.trim() ?? "";
@@ -282,7 +288,11 @@ function ChatMessage({ message, isStreaming }: { message: UIMessage; isStreaming
             if (part.type === "text") {
               if (!part.text) return null;
               return (
-                <MessageResponse key={key} isAnimating={isStreaming && index === message.parts.length - 1} className="prose prose-sm max-w-none text-foreground dark:prose-invert">
+                <MessageResponse
+                  key={key}
+                  isAnimating={isStreaming && index === message.parts.length - 1}
+                  className="prose prose-sm max-w-none text-foreground dark:prose-invert [&_[data-streamdown=table-wrapper]]:bg-muted/60 [&_[data-streamdown=table-wrapper]]:p-1.5"
+                >
                   {part.text}
                 </MessageResponse>
               );
@@ -290,7 +300,13 @@ function ChatMessage({ message, isStreaming }: { message: UIMessage; isStreaming
             if (part.type === "reasoning") {
               if (!part.text?.trim()) return null;
               return (
-                <Reasoning key={key} isStreaming={isStreaming && part.state === "streaming"} className="mb-1" defaultOpen={false}>
+                <Reasoning
+                  key={key}
+                  isStreaming={isStreaming && part.state === "streaming"}
+                  className="mb-1"
+                  defaultOpen={false}
+                  getThinkingMessage={thinkingMessage}
+                >
                   <ReasoningTrigger />
                   <ReasoningContent>{part.text}</ReasoningContent>
                 </Reasoning>

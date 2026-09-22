@@ -165,7 +165,7 @@ export function AppSidebar() {
             height={20}
             decoding="sync"
             loading="eager"
-            fetchPriority="high"
+            {...{ fetchpriority: "high" }}
             className={`h-5 w-5 object-scale-down mx-auto ${isCollapsed && !isMobile ? "block" : "hidden"}`}
           />
           <img
@@ -173,7 +173,7 @@ export function AppSidebar() {
             alt="SoMA"
             decoding="sync"
             loading="eager"
-            fetchPriority="high"
+            {...{ fetchpriority: "high" }}
             className={`h-8 md:h-10 w-auto ${isCollapsed && !isMobile ? "hidden" : "block"}`}
           />
         </NavLink>
