@@ -250,9 +250,9 @@ export function buildBoardTools({ supabase, boardId, tz }: ToolDeps) {
 
       if (filter === "overdue") q = q.order("days_overdue", { ascending: false, nullsFirst: false });
       else if (filter === "due_soon" || filter === "due_today") q = q.order("due_on", { ascending: true, nullsFirst: false });
-      else if (filter === "delivered" || filter === "delivered_late" || filter === "delivered_on_time")
+      else if (filter === "delivered_late") q = q.order("days_late", { ascending: false, nullsFirst: false });
+      else if (filter === "delivered" || filter === "delivered_on_time")
         q = q.order("delivered_on", { ascending: false, nullsFirst: false });
-      else if (filter === "delivered_late") q = q.order("days_late", { ascending: false });
       else q = q.order("created_at", { ascending: false });
 
       const { data, error, count } = await q.limit(limit);
