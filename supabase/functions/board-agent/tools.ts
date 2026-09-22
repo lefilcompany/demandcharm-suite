@@ -131,9 +131,9 @@ export function buildBoardTools({ supabase, boardId, tz }: ToolDeps) {
     description:
       "Métricas consolidadas do quadro calculadas pela fonte oficial do banco. Retorna: estado ATUAL (abertas, entregues no total, vencidas, vencendo em 7 dias, hoje, sem prazo, sem responsável, backlog, em ajuste, na etapa Solicitações, subdemandas abertas, alta prioridade, médias de atraso, distribuição por etapa/prioridade/serviço/responsável), FLUXO DO PERÍODO (criadas, entregues, entregues no prazo x com atraso, taxa de pontualidade, tempo médio de entrega, solicitações por status, horas registradas) e LIMITE MENSAL. Use SEMPRE esta ferramenta para números; nunca estime. Sem período = histórico completo. Para restringir a um membro, informe member_id (obtenha em get_board_members).",
     inputSchema: z.object({
-      from: z.string().optional().describe("Início do período no formato AAAA-MM-DD (opcional)."),
-      to: z.string().optional().describe("Fim do período no formato AAAA-MM-DD (opcional)."),
-      member_id: z.string().optional().describe("UUID do membro para restringir as métricas a um responsável (opcional)."),
+      from: z.string().nullable().describe("Início do período no formato AAAA-MM-DD, ou null para não filtrar."),
+      to: z.string().nullable().describe("Fim do período no formato AAAA-MM-DD, ou null para não filtrar."),
+      member_id: z.string().nullable().describe("UUID do membro para restringir as métricas a um responsável, ou null para o quadro inteiro."),
     }),
     execute: async ({ from, to, member_id }) => {
       if (from && !isIsoDate(from)) return errorResult("Parâmetro 'from' inválido: use AAAA-MM-DD.");
@@ -156,22 +156,26 @@ export function buildBoardTools({ supabase, boardId, tz }: ToolDeps) {
     description:
       "Lista demandas do quadro com filtros. Use para responder QUAIS demandas (títulos, códigos, responsáveis, prazos), não apenas quantas. Filtros: all, open, overdue (vencidas), due_soon (vencem em até 7 dias), due_today, no_due_date, unassigned, delivered, delivered_late, delivered_on_time, backlog, in_adjustment, in_requests_stage, subdemands_open, rescheduled, high_priority_open. Combine com responsible, service, priority, stage, query (texto no título/código) e período de criação ou entrega. Retorna no máximo 50 itens e o total que casa com o filtro.",
     inputSchema: z.object({
-      filter: z.enum(DEMAND_FILTERS).optional().describe("Filtro principal. Padrão: open."),
-      responsible: z.string().optional().describe("Parte do nome do responsável."),
-      service: z.string().optional().describe("Parte do nome do serviço."),
-      priority: z.string().optional().describe("Prioridade exata: urgente, alta, média ou baixa."),
-      stage: z.string().optional().describe("Parte do nome da etapa (ex.: Backlog, Em Ajuste, Entregue)."),
-      query: z.string().optional().describe("Texto para buscar no título ou código da demanda."),
-      created_from: z.string().optional().describe("Criadas a partir de AAAA-MM-DD."),
-      created_to: z.string().optional().describe("Criadas até AAAA-MM-DD."),
-      delivered_from: z.string().optional().describe("Entregues a partir de AAAA-MM-DD."),
-      delivered_to: z.string().optional().describe("Entregues até AAAA-MM-DD."),
-      due_from: z.string().optional().describe("Com prazo a partir de AAAA-MM-DD."),
-      due_to: z.string().optional().describe("Com prazo até AAAA-MM-DD."),
-      limit: z.number().optional().describe("Quantidade de itens (padrão 20, máximo 50)."),
+      filter: z.string().nullable().describe("Filtro principal (um dos listados na descrição). null = open."),
+      responsible: z.string().nullable().describe("Parte do nome do responsável, ou null."),
+      service: z.string().nullable().describe("Parte do nome do serviço, ou null."),
+      priority: z.string().nullable().describe("Prioridade exata: urgente, alta, média ou baixa; ou null."),
+      stage: z.string().nullable().describe("Parte do nome da etapa (ex.: Backlog, Em Ajuste, Entregue), ou null."),
+      query: z.string().nullable().describe("Texto para buscar no título ou código da demanda, ou null."),
+      created_from: z.string().nullable().describe("Criadas a partir de AAAA-MM-DD, ou null."),
+      created_to: z.string().nullable().describe("Criadas até AAAA-MM-DD, ou null."),
+      delivered_from: z.string().nullable().describe("Entregues a partir de AAAA-MM-DD, ou null."),
+      delivered_to: z.string().nullable().describe("Entregues até AAAA-MM-DD, ou null."),
+      due_from: z.string().nullable().describe("Com prazo a partir de AAAA-MM-DD, ou null."),
+      due_to: z.string().nullable().describe("Com prazo até AAAA-MM-DD, ou null."),
+      limit: z.number().nullable().describe("Quantidade de itens (padrão 20, máximo 50), ou null."),
     }),
     execute: async (input) => {
-      const filter: DemandFilter = input.filter ?? "open";
+      const rawFilter = (input.filter ?? "open").trim().toLowerCase();
+      if (!(DEMAND_FILTERS as readonly string[]).includes(rawFilter)) {
+        return errorResult(`Filtro inválido: '${rawFilter}'. Use um destes: ${DEMAND_FILTERS.join(", ")}.`);
+      }
+      const filter = rawFilter as DemandFilter;
       for (const key of ["created_from", "created_to", "delivered_from", "delivered_to", "due_from", "due_to"] as const) {
         const v = input[key];
         if (v && !isIsoDate(v)) return errorResult(`Parâmetro '${key}' inválido: use AAAA-MM-DD.`);
@@ -314,10 +318,10 @@ export function buildBoardTools({ supabase, boardId, tz }: ToolDeps) {
     description:
       "Lista as solicitações de demanda do quadro (pedidos feitos por solicitantes que ainda precisam de aprovação ou já foram aprovados/devolvidos/recusados). Status: pending (aguardando aprovação), approved, returned (devolvida para ajustes), rejected. Use para responder o que está aguardando aprovação ou quais solicitações foram feitas em um período.",
     inputSchema: z.object({
-      status: z.string().optional().describe("pending, approved, returned, rejected ou all (padrão: pending)."),
-      created_from: z.string().optional().describe("Criadas a partir de AAAA-MM-DD."),
-      created_to: z.string().optional().describe("Criadas até AAAA-MM-DD."),
-      limit: z.number().optional().describe("Quantidade de itens (padrão 20, máximo 50)."),
+      status: z.string().nullable().describe("pending, approved, returned, rejected ou all. null = pending."),
+      created_from: z.string().nullable().describe("Criadas a partir de AAAA-MM-DD, ou null."),
+      created_to: z.string().nullable().describe("Criadas até AAAA-MM-DD, ou null."),
+      limit: z.number().nullable().describe("Quantidade de itens (padrão 20, máximo 50), ou null."),
     }),
     execute: async ({ status, created_from, created_to, limit }) => {
       const st = (status ?? "pending").trim().toLowerCase();

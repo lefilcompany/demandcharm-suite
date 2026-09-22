@@ -22,6 +22,7 @@ export const LEGACY_APP_PATHS = [
   "kanban",
   "time-management",
   "board-summary",
+  "board-agent",
   "user",
   "team-demands",
   "my-demands",

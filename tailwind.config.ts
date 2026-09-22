@@ -2,7 +2,18 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+    // Classes utilitárias usadas pelo renderizador de Markdown do assistente
+    "./node_modules/streamdown/dist/*.js",
+    "./node_modules/@streamdown/code/dist/*.js",
+    "./node_modules/@streamdown/cjk/dist/*.js",
+    "./node_modules/@streamdown/math/dist/*.js",
+    "./node_modules/@streamdown/mermaid/dist/*.js",
+  ],
   prefix: "",
   theme: {
     container: {

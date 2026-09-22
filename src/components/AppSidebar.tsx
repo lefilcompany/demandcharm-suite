@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, User, Briefcase, Kanban, ChevronUp, Settings, FileText, Send, LayoutGrid, UserPlus, UsersRound, Clock, Sparkles, ShoppingCart, Layers, StickyNote, LayoutList, CornerUpLeft } from "lucide-react";
+import { LayoutDashboard, Users, User, Briefcase, Kanban, ChevronUp, Settings, FileText, Send, LayoutGrid, UserPlus, UsersRound, Clock, Sparkles, ShoppingCart, Layers, StickyNote, LayoutList, CornerUpLeft, MessageSquareText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 const logoSoma = "/logo-soma-sidebar.png";
 import { NavLink } from "@/components/NavLink";
@@ -124,6 +124,11 @@ export function AppSidebar() {
       title: "Resumo IA",
       url: "/app/board-summary",
       icon: Sparkles
+    },
+    {
+      title: "Assistente do Quadro",
+      url: "/app/board-agent",
+      icon: MessageSquareText
     }
   ];
 
@@ -160,7 +165,7 @@ export function AppSidebar() {
             height={20}
             decoding="sync"
             loading="eager"
-            fetchPriority="high"
+            {...{ fetchpriority: "high" }}
             className={`h-5 w-5 object-scale-down mx-auto ${isCollapsed && !isMobile ? "block" : "hidden"}`}
           />
           <img
@@ -168,7 +173,7 @@ export function AppSidebar() {
             alt="SoMA"
             decoding="sync"
             loading="eager"
-            fetchPriority="high"
+            {...{ fetchpriority: "high" }}
             className={`h-8 md:h-10 w-auto ${isCollapsed && !isMobile ? "hidden" : "block"}`}
           />
         </NavLink>

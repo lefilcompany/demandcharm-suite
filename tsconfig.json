@@ -7,6 +7,12 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "zod": [
+        "./node_modules/zod"
+      ],
+      "zod/*": [
+        "./node_modules/zod/*"
       ]
     },
     "skipLibCheck": true,

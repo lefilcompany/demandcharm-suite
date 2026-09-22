@@ -283,7 +283,7 @@ export function ProtectedLayout() {
           <div className="flex flex-col items-center text-center pt-2 pb-2 relative">
             <div className="absolute top-4 h-32 w-32 rounded-full bg-primary/5 blur-2xl -z-10" />
             <div className="mb-6 flex items-center justify-center">
-              <img src={logoSomaIcon} alt="SoMA+" loading="eager" decoding="sync" fetchPriority="high" className="h-20 w-auto object-contain drop-shadow-sm" />
+              <img src={logoSomaIcon} alt="SoMA+" loading="eager" decoding="sync" {...{ fetchpriority: "high" }} className="h-20 w-auto object-contain drop-shadow-sm" />
             </div>
             <AlertDialogHeader className="space-y-3">
               <AlertDialogTitle className="text-2xl font-semibold tracking-tight">
