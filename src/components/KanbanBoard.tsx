@@ -2526,10 +2526,9 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                 key={column.key}
                  style={{
                   ...(isActive ? {
-                    width: `${openColumnWidth}px`,
-                    minWidth: `${openColumnWidth}px`,
-                    flexShrink: 0,
-                  } : {
+                     flex: "2.2",
+                     minWidth: `${closedColumnMinWidth}px`,
+                   } : {
                     minWidth: `${closedColumnMinWidth}px`,
                   }),
                   ...colorStyle.style,
@@ -2538,7 +2537,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   "rounded-lg flex flex-col min-h-0 overflow-hidden",
                   "transition-all duration-700 ease-in-out",
                   colorStyle.className,
-                  isActive ? "p-4" : "p-2 cursor-pointer flex-1 hover:flex-[2.2] hover:shadow-lg",
+                   isActive ? "p-4 flex-[2.2]" : "p-2 cursor-pointer flex-1 hover:bg-primary/5 hover:shadow-md",
                   isDragTarget && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                 )}
                 onClick={() => toggleColumn(column.key)}
@@ -2644,10 +2643,9 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                 key={column.key}
                 style={{
                   ...(isActive ? {
-                    width: `${openColumnWidth}px`,
-                    minWidth: `${openColumnWidth}px`,
-                    flexShrink: 0,
-                  } : {
+                     flex: "2.2",
+                     minWidth: `${closedColumnMinWidth}px`,
+                   } : {
                     minWidth: `${closedColumnMinWidth}px`,
                   }),
                   ...colorStyle.style,
@@ -2656,7 +2654,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   "rounded-lg flex flex-col min-h-0 overflow-hidden",
                   "transition-all duration-700 ease-in-out",
                   colorStyle.className,
-                  isActive ? "p-4" : "p-2 cursor-pointer flex-1 hover:flex-[2.2] hover:shadow-lg",
+                  isActive ? "p-4 flex-[2.2]" : "p-2 cursor-pointer flex-1 hover:bg-primary/5 hover:shadow-md",
                   isDragTarget && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                 )}
                 onClick={() => toggleColumn(column.key)}
