@@ -2,6 +2,30 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useRef } from "react";
 import { createRealtimeInstanceId } from "@/lib/realtimeUtils";
+import { cachedRead, invalidateServerCache } from "@/lib/cachedFetch";
+
+/** Consulta direta ao banco (fallback quando a camada de cache não responde). */
+async function fetchActiveBoardStatusesDirect(boardId: string) {
+  const { data, error } = await supabase
+    .from("board_statuses")
+    .select(`
+      id,
+      board_id,
+      status_id,
+      position,
+      is_active,
+      created_at,
+      adjustment_type,
+      visible_to_roles,
+      status:demand_statuses(id, name, color, is_system)
+    `)
+    .eq("board_id", boardId)
+    .eq("is_active", true)
+    .order("position");
+
+  if (error) throw error;
+  return (data ?? []) as any[];
+}
 export type AdjustmentType = 'none' | 'internal' | 'external';
 
 export type BoardRoleType = 'admin' | 'moderator' | 'executor' | 'requester';
@@ -168,27 +192,13 @@ export function useBoardStatuses(boardId: string | null) {
     queryFn: async () => {
       if (!boardId) return [];
 
-      const { data, error } = await supabase
-        .from("board_statuses")
-        .select(`
-          id,
-          board_id,
-          status_id,
-          position,
-          is_active,
-          created_at,
-          adjustment_type,
-          visible_to_roles,
-          status:demand_statuses(id, name, color, is_system)
-        `)
-        .eq("board_id", boardId)
-        .eq("is_active", true)
-        .order("position");
+      const rows = await cachedRead<any>(
+        { resource: "board_statuses", boardId },
+        () => fetchActiveBoardStatusesDirect(boardId),
+      );
 
-      if (error) throw error;
-      
       // Filter out any null statuses and type cast
-      return (data || []).filter(d => d.status !== null).map(d => ({
+      return (rows || []).filter((d: any) => d.status !== null).map((d: any) => ({
         ...d,
         adjustment_type: (d.adjustment_type as AdjustmentType) || 'none',
         visible_to_roles: d.visible_to_roles || null,
@@ -196,7 +206,8 @@ export function useBoardStatuses(boardId: string | null) {
     },
     enabled: !!boardId,
     placeholderData: (prev: any) => prev,
-    staleTime: 60 * 1000,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   // Subscribe to realtime updates
