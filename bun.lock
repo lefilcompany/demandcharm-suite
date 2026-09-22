@@ -140,6 +140,7 @@
     "smob": "1.4.0",
     "workbox-build": "7.3.0",
     "workbox-window": "7.3.0",
+    "zod": "^3.25.76",
   },
   "packages": {
     "@adobe/css-tools": ["@adobe/css-tools@4.5.0", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@adobe/css-tools/-/css-tools-4.5.0.tgz", {}, "sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q=="],
@@ -2703,8 +2704,6 @@
     "@lovable.dev/mcp-js/esbuild": ["esbuild@0.27.7", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/esbuild/-/esbuild-0.27.7.tgz", { "optionalDependencies": { "@esbuild/aix-ppc64": "0.27.7", "@esbuild/android-arm": "0.27.7", "@esbuild/android-arm64": "0.27.7", "@esbuild/android-x64": "0.27.7", "@esbuild/darwin-arm64": "0.27.7", "@esbuild/darwin-x64": "0.27.7", "@esbuild/freebsd-arm64": "0.27.7", "@esbuild/freebsd-x64": "0.27.7", "@esbuild/linux-arm": "0.27.7", "@esbuild/linux-arm64": "0.27.7", "@esbuild/linux-ia32": "0.27.7", "@esbuild/linux-loong64": "0.27.7", "@esbuild/linux-mips64el": "0.27.7", "@esbuild/linux-ppc64": "0.27.7", "@esbuild/linux-riscv64": "0.27.7", "@esbuild/linux-s390x": "0.27.7", "@esbuild/linux-x64": "0.27.7", "@esbuild/netbsd-arm64": "0.27.7", "@esbuild/netbsd-x64": "0.27.7", "@esbuild/openbsd-arm64": "0.27.7", "@esbuild/openbsd-x64": "0.27.7", "@esbuild/openharmony-arm64": "0.27.7", "@esbuild/sunos-x64": "0.27.7", "@esbuild/win32-arm64": "0.27.7", "@esbuild/win32-ia32": "0.27.7", "@esbuild/win32-x64": "0.27.7" }, "bin": { "esbuild": "bin/esbuild" } }, "sha512-IxpibTjyVnmrIQo5aqNpCgoACA/dTKLTlhMHihVHhdkxKyPO1uBBthumT0rdHmcsk9uMonIWS0m4FljWzILh3w=="],
 
     "@modelcontextprotocol/sdk/ajv": ["ajv@8.20.0", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/ajv/-/ajv-8.20.0.tgz", { "dependencies": { "fast-deep-equal": "^3.1.3", "fast-uri": "^3.0.1", "json-schema-traverse": "^1.0.0", "require-from-string": "^2.0.2" } }, "sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA=="],
-
-    "@modelcontextprotocol/sdk/zod": ["zod@4.4.3", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/zod/-/zod-4.4.3.tgz", {}, "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ=="],
 
     "@radix-ui/react-accordion/@radix-ui/react-use-controllable-state": ["@radix-ui/react-use-controllable-state@1.2.2", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@radix-ui/react-use-controllable-state/-/react-use-controllable-state-1.2.2.tgz", { "dependencies": { "@radix-ui/react-use-effect-event": "0.0.2", "@radix-ui/react-use-layout-effect": "1.1.1" }, "peerDependencies": { "@types/react": "*", "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc" } }, "sha512-BjasUjixPFdS+NKkypcyyN5Pmg83Olst0+c6vGov0diwTEo6mgdqVR6hxcEgFuh4QrAs7Rc+9KuGJ9TVCj0Zzg=="],
 
