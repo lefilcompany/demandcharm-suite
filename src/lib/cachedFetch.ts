@@ -1,0 +1,83 @@
+import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * Leitura através da camada de cache compartilhado (Redis, via edge function).
+ *
+ * Regra de ouro: nunca quebrar a tela. Se a função de cache demorar, falhar ou
+ * não estiver configurada, caímos automaticamente na consulta direta ao banco.
+ */
+
+const CACHE_TIMEOUT_MS = 1200;
+
+/** Depois de N falhas seguidas, paramos de tentar por um tempo. */
+let consecutiveFailures = 0;
+let disabledUntil = 0;
+const FAILURE_THRESHOLD = 3;
+const DISABLE_WINDOW_MS = 60_000;
+
+function cacheAvailable(): boolean {
+  return Date.now() >= disabledUntil;
+}
+
+function registerFailure() {
+  consecutiveFailures += 1;
+  if (consecutiveFailures >= FAILURE_THRESHOLD) {
+    disabledUntil = Date.now() + DISABLE_WINDOW_MS;
+    consecutiveFailures = 0;
+  }
+}
+
+function registerSuccess() {
+  consecutiveFailures = 0;
+}
+
+export type CacheResource = "services" | "profiles" | "board_statuses";
+
+interface CacheReadPayload {
+  resource: CacheResource;
+  boardId?: string;
+  userIds?: string[];
+}
+
+async function invokeWithTimeout<T>(payload: CacheReadPayload): Promise<T[] | null> {
+  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), CACHE_TIMEOUT_MS));
+
+  const request = supabase.functions
+    .invoke("cache-read", { body: payload })
+    .then(({ data, error }) => {
+      if (error || !data || !Array.isArray((data as any).data)) return null;
+      return (data as any).data as T[];
+    })
+    .catch(() => null);
+
+  return await Promise.race([request, timeout]);
+}
+
+/**
+ * Busca `resource` no cache compartilhado; em qualquer problema usa `fallback`.
+ */
+export async function cachedRead<T>(
+  payload: CacheReadPayload,
+  fallback: () => Promise<T[]>,
+): Promise<T[]> {
+  if (!cacheAvailable()) return fallback();
+
+  const result = await invokeWithTimeout<T>(payload);
+
+  if (result === null) {
+    registerFailure();
+    return fallback();
+  }
+
+  registerSuccess();
+  return result;
+}
+
+/** Limpa a cópia guardada de um recurso que acabou de ser alterado. */
+export async function invalidateServerCache(payload: CacheReadPayload): Promise<void> {
+  try {
+    await supabase.functions.invoke("cache-invalidate", { body: payload });
+  } catch {
+    // Silencioso de propósito: o TTL cuida da expiração de qualquer forma.
+  }
+}
