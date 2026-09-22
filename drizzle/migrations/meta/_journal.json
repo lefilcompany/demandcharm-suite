@@ -22,6 +22,20 @@
       "when": 1790015555569,
       "tag": "0002_add_demo_request_internal_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790084861899,
+      "tag": "0003_board_metrics_deep_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790084988733,
+      "tag": "0004_board_demand_facts_guard_null_safe",
+      "breakpoints": true
     }
   ]
 }
