@@ -220,7 +220,8 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     setServiceId(newServiceId);
     if (newServiceId !== "none" && estimatedHours) {
       const calculatedDate = calculateBusinessDueDate(estimatedHours);
-      setDueDate(formatDueDateForInput(calculatedDate));
+      // Só sugere a data quando o usuário ainda não escolheu uma.
+      setDueDate((prev) => (prev ? prev : formatDueDateForInput(calculatedDate)));
     }
   };
 
