@@ -3863,6 +3863,51 @@ export type Database = {
         }
         Returns: Json
       }
+      board_demand_facts: {
+        Args: { p_board_id: string; p_tz?: string }
+        Returns: {
+          age_days: number
+          assignee_ids: string[]
+          board_sequence_number: number
+          code: string
+          created_at: string
+          created_by: string
+          created_by_name: string
+          created_on: string
+          days_late: number
+          days_overdue: number
+          delivered_at: string
+          delivered_estimated: boolean
+          delivered_on: string
+          delivery_days: number
+          delivery_state: string
+          due_in_days: number
+          due_on: string
+          effort_points: number
+          follower_names: string[]
+          has_due: boolean
+          id: string
+          is_adjustment: boolean
+          is_backlog: boolean
+          is_delivered: boolean
+          is_due_soon: boolean
+          is_overdue_now: boolean
+          is_requests_stage: boolean
+          is_subdemand: boolean
+          parent_demand_id: string
+          priority: string
+          reschedule_count: number
+          responsible_id: string
+          responsible_name: string
+          service_id: string
+          service_name: string
+          stage_color: string
+          stage_name: string
+          stage_position: number
+          time_seconds: number
+          title: string
+        }[]
+      }
       can_access_demand: {
         Args: { _demand_id: string; _user_id: string }
         Returns: boolean
@@ -3964,6 +4009,16 @@ export type Database = {
         Returns: Json
       }
       email_exists: { Args: { _email: string }; Returns: boolean }
+      get_board_metrics: {
+        Args: {
+          p_board_id: string
+          p_from?: string
+          p_member_id?: string
+          p_to?: string
+          p_tz?: string
+        }
+        Returns: Json
+      }
       get_board_role: {
         Args: { _board_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["team_role"]
