@@ -21,45 +21,56 @@ export async function downloadFileFromUrl(signedUrl: string, fileName: string) {
   }
 }
 
+async function fetchAsPngBlob(imageUrl: string): Promise<Blob> {
+  const response = await fetch(imageUrl);
+  if (!response.ok) throw new Error("Fetch failed");
+  const blob = await response.blob();
+  if (blob.type === "image/png") return blob;
+  return convertToPng(blob);
+}
+
 export async function copyImageToClipboard(imageUrl: string) {
   try {
-    const response = await fetch(imageUrl);
-    if (!response.ok) throw new Error("Fetch failed");
-    const blob = await response.blob();
-
-    // Convert to PNG if needed (clipboard API requires image/png)
-    let pngBlob = blob;
-    if (blob.type !== "image/png") {
-      pngBlob = await convertToPng(blob);
+    if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) {
+      throw new Error("Clipboard API unavailable");
     }
 
-    await navigator.clipboard.write([
-      new ClipboardItem({ "image/png": pngBlob }),
-    ]);
+    // Pass a promise so the write stays tied to the user gesture (avoids NotAllowedError)
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": fetchAsPngBlob(imageUrl) }),
+      ]);
+    } catch {
+      // Browsers that don't accept promises in ClipboardItem: resolve the blob first
+      const pngBlob = await fetchAsPngBlob(imageUrl);
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
+    }
+
     toast.success("Imagem copiada para a área de transferência");
   } catch (e) {
     console.error("Copy failed:", e);
-    toast.error("Não foi possível copiar a imagem");
+    // Last resort: copy the link so the user still gets something usable
+    try {
+      await navigator.clipboard.writeText(imageUrl);
+      toast.success("Link da imagem copiado");
+    } catch {
+      toast.error("Não foi possível copiar a imagem");
+    }
   }
 }
 
-function convertToPng(blob: Blob): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("No canvas context"));
-      ctx.drawImage(img, 0, 0);
-      canvas.toBlob((b) => {
-        if (b) resolve(b);
-        else reject(new Error("toBlob failed"));
-      }, "image/png");
-    };
-    img.onerror = reject;
-    img.crossOrigin = "anonymous";
-    img.src = URL.createObjectURL(blob);
+async function convertToPng(blob: Blob): Promise<Blob> {
+  // createImageBitmap decodes without an <img> element and preserves full resolution
+  const bitmap = await createImageBitmap(blob);
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("No canvas context");
+  ctx.drawImage(bitmap, 0, 0);
+  bitmap.close?.();
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
   });
 }
+

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { downloadFileFromUrl } from "@/lib/fileDownloadUtils";
 import { DocumentPreviewDialog, isPreviewable } from "@/components/DocumentPreviewDialog";
+import { ImagePreviewDialog } from "@/components/ImagePreviewDialog";
+
 
 interface CommentAttachmentsProps {
   commentId: string;
@@ -115,28 +117,13 @@ export function CommentAttachments({ commentId, className }: CommentAttachmentsP
       )}
 
       {/* Image preview modal */}
-      <Dialog open={!!imagePreview} onOpenChange={() => setImagePreview(null)}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] p-4 flex flex-col items-center justify-center gap-3">
-          {imagePreview && (
-            <>
-              <img
-                src={imagePreview.url}
-                alt={imagePreview.name}
-                className="max-w-full max-h-[78vh] object-contain rounded-md"
-              />
-              <div className="flex items-center justify-between w-full px-1">
-                <span className="text-sm text-muted-foreground truncate max-w-[70%]">
-                  {imagePreview.name}
-                </span>
-                <Button variant="outline" size="sm" onClick={() => downloadFileFromUrl(imagePreview.url, imagePreview.name)}>
-                  <Download className="h-4 w-4 mr-1" />
-                  Baixar
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ImagePreviewDialog
+        open={!!imagePreview}
+        onOpenChange={(open) => { if (!open) setImagePreview(null); }}
+        url={imagePreview?.url ?? null}
+        fileName={imagePreview?.name ?? ""}
+      />
+
 
       {/* Document preview modal */}
       {previewFile && (
