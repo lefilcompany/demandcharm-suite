@@ -96,6 +96,7 @@ export function ProfileEditDrawer({ open, onOpenChange }: ProfileEditDrawerProps
       if (error) throw error;
     },
     onSuccess: () => {
+      void invalidateServerCache({ resource: "profiles", userIds: user ? [user.id] : [] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       toast.success("Perfil atualizado com sucesso!");
