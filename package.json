@@ -16,7 +16,8 @@
   "overrides": {
     "smob": "1.4.0",
     "workbox-build": "7.3.0",
-    "workbox-window": "7.3.0"
+    "workbox-window": "7.3.0",
+    "zod": "^3.25.76"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.112",
