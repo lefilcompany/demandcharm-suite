@@ -33,8 +33,8 @@ export function SubdemandCountStep({ count, onChange }: SubdemandCountStepProps)
           variant="outline"
           size="icon"
           className="h-8 w-8 shrink-0"
-          onClick={() => onChange(Math.min(20, count + 1))}
-          disabled={count >= 20}
+          onClick={() => onChange(Math.min(50, count + 1))}
+          disabled={count >= 50}
         >
           <Plus className="h-4 w-4" />
         </Button>
