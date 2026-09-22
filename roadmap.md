@@ -11,4 +11,4 @@
 ## Cache compartilhado (Redis/Upstash)
 - [x] Funcoes cache-read e cache-invalidate + helper src/lib/cachedFetch.ts
 - [x] Servicos, etapas de quadro e perfis lendo via cache com fallback direto ao banco
-- [ ] Salvar UPSTASH_REDIS_REST_URL e UPSTASH_REDIS_REST_TOKEN para ativar o Redis
+- [x] Salvar UPSTASH_REDIS_REST_URL e UPSTASH_REDIS_REST_TOKEN para ativar o Redis (testado: 2ª chamada vem do cache)
