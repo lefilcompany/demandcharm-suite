@@ -305,9 +305,8 @@ function ChatMessage({ message, isStreaming }: { message: UIMessage; isStreaming
                   isStreaming={isStreaming && part.state === "streaming"}
                   className="mb-1"
                   defaultOpen={false}
-                  getThinkingMessage={thinkingMessage}
                 >
-                  <ReasoningTrigger />
+                  <ReasoningTrigger getThinkingMessage={thinkingMessage} />
                   <ReasoningContent>{part.text}</ReasoningContent>
                 </Reasoning>
               );
