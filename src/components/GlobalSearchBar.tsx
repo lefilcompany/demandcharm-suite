@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, FileText, Loader2, X, Plus, LayoutDashboard, Columns3, ClipboardList, Clock, StickyNote, Sparkles, Inbox, Wrench } from "lucide-react";
 import { Input } from "@/components/ui/input";
