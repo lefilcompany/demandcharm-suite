@@ -41,3 +41,11 @@ definições (aberta, entregue no prazo/atrasada, vencida, vence em breve, etapa
 - [ ] Opcional: reindexação agendada (hoje reindexa sob demanda quando o índice tem mais de 10 minutos)
 - [ ] Opcional: incluir notas e comentários no índice
 
+
+## Latência (banco, permissões e anexos)
+- [x] Índices `team_members(user_id)` e `team_members(team_id)`
+- [x] Policies de `profiles`, `demands`, `board_members`, `team_members` usando `(select auth.uid())` — perfis: ~503 ms → ~21 ms; demandas: ~0,5 ms
+- [x] `REVOKE EXECUTE` de `anon` nas funções internas (gatilhos, manutenção, métricas, busca semântica)
+- [x] Links de anexos assinados em lote com cache em memória (`useAttachments.ts`)
+- [x] Circuit breaker do cache externo mais rígido (600 ms / 2 falhas / 120 s)
+- [ ] Observar crescimento de rollbacks do Postgres (hoje acumulado desde o boot, sem ação)
