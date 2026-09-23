@@ -278,6 +278,32 @@ export function GlobalSearchBar() {
               {peopleResults.map((result, i) => renderResultItem(result, demandResults.length + i))}
             </>
           )}
+          {semanticResults.length > 0 && (
+            <>
+              <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30 border-b border-border/50 border-t flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3 text-primary" />
+                Por significado ({semanticResults.length})
+              </div>
+              {semanticResults.map((result, i) =>
+                renderResultItem(result, demandResults.length + peopleResults.length + i)
+              )}
+            </>
+          )}
+          {isSemanticLoading && semanticResults.length === 0 && (
+            <div className="px-3 py-2 border-t border-border/50 flex items-center gap-2 text-[10px] text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Buscando por significado...
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (isSemanticLoading) {
+      return (
+        <div className="flex items-center justify-center py-6 gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Buscando por significado...
         </div>
       );
     }
