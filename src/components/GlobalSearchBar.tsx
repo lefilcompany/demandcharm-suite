@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, FileText, Loader2, X, Plus, LayoutDashboard, Columns3, ClipboardList, Clock, StickyNote } from "lucide-react";
+import { Search, FileText, Loader2, X, Plus, LayoutDashboard, Columns3, ClipboardList, Clock, StickyNote, Sparkles, Inbox, Wrench } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useGlobalSearch } from "@/hooks/useGlobalSearch";
+import { useSemanticSearch } from "@/hooks/useSemanticSearch";
 import { useSelectedBoardSafe } from "@/contexts/BoardContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
