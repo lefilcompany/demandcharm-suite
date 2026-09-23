@@ -81,6 +81,16 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Paleta da landing page SoMA
+        soma: {
+          black: "#1a1a1a",
+          white: "#FFFFFF",
+          orange: {
+            light: "#F5A623",
+            medium: "#F28C13",
+            dark: "#D44F0F",
+          },
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
