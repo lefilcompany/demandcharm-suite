@@ -26,7 +26,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RELEASE_EVENT_SECRET = Deno.env.get("RELEASE_EVENT_SECRET") ?? "";
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") ?? "";
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
 const MODEL = "google/gemini-3.8-flash";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 function log(level: "info" | "warn" | "error", message: string, ctx: Record<string, unknown> = {}) {
   const line = JSON.stringify({
@@ -93,7 +95,40 @@ async function lastAnnouncedSha(): Promise<string | null> {
   return (data?.commit_sha as string | undefined) ?? null;
 }
 
-async function callAi(prompt: string): Promise<{ ok: true; content: string } | { ok: false; status: number; error: string }> {
+type AiResult = { ok: true; content: string } | { ok: false; status: number; error: string };
+
+/** Gemini direto (chave do projeto), sem depender dos créditos do gateway. */
+async function callGemini(prompt: string): Promise<AiResult> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: PATCH_NOTES_SYSTEM_PROMPT }] },
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: "application/json", temperature: 0.4 },
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    return { ok: false, status: res.status, error: text.slice(0, 500) };
+  }
+  const payload = await res.json().catch(() => null);
+  const content = payload?.candidates?.[0]?.content?.parts
+    ?.map((p: { text?: string }) => p?.text ?? "")
+    .join("")
+    .trim();
+  if (!content) return { ok: false, status: 502, error: "resposta da IA sem conteúdo" };
+  return { ok: true, content };
+}
+
+async function callAi(prompt: string): Promise<AiResult> {
+  if (GEMINI_API_KEY) {
+    const gemini = await callGemini(prompt);
+    if (gemini.ok || !LOVABLE_API_KEY) return gemini;
+    log("warn", "gemini failed, falling back to gateway", { status: gemini.status });
+  }
+
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -132,10 +167,11 @@ Deno.serve(async (req) => {
     return json({ error: "Unauthorized" }, 401);
   }
 
-  if (!LOVABLE_API_KEY) {
-    log("error", "missing LOVABLE_API_KEY");
+  if (!GEMINI_API_KEY && !LOVABLE_API_KEY) {
+    log("error", "missing AI credentials");
     return json({ error: "AI não configurada" }, 500);
   }
+
 
   let body: Record<string, unknown>;
   try {
