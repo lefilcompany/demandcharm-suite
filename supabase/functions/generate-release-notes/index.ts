@@ -95,7 +95,40 @@ async function lastAnnouncedSha(): Promise<string | null> {
   return (data?.commit_sha as string | undefined) ?? null;
 }
 
-async function callAi(prompt: string): Promise<{ ok: true; content: string } | { ok: false; status: number; error: string }> {
+type AiResult = { ok: true; content: string } | { ok: false; status: number; error: string };
+
+/** Gemini direto (chave do projeto), sem depender dos créditos do gateway. */
+async function callGemini(prompt: string): Promise<AiResult> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: PATCH_NOTES_SYSTEM_PROMPT }] },
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: "application/json", temperature: 0.4 },
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    return { ok: false, status: res.status, error: text.slice(0, 500) };
+  }
+  const payload = await res.json().catch(() => null);
+  const content = payload?.candidates?.[0]?.content?.parts
+    ?.map((p: { text?: string }) => p?.text ?? "")
+    .join("")
+    .trim();
+  if (!content) return { ok: false, status: 502, error: "resposta da IA sem conteúdo" };
+  return { ok: true, content };
+}
+
+async function callAi(prompt: string): Promise<AiResult> {
+  if (GEMINI_API_KEY) {
+    const gemini = await callGemini(prompt);
+    if (gemini.ok || !LOVABLE_API_KEY) return gemini;
+    log("warn", "gemini failed, falling back to gateway", { status: gemini.status });
+  }
+
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
