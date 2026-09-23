@@ -124,7 +124,66 @@ export function useDeleteAttachment() {
   });
 }
 
+const SIGNED_URL_TTL_SECONDS = 14400;
+/** Reaproveita o link enquanto ele tem pelo menos 20% de validade restante. */
+const SIGNED_URL_REUSE_MS = SIGNED_URL_TTL_SECONDS * 1000 * 0.8;
+
+const signedUrlCache = new Map<string, { url: string; expiresAt: number }>();
+
+/** Pedidos acumulados na janela atual, para assinar tudo numa chamada só. */
+let pendingPaths: string[] = [];
+let pendingPromise: Promise<Map<string, string>> | null = null;
+
+function flushBatch(): Promise<Map<string, string>> {
+  if (pendingPromise) return pendingPromise;
+
+  pendingPromise = new Promise<Map<string, string>>((resolve) => {
+    setTimeout(async () => {
+      const paths = Array.from(new Set(pendingPaths));
+      pendingPaths = [];
+      pendingPromise = null;
+
+      const result = new Map<string, string>();
+      if (paths.length === 0) return resolve(result);
+
+      const { data, error } = await supabase.storage
+        .from("demand-attachments")
+        .createSignedUrls(paths, SIGNED_URL_TTL_SECONDS);
+
+      if (!error && data) {
+        for (const item of data) {
+          if (item.signedUrl && item.path) {
+            result.set(item.path, item.signedUrl);
+            signedUrlCache.set(item.path, {
+              url: item.signedUrl,
+              expiresAt: Date.now() + SIGNED_URL_REUSE_MS,
+            });
+          }
+        }
+      }
+
+      resolve(result);
+    }, 25);
+  });
+
+  return pendingPromise;
+}
+
+/** Assina vários anexos de uma vez; devolve null quando o arquivo não existe. */
+async function getBatchedSignedUrl(filePath: string): Promise<string | null> {
+  const cached = signedUrlCache.get(filePath);
+  if (cached && cached.expiresAt > Date.now()) return cached.url;
+
+  pendingPaths.push(filePath);
+  const batch = await flushBatch();
+  return batch.get(filePath) ?? null;
+}
+
 export async function getAttachmentUrl(filePath: string): Promise<string | null> {
+  // Caminho rápido: assinatura em lote direto no storage (sem cold start).
+  const batched = await getBatchedSignedUrl(filePath);
+  if (batched) return batched;
+
   try {
     const { data, error } = await supabase.functions.invoke("demand-attachment-url", {
       body: { filePath },
