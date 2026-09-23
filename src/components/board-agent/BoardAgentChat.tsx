@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart, type UIMessage } from "ai";
-import { AlertCircle, RotateCcw, MessageSquarePlus } from "lucide-react";
+import { AlertCircle, RotateCcw, MessageSquarePlus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea, type PromptInputMessage } from "@/components/ai-elements/prompt-input";
@@ -56,6 +57,7 @@ function readableError(error: Error): string {
 
 export function BoardAgentChat({ boardId, boardName }: Props) {
   const composerRef = useRef<HTMLDivElement>(null);
+  const [showClearDialog, setShowClearDialog] = useState(false);
   const initialMessages = useMemo(() => loadBoardAgentMessages(boardId), [boardId]);
 
   const transport = useMemo(
@@ -129,6 +131,15 @@ export function BoardAgentChat({ boardId, boardName }: Props) {
     setMessages([]);
     clearError();
     clearBoardAgentMessages(boardId);
+    requestAnimationFrame(focusComposer);
+  }, [isBusy, stop, setMessages, clearError, boardId, focusComposer]);
+
+  const clearConversation = useCallback(() => {
+    if (isBusy) stop();
+    setMessages([]);
+    clearError();
+    clearBoardAgentMessages(boardId);
+    setShowClearDialog(false);
     requestAnimationFrame(focusComposer);
   }, [isBusy, stop, setMessages, clearError, boardId, focusComposer]);
 
@@ -216,6 +227,17 @@ export function BoardAgentChat({ boardId, boardName }: Props) {
                   <MessageSquarePlus className="size-3.5" />
                   Nova conversa
                 </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-destructive"
+                  onClick={() => setShowClearDialog(true)}
+                  disabled={messages.length === 0}
+                >
+                  <Trash2 className="size-3.5" />
+                  Limpar
+                </Button>
               </div>
               <PromptInputSubmit status={isBusy ? status : undefined} onStop={stop} className="size-8 rounded-lg" />
             </PromptInputFooter>
@@ -225,6 +247,26 @@ export function BoardAgentChat({ boardId, boardName }: Props) {
           </p>
         </div>
       </div>
+
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar conversa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todas as mensagens desta conversa serão removidas. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={clearConversation}
+            >
+              Limpar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
