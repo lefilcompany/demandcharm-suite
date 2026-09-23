@@ -186,18 +186,13 @@ Deno.serve(async (req) => {
     // Provider criado dentro da requisição: o wrapper de fetch guarda o run id por chamada.
     const initialRunId = getLovableAiGatewayRunId(req);
     const runIdFetch = createLovableAiGatewayRunIdFetch(initialRunId);
-    const lovable = createOpenAI({
-      baseURL: "https://ai.gateway.lovable.dev/v1",
-      apiKey: lovableApiKey,
-      headers: {
-        "Lovable-API-Key": lovableApiKey,
-        "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-      },
+    const google = createGoogleGenerativeAI({
+      apiKey: geminiApiKey,
       fetch: runIdFetch.fetch,
     });
 
     const result = streamText({
-      model: lovable.responses(MODEL_ID),
+      model: google(MODEL_ID),
       system,
       messages: modelMessages,
       tools: buildBoardTools({ supabase, boardId, tz }),
