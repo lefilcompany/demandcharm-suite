@@ -10,7 +10,7 @@ import {
   toUIMessageStream,
   type UIMessage,
 } from "npm:ai@7.0.109";
-import { createOpenAI } from "npm:@ai-sdk/openai@4.0.72";
+import { createGoogleGenerativeAI } from "npm:@ai-sdk/google@4.0.78";
 import { z } from "npm:zod@3.25.76";
 import { buildBoardTools } from "./tools.ts";
 import { buildSystemPrompt } from "./prompt.ts";
@@ -22,7 +22,7 @@ import {
 } from "./gateway.ts";
 
 const DEFAULT_TZ = "America/Fortaleza";
-const MODEL_ID = "openai/gpt-6-astra";
+const MODEL_ID = "gemini-2.5-flash";
 const MAX_HISTORY_MESSAGES = 30;
 const MAX_TEXT_CHARS = 8000;
 
@@ -111,9 +111,9 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!lovableApiKey) {
-      console.error("LOVABLE_API_KEY não configurada");
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!geminiApiKey) {
+      console.error("GEMINI_API_KEY não configurada");
       return json({ error: "O assistente não está configurado neste ambiente." }, 500);
     }
 
@@ -186,32 +186,22 @@ Deno.serve(async (req) => {
     // Provider criado dentro da requisição: o wrapper de fetch guarda o run id por chamada.
     const initialRunId = getLovableAiGatewayRunId(req);
     const runIdFetch = createLovableAiGatewayRunIdFetch(initialRunId);
-    const lovable = createOpenAI({
-      baseURL: "https://ai.gateway.lovable.dev/v1",
-      apiKey: lovableApiKey,
-      headers: {
-        "Lovable-API-Key": lovableApiKey,
-        "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-      },
+    const google = createGoogleGenerativeAI({
+      apiKey: geminiApiKey,
       fetch: runIdFetch.fetch,
     });
 
     const result = streamText({
-      model: lovable.responses(MODEL_ID),
+      model: google(MODEL_ID),
       system,
       messages: modelMessages,
       tools: buildBoardTools({ supabase, boardId, tz }),
       stopWhen: isStepCount(50),
       abortSignal: req.signal,
       providerOptions: {
-        openai: {
-          // Ids com prefixo do gateway não são reconhecidos como modelos de raciocínio: força o pedido.
-          forceReasoning: true,
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          // Gateway é stateless: cada passo de ferramenta reenvia os itens anteriores inline.
-          store: false,
-          include: ["reasoning.encrypted_content"],
+        google: {
+          // Raciocínio curto e visível para o usuário acompanhar o passo a passo.
+          thinkingConfig: { includeThoughts: true, thinkingBudget: 2048 },
         },
       },
       onError: ({ error }) => {
