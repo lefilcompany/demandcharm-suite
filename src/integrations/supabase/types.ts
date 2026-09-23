@@ -171,6 +171,24 @@ export type Database = {
           },
         ]
       }
+      board_cache_versions: {
+        Row: {
+          board_id: string
+          demands_version: number
+          updated_at: string
+        }
+        Insert: {
+          board_id: string
+          demands_version?: number
+          updated_at?: string
+        }
+        Update: {
+          board_id?: string
+          demands_version?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       board_members: {
         Row: {
           added_by: string | null
@@ -3957,6 +3975,10 @@ export type Database = {
           time_seconds: number
           title: string
         }[]
+      }
+      bump_board_demands_version: {
+        Args: { _board_id: string }
+        Returns: undefined
       }
       can_access_demand: {
         Args: { _demand_id: string; _user_id: string }

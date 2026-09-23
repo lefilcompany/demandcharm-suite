@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { usePlansModal } from "@/contexts/PlansModalContext";
 import { showPlanLimitToast } from "@/lib/planLimitErrors";
 import { createRealtimeInstanceId } from "@/lib/realtimeUtils";
+import { cachedRead } from "@/lib/cachedFetch";
 import { 
   DemandCreateSchema, 
   DemandUpdateSchema, 
@@ -67,30 +68,52 @@ export function useDemands(boardId?: string) {
         return sortDemandsByPriorityAndDueDate(cachedDemands as any[]);
       }
 
-      let query = supabase
-        .from("demands")
-        .select(`
-          *,
-          demand_statuses(name, color),
-          profiles!demands_created_by_fkey(full_name, avatar_url),
-          assigned_profile:profiles!demands_assigned_to_fkey(full_name, avatar_url),
-          status_changed_by_profile:profiles!demands_status_changed_by_fkey(full_name, avatar_url),
-          teams(name),
-          services(id, name, estimated_hours),
-          boards(id, name),
-          demand_assignees(
-            user_id,
-            is_primary,
-            profile:profiles(full_name, avatar_url)
-          )
-        `)
-        .eq("archived", false);
+      const fetchDirect = async () => {
+        let query = supabase
+          .from("demands")
+          .select(`
+            *,
+            demand_statuses(name, color),
+            profiles!demands_created_by_fkey(full_name, avatar_url),
+            assigned_profile:profiles!demands_assigned_to_fkey(full_name, avatar_url),
+            status_changed_by_profile:profiles!demands_status_changed_by_fkey(full_name, avatar_url),
+            teams(name),
+            services(id, name, estimated_hours),
+            boards(id, name),
+            demand_assignees(
+              user_id,
+              is_primary,
+              profile:profiles(full_name, avatar_url)
+            )
+          `)
+          .eq("archived", false);
 
-      if (boardId) {
-        query = query.eq("board_id", boardId);
-      }
+        if (boardId) {
+          query = query.eq("board_id", boardId);
+        }
 
-      const { data, error } = await query;
+        return await query;
+      };
+
+      // Cache compartilhado (chave versionada pelo banco); qualquer falha cai
+      // automaticamente na consulta direta.
+      const { data, error } = boardId
+        ? await (async () => {
+            try {
+              const rows = await cachedRead<any>(
+                { resource: "demands", boardId },
+                async () => {
+                  const res = await fetchDirect();
+                  if (res.error) throw res.error;
+                  return (res.data ?? []) as any[];
+                },
+              );
+              return { data: rows, error: null as any };
+            } catch (err) {
+              return { data: null as any, error: err as any };
+            }
+          })()
+        : await fetchDirect();
 
       if (error) {
         // If network error, try to return cached data

@@ -12,6 +12,7 @@
 - [x] Funcoes cache-read e cache-invalidate + helper src/lib/cachedFetch.ts
 - [x] Servicos, etapas de quadro e perfis lendo via cache com fallback direto ao banco
 - [x] Salvar UPSTASH_REDIS_REST_URL e UPSTASH_REDIS_REST_TOKEN para ativar o Redis (testado: 2ª chamada vem do cache)
+- [x] Demandas com cache versionado pelo banco: `board_cache_versions` + triggers (demands, demand_assignees, board_statuses), edge function `demands-read`, chave `demands:<board>:<papel>:v<versão>` (TTL 120s só p/ limpeza). Testado: cached=false → true; após alterar uma demanda, versão sobe e o cache é ignorado
 
 ## Assistente do quadro (tool calling)
 Decisões: uma conversa por quadro, guardada no navegador (localStorage), com botão "Nova conversa".
