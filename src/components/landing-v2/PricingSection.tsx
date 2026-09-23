@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, X } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 
 const plans = [
   {
@@ -20,7 +20,7 @@ const plans = [
     },
     highlighted: false,
     cta: 'Selecionar Plano',
-    href: 'https://pla.soma.lefil.com.br/get-started',
+    href: '/get-started',
   },
   {
     name: 'Profissional',
@@ -38,7 +38,7 @@ const plans = [
     },
     highlighted: true,
     cta: 'Selecionar Plano',
-    href: 'https://pla.soma.lefil.com.br/get-started',
+    href: '/get-started',
   },
   {
     name: 'Business',
@@ -56,7 +56,7 @@ const plans = [
     },
     highlighted: false,
     cta: 'Selecionar Plano',
-    href: 'https://pla.soma.lefil.com.br/get-started',
+    href: '/get-started',
   },
   {
     name: 'Enterprise',

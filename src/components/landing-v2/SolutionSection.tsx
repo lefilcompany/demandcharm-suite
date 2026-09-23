@@ -1,5 +1,6 @@
 import React from 'react';
-import loopKanbanVideo from '@/assets/loop_kanban.mp4';
+import loopKanbanAsset from '@/assets/lp/loop_kanban.mp4.asset.json';
+const loopKanbanVideo = loopKanbanAsset.url;
 const SolutionSection: React.FC = () => {
   return <section className="bg-soma-black py-24 px-4">
       <div className="container mx-auto max-w-6xl">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 
 const FinalSection: React.FC = () => {
   return (
@@ -25,7 +25,7 @@ const FinalSection: React.FC = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-5 justify-center">
-            <a href="https://pla.soma.lefil.com.br" target="_blank" rel="noopener noreferrer">
+            <a href="/app">
               <Button className="text-white font-semibold h-auto py-4 text-lg px-10 bg-gradient-to-r from-soma-orange-light via-soma-orange-medium to-soma-orange-dark hover:from-soma-orange-medium hover:via-soma-orange-dark hover:to-soma-orange-dark shadow-lg shadow-soma-orange-medium/40 hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl w-full sm:w-auto">
                 Testar grátis
               </Button>

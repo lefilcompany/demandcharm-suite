@@ -11,12 +11,12 @@ import {
 } from 'lucide-react';
 
 // Import feature images
-import kanbanImg from '@/assets/features/kanban.png';
-import timeTrackingImg from '@/assets/features/time-tracking.png';
-import rolesImg from '@/assets/features/roles.png';
-import aiSummaryImg from '@/assets/features/ai-summary.png';
-import notificationsImg from '@/assets/features/notifications.png';
-import reportsImg from '@/assets/features/reports.png';
+import kanbanImg from '@/assets/lp/features/kanban.png';
+import timeTrackingImg from '@/assets/lp/features/time-tracking.png';
+import rolesImg from '@/assets/lp/features/roles.png';
+import aiSummaryImg from '@/assets/lp/features/ai-summary.png';
+import notificationsImg from '@/assets/lp/features/notifications.png';
+import reportsImg from '@/assets/lp/features/reports.png';
 
 interface Feature {
   title: string;

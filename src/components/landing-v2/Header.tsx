@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 import { LogIn, Menu, X } from 'lucide-react';
-import logoSoma from '@/assets/logo-soma-dark.png';
+import logoSoma from '@/assets/lp/logo-soma-dark.png';
 
 const navLinks = [
   { label: 'Como funciona', href: '#como-funciona' },
@@ -38,7 +38,7 @@ const Header: React.FC = () => {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            <a href="https://pla.soma.lefil.com.br/" target="_blank" rel="noopener noreferrer" className="hidden sm:inline-flex">
+            <a href="/app" className="hidden sm:inline-flex">
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -49,7 +49,7 @@ const Header: React.FC = () => {
               </Button>
             </a>
             
-            <a href="https://pla.soma.lefil.com.br/" target="_blank" rel="noopener noreferrer">
+            <a href="/app">
               <Button size="sm" className="bg-primary hover:bg-secondary text-primary-foreground font-medium px-4">
                 Cadastre-se
               </Button>
@@ -80,7 +80,7 @@ const Header: React.FC = () => {
               </a>
             ))}
             <a
-              href="https://pla.soma.lefil.com.br/"
+              href="/app"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setMobileOpen(false)}

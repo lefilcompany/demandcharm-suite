@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from './ui/button';
-import heroImage from '@/assets/hero-image.png';
+import { Button } from '@/components/ui/button';
+import heroImage from '@/assets/lp/hero-image.png';
 
 const HeroSection: React.FC = () => {
 
@@ -33,7 +33,7 @@ const HeroSection: React.FC = () => {
             </p>
             
             <div className="animate-fade-in flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <a href="https://pla.soma.lefil.com.br" target="_blank" rel="noopener noreferrer" className="group">
+              <a href="/app" className="group">
                 <Button className="text-white font-semibold h-auto py-3.5 lg:py-4 text-base lg:text-lg px-8 lg:px-10 bg-gradient-to-r from-soma-orange-light via-soma-orange-medium to-soma-orange-dark hover:from-soma-orange-medium hover:via-soma-orange-dark hover:to-soma-orange-dark w-full sm:w-auto shadow-lg shadow-soma-orange-medium/40 hover:shadow-xl hover:shadow-soma-orange-dark/50 transition-all duration-300 hover:scale-105 rounded-xl">
                   Testar grátis
                 </Button>

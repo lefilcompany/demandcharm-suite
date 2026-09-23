@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-import lefilLogo from '@/assets/partners/lefil.png';
-import marketingFuturoLogo from '@/assets/partners/marketing-futuro.png';
-import raymundoFonteLogo from '@/assets/partners/raymundo-fonte.png';
-import magaluLogo from '@/assets/partners/magalu.png';
-import lumiLogo from '@/assets/partners/lumi.png';
-import juqLogo from '@/assets/partners/juq.png';
+import lefilLogo from '@/assets/lp/partners/lefil.png';
+import marketingFuturoLogo from '@/assets/lp/partners/marketing-futuro.png';
+import raymundoFonteLogo from '@/assets/lp/partners/raymundo-fonte.png';
+import magaluLogo from '@/assets/lp/partners/magalu.png';
+import lumiLogo from '@/assets/lp/partners/lumi.png';
+import juqLogo from '@/assets/lp/partners/juq.png';
 
 const partners = [
   { name: 'Lefil', logo: lefilLogo },
