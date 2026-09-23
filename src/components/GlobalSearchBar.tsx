@@ -359,7 +359,7 @@ export function GlobalSearchBar() {
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Buscar demandas, membros..."
+                placeholder="Buscar por palavra ou por significado..."
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
                 onKeyDown={handleKeyDown}
@@ -394,7 +394,7 @@ export function GlobalSearchBar() {
             <Input
               ref={modalInputRef}
               type="text"
-              placeholder="Buscar demandas, membros..."
+              placeholder="Buscar por palavra ou por significado..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
