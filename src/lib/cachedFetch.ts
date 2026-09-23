@@ -7,13 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
  * não estiver configurada, caímos automaticamente na consulta direta ao banco.
  */
 
-const CACHE_TIMEOUT_MS = 1200;
+const CACHE_TIMEOUT_MS = 600;
 
 /** Depois de N falhas seguidas, paramos de tentar por um tempo. */
 let consecutiveFailures = 0;
 let disabledUntil = 0;
-const FAILURE_THRESHOLD = 3;
-const DISABLE_WINDOW_MS = 60_000;
+const FAILURE_THRESHOLD = 2;
+const DISABLE_WINDOW_MS = 120_000;
 
 function cacheAvailable(): boolean {
   return Date.now() >= disabledUntil;

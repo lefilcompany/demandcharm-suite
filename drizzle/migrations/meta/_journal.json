@@ -71,6 +71,13 @@
       "when": 1790166865303,
       "tag": "0009_fix_profiles_anon_policy_and_notification_purge",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790169659762,
+      "tag": "0010_perf_rls_indexes_and_function_grants",
+      "breakpoints": true
     }
   ]
 }
