@@ -289,7 +289,6 @@ Deno.serve(async (req: Request) => {
       return n.includes("entregue") || n.includes("concluí") || n.includes("conclui");
     };
 
-    let deliveredEstimatedCount = 0;
     const allDemands = (demands || []).map((d: any) => {
       let deliveredAt = d.delivered_at;
       let estimated = false;
@@ -297,7 +296,6 @@ Deno.serve(async (req: Request) => {
         deliveredAt = d.status_changed_at || d.updated_at || null;
         if (deliveredAt) {
           estimated = true;
-          deliveredEstimatedCount++;
         }
       }
       return { ...d, delivered_at: deliveredAt, deliveredEstimated: estimated };
@@ -309,6 +307,12 @@ Deno.serve(async (req: Request) => {
           (d.assignees || []).some((a: any) => a.user_id === memberId)
         )
       : allDemands;
+
+    // Data-quality counter must follow the same scope as the other metrics
+    const deliveredEstimatedCount = scopedDemands.filter(
+      (d: any) => d.deliveredEstimated
+    ).length;
+
 
     // Calculate demand metrics with detailed late/overdue tracking
     const demandsList = scopedDemands;
