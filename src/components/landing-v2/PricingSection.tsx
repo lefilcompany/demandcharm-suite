@@ -221,7 +221,7 @@ const PricingSection: React.FC = () => {
                 })}
               </ul>
 
-              <a href={plan.href} target="_blank" rel="noopener noreferrer">
+              <a href={plan.href}>
                 <Button
                   className={`w-full py-5 text-sm font-semibold rounded-xl transition-all ${
                     plan.highlighted
