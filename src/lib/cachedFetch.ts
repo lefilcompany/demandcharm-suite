@@ -31,7 +31,7 @@ function registerSuccess() {
   consecutiveFailures = 0;
 }
 
-export type CacheResource = "services" | "profiles" | "board_statuses";
+export type CacheResource = "services" | "profiles" | "board_statuses" | "demands";
 
 interface CacheReadPayload {
   resource: CacheResource;
@@ -39,11 +39,19 @@ interface CacheReadPayload {
   userIds?: string[];
 }
 
+/** As demandas têm função própria (chave versionada pelo banco). */
+function functionNameFor(resource: CacheResource): string {
+  return resource === "demands" ? "demands-read" : "cache-read";
+}
+
 async function invokeWithTimeout<T>(payload: CacheReadPayload): Promise<T[] | null> {
   const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), CACHE_TIMEOUT_MS));
 
+  const { resource, ...rest } = payload;
+  const body = resource === "demands" ? rest : payload;
+
   const request = supabase.functions
-    .invoke("cache-read", { body: payload })
+    .invoke(functionNameFor(resource), { body })
     .then(({ data, error }) => {
       if (error || !data || !Array.isArray((data as any).data)) return null;
       return (data as any).data as T[];
