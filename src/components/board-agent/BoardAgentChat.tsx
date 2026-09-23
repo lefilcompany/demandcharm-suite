@@ -134,6 +134,15 @@ export function BoardAgentChat({ boardId, boardName }: Props) {
     requestAnimationFrame(focusComposer);
   }, [isBusy, stop, setMessages, clearError, boardId, focusComposer]);
 
+  const clearConversation = useCallback(() => {
+    if (isBusy) stop();
+    setMessages([]);
+    clearError();
+    clearBoardAgentMessages(boardId);
+    setShowClearDialog(false);
+    requestAnimationFrame(focusComposer);
+  }, [isBusy, stop, setMessages, clearError, boardId, focusComposer]);
+
   const lastMessage = messages[messages.length - 1];
   const showThinking =
     status === "submitted" ||
