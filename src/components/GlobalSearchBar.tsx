@@ -34,7 +34,35 @@ export function GlobalSearchBar() {
   const { openCreateDemand } = useCreateDemandModal();
   const isMobile = useIsMobile();
 
-  const { data: results, isLoading } = useGlobalSearch(query, currentBoard?.id || null);
+  const { data: keywordResults, isLoading } = useGlobalSearch(query, currentBoard?.id || null);
+  const { data: semanticData, isFetching: isSemanticLoading } = useSemanticSearch(query, currentBoard?.id || null);
+
+  const semanticLabels: Record<string, string> = {
+    demand: "Demanda",
+    request: "Solicitação",
+    member: "Membro do quadro",
+    service: "Serviço",
+  };
+
+  const results = useMemo(() => {
+    const keyword = keywordResults ?? [];
+    const seen = new Set(keyword.map((r) => r.id));
+    const semantic = (semanticData ?? [])
+      .filter((r) => !seen.has(r.id))
+      .map((r) => ({
+        type: "semantic" as const,
+        semanticType: r.type,
+        id: r.id,
+        title: r.title,
+        subtitle: semanticLabels[r.type] || "Resultado",
+        extra: r.snippet,
+        link: r.link,
+        avatarUrl: undefined as string | undefined,
+        priority: undefined as string | undefined,
+        statusColor: undefined as string | undefined,
+      }));
+    return [...keyword.map((r) => ({ ...r, semanticType: undefined as string | undefined })), ...semantic];
+  }, [keywordResults, semanticData]);
 
   useEffect(() => {
     setSelectedIndex(-1);
