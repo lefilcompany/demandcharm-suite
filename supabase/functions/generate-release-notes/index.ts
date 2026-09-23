@@ -167,10 +167,11 @@ Deno.serve(async (req) => {
     return json({ error: "Unauthorized" }, 401);
   }
 
-  if (!LOVABLE_API_KEY) {
-    log("error", "missing LOVABLE_API_KEY");
+  if (!GEMINI_API_KEY && !LOVABLE_API_KEY) {
+    log("error", "missing AI credentials");
     return json({ error: "AI não configurada" }, 500);
   }
+
 
   let body: Record<string, unknown>;
   try {
