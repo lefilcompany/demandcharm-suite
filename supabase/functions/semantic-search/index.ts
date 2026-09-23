@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       p_board_id: boardId,
       p_embedding: JSON.stringify(embedding),
       p_limit: limit ?? 12,
-      p_min_similarity: 0.45,
+      p_min_similarity: 0.6,
     });
     if (error) throw new Error(error.message);
 
