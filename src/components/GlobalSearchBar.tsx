@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, FileText, Loader2, X, Plus, LayoutDashboard, Columns3, ClipboardList, Clock, StickyNote } from "lucide-react";
+import { Search, FileText, Loader2, X, Plus, LayoutDashboard, Columns3, ClipboardList, Clock, StickyNote, Sparkles, Inbox, Wrench } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useGlobalSearch } from "@/hooks/useGlobalSearch";
+import { useSemanticSearch } from "@/hooks/useSemanticSearch";
 import { useSelectedBoardSafe } from "@/contexts/BoardContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCreateDemandModal } from "@/contexts/CreateDemandContext";
@@ -33,7 +34,35 @@ export function GlobalSearchBar() {
   const { openCreateDemand } = useCreateDemandModal();
   const isMobile = useIsMobile();
 
-  const { data: results, isLoading } = useGlobalSearch(query, currentBoard?.id || null);
+  const { data: keywordResults, isLoading } = useGlobalSearch(query, currentBoard?.id || null);
+  const { data: semanticData, isFetching: isSemanticLoading } = useSemanticSearch(query, currentBoard?.id || null);
+
+  const semanticLabels: Record<string, string> = {
+    demand: "Demanda",
+    request: "Solicitação",
+    member: "Membro do quadro",
+    service: "Serviço",
+  };
+
+  const results = useMemo(() => {
+    const keyword = keywordResults ?? [];
+    const seen = new Set(keyword.map((r) => r.id));
+    const semantic = (semanticData ?? [])
+      .filter((r) => !seen.has(r.id))
+      .map((r) => ({
+        type: "semantic" as const,
+        semanticType: r.type,
+        id: r.id,
+        title: r.title,
+        subtitle: semanticLabels[r.type] || "Resultado",
+        extra: r.snippet,
+        link: r.link,
+        avatarUrl: undefined as string | undefined,
+        priority: undefined as string | undefined,
+        statusColor: undefined as string | undefined,
+      }));
+    return [...keyword.map((r) => ({ ...r, semanticType: undefined as string | undefined })), ...semantic];
+  }, [keywordResults, semanticData]);
 
   useEffect(() => {
     setSelectedIndex(-1);
@@ -134,7 +163,21 @@ export function GlobalSearchBar() {
     }
   };
 
-  const getIcon = (result: { type: string; avatarUrl?: string; title?: string; statusColor?: string }) => {
+  const getIcon = (result: { type: string; semanticType?: string; avatarUrl?: string; title?: string; statusColor?: string }) => {
+    if (result.type === "semantic") {
+      const Icon = result.semanticType === "member"
+        ? Sparkles
+        : result.semanticType === "request"
+          ? Inbox
+          : result.semanticType === "service"
+            ? Wrench
+            : FileText;
+      return (
+        <div className="h-7 w-7 rounded-md flex items-center justify-center shrink-0 bg-primary/10">
+          <Icon className="h-3.5 w-3.5 text-primary" />
+        </div>
+      );
+    }
     if (result.type === "member" || result.type === "user") {
       const initials = result.title
         ?.split(" ")
@@ -172,6 +215,7 @@ export function GlobalSearchBar() {
   // Group results by type
   const demandResults = results?.filter(r => r.type === "demand") || [];
   const peopleResults = results?.filter(r => r.type === "member" || r.type === "user") || [];
+  const semanticResults = results?.filter(r => r.type === "semantic") || [];
 
   const renderResultItem = (result: typeof results extends (infer T)[] | undefined ? T : never, globalIndex: number) => (
     <button
@@ -234,6 +278,32 @@ export function GlobalSearchBar() {
               {peopleResults.map((result, i) => renderResultItem(result, demandResults.length + i))}
             </>
           )}
+          {semanticResults.length > 0 && (
+            <>
+              <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30 border-b border-border/50 border-t flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3 text-primary" />
+                Por significado ({semanticResults.length})
+              </div>
+              {semanticResults.map((result, i) =>
+                renderResultItem(result, demandResults.length + peopleResults.length + i)
+              )}
+            </>
+          )}
+          {isSemanticLoading && semanticResults.length === 0 && (
+            <div className="px-3 py-2 border-t border-border/50 flex items-center gap-2 text-[10px] text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Buscando por significado...
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (isSemanticLoading) {
+      return (
+        <div className="flex items-center justify-center py-6 gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Buscando por significado...
         </div>
       );
     }
@@ -289,7 +359,7 @@ export function GlobalSearchBar() {
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Buscar demandas, membros..."
+                placeholder="Buscar por palavra ou por significado..."
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
                 onKeyDown={handleKeyDown}
@@ -324,7 +394,7 @@ export function GlobalSearchBar() {
             <Input
               ref={modalInputRef}
               type="text"
-              placeholder="Buscar demandas, membros..."
+              placeholder="Buscar por palavra ou por significado..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}

@@ -2882,6 +2882,56 @@ export type Database = {
           },
         ]
       }
+      search_documents: {
+        Row: {
+          board_id: string
+          content: string
+          content_hash: string
+          created_at: string
+          embedding: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          board_id: string
+          content: string
+          content_hash: string
+          created_at?: string
+          embedding?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          metadata?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          board_id?: string
+          content?: string
+          content_hash?: string
+          created_at?: string
+          embedding?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          metadata?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_documents_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_catalog_items: {
         Row: {
           area_key: string
@@ -4252,6 +4302,22 @@ export type Database = {
       }
       join_board_via_share_token: { Args: { p_token: string }; Returns: Json }
       join_team_with_code: { Args: { p_code: string }; Returns: string }
+      match_board_documents: {
+        Args: {
+          p_board_id: string
+          p_embedding: string
+          p_limit?: number
+          p_min_similarity?: number
+        }
+        Returns: {
+          content: string
+          entity_id: string
+          entity_type: string
+          metadata: Json
+          similarity: number
+          title: string
+        }[]
+      }
       password_reset_required: { Args: { _email: string }; Returns: boolean }
       promote_to_admin_by_email: {
         Args: { p_email: string }
@@ -4293,6 +4359,13 @@ export type Database = {
       reschedule_demand: {
         Args: { p_demand_id: string; p_new_due_date: string; p_reason: string }
         Returns: Json
+      }
+      search_index_status: {
+        Args: { p_board_id: string }
+        Returns: {
+          document_count: number
+          last_indexed_at: string
+        }[]
       }
       seed_team_service_catalog: {
         Args: { _team_id: string }
