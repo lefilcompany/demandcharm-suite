@@ -26,7 +26,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RELEASE_EVENT_SECRET = Deno.env.get("RELEASE_EVENT_SECRET") ?? "";
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") ?? "";
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
 const MODEL = "google/gemini-3.8-flash";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 function log(level: "info" | "warn" | "error", message: string, ctx: Record<string, unknown> = {}) {
   const line = JSON.stringify({
