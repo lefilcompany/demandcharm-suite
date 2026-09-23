@@ -199,14 +199,9 @@ Deno.serve(async (req) => {
       stopWhen: isStepCount(50),
       abortSignal: req.signal,
       providerOptions: {
-        openai: {
-          // Ids com prefixo do gateway não são reconhecidos como modelos de raciocínio: força o pedido.
-          forceReasoning: true,
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          // Gateway é stateless: cada passo de ferramenta reenvia os itens anteriores inline.
-          store: false,
-          include: ["reasoning.encrypted_content"],
+        google: {
+          // Raciocínio curto e visível para o usuário acompanhar o passo a passo.
+          thinkingConfig: { includeThoughts: true, thinkingBudget: 2048 },
         },
       },
       onError: ({ error }) => {
