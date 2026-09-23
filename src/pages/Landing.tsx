@@ -13,7 +13,7 @@ import Footer from "@/components/landing-v2/Footer";
 
 const Landing: React.FC = () => {
   return (
-    <div className="lp-root min-h-screen bg-white overflow-hidden">
+    <div className="lp-root h-full overflow-x-hidden overflow-y-auto bg-white">
       <SEOHead
         title="SoMA - Plataforma de Escopo Inteligente para Marketing"
         description="Organize e controle o escopo do seu marketing com o SoMA. Acompanhe solicitações em tempo real, gerencie entregas e mantenha transparência total entre equipe e cliente."
