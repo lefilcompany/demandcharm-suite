@@ -57,6 +57,7 @@ function readableError(error: Error): string {
 
 export function BoardAgentChat({ boardId, boardName }: Props) {
   const composerRef = useRef<HTMLDivElement>(null);
+  const [showClearDialog, setShowClearDialog] = useState(false);
   const initialMessages = useMemo(() => loadBoardAgentMessages(boardId), [boardId]);
 
   const transport = useMemo(
