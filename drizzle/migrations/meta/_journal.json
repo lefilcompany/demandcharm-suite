@@ -64,6 +64,13 @@
       "when": 1790163331144,
       "tag": "0008_fix_board_cache_versions_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790166865303,
+      "tag": "0009_fix_profiles_anon_policy_and_notification_purge",
+      "breakpoints": true
     }
   ]
 }
