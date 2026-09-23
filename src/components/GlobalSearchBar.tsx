@@ -163,7 +163,21 @@ export function GlobalSearchBar() {
     }
   };
 
-  const getIcon = (result: { type: string; avatarUrl?: string; title?: string; statusColor?: string }) => {
+  const getIcon = (result: { type: string; semanticType?: string; avatarUrl?: string; title?: string; statusColor?: string }) => {
+    if (result.type === "semantic") {
+      const Icon = result.semanticType === "member"
+        ? Sparkles
+        : result.semanticType === "request"
+          ? Inbox
+          : result.semanticType === "service"
+            ? Wrench
+            : FileText;
+      return (
+        <div className="h-7 w-7 rounded-md flex items-center justify-center shrink-0 bg-primary/10">
+          <Icon className="h-3.5 w-3.5 text-primary" />
+        </div>
+      );
+    }
     if (result.type === "member" || result.type === "user") {
       const initials = result.title
         ?.split(" ")
@@ -201,6 +215,7 @@ export function GlobalSearchBar() {
   // Group results by type
   const demandResults = results?.filter(r => r.type === "demand") || [];
   const peopleResults = results?.filter(r => r.type === "member" || r.type === "user") || [];
+  const semanticResults = results?.filter(r => r.type === "semantic") || [];
 
   const renderResultItem = (result: typeof results extends (infer T)[] | undefined ? T : never, globalIndex: number) => (
     <button
