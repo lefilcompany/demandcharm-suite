@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
  */
 
 const CACHE_TIMEOUT_MS = 600;
+/** Demandas passam por lock/espera na função; damos mais folga antes de desistir. */
+const DEMANDS_TIMEOUT_MS = 1200;
 
 /** Depois de N falhas seguidas, paramos de tentar por um tempo. */
 let consecutiveFailures = 0;
@@ -44,8 +46,21 @@ function functionNameFor(resource: CacheResource): string {
   return resource === "demands" ? "demands-read" : "cache-read";
 }
 
+function payloadKey(payload: CacheReadPayload): string {
+  return [payload.resource, payload.boardId ?? "-", (payload.userIds ?? []).join(",")].join("|");
+}
+
+/** Pedidos idênticos em andamento são reaproveitados (coalescência no cliente). */
+const inFlight = new Map<string, Promise<unknown[] | null>>();
+
+/** Pequeno atraso aleatório para não disparar tudo ao mesmo tempo após invalidação. */
+function jitter(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, Math.random() * 250));
+}
+
 async function invokeWithTimeout<T>(payload: CacheReadPayload): Promise<T[] | null> {
-  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), CACHE_TIMEOUT_MS));
+  const limit = payload.resource === "demands" ? DEMANDS_TIMEOUT_MS : CACHE_TIMEOUT_MS;
+  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), limit));
 
   const { resource, ...rest } = payload;
   const body = resource === "demands" ? rest : payload;
@@ -74,7 +89,24 @@ export async function cachedRead<T>(
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData?.session?.access_token) return fallback();
 
-  const result = await invokeWithTimeout<T>(payload);
+  const key = payloadKey(payload);
+  const existing = inFlight.get(key);
+
+  const pending =
+    existing ??
+    (async () => {
+      await jitter();
+      return await invokeWithTimeout<T>(payload);
+    })();
+
+  if (!existing) {
+    inFlight.set(key, pending as Promise<unknown[] | null>);
+    pending.finally(() => {
+      if (inFlight.get(key) === (pending as Promise<unknown[] | null>)) inFlight.delete(key);
+    });
+  }
+
+  const result = (await pending) as T[] | null;
 
   if (result === null) {
     registerFailure();
