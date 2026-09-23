@@ -26,6 +26,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        'space-grotesk': ['"Space Grotesk"', 'sans-serif'],
+        poppins: ['Poppins', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -78,6 +80,16 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+        },
+        // Paleta da landing page SoMA
+        soma: {
+          black: "#1a1a1a",
+          white: "#FFFFFF",
+          orange: {
+            light: "#F5A623",
+            medium: "#F28C13",
+            dark: "#D44F0F",
+          },
         },
       },
       borderRadius: {
