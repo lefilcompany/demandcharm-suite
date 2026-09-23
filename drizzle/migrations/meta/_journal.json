@@ -36,6 +36,13 @@
       "when": 1790084988733,
       "tag": "0004_board_demand_facts_guard_null_safe",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790158998392,
+      "tag": "0005_fix_board_services_monthly_limit",
+      "breakpoints": true
     }
   ]
 }

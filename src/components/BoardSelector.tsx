@@ -65,7 +65,7 @@ export function BoardSelector() {
   const pendingBoardIdRef = useRef<string | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
-  const isDemandDetail = /^\/demands\/[^/]+$/.test(location.pathname);
+  const isDemandDetail = /^\/(?:app\/)?demands\/[^/]+$/.test(location.pathname);
 
   const getReturnRoute = () => {
     const from = (location.state as any)?.from;
