@@ -200,8 +200,8 @@ Deno.serve(async (req) => {
       abortSignal: req.signal,
       providerOptions: {
         google: {
-          // Raciocínio curto e visível para o usuário acompanhar o passo a passo.
-          thinkingConfig: { includeThoughts: true, thinkingBudget: 2048 },
+          // Raciocínio interno sem exposição ao usuário (evita texto técnico em inglês no chat).
+          thinkingConfig: { includeThoughts: false, thinkingBudget: 2048 },
         },
       },
       onError: ({ error }) => {
@@ -213,7 +213,7 @@ Deno.serve(async (req) => {
     const uiStream = toUIMessageStream({
       stream: result.stream,
       originalMessages: history,
-      sendReasoning: true,
+      sendReasoning: false,
       onError: friendlyError,
     });
 
