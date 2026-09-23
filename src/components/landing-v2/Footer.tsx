@@ -89,10 +89,10 @@ const Footer: React.FC = () => {
               © {new Date().getFullYear()} SoMA. Todos os direitos reservados.
             </div>
             <div className="flex gap-6">
-              <a href="#" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
+              <a href="/privacy-policy" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
                 Política de Privacidade
               </a>
-              <a href="#" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
+              <a href="/terms-of-service" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
                 Termos de Uso
               </a>
             </div>

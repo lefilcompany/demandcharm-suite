@@ -81,8 +81,6 @@ const Header: React.FC = () => {
             ))}
             <a
               href="/app"
-              target="_blank"
-              rel="noopener noreferrer"
               onClick={() => setMobileOpen(false)}
               className="sm:hidden px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors flex items-center gap-1.5"
             >
