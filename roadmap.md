@@ -33,4 +33,9 @@ definições (aberta, entregue no prazo/atrasada, vencida, vence em breve, etapa
 
 
 ## Busca semântica
-- [ ] Implementar busca semântica funcional (embeddings + pgvector) sobre demandas/notas
+- [x] Índice `search_documents` (pgvector 768d, HNSW) + `match_board_documents` / `search_index_status`
+- [x] Edge functions `semantic-index` (indexa demandas, solicitações, membros e serviços via Gemini) e `semantic-search`
+- [x] Grupo "Por significado" na busca global do topo, escopo do quadro atual
+- [ ] Opcional: reindexação agendada (hoje reindexa sob demanda quando o índice tem mais de 10 minutos)
+- [ ] Opcional: incluir notas e comentários no índice
+
