@@ -6,6 +6,7 @@
 - [x] Criar gestão administrativa das solicitações.
 - [x] Verificar funcionamento e corrigir erros pendentes.
 - [x] Landing na raiz e sistema em /app, com redirecionamento dos endereços antigos.
+- [x] Substituir a landing da rota inicial pela LP-SOMA+ 1:1, com imagens, fontes, animações e rolagem completas.
 
 
 ## Cache compartilhado (Redis/Upstash)
