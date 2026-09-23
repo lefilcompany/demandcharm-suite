@@ -227,6 +227,17 @@ export function BoardAgentChat({ boardId, boardName }: Props) {
                   <MessageSquarePlus className="size-3.5" />
                   Nova conversa
                 </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-destructive"
+                  onClick={() => setShowClearDialog(true)}
+                  disabled={messages.length === 0}
+                >
+                  <Trash2 className="size-3.5" />
+                  Limpar
+                </Button>
               </div>
               <PromptInputSubmit status={isBusy ? status : undefined} onStop={stop} className="size-8 rounded-lg" />
             </PromptInputFooter>
@@ -236,6 +247,26 @@ export function BoardAgentChat({ boardId, boardName }: Props) {
           </p>
         </div>
       </div>
+
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar conversa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todas as mensagens desta conversa serão removidas. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={clearConversation}
+            >
+              Limpar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
