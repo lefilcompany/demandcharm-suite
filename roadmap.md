@@ -30,3 +30,7 @@ definições (aberta, entregue no prazo/atrasada, vencida, vence em breve, etapa
 ## Pendências
 - [ ] Comparar pg_stat antes/depois do Redis para medir o ganho
 - [ ] Confirmar deploy em produção das edge functions que usam `/app/`: process-platform-events, processReleaseEmailDeliveries, detect-production-release, generate-release-notes, ingest-release-event
+
+
+## Busca semântica
+- [ ] Implementar busca semântica funcional (embeddings + pgvector) sobre demandas/notas
