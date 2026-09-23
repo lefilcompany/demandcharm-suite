@@ -50,6 +50,13 @@
       "when": 1790160558730,
       "tag": "0006_semantic_search_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790163229450,
+      "tag": "0007_board_cache_versions",
+      "breakpoints": true
     }
   ]
 }
