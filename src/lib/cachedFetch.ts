@@ -70,6 +70,10 @@ export async function cachedRead<T>(
 ): Promise<T[]> {
   if (!cacheAvailable()) return fallback();
 
+  // Sem sessão ativa a função de cache responderia 401: vai direto ao banco.
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData?.session?.access_token) return fallback();
+
   const result = await invokeWithTimeout<T>(payload);
 
   if (result === null) {
