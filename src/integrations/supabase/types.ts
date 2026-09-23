@@ -4350,6 +4350,7 @@ export type Database = {
         Returns: Json
       }
       purge_expired_trashed_demands: { Args: never; Returns: number }
+      purge_old_read_notifications: { Args: never; Returns: number }
       redeem_trial_coupon: {
         Args: { p_code: string; p_team_id: string }
         Returns: Json
