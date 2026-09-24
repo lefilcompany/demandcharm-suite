@@ -21,7 +21,7 @@ export function hasMeaningfulRichText(value: string): boolean {
   return meaningfulRichTextLength(value) > 0;
 }
 
-export const DEMAND_DESCRIPTION_MIN_LENGTH = 30;
+export const DEMAND_DESCRIPTION_MIN_LENGTH = 20;
 
 export function hasMinMeaningfulRichText(value: string): boolean {
   return meaningfulRichTextLength(value) >= DEMAND_DESCRIPTION_MIN_LENGTH;
