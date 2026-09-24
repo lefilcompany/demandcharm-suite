@@ -176,6 +176,7 @@ Deno.serve(async (req) => {
     const system = buildSystemPrompt({
       boardName: board.name,
       boardDescription: board.description,
+      userId: user.id,
       userName: profile?.full_name ?? user.email ?? "Usuário",
       userRole: membership?.role ? ROLE_LABEL[membership.role] ?? membership.role : "Membro da equipe",
       today,
