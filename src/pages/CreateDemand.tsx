@@ -338,7 +338,7 @@ export default function CreateDemand({ open, onClose }: { open?: boolean; onClos
     if (!title.trim() || !selectedTeamId || !activeBoardId || !statusId || !canCreate) return;
 
     if (!hasMinMeaningfulRichText(description)) {
-      toast.error("A descrição precisa ter pelo menos 30 caracteres");
+      toast.error("A descrição precisa ter pelo menos 20 caracteres");
       setCurrentStep(0);
       return;
     }
