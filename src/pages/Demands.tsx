@@ -16,7 +16,8 @@ import { useBoardRole } from "@/hooks/useBoardMembers";
 import { useAuth } from "@/lib/auth";
 import { useMembersByPosition } from "@/hooks/useMembersByPosition";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
-import { Plus, Briefcase, LayoutList, LayoutGrid, List, Search, Eye, EyeOff, CalendarDays, User, Layers, Trash2, RotateCcw } from "lucide-react";
+import { Plus, Briefcase, LayoutList, LayoutGrid, List, Search, Eye, EyeOff, CalendarDays, User, Layers, Trash2, RotateCcw, FileUp } from "lucide-react";
+import { ImportDemandsDialog } from "@/components/demands/ImportDemandsDialog";
 import { useNavigate, useLocation } from "react-router-dom";
 import { DemandHierarchyTable, HierarchicalDemand } from "@/components/demands/DemandHierarchyTable";
 import { DemandHierarchyGrid } from "@/components/demands/DemandHierarchyGrid";
@@ -99,6 +100,7 @@ export default function Demands() {
   } = useTranslation();
   const navigate = useNavigate();
   const { openCreateDemand } = useCreateDemandModal();
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const guardDemands = usePlanLimitGuard("demands");
   const location = useLocation();
   const {
@@ -582,6 +584,17 @@ export default function Demands() {
 
               {/* Scheduled demands button */}
               <ScheduledDemandsModal boardId={selectedBoardId} teamId={currentTeamId} />
+              {!isReadOnly && (
+                <button
+                  type="button"
+                  onClick={() => setIsImportOpen(true)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium h-8 transition-all duration-200 whitespace-nowrap bg-background border border-border/60 hover:border-primary/40 hover:text-primary"
+                >
+                  <FileUp className="h-3.5 w-3.5" />
+                  Importar de documento
+                </button>
+              )}
+              <ImportDemandsDialog open={isImportOpen} onOpenChange={setIsImportOpen} />
 
               {/* Archived demands button */}
               <Tooltip>
