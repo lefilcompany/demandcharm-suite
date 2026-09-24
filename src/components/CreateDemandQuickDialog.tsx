@@ -138,7 +138,7 @@ export function CreateDemandQuickDialog({
     }
 
     if (!hasMinMeaningfulRichText(description)) {
-      toast.error("A descrição precisa ter pelo menos 30 caracteres");
+      toast.error("A descrição precisa ter pelo menos 20 caracteres");
       return;
     }
 

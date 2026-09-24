@@ -21,7 +21,7 @@ export function hasMeaningfulRichText(value: string): boolean {
   return meaningfulRichTextLength(value) > 0;
 }
 
-export const DEMAND_DESCRIPTION_MIN_LENGTH = 30;
+export const DEMAND_DESCRIPTION_MIN_LENGTH = 20;
 
 export function hasMinMeaningfulRichText(value: string): boolean {
   return meaningfulRichTextLength(value) >= DEMAND_DESCRIPTION_MIN_LENGTH;
@@ -38,7 +38,7 @@ export const DemandCreateSchema = z.object({
   description: nonEmptyString
     .max(50000, "Descrição deve ter no máximo 50000 caracteres")
     .refine(hasMeaningfulRichText, "A descrição é obrigatória")
-    .refine(hasMinMeaningfulRichText, "A descrição precisa ter pelo menos 30 caracteres"),
+    .refine(hasMinMeaningfulRichText, "A descrição precisa ter pelo menos 20 caracteres"),
   team_id: z.string().uuid("ID da equipe inválido"),
   board_id: z.string().uuid("ID do quadro inválido"),
   status_id: z.string().uuid("ID do status inválido"),
