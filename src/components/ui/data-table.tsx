@@ -32,6 +32,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onRowClick?: (row: TData) => void;
+  onRowAuxClick?: (row: TData) => void;
   defaultSorting?: SortingState;
   defaultPageSize?: number;
 }
@@ -42,6 +43,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   onRowClick,
+  onRowAuxClick,
   defaultSorting = [],
   defaultPageSize = 10,
 }: DataTableProps<TData, TValue>) {
@@ -108,6 +110,12 @@ export function DataTable<TData, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   onClick={() => onRowClick?.(row.original)}
+                  onAuxClick={(e) => {
+                    if (e.button !== 1 || !onRowAuxClick) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onRowAuxClick(row.original);
+                  }}
                   className={onRowClick ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
                 >
                   {row.getVisibleCells().map((cell) => (

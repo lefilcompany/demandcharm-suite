@@ -54,6 +54,7 @@ import { checkDependencyBeforeStatusChange, useBatchDependencyInfo, type Depende
 import { patchDemandStatusByIds, patchParentAggregatedTime } from "@/lib/demandRealtimeCache";
 import { useReorderSubdemands } from "@/hooks/useSubdemands";
 import { validateSubdemandOrder } from "@/lib/subdemandOrderUtils";
+import { openDemandOnAuxClick } from "@/lib/demandAuxClick";
 import { Link2, Lock, AlertTriangle } from "lucide-react";
 import {
   AlertDialog,
@@ -1626,7 +1627,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              <div className="flex-1 min-w-0" onClick={() => onDemandClick(demand.id)}>
+              <div className="flex-1 min-w-0" onClick={() => onDemandClick(demand.id)} onAuxClick={(e) => openDemandOnAuxClick(e, demand.id)}>
                 {/* Code + label row */}
                 <div className="flex items-center gap-1.5 mb-1.5">
                   {demand.board_sequence_number && (
@@ -1765,6 +1766,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   <div
                     className="mt-2 rounded border border-primary/15 bg-primary/[0.04] px-2 py-1.5 cursor-pointer hover:bg-primary/[0.08] transition-colors"
                     onClick={(e) => { e.stopPropagation(); onDemandClick(parent.id); }}
+                    onAuxClick={(e) => openDemandOnAuxClick(e, parent.id)}
                   >
                     <div className="flex items-center gap-1">
                       <span className="text-[9px] text-primary font-medium uppercase tracking-wider">Vinculada a</span>
@@ -1850,6 +1852,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
             <div 
               className="flex-1 min-w-0"
               onClick={() => onDemandClick(demand.id)}
+              onAuxClick={(e) => openDemandOnAuxClick(e, demand.id)}
             >
               <div className="flex items-center gap-1.5 mb-1.5">
                 {demand.board_sequence_number && (

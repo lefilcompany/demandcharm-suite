@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { openDemandOnAuxClick } from "@/lib/demandAuxClick";
 import {
   Select,
   SelectContent,
@@ -170,6 +171,7 @@ export function DemandHierarchyTable({ data, onRowClick }: DemandHierarchyTableP
       <TableRow
         key={demand.id}
         onClick={() => onRowClick?.(demand)}
+        onAuxClick={(e) => openDemandOnAuxClick(e, demand.id)}
         className={`cursor-pointer hover:bg-muted/50 transition-colors ${isChild ? "bg-muted/20" : ""}`}
       >
         {/* Code + expand */}
