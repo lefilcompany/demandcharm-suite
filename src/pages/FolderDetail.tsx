@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParams, useNavigate } from "react-router-dom";
+import { openDemandOnAuxClick } from "@/lib/demandAuxClick";
 import { useAuth } from "@/lib/auth";
 import { useSelectedBoard } from "@/contexts/BoardContext";
 import { useFolderDemandIds, useDemandFolders, useUpdateFolder } from "@/hooks/useDemandFolders";
