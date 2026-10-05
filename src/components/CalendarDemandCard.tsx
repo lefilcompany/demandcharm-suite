@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { getStatusDisplayName } from "@/hooks/useBoardStatuses";
 import { AlertTriangle, Clock, Briefcase, Calendar as CalendarIcon, Flag, CircleDot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { openDemandOnAuxClick } from "@/lib/demandAuxClick";
 import { isDateOverdue } from "@/lib/dateUtils";
 import {
   Tooltip,
@@ -188,6 +189,7 @@ export function CalendarDemandCard({ demand, onClick, compact = false }: Calenda
             e.stopPropagation();
             onClick?.();
           }}
+          onAuxClick={onClick ? (e) => openDemandOnAuxClick(e, demand.id) : undefined}
         >
           <span className="font-medium text-foreground truncate block">
             {demand.title}
@@ -211,6 +213,7 @@ export function CalendarDemandCard({ demand, onClick, compact = false }: Calenda
           e.stopPropagation();
           onClick?.();
         }}
+        onAuxClick={onClick ? (e) => openDemandOnAuxClick(e, demand.id) : undefined}
       >
         {/* Priority indicator */}
         {demand.priority && (

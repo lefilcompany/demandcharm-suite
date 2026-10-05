@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { openDemandOnAuxClick } from "@/lib/demandAuxClick";
 import { getStatusDisplayName } from "@/hooks/useBoardStatuses";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, AlertTriangle, Clock, Wrench, User } from "lucide-react";
@@ -89,6 +90,7 @@ export function DemandCard({ demand, onClick, showFullDetails = false }: DemandC
         isHighPriority && "border-l-4 border-l-destructive"
       )}
       onClick={onClick}
+      onAuxClick={onClick ? (e) => openDemandOnAuxClick(e, demand.id) : undefined}
     >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
