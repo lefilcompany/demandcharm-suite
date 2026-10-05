@@ -41,8 +41,13 @@ export function installChunkReloadHandler() {
   if (typeof window === "undefined") return;
 
   window.addEventListener("vite:preloadError", (event) => {
-    event.preventDefault();
-    if (shouldReload()) reloadFresh();
+    // Only swallow the error when we are actually reloading. Calling
+    // preventDefault() without reloading makes the dynamic import resolve to
+    // `undefined`, which crashes React.lazy with "reading 'default'" (blank page).
+    if (shouldReload()) {
+      event.preventDefault();
+      reloadFresh();
+    }
   });
 
   window.addEventListener("error", (event) => {
