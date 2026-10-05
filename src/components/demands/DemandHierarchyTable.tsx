@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { openDemandOnAuxClick } from "@/lib/demandAuxClick";
 import {
   Select,
   SelectContent,

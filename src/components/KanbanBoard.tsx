@@ -54,6 +54,7 @@ import { checkDependencyBeforeStatusChange, useBatchDependencyInfo, type Depende
 import { patchDemandStatusByIds, patchParentAggregatedTime } from "@/lib/demandRealtimeCache";
 import { useReorderSubdemands } from "@/hooks/useSubdemands";
 import { validateSubdemandOrder } from "@/lib/subdemandOrderUtils";
+import { openDemandOnAuxClick } from "@/lib/demandAuxClick";
 import { Link2, Lock, AlertTriangle } from "lucide-react";
 import {
   AlertDialog,

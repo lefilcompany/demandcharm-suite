@@ -32,6 +32,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onRowClick?: (row: TData) => void;
+  onRowAuxClick?: (row: TData) => void;
   defaultSorting?: SortingState;
   defaultPageSize?: number;
 }
@@ -42,6 +43,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   onRowClick,
+  onRowAuxClick,
   defaultSorting = [],
   defaultPageSize = 10,
 }: DataTableProps<TData, TValue>) {
