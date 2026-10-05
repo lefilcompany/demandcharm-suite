@@ -480,6 +480,7 @@ export default function FolderDetail() {
               columns={demandColumns}
               data={filteredDemands.map(mapToTableRow)}
               onRowClick={(row) => handleDemandClick(row.id)}
+              onRowAuxClick={(row) => window.open(`/app/demands/${row.id}`, "_blank", "noopener")}
             />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -532,6 +533,7 @@ export default function FolderDetail() {
                       columns={demandColumns}
                       data={group.demands.map(mapToTableRow)}
                       onRowClick={(row) => handleDemandClick(row.id, group.boardId)}
+                      onRowAuxClick={(row) => window.open(`/app/demands/${row.id}`, "_blank", "noopener")}
                     />
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
