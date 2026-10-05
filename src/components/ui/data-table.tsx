@@ -110,7 +110,7 @@ export function DataTable<TData, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   onClick={() => onRowClick?.(row.original)}
-                  onAuxClick={(e) => {
+                  onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }} onAuxClick={(e) => {
                     if (e.button !== 1 || !onRowAuxClick) return;
                     e.preventDefault();
                     e.stopPropagation();
