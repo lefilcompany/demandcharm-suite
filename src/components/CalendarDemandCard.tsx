@@ -189,7 +189,7 @@ export function CalendarDemandCard({ demand, onClick, compact = false }: Calenda
             e.stopPropagation();
             onClick?.();
           }}
-          onAuxClick={onClick ? (e) => openDemandOnAuxClick(e, demand.id) : undefined}
+          onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }} onAuxClick={onClick ? (e) => openDemandOnAuxClick(e, demand.id) : undefined}
         >
           <span className="font-medium text-foreground truncate block">
             {demand.title}
@@ -213,7 +213,7 @@ export function CalendarDemandCard({ demand, onClick, compact = false }: Calenda
           e.stopPropagation();
           onClick?.();
         }}
-        onAuxClick={onClick ? (e) => openDemandOnAuxClick(e, demand.id) : undefined}
+        onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }} onAuxClick={onClick ? (e) => openDemandOnAuxClick(e, demand.id) : undefined}
       >
         {/* Priority indicator */}
         {demand.priority && (

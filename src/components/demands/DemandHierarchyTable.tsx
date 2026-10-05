@@ -171,7 +171,7 @@ export function DemandHierarchyTable({ data, onRowClick }: DemandHierarchyTableP
       <TableRow
         key={demand.id}
         onClick={() => onRowClick?.(demand)}
-        onAuxClick={(e) => openDemandOnAuxClick(e, demand.id)}
+        onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }} onAuxClick={(e) => openDemandOnAuxClick(e, demand.id)}
         className={`cursor-pointer hover:bg-muted/50 transition-colors ${isChild ? "bg-muted/20" : ""}`}
       >
         {/* Code + expand */}

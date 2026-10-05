@@ -90,7 +90,7 @@ export function DemandCard({ demand, onClick, showFullDetails = false }: DemandC
         isHighPriority && "border-l-4 border-l-destructive"
       )}
       onClick={onClick}
-      onAuxClick={onClick ? (e) => openDemandOnAuxClick(e, demand.id) : undefined}
+      onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }} onAuxClick={onClick ? (e) => openDemandOnAuxClick(e, demand.id) : undefined}
     >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
