@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
   const authHeader = req.headers.get("Authorization") ?? "";
   if (!authHeader.startsWith("Bearer ")) {
-    return json({ error: "Não autenticado" }, 401);
+    return json({ data: null, unauthenticated: true });
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
 
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData?.user) {
-    return json({ error: "Não autenticado" }, 401);
+    return json({ data: null, unauthenticated: true });
   }
 
   let payload: { resource?: string; boardId?: string; userIds?: string[] };
