@@ -1,4 +1,5 @@
 import { defineConfig, type Plugin } from "vite";
+import type { PreRenderedChunk } from "rollup";
 import react from "@vitejs/plugin-react-swc";
 import { fileURLToPath } from "url";
 import { createHash } from "node:crypto";
@@ -95,6 +96,28 @@ function releaseBuildInfoPlugin(): Plugin {
   };
 }
 
+/**
+ * Pacotes pesados carregados sob demanda (realce de código, diagramas). Eles
+ * somavam ~19 MB em centenas de arquivos que o service worker baixava a cada
+ * publicação. Ficam em `assets/lazy/`, fora do precache, e são guardados no
+ * navegador apenas quando realmente usados.
+ */
+const LAZY_VENDOR_RE =
+  /node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?(?:shiki|@shikijs|mermaid|@mermaid-js|cytoscape(?:-[\w-]+)?|elkjs|langium|chevrotain|@chevrotain|dagre(?:-[\w-]+)?|d3(?:-[\w-]+)?|katex|zenuml|@zenuml|roughjs|khroma|stylis|internmap|delaunator|robust-predicates|layout-base|cose-base|vscode-[\w-]+|@antfu|hachure-fill|path-data-parser|points-on-curve|points-on-path|oniguruma-to-es|oniguruma-parser|regex(?:-[\w-]+)?|emoji-regex-xs|ts-dedent|@braintree\/sanitize-url|@iconify\/utils|es-toolkit|@upsetjs|uuid|dayjs|lodash-es|fastdom)\//;
+
+/** Um chunk só vai para `assets/lazy/` quando TODOS os seus módulos são desses pacotes. */
+function isLazyVendorChunk(chunk: PreRenderedChunk): boolean {
+  const ids = chunk.moduleIds.filter((id) => !id.startsWith("\0"));
+  if (ids.length === 0) return false;
+  return ids.every((id) => LAZY_VENDOR_RE.test(id));
+}
+
+/** O núcleo do mermaid (~1,5 MB) é isolado para não ser arrastado para o chunk do Assistente do Quadro. */
+function manualChunks(id: string): string | undefined {
+  if (/node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?(?:mermaid|@mermaid-js)\//.test(id)) return "mermaid-core";
+  return undefined;
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   return {
@@ -103,6 +126,15 @@ export default defineConfig(({ mode }) => {
       host: "::",
       port: 8080,
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks,
+          chunkFileNames: (chunk) =>
+            isLazyVendorChunk(chunk) ? "assets/lazy/[name]-[hash].js" : "assets/[name]-[hash].js",
+        },
+      },
+    },
     plugins: [
       react(),
       mode === "development" && componentTagger(),
@@ -110,6 +142,11 @@ export default defineConfig(({ mode }) => {
       releaseBuildInfoPlugin(),
 
       VitePWA({
+        // Worker próprio (src/sw.ts): a página vem sempre da rede; só os
+        // arquivos da versão ficam em precache. Ver comentários em src/sw.ts.
+        strategies: "injectManifest",
+        srcDir: "src",
+        filename: "sw.ts",
         registerType: "prompt",
         includeAssets: [
           "favicon.png",
@@ -166,92 +203,13 @@ export default defineConfig(({ mode }) => {
             },
           ],
         },
-        workbox: {
+        injectManifest: {
           maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
-          globPatterns: ["**/*.{js,css,html,ico,png,jpg,jpeg,svg,webp,gif,woff,woff2,ttf,eot}"],
-          navigateFallback: "/index.html",
-          navigateFallbackDenylist: [/^\/api/, /^\/~oauth/],
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
-              handler: "CacheFirst",
-              options: {
-                cacheName: "supabase-storage-cache",
-                expiration: {
-                  maxEntries: 200,
-                  maxAgeSeconds: 60 * 60 * 24 * 30,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-              handler: "NetworkFirst",
-              options: {
-                cacheName: "supabase-api-cache",
-                expiration: {
-                  maxEntries: 100,
-                  maxAgeSeconds: 60 * 60 * 24,
-                },
-                networkTimeoutSeconds: 10,
-              },
-            },
-            {
-              urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
-              handler: "CacheFirst",
-              options: {
-                cacheName: "images-cache",
-                expiration: {
-                  maxEntries: 100,
-                  maxAgeSeconds: 60 * 60 * 24 * 30,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-            {
-              urlPattern: /\.(?:woff|woff2|ttf|eot)$/i,
-              handler: "CacheFirst",
-              options: {
-                cacheName: "fonts-cache",
-                expiration: {
-                  maxEntries: 30,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: "StaleWhileRevalidate",
-              options: {
-                cacheName: "google-fonts-stylesheets",
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: "CacheFirst",
-              options: {
-                cacheName: "google-fonts-webfonts",
-                expiration: {
-                  maxEntries: 30,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-          ],
+          // Só os arquivos da versão (JS/CSS/ícones/fontes). Nada de HTML nem
+          // JSON: a página e o build-info.json precisam vir sempre do servidor.
+          // Imagens grandes (landing, fundo do login) ficam no cache de execução.
+          globPatterns: ["**/*.{js,css,ico,svg,woff,woff2,ttf,eot}"],
+          globIgnores: ["**/index.html", "**/assets/lazy/**", "**/node_modules/**", "sw.js", "workbox-*.js", "firebase-messaging-sw.js"],
         },
       }),
     ].filter(Boolean),

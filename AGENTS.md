@@ -1,0 +1,13 @@
+# AGENTS.md — technical decisions
+
+Rules for anyone (human or agent) changing this codebase. One rule per decision, with the reason.
+
+## PWA / service worker
+
+- The service worker is hand-written in `src/sw.ts` (vite-plugin-pwa `injectManifest`), not generated from config — because the hosting deletes the previous hashed files on every publish, so caching behaviour must be explicit and auditable.
+- `index.html` is never precached; navigations use NetworkFirst with a single cache key (`<scope>index.html`) used only as an offline fallback — a stale cached page points to chunks that no longer exist on the server (404 → blank screen, only fixed with Ctrl+Shift+R).
+- Same-origin `/assets/*` requests go through a CacheFirst route that writes into the precache cache — so a partial install or a wiped cache self-heals from the network instead of forcing full re-downloads.
+- Heavy on-demand vendor chunks (shiki, mermaid and their dependencies, see `LAZY_VENDOR_RE` in `vite.config.ts`) are emitted under `assets/lazy/` and excluded from the precache — they were ~19 MB / ~690 files downloaded by every user at each publish; they are cached at runtime only when used.
+- The precache contains only JS/CSS/icons/fonts: no HTML, no JSON (`build-info.json` and `release-manifest.json` must always be fresh for release detection) and no raster images (runtime `images-cache` covers them).
+- Updates stay in `prompt` mode (`UpdateModal`), but the update flow must not delete caches — the new worker cleans the previous version on activate; wiping the precache left the app with no offline copy.
+- `src/lib/chunkReload.ts` is the single recovery path for missing-chunk errors: activate a waiting worker if any, then reload once (30 s guard). `AppErrorBoundary` in `main.tsx` is the last line of defence so the screen is never blank.
