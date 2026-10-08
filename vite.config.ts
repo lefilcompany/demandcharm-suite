@@ -112,12 +112,6 @@ function isLazyVendorChunk(chunk: PreRenderedChunk): boolean {
   return ids.every((id) => LAZY_VENDOR_RE.test(id));
 }
 
-/** O núcleo do mermaid (~1,5 MB) é isolado para não ser arrastado para o chunk do Assistente do Quadro. */
-function manualChunks(id: string): string | undefined {
-  if (/node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?(?:mermaid|@mermaid-js)\//.test(id)) return "mermaid-core";
-  return undefined;
-}
-
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   return {
@@ -129,7 +123,6 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks,
           chunkFileNames: (chunk) =>
             isLazyVendorChunk(chunk) ? "assets/lazy/[name]-[hash].js" : "assets/[name]-[hash].js",
         },
