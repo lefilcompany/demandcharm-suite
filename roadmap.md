@@ -58,4 +58,4 @@ a hospedagem apaga os arquivos da versão anterior a cada publicação → 404 +
 - [x] `/assets/*` com CacheFirst gravando no precache (recupera instalação parcial/cache apagado)
 - [x] Modal de atualização não apaga mais os caches; recuperação de chunk ausente ativa o worker novo e recarrega
 - [x] `AppErrorBoundary` para nunca ficar em tela branca
-- [ ] Publicar e confirmar no endereço oficial que abrir rotas não exige mais Ctrl+Shift+R
+- [ ] Publicar e confirmar no endereço oficial que abrir rotas não exige mais Ctrl+Shift+R (testado localmente: instalação 75 s → ~2 s; 930 arquivos/32 MB → 224/8 MB; página nova após publicação; offline abre; prompt de atualização OK)
