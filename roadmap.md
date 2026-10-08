@@ -49,3 +49,13 @@ definições (aberta, entregue no prazo/atrasada, vencida, vence em breve, etapa
 - [x] Links de anexos assinados em lote com cache em memória (`useAttachments.ts`)
 - [x] Circuit breaker do cache externo mais rígido (600 ms / 2 falhas / 120 s)
 - [ ] Observar crescimento de rollbacks do Postgres (hoje acumulado desde o boot, sem ação)
+
+## Atualização do app sem Ctrl+Shift+R (service worker)
+Causa: o worker guardava a página inicial junto com 930 arquivos (32 MB, ~75 s) e a servia do cache;
+a hospedagem apaga os arquivos da versão anterior a cada publicação → 404 + tela em branco.
+- [x] Worker próprio `src/sw.ts` (injectManifest): página sempre da rede, cópia só como reserva offline
+- [x] Precache só com JS/CSS/ícones/fontes; pacotes pesados (shiki/mermaid) em `assets/lazy/` fora do precache
+- [x] `/assets/*` com CacheFirst gravando no precache (recupera instalação parcial/cache apagado)
+- [x] Modal de atualização não apaga mais os caches; recuperação de chunk ausente ativa o worker novo e recarrega
+- [x] `AppErrorBoundary` para nunca ficar em tela branca
+- [ ] Publicar e confirmar no endereço oficial que abrir rotas não exige mais Ctrl+Shift+R (testado localmente: instalação 75 s → ~2 s; 930 arquivos/32 MB → 224/8 MB; página nova após publicação; offline abre; prompt de atualização OK)

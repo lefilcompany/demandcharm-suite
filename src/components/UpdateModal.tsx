@@ -21,19 +21,15 @@ function delay(ms: number) {
   return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 }
 
-async function clearAppCaches() {
-  if (!("caches" in window)) return;
-
-  const cacheNames = await window.caches.keys();
-  // Preserve FCM/messaging caches; only drop app-shell buckets.
-  const appCaches = cacheNames.filter((name) => !/firebase|fcm|onesignal/i.test(name));
-  await Promise.allSettled(appCaches.map((cacheName) => window.caches.delete(cacheName)));
-}
+// Não apagamos mais os caches aqui: o worker novo limpa sozinho os arquivos da
+// versão anterior ao ativar, e apagar o precache recém-baixado deixava o app
+// sem cópia offline e dependente da rede para cada arquivo.
 
 function reload() {
   const url = new URL(window.location.href);
   // Remove any legacy cache-bust marker so it does not accumulate.
   url.searchParams.delete("soma-update");
+  url.searchParams.delete("_r");
   window.location.replace(url.toString());
 }
 
@@ -112,9 +108,6 @@ export function UpdateModal() {
     } catch (error) {
       console.error("Erro ao aplicar atualização:", error);
     } finally {
-      await clearAppCaches().catch((error) => {
-        console.warn("Não foi possível limpar o cache do app:", error);
-      });
       reload();
     }
   };
