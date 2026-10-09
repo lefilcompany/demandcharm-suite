@@ -95,6 +95,10 @@ export function AppSidebar() {
     url: "/app/kanban",
     icon: Kanban
   }, {
+    title: "Sprints",
+    url: "/app/sprints",
+    icon: Rocket
+  }, {
     title: t("demands.title"),
     url: "/app/demands",
     icon: LayoutList
