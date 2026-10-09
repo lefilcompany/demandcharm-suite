@@ -55,3 +55,13 @@ export function canAddDemandToSprint(
     (m) => m.demand_id === demandId && m.sprint_id !== targetSprintId && m.sprint_status !== "completed"
   );
 }
+
+/**
+ * Ao remover uma etapa do Kanban da sprint, as demandas vão para a próxima etapa visível.
+ * Retorna null quando não há etapa seguinte (a última etapa não pode ser removida).
+ */
+export function nextStageAfter<T extends { statusId?: string }>(visible: T[], statusId: string): T | null {
+  const i = visible.findIndex((c) => c.statusId === statusId);
+  if (i === -1 || i === visible.length - 1) return null;
+  return visible[i + 1];
+}

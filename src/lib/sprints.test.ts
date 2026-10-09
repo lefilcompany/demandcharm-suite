@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sprintDaysRemaining, formatDaysRemaining, sprintProgress, canAddDemandToSprint } from "./sprints";
+import { sprintDaysRemaining, formatDaysRemaining, sprintProgress, canAddDemandToSprint, nextStageAfter } from "./sprints";
 
 describe("sprints", () => {
   it("conta dias restantes e encerradas", () => {
@@ -25,5 +25,11 @@ describe("sprints", () => {
     const m = [{ demand_id: "d1", sprint_id: "s1", sprint_status: "active" as const }];
     expect(canAddDemandToSprint("d1", "s2", m)).toBe(false);
     expect(canAddDemandToSprint("d1", "s2", [{ ...m[0], sprint_status: "completed" }])).toBe(true);
+  });
+
+  it("move para a próxima etapa visível e bloqueia a última", () => {
+    const cols = [{ statusId: "a" }, { statusId: "b" }, { statusId: "c" }];
+    expect(nextStageAfter(cols, "a")?.statusId).toBe("b");
+    expect(nextStageAfter(cols, "c")).toBeNull();
   });
 });
