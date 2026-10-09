@@ -17,7 +17,6 @@ import { useAuth } from "@/lib/auth";
 import { useMembersByPosition } from "@/hooks/useMembersByPosition";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { Plus, Briefcase, LayoutList, LayoutGrid, List, Search, Eye, EyeOff, CalendarDays, User, Layers, Trash2, RotateCcw, FileUp } from "lucide-react";
-import { ImportDemandsDialog } from "@/components/demands/ImportDemandsDialog";
 import { useNavigate, useLocation } from "react-router-dom";
 import { DemandHierarchyTable, HierarchicalDemand } from "@/components/demands/DemandHierarchyTable";
 import { DemandHierarchyGrid } from "@/components/demands/DemandHierarchyGrid";
