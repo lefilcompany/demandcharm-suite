@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FolderOpen, Plus, MoreVertical, Pencil, Trash2, ListChecks, Users, Share2, LayoutGrid, Globe } from "lucide-react";
+import { FolderOpen, Plus, MoreVertical, Pencil, Trash2, ListChecks, Users, Share2, LayoutGrid, Globe, AlertTriangle } from "lucide-react";
 import { useDemandFolders, useCreateFolder, useUpdateFolder, useDeleteFolder, DemandFolder } from "@/hooks/useDemandFolders";
 import { useBoards } from "@/hooks/useBoards";
 import { useAuth } from "@/lib/auth";
@@ -44,10 +44,18 @@ export function DemandFolderStrip({ teamId, boardId, selectedFolderId, onSelectF
     });
   };
 
-  const { data: folders } = useDemandFolders(teamId, user?.id, {
+  const { data: folders, isError: foldersError, refetch: refetchFolders } = useDemandFolders(teamId, user?.id, {
     scope: showAllProjects ? "all" : "board",
     boardId: boardId ?? null,
   });
+  // Quando o quadro atual não tem projetos, mostra quantos existem nos outros
+  // quadros — senão o usuário acha que os projetos dele sumiram ao trocar de quadro.
+  const boardHasNoProjects = !showAllProjects && !!folders && folders.length === 0;
+  const { data: allFolders } = useDemandFolders(teamId, user?.id, {
+    scope: "all",
+    enabled: boardHasNoProjects,
+  });
+  const projectsElsewhere = boardHasNoProjects ? (allFolders?.length ?? 0) : 0;
   const { data: boards } = useBoards(teamId);
   const boardNameById = new Map((boards || []).map((b) => [b.id, b.name]));
 
@@ -203,6 +211,32 @@ export function DemandFolderStrip({ teamId, boardId, selectedFolderId, onSelectF
             </div>
           );
         })}
+
+        {/* Falha ao carregar: nunca deixar parecer que não há projetos */}
+        {foldersError && (
+          <button
+            type="button"
+            onClick={() => refetchFolders()}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-destructive/40 bg-destructive/5 text-destructive text-xs font-medium shrink-0 hover:bg-destructive/10 transition-colors"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Não foi possível carregar os projetos · Tentar novamente
+          </button>
+        )}
+
+        {/* Quadro sem projetos, mas a equipe tem projetos em outros quadros */}
+        {!foldersError && projectsElsewhere > 0 && (
+          <button
+            type="button"
+            onClick={toggleScope}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/60 bg-muted/40 text-xs text-muted-foreground shrink-0 hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-colors"
+          >
+            <FolderOpen className="h-4 w-4" />
+            <span className="whitespace-nowrap">
+              Nenhum projeto neste quadro · {projectsElsewhere} {projectsElsewhere === 1 ? "projeto" : "projetos"} em outros quadros
+            </span>
+          </button>
+        )}
 
         {/* Create folder card */}
         <button
