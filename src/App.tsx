@@ -8,6 +8,7 @@ import { TeamProvider } from "@/contexts/TeamContext";
 import { BoardProvider } from "@/contexts/BoardContext";
 import { PresenceProvider } from "@/contexts/PresenceContext";
 import { CreateDemandProvider, useCreateDemandModal } from "@/contexts/CreateDemandContext";
+import { CreateDemandMethodDialog } from "@/components/demands/CreateDemandMethodDialog";
 import { PlansModalProvider } from "@/contexts/PlansModalContext";
 import { PipTimerProvider } from "@/contexts/PipTimerContext";
 import { RequireAuth } from "@/components/RequireAuth";
@@ -89,7 +90,12 @@ const McpDocs = lazy(() => import("./pages/McpDocs"));
 const Landing = lazy(() => import("./pages/Landing"));
 
 function CreateDemandGlobal() {
-  return <CreateDemand />;
+  return (
+    <>
+      <CreateDemand />
+      <CreateDemandMethodDialog />
+    </>
+  );
 }
 
 function CreateDemandRoute() {
