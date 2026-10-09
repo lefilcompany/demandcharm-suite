@@ -16,8 +16,7 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
   const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
   const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
   try {
-    const json = typeof atob === "function" ? atob(padded) : Buffer.from(padded, "base64").toString("binary");
-    const parsed = JSON.parse(json);
+    const parsed = JSON.parse(atob(padded));
     return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
   } catch {
     return null;
