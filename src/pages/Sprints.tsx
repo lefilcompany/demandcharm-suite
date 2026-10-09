@@ -240,7 +240,6 @@ export default function Sprints() {
                   userRole={role || undefined}
                   boardName={board?.name}
                   boardId={selectedBoardId}
-                  initialColumnsOpen
                 />
               ) : (
                 <div className="h-full overflow-y-auto space-y-4 pr-1">
