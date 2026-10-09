@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AlertTriangle, CalendarRange, CheckCircle2, Pencil, Play, Plus, RefreshCw, Rocket, Trash2, X } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
 import { KanbanBoard } from "@/components/KanbanBoard";
@@ -24,9 +25,9 @@ import { useKanbanColumns } from "@/hooks/useBoardStatuses";
 import { useRealtimeDemands } from "@/hooks/useRealtimeDemands";
 import {
   Sprint, useSprints, useSprintMemberships, useSaveSprint, useDeleteSprint,
-  useAddDemandsToSprint, useRemoveDemandFromSprint, useCompleteSprint,
+  useAddDemandsToSprint, useRemoveDemandFromSprint, useCompleteSprint, useHideSprintStage, useRestoreSprintStages,
 } from "@/hooks/useSprints";
-import { SPRINT_STATUS_LABEL, formatDaysRemaining, sprintProgress, todayIso, canAddDemandToSprint } from "@/lib/sprints";
+import { SPRINT_STATUS_LABEL, formatDaysRemaining, sprintProgress, todayIso, canAddDemandToSprint, nextStageAfter } from "@/lib/sprints";
 import { openDemandOnAuxClick } from "@/lib/demandAuxClick";
 
 const fmt = (d: string) => d.substring(0, 10).split("-").reverse().join("/");
@@ -67,6 +68,25 @@ export default function Sprints() {
   );
   const sprintDemands = useMemo(() => (demands as any[]).filter((d) => sprintDemandIds.has(d.id)), [demands, sprintDemandIds]);
   const progress = sprintProgress(sprintDemands);
+  const visibleColumns = useMemo(
+    () => (columns as any[]).filter((c) => !c.statusId || !(sprint?.hidden_status_ids ?? []).includes(c.statusId)),
+    [columns, sprint?.hidden_status_ids]
+  );
+  const [stageToRemove, setStageToRemove] = useState<any | null>(null);
+  const hideStage = useHideSprintStage();
+  const restoreStages = useRestoreSprintStages();
+  const removeTarget = stageToRemove ? nextStageAfter(visibleColumns, stageToRemove.statusId) : null;
+  const removeDemands = stageToRemove ? sprintDemands.filter((d) => d.status_id === stageToRemove.statusId) : [];
+  const confirmRemoveStage = () => {
+    if (!sprint || !stageToRemove || !removeTarget) return;
+    hideStage.mutate({
+      sprint, statusId: stageToRemove.statusId, toStatusId: removeTarget.statusId,
+      demandIds: removeDemands.map((d) => d.id), userId: user?.id,
+    }, {
+      onSuccess: () => { toast({ title: `Etapa "${stageToRemove.label}" removida da sprint` }); setStageToRemove(null); },
+      onError: (e: any) => { onError(e); setStageToRemove(null); },
+    });
+  };
 
   const save = useSaveSprint();
   const del = useDeleteSprint();
@@ -147,7 +167,7 @@ export default function Sprints() {
                     boardName={board?.name || "Quadro"}
                     authorName={(user?.user_metadata?.full_name as string) || user?.email || "—"}
                     sprint={sprint}
-                    columns={columns as any}
+                    columns={visibleColumns as any}
                     demands={sprintDemands as any}
                   />
                 {canEdit && (
@@ -183,6 +203,27 @@ export default function Sprints() {
                   </TabsList>
                 </Tabs>
               </div>
+              {canEdit && sprint.status !== "completed" && (
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <span className="text-muted-foreground mr-1">Etapas desta sprint:</span>
+                  {visibleColumns.map((col: any, i: number) => (
+                    <span key={col.key} className="inline-flex items-center gap-1 rounded-full border px-2 h-7">
+                      {col.label}
+                      {col.statusId && i < visibleColumns.length - 1 && (
+                        <button aria-label={`Remover etapa ${col.label}`} className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setStageToRemove(col)}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </span>
+                  ))}
+                  {(sprint.hidden_status_ids?.length ?? 0) > 0 && (
+                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => restoreStages.mutate(sprint.id, { onError })}>
+                      Restaurar {sprint.hidden_status_ids.length} etapa(s) removida(s)
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -193,7 +234,7 @@ export default function Sprints() {
               ) : view === "kanban" ? (
                 <KanbanBoard
                   demands={sprintDemands}
-                  columns={columns}
+                  columns={visibleColumns}
                   onDemandClick={(id) => navigate(`/app/demands/${id}`)}
                   readOnly={!canEdit}
                   userRole={role || undefined}
@@ -203,7 +244,7 @@ export default function Sprints() {
                 />
               ) : (
                 <div className="h-full overflow-y-auto space-y-4 pr-1">
-                  {columns.map((col: any) => {
+                  {visibleColumns.map((col: any) => {
                     const items = sprintDemands.filter((d) => d.status_id === col.statusId || (!col.statusId && d.demand_statuses?.name === col.label));
                     if (!items.length) return null;
                     return (
@@ -241,6 +282,34 @@ export default function Sprints() {
           )}
         </>
       )}
+
+      <AlertDialog open={!!stageToRemove} onOpenChange={(o) => !o && setStageToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover a etapa "{stageToRemove?.label}" desta sprint?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>A etapa deixa de aparecer só no Kanban da sprint <b>{sprint?.name}</b>. O Kanban do quadro e as outras sprints continuam com ela.</p>
+                {removeDemands.length > 0 ? (
+                  <p className="text-destructive">
+                    {removeDemands.length} demanda(s) desta etapa serão movidas para <b>{removeTarget?.label}</b>. Essa mudança de etapa vale para a demanda em todo o SoMA (quadro, relatórios e notificações) e não é desfeita ao restaurar a etapa.
+                  </p>
+                ) : (
+                  <p>Nenhuma demanda da sprint está nessa etapa.</p>
+                )}
+                <p>Você pode restaurar a etapa na sprint a qualquer momento.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemoveStage} disabled={hideStage.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Remover etapa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {editing && (
         <SprintFormDialog initial={editing} boardId={selectedBoardId} onClose={() => setEditing(null)} />

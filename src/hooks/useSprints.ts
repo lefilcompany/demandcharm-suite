@@ -12,6 +12,7 @@ export interface Sprint {
   end_date: string;
   status: SprintStatus;
   completed_at: string | null;
+  hidden_status_ids: string[];
   created_at: string;
 }
 
@@ -164,5 +165,39 @@ export function useDemandSprint(demandId: string | undefined) {
       if (error) throw error;
       return ((data as any)?.board_sprints ?? null) as { id: string; name: string; status: SprintStatus } | null;
     },
+  });
+}
+
+/** Remove uma etapa do Kanban desta sprint, movendo as demandas dela para a próxima etapa. */
+export function useHideSprintStage() {
+  const invalidate = useInvalidate();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sprint, statusId, toStatusId, demandIds, userId }: {
+      sprint: Sprint; statusId: string; toStatusId: string; demandIds: string[]; userId?: string;
+    }) => {
+      if (demandIds.length) {
+        const { error } = await supabase
+          .from("demands")
+          .update({ status_id: toStatusId, status_changed_at: new Date().toISOString(), status_changed_by: userId ?? null })
+          .in("id", demandIds);
+        if (error) throw error;
+      }
+      const hidden = Array.from(new Set([...(sprint.hidden_status_ids ?? []), statusId]));
+      const { error } = await supabase.from("board_sprints").update({ hidden_status_ids: hidden }).eq("id", sprint.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); qc.invalidateQueries({ queryKey: ["demands"] }); },
+  });
+}
+
+export function useRestoreSprintStages() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: async (sprintId: string) => {
+      const { error } = await supabase.from("board_sprints").update({ hidden_status_ids: [] }).eq("id", sprintId);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
   });
 }
