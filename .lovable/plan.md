@@ -4,7 +4,7 @@
 - Nova página **Sprints** na barra lateral (por quadro selecionado).
 - Lista de sprints do quadro: nome, objetivo, início e fim, situação (Planejada, Ativa, Concluída).
 - Detalhe da sprint:
-  - **Progresso**: barra entregues/total, dias restantes (ou "encerrada há X dias"), número de atrasadas.
+  - **Kanban da sprint**: as mesmas colunas/etapas do quadro, só com as demandas da sprint, com arrastar entre etapas; no topo, barra entregues/total, dias restantes (ou "encerrada há X dias") e número de atrasadas.
   - **Lista por etapa**: demandas agrupadas pelo status atual do quadro, com prioridade, responsável e prazo; clique abre a demanda (botão do meio abre em nova aba).
 - Ações (admin, coordenador e agente): criar/editar sprint, adicionar/remover demandas, iniciar e concluir.
 - Ao concluir: oferecer mover as não entregues para a próxima sprint planejada (ou deixá-las sem sprint).
