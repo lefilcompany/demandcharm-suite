@@ -285,6 +285,7 @@ export type Database = {
           created_by: string
           end_date: string
           goal: string | null
+          hidden_status_ids: string[]
           id: string
           name: string
           start_date: string
@@ -298,6 +299,7 @@ export type Database = {
           created_by?: string
           end_date: string
           goal?: string | null
+          hidden_status_ids?: string[]
           id?: string
           name: string
           start_date: string
@@ -311,6 +313,7 @@ export type Database = {
           created_by?: string
           end_date?: string
           goal?: string | null
+          hidden_status_ids?: string[]
           id?: string
           name?: string
           start_date?: string

@@ -1,0 +1,2 @@
+ALTER TABLE public.board_sprints ADD COLUMN hidden_status_ids uuid[] NOT NULL DEFAULT '{}';
+COMMENT ON COLUMN public.board_sprints.hidden_status_ids IS 'Etapas (demand_statuses.id) ocultadas apenas no Kanban desta sprint';
