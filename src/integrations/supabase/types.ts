@@ -277,6 +277,56 @@ export type Database = {
           },
         ]
       }
+      board_sprints: {
+        Row: {
+          board_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          end_date: string
+          goal: string | null
+          id: string
+          name: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          board_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          end_date: string
+          goal?: string | null
+          id?: string
+          name: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          board_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          end_date?: string
+          goal?: string | null
+          id?: string
+          name?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_sprints_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_statuses: {
         Row: {
           adjustment_type: Database["public"]["Enums"]["adjustment_type"] | null
@@ -3086,6 +3136,45 @@ export type Database = {
           },
         ]
       }
+      sprint_demands: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          demand_id: string
+          id: string
+          sprint_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          demand_id: string
+          id?: string
+          sprint_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          demand_id?: string
+          id?: string
+          sprint_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sprint_demands_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sprint_demands_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "board_sprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
@@ -3989,6 +4078,10 @@ export type Database = {
         Args: { _board_id: string; _service_id: string }
         Returns: boolean
       }
+      can_edit_board_sprints: {
+        Args: { _board_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_edit_note: {
         Args: { _note_id: string; _user_id: string }
         Returns: boolean
@@ -4013,6 +4106,10 @@ export type Database = {
       clear_password_reset_required: {
         Args: { _email: string }
         Returns: undefined
+      }
+      complete_sprint: {
+        Args: { _carry_to?: string; _sprint_id: string }
+        Returns: number
       }
       convert_subdemand_to_request: {
         Args: { p_demand_id: string }

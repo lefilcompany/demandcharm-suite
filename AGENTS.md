@@ -17,3 +17,7 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 
 - A list screen must never render its "empty" state when the query failed: show an error state with a retry (`Projects.tsx`, `DemandFolderStrip.tsx`) — a masked network error reads as "my data was deleted".
 - Query keys for data whose shape depends on the signed-in user (e.g. `is_owner` in `useDemandFolders`) must include the user id, so one account's cached result is never reused by another.
+
+## Sprints
+
+- Sprints belong to one board (`board_sprints` + `sprint_demands`); the "one open sprint per demand" and "one active sprint per board" rules live in the database (trigger + partial unique index) so every client obeys them; the sprint Kanban reuses `KanbanBoard` with the board demands filtered by sprint so drag/status logic stays in one place.

@@ -36,6 +36,7 @@ import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { ShareDemandButton } from "@/components/ShareDemandButton";
 import { UserTimeTrackingDisplay } from "@/components/UserTimeTrackingDisplay";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { DemandSprintBadge } from "@/components/DemandSprintBadge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatDateOnlyBR, isDemandDeliveredLate } from "@/lib/dateUtils";
@@ -790,7 +791,7 @@ export default function DemandDetail() {
             isCurrent: true
           }]} />
 
-        {id && <DemandPresenceIndicator demandId={id} />}
+        {id && <div className="flex items-center gap-2"><DemandSprintBadge demandId={id} /><DemandPresenceIndicator demandId={id} /></div>}
       </div>
 
       <Card className="overflow-hidden">

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, User, Briefcase, Kanban, ChevronUp, Settings, FileText, Send, LayoutGrid, UserPlus, UsersRound, Clock, Sparkles, ShoppingCart, Layers, StickyNote, LayoutList, CornerUpLeft, MessageSquareText } from "lucide-react";
+import { LayoutDashboard, Users, User, Briefcase, Kanban, ChevronUp, Settings, FileText, Send, LayoutGrid, UserPlus, UsersRound, Clock, Sparkles, ShoppingCart, Layers, StickyNote, LayoutList, CornerUpLeft, MessageSquareText, Rocket } from "lucide-react";
 import { useTranslation } from "react-i18next";
 const logoSoma = "/logo-soma-sidebar.png";
 import { NavLink } from "@/components/NavLink";
@@ -94,6 +94,10 @@ export function AppSidebar() {
     title: t("kanban.title"),
     url: "/app/kanban",
     icon: Kanban
+  }, {
+    title: "Sprints",
+    url: "/app/sprints",
+    icon: Rocket
   }, {
     title: t("demands.title"),
     url: "/app/demands",
