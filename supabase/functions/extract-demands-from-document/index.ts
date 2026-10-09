@@ -16,6 +16,17 @@ const BodySchema = z.object({
   pdf_base64: z.string().max(15_000_000).nullish(),
 });
 
+const EFFORT = [1, 2, 3, 5, 8, 13, 21];
+const snapEffort = (v: unknown) => {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return 3;
+  return EFFORT.reduce((b, x) => (Math.abs(x - n) < Math.abs(b - n) ? x : b), 1);
+};
+const priorityFromCode = (c?: string | null) => {
+  const u = (c ?? "").toUpperCase().trim();
+  return u === "P0" ? "alta" : u === "P2" ? "baixa" : "média";
+};
+
 const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 Deno.serve(async (req) => {
@@ -58,7 +69,10 @@ Deno.serve(async (req) => {
 Leia o documento "${file_name}" e liste cada demanda descrita (no máximo 50).
 Para cada uma: título curto e claro; descrição detalhada (mínimo 20 caracteres, use o conteúdo do documento);
 serviço: escolha o nome EXATO de um destes, ou null: ${serviceList.map((s) => s.name).join(" | ") || "(nenhum)"};
-prazo no formato AAAA-MM-DD se mencionado, senão null; prioridade: baixa, média, alta ou urgente (padrão média);
+prazo no formato AAAA-MM-DD se mencionado, senão null;
+priority_code: o código de prioridade escrito no documento para a demanda (P0, P1 ou P2), ou null se não houver;
+effort_points: estime o esforço na escala Fibonacci 1, 2, 3, 5, 8, 13 ou 21 (1–3 pouco, 5–8 médio, 13–21 alto) pelo tamanho, complexidade, dependências e incerteza descritos;
+effort_reason: justificativa curta do esforço (até 80 caracteres, em português);
 responsável: nome EXATO de uma destas pessoas se mencionado, senão null: ${people.map((p) => p.full_name).join(" | ") || "(nenhuma)"}.
 Se o documento for uma planilha, cada linha costuma ser uma demanda.`;
 
@@ -87,10 +101,12 @@ Se o documento for uma planilha, cada linha costuma ser uma demanda.`;
                       description: { type: "STRING" },
                       service: { type: "STRING", nullable: true },
                       due_date: { type: "STRING", nullable: true },
-                      priority: { type: "STRING", enum: ["baixa", "média", "alta", "urgente"] },
+                      priority_code: { type: "STRING", enum: ["P0", "P1", "P2"], nullable: true },
+                      effort_points: { type: "INTEGER" },
+                      effort_reason: { type: "STRING" },
                       assignee: { type: "STRING", nullable: true },
                     },
-                    required: ["title", "description", "priority"],
+                    required: ["title", "description", "effort_points"],
                   },
                 },
               },
@@ -121,7 +137,10 @@ Se o documento for uma planilha, cada linha costuma ser uma demanda.`;
         description: String(d.description ?? ""),
         service_id: svc?.id ?? null,
         due_date: due,
-        priority: ["baixa", "média", "alta", "urgente"].includes(d.priority) ? d.priority : "média",
+        priority_code: ["P0", "P1", "P2"].includes(String(d.priority_code).toUpperCase()) ? String(d.priority_code).toUpperCase() : null,
+        priority: priorityFromCode(d.priority_code),
+        effort_points: snapEffort(d.effort_points),
+        effort_reason: String(d.effort_reason ?? "").slice(0, 120),
         assigned_to: person?.id ?? null,
       };
     });
