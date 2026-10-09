@@ -508,6 +508,7 @@ export type Database = {
           description: string | null
           id: string
           is_default: boolean | null
+          kanban_cleared_at: string | null
           monthly_demand_limit: number | null
           name: string
           team_id: string
@@ -520,6 +521,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean | null
+          kanban_cleared_at?: string | null
           monthly_demand_limit?: number | null
           name: string
           team_id: string
@@ -532,6 +534,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean | null
+          kanban_cleared_at?: string | null
           monthly_demand_limit?: number | null
           name?: string
           team_id?: string
@@ -4106,6 +4109,7 @@ export type Database = {
         Args: { _resource_type: string; _team_id: string }
         Returns: boolean
       }
+      clear_board_kanban: { Args: { _board_id: string }; Returns: string }
       clear_password_reset_required: {
         Args: { _email: string }
         Returns: undefined
@@ -4155,6 +4159,7 @@ export type Database = {
           description: string | null
           id: string
           is_default: boolean | null
+          kanban_cleared_at: string | null
           monthly_demand_limit: number | null
           name: string
           team_id: string

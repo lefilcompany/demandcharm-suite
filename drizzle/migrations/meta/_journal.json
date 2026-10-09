@@ -92,6 +92,13 @@
       "when": 1791550624258,
       "tag": "0012_sprint_hidden_stages",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791552330825,
+      "tag": "0013_board_kanban_cleared_at",
+      "breakpoints": true
     }
   ]
 }

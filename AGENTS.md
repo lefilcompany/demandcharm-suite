@@ -21,3 +21,4 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 ## Sprints
 
 - Sprints belong to one board (`board_sprints` + `sprint_demands`); the "one open sprint per demand" and "one active sprint per board" rules live in the database (trigger + partial unique index) so every client obeys them; the sprint Kanban reuses `KanbanBoard` with the board demands filtered by sprint so drag/status logic stays in one place.
+- Hiding old delivered demands is a Kanban-page-only filter (`src/lib/kanbanVisibility.ts` + `boards.kanban_cleared_at`, set by RPC `clear_board_kanban`); `useDemands`/`demands-read` stay unfiltered because the demand list, reports and sprints share them.
