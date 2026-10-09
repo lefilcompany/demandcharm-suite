@@ -36,6 +36,9 @@ import { useTeamMembershipRole } from "@/hooks/useTeamRole";
 import { SEOHead } from "@/components/SEOHead";
 import { KanbanSnapshotDialog } from "@/components/KanbanSnapshotDialog";
 import { TrashDemandsModal } from "@/components/TrashDemandsModal";
+import { ClearBoardKanbanDialog } from "@/components/ClearBoardKanbanDialog";
+import { isHiddenFromKanban } from "@/lib/kanbanVisibility";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Kanban() {
   const { t } = useTranslation();
@@ -83,7 +86,7 @@ export default function Kanban() {
   const { openCreateDemand } = useCreateDemandModal();
   const { user } = useAuth();
   const { selectedBoardId, currentTeamId } = useSelectedBoard();
-  const { data: demands, isLoading } = useDemands(selectedBoardId || undefined);
+  const { data: allBoardDemands, isLoading } = useDemands(selectedBoardId || undefined);
   const { data: role } = useBoardRole(selectedBoardId);
   const { data: teamMembershipRole } = useTeamMembershipRole(currentTeamId);
   const { data: currentBoard } = useBoard(selectedBoardId);
@@ -161,6 +164,23 @@ export default function Kanban() {
     clearNotification, 
     clearAllNotifications 
   } = useKanbanRealtimeNotifications(selectedBoardId || undefined);
+
+  const [showHidden, setShowHidden] = useState(false);
+  useEffect(() => setShowHidden(false), [selectedBoardId]);
+  const clearedAt = (currentBoard as any)?.kanban_cleared_at as string | null | undefined;
+  const hiddenCount = useMemo(
+    () => (allBoardDemands || []).filter((d: any) => isHiddenFromKanban(d, clearedAt)).length,
+    [allBoardDemands, clearedAt]
+  );
+  const demands = useMemo(
+    () => (!allBoardDemands || showHidden ? allBoardDemands : allBoardDemands.filter((d: any) => !isHiddenFromKanban(d, clearedAt))),
+    [allBoardDemands, showHidden, clearedAt]
+  );
+  const deliveredVisible = useMemo(
+    () => (allBoardDemands || []).filter((d: any) => d.delivered_at && d.demand_statuses?.name === "Entregue" && !isHiddenFromKanban(d, clearedAt)).length,
+    [allBoardDemands, clearedAt]
+  );
+  const openCount = useMemo(() => (allBoardDemands || []).filter((d: any) => !d.delivered_at).length, [allBoardDemands]);
 
   const isReadOnly = role === "requester" || (!role && teamMembershipRole === "requester");
 
@@ -244,7 +264,7 @@ export default function Kanban() {
   const visibleDemands = useMemo(() => {
     if (!highlightDemandId) return filteredDemands;
     if (filteredDemands.some((d) => d.id === highlightDemandId)) return filteredDemands;
-    const highlighted = demands?.find((d) => d.id === highlightDemandId);
+    const highlighted = allBoardDemands?.find((d) => d.id === highlightDemandId);
     return highlighted ? [...filteredDemands, highlighted] : filteredDemands;
   }, [filteredDemands, demands, highlightDemandId]);
 
@@ -315,6 +335,17 @@ export default function Kanban() {
               allDemands={(demands || []) as any}
               hasActiveFilters={hasActiveFilters}
             />
+          )}
+
+          {selectedBoardId && hiddenCount > 0 && (
+            <Button variant="ghost" size="sm" className="h-9 gap-1.5 shrink-0 text-muted-foreground" onClick={() => setShowHidden((v) => !v)}>
+              {showHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="text-xs">{hiddenCount} entregue(s) oculta(s) · {showHidden ? "Ocultar" : "Mostrar"}</span>
+            </Button>
+          )}
+
+          {selectedBoardId && (role === "admin" || role === "moderator") && (
+            <ClearBoardKanbanDialog boardId={selectedBoardId} deliveredVisible={deliveredVisible} openCount={openCount} />
           )}
 
           {/* Lixeira */}
