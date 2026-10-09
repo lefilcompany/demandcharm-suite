@@ -58,6 +58,8 @@ export interface DemandFoldersOptions {
   /** When scope === "board", only projects linked to this board are returned. */
   boardId?: string | null;
   scope?: "board" | "all";
+  /** Extra gate on top of `teamId` (defaults to true). */
+  enabled?: boolean;
 }
 
 export function useDemandFolders(
@@ -70,7 +72,9 @@ export function useDemandFolders(
   const boardScoped = scope === "board";
 
   return useQuery<DemandFolder[]>({
-    queryKey: ["demand-folders", teamId, boardScoped ? boardId ?? "no-board" : "all"],
+    // `userId` is part of the key: ownership (`is_owner`) is derived from it, so a
+    // list computed for one account must never be reused by another one.
+    queryKey: ["demand-folders", teamId, boardScoped ? boardId ?? "no-board" : "all", userId ?? "anon"],
     queryFn: async () => {
       if (!teamId) return [];
       let query = supabase
@@ -95,7 +99,7 @@ export function useDemandFolders(
       if (legacy.error) throw legacy.error;
       return normalizeProjectRows(legacy.data, userId);
     },
-    enabled: !!teamId,
+    enabled: !!teamId && !!userId && (options?.enabled ?? true),
   });
 }
 
