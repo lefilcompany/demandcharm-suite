@@ -59,3 +59,12 @@ a hospedagem apaga os arquivos da versão anterior a cada publicação → 404 +
 - [x] Modal de atualização não apaga mais os caches; recuperação de chunk ausente ativa o worker novo e recarrega
 - [x] `AppErrorBoundary` para nunca ficar em tela branca
 - [ ] Publicar e confirmar no endereço oficial que abrir rotas não exige mais Ctrl+Shift+R (testado localmente: instalação 75 s → ~2 s; 930 arquivos/32 MB → 224/8 MB; página nova após publicação; offline abre; prompt de atualização OK)
+
+## Projetos "sumiram" para um usuário (2026-10-09)
+Diagnóstico: nenhum projeto apagado (14 na LeFil Company, sem exclusões desde 10/09); donos ainda na equipe/quadros; RLS e grants corretos.
+Causa provável no navegador: o worker guardava TODAS as respostas do backend por URL (sem usuário) por 24 h e as usava quando a rede passava de 10 s.
+- [x] Worker: só `/rest/v1/` GET, NetworkFirst sem timeout, chave por usuário (`swApiCache.ts`), anônimo nunca guardado; cache antigo apagado no activate
+- [x] `useDemandFolders`: user id na chave do React Query
+- [x] Tela Projetos e faixa de projetos: estado de erro com "Tentar novamente" (nunca "Nenhum projeto" em falha)
+- [x] Faixa de projetos: aviso "Nenhum projeto neste quadro · N em outros quadros" com atalho para ver todos
+- [ ] Publicar e pedir ao usuário afetado para recarregar uma vez (o worker novo limpa a cópia antiga)

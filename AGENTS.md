@@ -11,3 +11,9 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 - The precache contains only JS/CSS/icons/fonts: no HTML, no JSON (`build-info.json` and `release-manifest.json` must always be fresh for release detection) and no raster images (runtime `images-cache` covers them).
 - Updates stay in `prompt` mode (`UpdateModal`), but the update flow must not delete caches — the new worker cleans the previous version on activate; wiping the precache left the app with no offline copy.
 - `src/lib/chunkReload.ts` is the single recovery path for missing-chunk errors: activate a waiting worker if any, then reload once (30 s guard). `AppErrorBoundary` in `main.tsx` is the last line of defence so the screen is never blank.
+- Backend reads (`/rest/v1/` GET) are the only API responses the worker may store, with NetworkFirst and **no network timeout**, cache keys scoped per user (`src/lib/swApiCache.ts` appends the JWT `sub`), and anonymous requests never cached — a URL-only key with a 10 s timeout served empty/other-account lists to signed-in users ("all my projects disappeared"). Auth, Edge Functions and realtime are never cached.
+
+## Data lists
+
+- A list screen must never render its "empty" state when the query failed: show an error state with a retry (`Projects.tsx`, `DemandFolderStrip.tsx`) — a masked network error reads as "my data was deleted".
+- Query keys for data whose shape depends on the signed-in user (e.g. `is_owner` in `useDemandFolders`) must include the user id, so one account's cached result is never reused by another.

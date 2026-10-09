@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Briefcase, Plus, Search, Users, Pencil, Trash2, MoreVertical, Share2 } from "lucide-react";
+import { Briefcase, Plus, Search, Users, Pencil, Trash2, MoreVertical, Share2, AlertTriangle, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,13 @@ export default function Projects() {
   const { selectedTeamId } = useSelectedTeam();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { data: projects = [], isLoading } = useDemandFolders(selectedTeamId, user?.id);
+  const {
+    data: projects = [],
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useDemandFolders(selectedTeamId, user?.id);
   const { data: projectBoards = [] } = useBoards(selectedTeamId);
   const boardNameById = new Map(projectBoards.map((b) => [b.id, b.name]));
 
@@ -108,6 +114,25 @@ export default function Projects() {
 
       {isLoading ? (
         <div className="text-center py-12 text-sm text-muted-foreground">Carregando...</div>
+      ) : isError ? (
+        // A falha de rede nunca pode parecer "nenhum projeto": o usuário precisa
+        // saber que a lista não foi carregada e poder tentar de novo.
+        <div
+          role="alert"
+          className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-destructive/40 rounded-2xl bg-destructive/5"
+        >
+          <div className="h-14 w-14 rounded-2xl bg-destructive/10 flex items-center justify-center mb-4">
+            <AlertTriangle className="h-7 w-7 text-destructive" />
+          </div>
+          <h3 className="text-base font-semibold mb-1">Não foi possível carregar os projetos</h3>
+          <p className="text-sm text-muted-foreground max-w-sm mb-4">
+            Seus projetos continuam salvos. Verifique a conexão e tente novamente.
+          </p>
+          <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+            Tentar novamente
+          </Button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed rounded-2xl bg-muted/20">
           <div className="h-14 w-14 rounded-2xl bg-[#F28705]/10 flex items-center justify-center mb-4">
