@@ -16,7 +16,7 @@ import { useBoardRole } from "@/hooks/useBoardMembers";
 import { useAuth } from "@/lib/auth";
 import { useMembersByPosition } from "@/hooks/useMembersByPosition";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
-import { Plus, Briefcase, LayoutList, LayoutGrid, List, Search, Eye, EyeOff, CalendarDays, User, Layers, Trash2, RotateCcw, FileUp } from "lucide-react";
+import { Plus, Briefcase, LayoutList, LayoutGrid, List, Search, Eye, EyeOff, CalendarDays, User, Layers, Trash2, RotateCcw } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { DemandHierarchyTable, HierarchicalDemand } from "@/components/demands/DemandHierarchyTable";
 import { DemandHierarchyGrid } from "@/components/demands/DemandHierarchyGrid";
@@ -99,7 +99,6 @@ export default function Demands() {
   } = useTranslation();
   const navigate = useNavigate();
   const { openCreateDemand } = useCreateDemandModal();
-  const [isImportOpen, setIsImportOpen] = useState(false);
   const guardDemands = usePlanLimitGuard("demands");
   const location = useLocation();
   const {
