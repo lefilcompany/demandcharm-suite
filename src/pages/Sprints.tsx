@@ -14,6 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, CalendarRange, CheckCircle2, Pencil, Play, Plus, RefreshCw, Rocket, Trash2, X } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
 import { KanbanBoard } from "@/components/KanbanBoard";
+import { SprintSnapshotDialog } from "@/components/SprintSnapshotDialog";
+import { useAuth } from "@/lib/auth";
 import { useSelectedBoard } from "@/contexts/BoardContext";
 import { useBoardRole } from "@/hooks/useBoardMembers";
 import { useBoard } from "@/hooks/useBoards";
@@ -36,6 +38,7 @@ export default function Sprints() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { selectedBoardId } = useSelectedBoard();
+  const { user } = useAuth();
   const { data: role } = useBoardRole(selectedBoardId);
   const { data: board } = useBoard(selectedBoardId);
   const canEdit = !!role && role !== "requester";
@@ -139,6 +142,14 @@ export default function Sprints() {
                   </p>
                   {sprint.goal && <p className="text-sm mt-1">{sprint.goal}</p>}
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  <SprintSnapshotDialog
+                    boardName={board?.name || "Quadro"}
+                    authorName={(user?.user_metadata?.full_name as string) || user?.email || "—"}
+                    sprint={sprint}
+                    columns={columns as any}
+                    demands={sprintDemands as any}
+                  />
                 {canEdit && (
                   <div className="flex flex-wrap gap-2">
                     {sprint.status !== "completed" && (
@@ -157,6 +168,7 @@ export default function Sprints() {
                     </Button>
                   </div>
                 )}
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <div className="flex-1 min-w-[200px]">

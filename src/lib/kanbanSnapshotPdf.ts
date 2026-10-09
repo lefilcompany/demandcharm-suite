@@ -290,11 +290,14 @@ export function renderSnapshotSections(
   return y;
 }
 
-export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
+export function generateKanbanSnapshotPDF(
+  snapshot: KanbanSnapshot,
+  opts: { title?: string; subtitle?: string; filePrefix?: string } = {}
+): void {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const meta: SnapshotPdfMeta = {
-    title: "Resumo do Kanban",
-    subtitle: snapshot.boardName,
+    title: opts.title ?? "Resumo do Kanban",
+    subtitle: opts.subtitle ?? snapshot.boardName,
     generatedAt: snapshot.generatedAt,
     scopeLabel: snapshot.scopeLabel,
     authorName: snapshot.authorName,
@@ -310,5 +313,5 @@ export function generateKanbanSnapshotPDF(snapshot: KanbanSnapshot): void {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
   const stamp = snapshot.generatedAt.toISOString().substring(0, 10);
-  doc.save(`resumo-kanban-${slug || "quadro"}-${stamp}.pdf`);
+  doc.save(`${opts.filePrefix ?? "resumo-kanban"}-${slug || "quadro"}-${stamp}.pdf`);
 }
