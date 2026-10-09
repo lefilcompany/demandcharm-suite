@@ -18,6 +18,7 @@ import { NavigationRoute, registerRoute } from "workbox-routing";
 import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
+import { apiCacheSubject, isSupabaseRestRead, userScopedCacheKey } from "./lib/swApiCache";
 
 declare let self: ServiceWorkerGlobalScope & { __WB_MANIFEST: Array<PrecacheEntry | string> };
 
@@ -111,7 +112,7 @@ registerRoute(
 );
 
 // ---------------------------------------------------------------------------
-// Caches de execução (mesmas regras de antes).
+// Caches de execução.
 // ---------------------------------------------------------------------------
 registerRoute(
   /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
@@ -124,14 +125,38 @@ registerRoute(
   }),
 );
 
+// Leituras de dados (`/rest/v1/`): o banco é sempre a fonte da verdade.
+//  - A rede é esperada até responder (sem limite de tempo): lentidão nunca vira
+//    dado velho. A cópia guardada só entra quando a rede falha de fato (offline).
+//  - Só pedidos autenticados são guardados, e cada cópia é separada por usuário
+//    (chave com o `sub` do token). Antes, a chave era apenas a URL: um pedido
+//    anônimo (lista vazia) ou de outra conta no mesmo navegador podia ser
+//    entregue ao usuário atual — foi assim que "todos os projetos sumiram".
+//  - Autenticação, Edge Functions e realtime nunca passam por cópia.
 registerRoute(
-  /^https:\/\/.*\.supabase\.co\/.*/i,
+  ({ url, request }) =>
+    request.method === "GET" &&
+    isSupabaseRestRead(url) &&
+    apiCacheSubject(request.headers.get("authorization")) !== null,
   new NetworkFirst({
-    cacheName: "supabase-api-cache",
-    networkTimeoutSeconds: 10,
-    plugins: [new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 })],
+    cacheName: "supabase-api-cache-v2",
+    plugins: [
+      {
+        cacheKeyWillBeUsed: async ({ request }) => {
+          const subject = apiCacheSubject(request.headers.get("authorization"));
+          return subject ? userScopedCacheKey(request.url, subject) : request;
+        },
+      },
+      new CacheableResponsePlugin({ statuses: [200] }),
+      new ExpirationPlugin({ maxEntries: 150, maxAgeSeconds: 60 * 60 * 24, purgeOnQuotaError: true }),
+    ],
   }),
 );
+
+// Remove a cópia antiga (chave só por URL, sem separação por usuário).
+self.addEventListener("activate", (event) => {
+  event.waitUntil(caches.delete("supabase-api-cache"));
+});
 
 registerRoute(
   /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
