@@ -67,4 +67,5 @@ Causa provável no navegador: o worker guardava TODAS as respostas do backend po
 - [x] `useDemandFolders`: user id na chave do React Query
 - [x] Tela Projetos e faixa de projetos: estado de erro com "Tentar novamente" (nunca "Nenhum projeto" em falha)
 - [x] Faixa de projetos: aviso "Nenhum projeto neste quadro · N em outros quadros" com atalho para ver todos
-- [ ] Publicar e pedir ao usuário afetado para recarregar uma vez (o worker novo limpa a cópia antiga)
+- [x] Verificado: build local + Playwright (2 contas no mesmo navegador, backend fora do ar: cada conta recebe só a própria cópia; anônimo nunca guardado); tela de erro com retry; aviso na faixa
+- [ ] Publicar; o usuário afetado aceita o aviso "Novidades no SoMA!" (ou fecha e reabre o app) — o worker novo apaga a cópia antiga por URL
