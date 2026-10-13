@@ -65,3 +65,26 @@ export function nextStageAfter<T extends { statusId?: string }>(visible: T[], st
   if (i === -1 || i === visible.length - 1) return null;
   return visible[i + 1];
 }
+
+/** Distribuição pelo status atual, sem atribuir avanço fictício às etapas intermediárias. */
+export function sprintStageDistribution<T extends { key: string; label: string; statusId?: string }>(
+  demands: { status_id?: string | null; demand_statuses?: { name?: string | null } | null }[],
+  columns: T[],
+) {
+  const counts = columns.map(() => 0);
+  let other = 0;
+  for (const demand of demands) {
+    const index = columns.findIndex((column) => column.statusId
+      ? column.statusId === demand.status_id
+      : column.key === demand.demand_statuses?.name);
+    if (index < 0) other++;
+    else counts[index]++;
+  }
+  const total = demands.length;
+  return {
+    stages: columns.map((column, index) => ({
+      ...column, count: counts[index], percent: total ? counts[index] / total * 100 : 0,
+    })),
+    other, otherPercent: total ? other / total * 100 : 0, total,
+  };
+}

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
+import { SprintStageProgress } from "@/components/SprintStageProgress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -190,11 +190,8 @@ export default function Sprints() {
                 )}
                 </div>
               </div>
+              <SprintStageProgress demands={sprintDemands} columns={visibleColumns} />
               <div className="flex flex-wrap items-center gap-4 text-sm">
-                <div className="flex-1 min-w-[200px]">
-                  <Progress value={progress.percent} className="h-2" />
-                </div>
-                <span><b>{progress.delivered}</b>/{progress.total} entregues ({progress.percent}%)</span>
                 <span className={progress.overdue ? "text-destructive font-medium" : "text-muted-foreground"}>{progress.overdue} atrasada{progress.overdue === 1 ? "" : "s"}</span>
                 <Tabs value={view} onValueChange={(v) => setView(v as any)}>
                   <TabsList className="h-8">
