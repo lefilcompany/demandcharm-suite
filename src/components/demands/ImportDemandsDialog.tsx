@@ -259,7 +259,7 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
           <DialogTitle>Importar demandas de documento</DialogTitle>
           <DialogDescription>
             {step === "upload" && "Envie um Word, PDF ou Excel. O agente identifica as demandas, lê P0/P1/P2 e estima o esforço; você revisa e escolhe os responsáveis antes de criar."}
-            {step === "review" && "Revise a lista e defina quem cuida de cada demanda. Nada é criado até você confirmar."}
+            {step === "review" && "Revise a lista, defina os responsáveis e marque só as demandas que quer criar agora — o resto fica na lista para depois."}
             {step === "done" && "Importação concluída."}
           </DialogDescription>
         </DialogHeader>
