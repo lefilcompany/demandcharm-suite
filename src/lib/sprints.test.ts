@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sprintDaysRemaining, formatDaysRemaining, sprintProgress, canAddDemandToSprint, nextStageAfter } from "./sprints";
+import { sprintDaysRemaining, formatDaysRemaining, sprintProgress, canAddDemandToSprint, nextStageAfter, sprintStageDistribution } from "./sprints";
 
 describe("sprints", () => {
   it("conta dias restantes e encerradas", () => {
@@ -31,5 +31,25 @@ describe("sprints", () => {
     const cols = [{ statusId: "a" }, { statusId: "b" }, { statusId: "c" }];
     expect(nextStageAfter(cols, "a")?.statusId).toBe("b");
     expect(nextStageAfter(cols, "c")).toBeNull();
+  });
+
+  it("representa a proporção de demandas em cada etapa atual do Kanban", () => {
+    const columns = [{ key: "Backlog", label: "Backlog", statusId: "b" }, { key: "Fazendo", label: "Fazendo", statusId: "f" }];
+    const demands = [{ status_id: "b" }, { status_id: "f" }, { status_id: "f" }, { status_id: "f" }];
+    expect(sprintStageDistribution(demands, columns).stages.map(s => [s.count, s.percent])).toEqual([[1, 25], [3, 75]]);
+    expect(sprintStageDistribution([{ status_id: "b" }, { status_id: "b" }, { status_id: "f" }, { status_id: "f" }], columns).stages.map(s => s.percent)).toEqual([50, 50]);
+  });
+
+  it("mantém demandas fora das etapas visíveis no total, sem inflar as demais", () => {
+    const distribution = sprintStageDistribution([{ status_id: "visible" }, { status_id: "hidden" }], [{ key: "Fazendo", label: "Fazendo", statusId: "visible" }]);
+    expect(distribution.stages[0].percent).toBe(50);
+    expect(distribution.other).toBe(1);
+    expect(distribution.otherPercent).toBe(50);
+  });
+
+  it("retorna zero para sprint vazia e usa o nome somente em colunas sem id", () => {
+    const columns = [{ key: "Fazendo", label: "Em execução" }];
+    expect(sprintStageDistribution([], columns).stages[0].percent).toBe(0);
+    expect(sprintStageDistribution([{ demand_statuses: { name: "Fazendo" } }], columns).stages[0].count).toBe(1);
   });
 });
