@@ -6,6 +6,15 @@ interface Props {
   columns: { key: string; label: string; statusId?: string; color?: string }[];
 }
 
+function StageColor({ color, x = 0, width = 8, height = 8 }: { color: string; x?: number; width?: number; height?: number }) {
+  if (color.startsWith("bg-")) {
+    return <foreignObject x={x} y={0} width={width} height={height}>
+      <div className={`h-full w-full ${color}`} />
+    </foreignObject>;
+  }
+  return <rect x={x} y={0} width={width} height={height} fill={color} />;
+}
+
 export function SprintStageProgress({ demands, columns }: Props) {
   const { stages, other, otherPercent, total } = sprintStageDistribution(demands, columns);
   const segments = [
@@ -21,9 +30,10 @@ export function SprintStageProgress({ demands, columns }: Props) {
         {segments.filter(s => s.count > 0).map(segment => {
           const x = offset;
           offset += segment.percent;
-          return <rect key={segment.key} x={x} y={0} width={segment.percent} height={10} fill={segment.color}>
+          return <g key={segment.key}>
+            <StageColor x={x} width={segment.percent} height={10} color={segment.color} />
             <title>{segment.label}: {segment.count} ({Math.round(segment.percent)}%)</title>
-          </rect>;
+          </g>;
         })}
       </svg>
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -31,7 +41,7 @@ export function SprintStageProgress({ demands, columns }: Props) {
           <Tooltip key={segment.key}>
             <TooltipTrigger asChild>
               <span className="inline-flex items-center gap-1.5">
-                <svg viewBox="0 0 8 8" className="h-2 w-2 shrink-0" aria-hidden="true"><circle cx={4} cy={4} r={4} fill={segment.color} /></svg>
+                <svg viewBox="0 0 8 8" className="h-2 w-2 shrink-0 overflow-hidden rounded-full" aria-hidden="true"><StageColor color={segment.color} /></svg>
                 {segment.label} <span className="font-medium text-foreground">{segment.count}</span>
               </span>
             </TooltipTrigger>
