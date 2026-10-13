@@ -190,13 +190,16 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
     setSelected(new Set());
   };
 
-  const createAll = async () => {
+  const createSelected = async () => {
     const status = statuses?.[0];
     if (!board || !status) return toast.error("Quadro sem etapas configuradas");
+    const targets = rows.filter((r) => selected.has(r.key));
+    if (!targets.length) return;
     setBusy(true); setProgress(0);
-    const next = [...rows];
-    for (let i = 0; i < next.length; i++) {
-      const r = next[i];
+    const failed: Row[] = [];
+    let ok = 0;
+    for (let i = 0; i < targets.length; i++) {
+      const r = targets[i];
       try {
         const demand: any = await createDemand.mutateAsync({
           title: r.title.trim(),
@@ -215,17 +218,25 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
             await supabase.from("demand_assignees").insert({ demand_id: demand.id, user_id: r.assigned_to, is_primary: true } as any);
           }
         }
-        next[i] = { ...r, result: "ok" };
+        ok++;
       } catch (e: any) {
-        next[i] = { ...r, result: e?.message || "Erro ao criar" };
+        failed.push({ ...r, result: e?.message || "Erro ao criar" });
       }
       setProgress(i + 1);
-      setRows([...next]);
     }
+    const createdKeys = new Set(targets.filter((t) => !failed.some((f) => f.key === t.key)).map((t) => t.key));
+    setRows((prev) => prev.map((r) => failed.find((f) => f.key === r.key) ?? r).filter((r) => !createdKeys.has(r.key)));
+    setSelected(new Set());
     setBusy(false);
-    setStep("done");
-    const ok = next.filter((r) => r.result === "ok").length;
-    toast.success(`${ok} de ${next.length} demandas criadas`);
+    if (failed.length) {
+      toast.error(`${ok} criada(s), ${failed.length} com erro`, { description: "As linhas com erro continuam na lista." });
+    } else {
+      toast.success(`${ok} demanda(s) criada(s)`);
+    }
+    if (ok > 0 && rows.length - ok === 0) {
+      onOpenChange(false);
+      reset();
+    }
   };
 
   const filterChip = (value: Filter, label: string, count: number) => (
@@ -248,7 +259,7 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
           <DialogTitle>Importar demandas de documento</DialogTitle>
           <DialogDescription>
             {step === "upload" && "Envie um Word, PDF ou Excel. O agente identifica as demandas, lê P0/P1/P2 e estima o esforço; você revisa e escolhe os responsáveis antes de criar."}
-            {step === "review" && "Revise a lista e defina quem cuida de cada demanda. Nada é criado até você confirmar."}
+            {step === "review" && "Revise a lista, defina os responsáveis e marque só as demandas que quer criar agora — o resto fica na lista para depois."}
             {step === "done" && "Importação concluída."}
           </DialogDescription>
         </DialogHeader>
@@ -431,14 +442,16 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
                       <Plus className="h-4 w-4 mr-1" /> Adicionar linha
                     </Button>
                     <span className={cn("text-xs", invalidCount ? "text-primary font-medium" : "text-muted-foreground")}>
-                      {unassigned > 0 ? `${unassigned} sem responsável` : invalidCount > 0 ? `${invalidCount} com pendência` : "Tudo pronto para criar"}
+                      {selected.size > 0
+                        ? `${selected.size} selecionada(s) de ${rows.length}`
+                        : unassigned > 0 ? `${unassigned} sem responsável` : invalidCount > 0 ? `${invalidCount} com pendência` : "Marque as demandas que quer criar"}
                     </span>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="ghost" disabled={busy} onClick={reset}>Voltar</Button>
-                    <Button onClick={createAll} disabled={busy || invalidCount > 0 || !rows.length}>
+                    <Button onClick={createSelected} disabled={busy || selected.size === 0 || rows.some((r) => selected.has(r.key) && rowError(r))}>
                       {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      {busy ? `Criando ${progress}/${rows.length}...` : `Criar ${rows.length} demandas`}
+                      {busy ? `Criando ${progress}/${selected.size}...` : selected.size > 0 ? `Criar ${selected.size} selecionada(s)` : "Selecione para criar"}
                     </Button>
                   </div>
                 </>
