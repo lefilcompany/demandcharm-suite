@@ -190,13 +190,16 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
     setSelected(new Set());
   };
 
-  const createAll = async () => {
+  const createSelected = async () => {
     const status = statuses?.[0];
     if (!board || !status) return toast.error("Quadro sem etapas configuradas");
+    const targets = rows.filter((r) => selected.has(r.key));
+    if (!targets.length) return;
     setBusy(true); setProgress(0);
-    const next = [...rows];
-    for (let i = 0; i < next.length; i++) {
-      const r = next[i];
+    const failed: Row[] = [];
+    let ok = 0;
+    for (let i = 0; i < targets.length; i++) {
+      const r = targets[i];
       try {
         const demand: any = await createDemand.mutateAsync({
           title: r.title.trim(),
@@ -215,17 +218,24 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
             await supabase.from("demand_assignees").insert({ demand_id: demand.id, user_id: r.assigned_to, is_primary: true } as any);
           }
         }
-        next[i] = { ...r, result: "ok" };
+        ok++;
       } catch (e: any) {
-        next[i] = { ...r, result: e?.message || "Erro ao criar" };
+        failed.push({ ...r, result: e?.message || "Erro ao criar" });
       }
       setProgress(i + 1);
-      setRows([...next]);
     }
+    const createdKeys = new Set(targets.filter((t) => !failed.some((f) => f.key === t.key)).map((t) => t.key));
+    setRows((prev) => prev.map((r) => failed.find((f) => f.key === r.key) ?? r).filter((r) => !createdKeys.has(r.key)));
+    setSelected(new Set());
     setBusy(false);
-    setStep("done");
-    const ok = next.filter((r) => r.result === "ok").length;
-    toast.success(`${ok} de ${next.length} demandas criadas`);
+    if (failed.length) {
+      toast.error(`${ok} criada(s), ${failed.length} com erro`, { description: "As linhas com erro continuam na lista." });
+    } else {
+      toast.success(`${ok} demanda(s) criada(s)`);
+    }
+    if (ok > 0 && rows.length - ok === 0) {
+      setStep("done");
+    }
   };
 
   const filterChip = (value: Filter, label: string, count: number) => (
