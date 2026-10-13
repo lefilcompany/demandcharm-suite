@@ -187,7 +187,10 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
   const assignSelected = (id: string | null) => {
     setRows((r) => r.map((x) => (selected.has(x.key) ? { ...x, assigned_to: id } : x)));
     toast.success(`Responsável atribuído a ${selected.size} demanda(s)`);
-    setSelected(new Set());
+  };
+  const setServiceSelected = (id: string | null) => {
+    setRows((r) => r.map((x) => (selected.has(x.key) ? { ...x, service_id: id } : x)));
+    toast.success(`Serviço definido em ${selected.size} demanda(s)`);
   };
 
   const createSelected = async () => {
