@@ -234,7 +234,8 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
       toast.success(`${ok} demanda(s) criada(s)`);
     }
     if (ok > 0 && rows.length - ok === 0) {
-      setStep("done");
+      onOpenChange(false);
+      reset();
     }
   };
 
