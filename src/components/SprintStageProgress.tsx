@@ -17,6 +17,7 @@ function StageColor({ color, x = 0, width = 8, height = 8 }: { color: string; x?
 
 export function SprintStageProgress({ demands, columns }: Props) {
   const { stages, other, otherPercent, total } = sprintStageDistribution(demands, columns);
+  const delivered = stages.find(stage => stage.key === "Entregue")?.count ?? 0;
   const segments = [
     ...stages.map(stage => ({ ...stage, color: stage.color || "hsl(var(--muted-foreground))" })),
     ...(other ? [{ key: "other", label: "Outras etapas", count: other, percent: otherPercent, color: "hsl(var(--muted-foreground))" }] : []),
@@ -48,6 +49,7 @@ export function SprintStageProgress({ demands, columns }: Props) {
             <TooltipContent>{segment.count} de {total} demanda(s) · {Math.round(segment.percent)}%</TooltipContent>
           </Tooltip>
         ))}
+        <span className="font-medium text-foreground">{delivered}/{total} entregues ({total ? Math.round(delivered / total * 100) : 0}%)</span>
       </div>
     </div>
   );

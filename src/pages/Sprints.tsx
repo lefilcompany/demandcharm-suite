@@ -192,7 +192,6 @@ export default function Sprints() {
               </div>
               <SprintStageProgress demands={sprintDemands} columns={visibleColumns} />
               <div className="flex flex-wrap items-center gap-4 text-sm">
-                <span><b>{progress.delivered}</b>/{progress.total} entregues ({progress.percent}%)</span>
                 <span className={progress.overdue ? "text-destructive font-medium" : "text-muted-foreground"}>{progress.overdue} atrasada{progress.overdue === 1 ? "" : "s"}</span>
                 <Tabs value={view} onValueChange={(v) => setView(v as any)}>
                   <TabsList className="h-8">
