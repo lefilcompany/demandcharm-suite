@@ -314,6 +314,17 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
                 {filterChip("P1", "P1", counts.P1)}
                 {filterChip("P2", "P2", counts.P2)}
                 <div className="ml-auto flex items-center gap-2">
+                  {selected.size > 0 && hasServices && (
+                    <Select onValueChange={(v) => setServiceSelected(v === NONE ? null : v)}>
+                      <SelectTrigger className="h-8 w-[180px] text-xs">
+                        <SelectValue placeholder={`Definir serviço (${selected.size})`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Sem serviço</SelectItem>
+                        {services?.map((s: any) => s.service && <SelectItem key={s.service.id} value={s.service.id}>{s.service.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
                   {selected.size > 0 && (
                     <PersonPicker
                       members={people}
