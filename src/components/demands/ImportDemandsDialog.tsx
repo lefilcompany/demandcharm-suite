@@ -442,14 +442,16 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
                       <Plus className="h-4 w-4 mr-1" /> Adicionar linha
                     </Button>
                     <span className={cn("text-xs", invalidCount ? "text-primary font-medium" : "text-muted-foreground")}>
-                      {unassigned > 0 ? `${unassigned} sem responsável` : invalidCount > 0 ? `${invalidCount} com pendência` : "Tudo pronto para criar"}
+                      {selected.size > 0
+                        ? `${selected.size} selecionada(s) de ${rows.length}`
+                        : unassigned > 0 ? `${unassigned} sem responsável` : invalidCount > 0 ? `${invalidCount} com pendência` : "Marque as demandas que quer criar"}
                     </span>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="ghost" disabled={busy} onClick={reset}>Voltar</Button>
-                    <Button onClick={createAll} disabled={busy || invalidCount > 0 || !rows.length}>
+                    <Button onClick={createSelected} disabled={busy || selected.size === 0 || rows.some((r) => selected.has(r.key) && rowError(r))}>
                       {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      {busy ? `Criando ${progress}/${rows.length}...` : `Criar ${rows.length} demandas`}
+                      {busy ? `Criando ${progress}/${selected.size}...` : selected.size > 0 ? `Criar ${selected.size} selecionada(s)` : "Selecione para criar"}
                     </Button>
                   </div>
                 </>
