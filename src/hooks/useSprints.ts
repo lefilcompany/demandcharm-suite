@@ -45,6 +45,10 @@ export function useSprintMemberships(boardId: string | null) {
   return useQuery({
     queryKey: ["sprint-memberships", boardId, user?.id],
     enabled: !!boardId && !!user,
+    // Sem cache: a lista de "disponíveis" precisa refletir outras sprints em aberto
+    // mesmo quando a mudança veio de outra aba ou outro usuário.
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sprint_demands")
