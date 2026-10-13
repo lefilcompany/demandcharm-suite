@@ -377,8 +377,19 @@ function AddDemandsDialog({ sprint, demands, memberships, onClose }: {
   });
   const toggle = (id: string) => setPicked((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const submit = () => add.mutate({ sprintId: sprint.id, demandIds: [...picked] }, {
-    onSuccess: () => { toast({ title: `${picked.size} demanda(s) adicionada(s)` }); onClose(); },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+    onSuccess: (res) => {
+      if (res?.failures.length) {
+        toast({
+          title: `${res.added} adicionada(s), ${res.failures.length} não puderam entrar`,
+          description: res.failures[0],
+          variant: res.added ? "default" : "destructive",
+        });
+      } else {
+        toast({ title: `${picked.size} demanda(s) adicionada(s)` });
+      }
+      onClose();
+    },
+    onError: (e: any) => toast({ title: "Erro ao adicionar", description: e.message, variant: "destructive" }),
   });
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
