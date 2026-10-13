@@ -45,6 +45,10 @@ export function useSprintMemberships(boardId: string | null) {
   return useQuery({
     queryKey: ["sprint-memberships", boardId, user?.id],
     enabled: !!boardId && !!user,
+    // Sem cache: a lista de "disponíveis" precisa refletir outras sprints em aberto
+    // mesmo quando a mudança veio de outra aba ou outro usuário.
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sprint_demands")
@@ -109,11 +113,20 @@ export function useAddDemandsToSprint() {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: async ({ sprintId, demandIds }: { sprintId: string; demandIds: string[] }) => {
-      if (!demandIds.length) return;
-      const { error } = await supabase
-        .from("sprint_demands")
-        .insert(demandIds.map((demand_id) => ({ sprint_id: sprintId, demand_id })));
-      if (error) throw error;
+      if (!demandIds.length) return { added: 0, failures: [] as string[] };
+      // Insere uma a uma: se uma demanda falhar (ex.: já está em outra sprint
+      // em aberto), as demais ainda entram e o erro mostra o motivo do servidor.
+      const failures: string[] = [];
+      let added = 0;
+      for (const demand_id of demandIds) {
+        const { error } = await supabase
+          .from("sprint_demands")
+          .insert({ sprint_id: sprintId, demand_id });
+        if (error) failures.push(error.message);
+        else added++;
+      }
+      if (added === 0 && failures.length) throw new Error(failures[0]);
+      return { added, failures };
     },
     onSuccess: invalidate,
   });
