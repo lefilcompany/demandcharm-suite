@@ -102,7 +102,7 @@ export default function Sprints() {
   }
 
   return (
-    <div className="flex flex-col h-full animate-fade-in gap-4">
+    <div className="flex flex-col min-h-full animate-fade-in gap-4">
       <SEOHead title="Sprints" path="/app/sprints" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between shrink-0">
         <div>
@@ -225,7 +225,7 @@ export default function Sprints() {
           )}
 
           {sprint && (
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-[max(560px,65dvh)]">
               {sprintDemands.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">Nenhuma demanda nesta sprint ainda.</p>
               ) : view === "kanban" ? (
