@@ -11,7 +11,7 @@ interface Props {
 function StageColor({ color, x = 0, width = 8, height = 8 }: { color: string; x?: number; width?: number; height?: number }) {
   if (color.startsWith("bg-")) {
     return <foreignObject x={x} y={0} width={width} height={height}>
-      <div className={`h-full w-full ${color.replace(/\/\d+$/, "/100")}`} />
+      <div className={`h-full w-full ${color}`} />
     </foreignObject>;
   }
   return <rect x={x} y={0} width={width} height={height} fill={color} />;
