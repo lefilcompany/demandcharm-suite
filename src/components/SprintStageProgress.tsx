@@ -39,7 +39,7 @@ export function SprintStageProgress({ demands, columns }: Props) {
             <span className="inline-flex items-center gap-1.5 text-muted-foreground"><CircleDashed className="h-3.5 w-3.5" />{remaining} pendente{remaining === 1 ? "" : "s"}</span>
           </div>
         </div>
-        <Progress value={percent} aria-label="Progresso concluído da sprint" className="h-3 bg-muted" indicatorClassName="bg-success motion-reduce:transition-none" />
+        <Progress value={percent} aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-valuetext={`${percent}% concluído, ${delivered} de ${total} entregues`} aria-label="Progresso concluído da sprint" className="h-3 bg-muted" indicatorClassName="bg-success motion-reduce:transition-none" />
       </div>
       <div className="space-y-2">
       <div className="flex items-center justify-between text-xs text-muted-foreground"><span className="font-medium">Distribuição por etapa</span><span className="tabular-nums">{total} demanda{total === 1 ? "" : "s"}</span></div>
