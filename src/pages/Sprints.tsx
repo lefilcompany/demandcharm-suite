@@ -225,7 +225,7 @@ export default function Sprints() {
           )}
 
           {sprint && (
-            <div className="flex-1 min-h-[max(560px,65dvh)]">
+            <div className="h-[max(560px,65dvh)]">
               {sprintDemands.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">Nenhuma demanda nesta sprint ainda.</p>
               ) : view === "kanban" ? (
