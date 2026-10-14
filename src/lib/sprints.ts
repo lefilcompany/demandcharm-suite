@@ -88,3 +88,16 @@ export function sprintStageDistribution<T extends { key: string; label: string; 
     other, otherPercent: total ? other / total * 100 : 0, total,
   };
 }
+
+/** Conclusão real pelo status atual; data de entrega antiga não implica conclusão. */
+export function sprintKanbanCompletion(
+  demands: { status_id?: string | null; demand_statuses?: { name?: string | null } | null }[],
+  columns: { key: string; statusId?: string }[],
+) {
+  const deliveredStage = columns.find(column => column.key === "Entregue");
+  const delivered = demands.filter(demand => demand.demand_statuses?.name
+    ? demand.demand_statuses.name === "Entregue"
+    : !!deliveredStage?.statusId && demand.status_id === deliveredStage.statusId).length;
+  const total = demands.length;
+  return { delivered, total, remaining: total - delivered, percent: total ? Math.round(delivered / total * 100) : 0 };
+}

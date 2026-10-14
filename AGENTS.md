@@ -20,6 +20,6 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 
 ## Sprints
 
-- Sprint stage distribution is derived from the same sprint demands and visible Kanban columns in `sprintStageDistribution`, using configured stage colors and status IDs — so the bar stays consistent with the Kanban without extra queries or invented intermediate completion weights.
+- Sprint progress uses `sprintKanbanCompletion` for current delivered statuses and `sprintStageDistribution` for stage occupancy, from the same demands and columns as the Kanban — separate completion and distribution bars prevent intermediate stages or historical delivery timestamps from implying completed work.
 - Sprints belong to one board (`board_sprints` + `sprint_demands`); the "one open sprint per demand" and "one active sprint per board" rules live in the database (trigger + partial unique index) so every client obeys them; the sprint Kanban reuses `KanbanBoard` with the board demands filtered by sprint so drag/status logic stays in one place.
 - Hiding old delivered demands is a Kanban-page-only filter (`src/lib/kanbanVisibility.ts` + `boards.kanban_cleared_at`, set by RPC `clear_board_kanban`); `useDemands`/`demands-read` stay unfiltered because the demand list, reports and sprints share them.

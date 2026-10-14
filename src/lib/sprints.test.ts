@@ -1,7 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { sprintDaysRemaining, formatDaysRemaining, sprintProgress, canAddDemandToSprint, nextStageAfter, sprintStageDistribution } from "./sprints";
+import { sprintDaysRemaining, formatDaysRemaining, sprintProgress, canAddDemandToSprint, nextStageAfter, sprintStageDistribution, sprintKanbanCompletion } from "./sprints";
 
 describe("sprints", () => {
+  it("conta somente o status atual de entrega como progresso concluído", () => {
+    const columns = [{ key: "Entregue", statusId: "done" }, { key: "Fazendo", statusId: "doing" }];
+    const demands = [{ status_id: "done" }, { status_id: "doing", demand_statuses: { name: "Fazendo" } }, { demand_statuses: { name: "Entregue" } }, { status_id: "doing" }];
+    expect(sprintKanbanCompletion(demands, columns)).toEqual({ delivered: 2, total: 4, remaining: 2, percent: 50 });
+    expect(sprintKanbanCompletion([{ status_id: "done", demand_statuses: { name: "Fazendo" } }], columns).delivered).toBe(0);
+    expect(sprintKanbanCompletion([], columns).percent).toBe(0);
+  });
   it("conta dias restantes e encerradas", () => {
     expect(sprintDaysRemaining("2026-10-20", "2026-10-09")).toBe(11);
     expect(formatDaysRemaining("2026-10-09", "2026-10-09")).toBe("Termina hoje");

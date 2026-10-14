@@ -1,5 +1,7 @@
-import { sprintStageDistribution } from "@/lib/sprints";
+import { sprintStageDistribution, sprintKanbanCompletion } from "@/lib/sprints";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
+import { CheckCircle2, CircleDashed } from "lucide-react";
 
 interface Props {
   demands: { status_id?: string | null; demand_statuses?: { name?: string | null } | null }[];
@@ -17,7 +19,7 @@ function StageColor({ color, x = 0, width = 8, height = 8 }: { color: string; x?
 
 export function SprintStageProgress({ demands, columns }: Props) {
   const { stages, other, otherPercent, total } = sprintStageDistribution(demands, columns);
-  const delivered = stages.find(stage => stage.key === "Entregue")?.count ?? 0;
+  const { delivered, remaining, percent } = sprintKanbanCompletion(demands, columns);
   const segments = [
     ...stages.map(stage => ({ ...stage, color: stage.color || "hsl(var(--muted-foreground))" })),
     ...(other ? [{ key: "other", label: "Outras etapas", count: other, percent: otherPercent, color: "hsl(var(--muted-foreground))" }] : []),
@@ -25,8 +27,23 @@ export function SprintStageProgress({ demands, columns }: Props) {
   let offset = 0;
 
   return (
-    <div className="space-y-2" aria-label="Situação do Kanban da sprint">
-      <svg viewBox="0 0 100 10" preserveAspectRatio="none" className="block h-2.5 w-full overflow-hidden rounded-full bg-muted" role="img"
+    <div className="space-y-4 border-t border-border pt-4" aria-label="Situação do Kanban da sprint">
+      <div className="space-y-2.5">
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-semibold tabular-nums text-foreground">{percent}%</span>
+            <span className="text-sm text-muted-foreground">concluído</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            <span className="inline-flex items-center gap-1.5 text-success"><CheckCircle2 className="h-3.5 w-3.5" />{delivered} de {total} entregues</span>
+            <span className="inline-flex items-center gap-1.5 text-muted-foreground"><CircleDashed className="h-3.5 w-3.5" />{remaining} pendente{remaining === 1 ? "" : "s"}</span>
+          </div>
+        </div>
+        <Progress value={percent} aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-valuetext={`${percent}% concluído, ${delivered} de ${total} entregues`} aria-label="Progresso concluído da sprint" className="h-3 bg-muted" indicatorClassName="bg-success motion-reduce:transition-none" />
+      </div>
+      <div className="space-y-2">
+      <div className="flex items-center justify-between text-xs text-muted-foreground"><span className="font-medium">Distribuição por etapa</span><span className="tabular-nums">{total} demanda{total === 1 ? "" : "s"}</span></div>
+      <svg viewBox="0 0 100 10" preserveAspectRatio="none" className="block h-2 w-full overflow-hidden rounded-full bg-muted" role="img"
         aria-label={total ? segments.filter(s => s.count).map(s => `${s.label}: ${s.count} (${Math.round(s.percent)}%)`).join("; ") : "Nenhuma demanda na sprint"}>
         {segments.filter(s => s.count > 0).map(segment => {
           const x = offset;
@@ -38,18 +55,19 @@ export function SprintStageProgress({ demands, columns }: Props) {
         })}
       </svg>
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        {segments.map(segment => (
+        {segments.filter(segment => segment.count > 0).map(segment => (
           <Tooltip key={segment.key}>
             <TooltipTrigger asChild>
               <span className="inline-flex items-center gap-1.5">
                 <svg viewBox="0 0 8 8" className="h-2 w-2 shrink-0 overflow-hidden rounded-full" aria-hidden="true"><StageColor color={segment.color} /></svg>
-                {segment.label} <span className="font-medium text-foreground">{segment.count}</span>
+                {segment.label} <span className="font-medium tabular-nums text-foreground">{segment.count}</span><span className="tabular-nums">({Math.round(segment.percent)}%)</span>
               </span>
             </TooltipTrigger>
             <TooltipContent>{segment.count} de {total} demanda(s) · {Math.round(segment.percent)}%</TooltipContent>
           </Tooltip>
         ))}
-        <span className="font-medium text-foreground">{delivered}/{total} entregues ({total ? Math.round(delivered / total * 100) : 0}%)</span>
+        {total === 0 && <span>Nenhuma demanda nesta sprint</span>}
+      </div>
       </div>
     </div>
   );
