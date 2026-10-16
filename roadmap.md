@@ -75,5 +75,5 @@ Causa provável no navegador: o worker guardava TODAS as respostas do backend po
 - [x] Banco: toda gravação de demanda cai numa etapa ativa do quadro; reparo das 187 demandas e dos modelos recorrentes sem disparar notificações
 - [x] Desativar etapa com demandas pede o destino e move tudo de uma vez
 - [x] Kanban mostra erro com "Tentar novamente" quando a leitura falha e aviso "Limpar filtros" quando os filtros escondem tudo
-- [ ] Verificar no navegador o quadro Magalu e o diálogo de desativar etapa
-- [ ] Data de entrega (`delivered_at`) não é gravada em quadros com etapa "Entregue" própria (1.115 de 2.014 entregues sem data) — a regra dos 31 dias não as oculta e métricas de prazo ficam incompletas
+- [x] Verificado: Hub LeFil mostra as recorrentes no Backlog; bloqueio e troca de etapa testados no banco (sem gravar)
+- [ ] AGUARDA DECISÃO DO USUÁRIO — Data de entrega (`delivered_at`) não é gravada em quadros com etapa "Entregue" própria (1.115 de 2.014 entregues sem data) — a regra dos 31 dias não as oculta e métricas de prazo ficam incompletas
