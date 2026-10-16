@@ -46,6 +46,7 @@ import {
   useAllBoardStatuses,
   useAvailableStatuses,
   useToggleBoardStatus,
+  useDeactivateBoardStage,
   useUpdateBoardStatusPositions,
   useAddBoardStatus,
   useDeleteBoardStatus,
@@ -58,10 +59,12 @@ import {
   AdjustmentType,
   BOARD_ROLES,
   BoardRoleType,
+  getStatusDisplayName,
 } from "@/hooks/useBoardStatuses";
 import { ColorPicker } from "@/components/ColorPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { deactivationTargets, defaultDeactivationTarget, stageHasDemandsCount } from "@/lib/stageDeactivation";
 
 interface KanbanStagesManagerProps {
   boardId: string;
