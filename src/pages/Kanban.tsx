@@ -390,7 +390,37 @@ export default function Kanban() {
         ) : isLoading && !demands ? (
           <KanbanSkeleton columns={kanbanColumns?.length || 5} />
 
+        ) : demandsFailed && !allBoardDemands ? (
+          // Nunca mostrar um quadro vazio quando a leitura falhou: parece que as demandas sumiram.
+          <div role="alert" className="flex flex-col items-center justify-center text-center gap-3 py-16 px-6 border border-dashed border-destructive/40 rounded-xl bg-destructive/5">
+            <AlertTriangle className="h-10 w-10 text-destructive" />
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold text-foreground">Não foi possível carregar as demandas</h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                As demandas continuam salvas — só não conseguimos buscá-las agora. Verifique sua conexão e tente de novo.
+              </p>
+            </div>
+            <Button onClick={() => refetchDemands()} disabled={isRefetchingDemands} className="gap-2">
+              <RefreshCw className={isRefetchingDemands ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+              {isRefetchingDemands ? "Tentando..." : "Tentar novamente"}
+            </Button>
+          </div>
         ) : (
+          <div className="flex h-full min-h-0 flex-col gap-3">
+          {hasActiveFilters && (demands?.length ?? 0) > 0 && filteredDemands.length === 0 && (
+            <div role="status" className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+              <div className="flex items-center gap-2.5 text-sm">
+                <FilterX className="h-4 w-4 shrink-0 text-primary" />
+                <span className="text-foreground">
+                  Nenhuma das {demands?.length} demandas do quadro aparece com os filtros ativos.
+                </span>
+              </div>
+              <Button size="sm" variant="outline" className="h-8" onClick={() => setFilters(defaultFilters)}>
+                Limpar filtros
+              </Button>
+            </div>
+          )}
+          <div className="flex-1 min-h-0">
           <KanbanBoard 
             demands={visibleDemands} 
             columns={kanbanColumns}
