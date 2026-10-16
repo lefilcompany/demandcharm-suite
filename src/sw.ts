@@ -158,13 +158,17 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(caches.delete("supabase-api-cache"));
 });
 
+// Só imagens do próprio app e do storage atual: links externos/antigos que
+// falham devem ir direto ao navegador (que mostra o fallback), sem erro do SW.
+const IMAGE_HOSTS = new Set([self.location.host, "erxhxmetrvkigjwxchbj.supabase.co"]);
 registerRoute(
-  /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
+  ({ url }) => IMAGE_HOSTS.has(url.host) && /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i.test(url.pathname),
   new CacheFirst({
     cacheName: "images-cache",
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 }),
+      { handlerDidError: async () => Response.error() },
     ],
   }),
 );
