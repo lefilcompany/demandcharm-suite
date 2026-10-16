@@ -26,7 +26,7 @@ import { useMembersByPosition } from "@/hooks/useMembersByPosition";
 import { useIsTeamAdminOrModerator } from "@/hooks/useTeamRole";
 import { useKanbanColumns } from "@/hooks/useBoardStatuses";
 import { useKanbanPreferences } from "@/hooks/useKanbanPreferences";
-import { Plus, LayoutGrid, Columns3, Loader2, Kanban as KanbanIcon, Trash2 } from "lucide-react";
+import { Plus, LayoutGrid, Columns3, Loader2, Kanban as KanbanIcon, Trash2, AlertTriangle, RefreshCw, FilterX } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useRealtimeDemands, useKanbanRealtimeNotifications } from "@/hooks/useRealtimeDemands";
 import { isToday, isThisWeek, isPast } from "date-fns";
@@ -86,7 +86,13 @@ export default function Kanban() {
   const { openCreateDemand } = useCreateDemandModal();
   const { user } = useAuth();
   const { selectedBoardId, currentTeamId } = useSelectedBoard();
-  const { data: allBoardDemands, isLoading } = useDemands(selectedBoardId || undefined);
+  const {
+    data: allBoardDemands,
+    isLoading,
+    isError: demandsFailed,
+    refetch: refetchDemands,
+    isFetching: isRefetchingDemands,
+  } = useDemands(selectedBoardId || undefined);
   const { data: role } = useBoardRole(selectedBoardId);
   const { data: teamMembershipRole } = useTeamMembershipRole(currentTeamId);
   const { data: currentBoard } = useBoard(selectedBoardId);
