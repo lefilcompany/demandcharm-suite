@@ -23,3 +23,8 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 - Sprint progress uses `sprintKanbanCompletion` for current delivered statuses and `sprintStageDistribution` for stage occupancy, from the same demands and columns as the Kanban — separate completion and distribution bars prevent intermediate stages or historical delivery timestamps from implying completed work.
 - Sprints belong to one board (`board_sprints` + `sprint_demands`); the "one open sprint per demand" and "one active sprint per board" rules live in the database (trigger + partial unique index) so every client obeys them; the sprint Kanban reuses `KanbanBoard` with the board demands filtered by sprint so drag/status logic stays in one place.
 - Hiding old delivered demands is a Kanban-page-only filter (`src/lib/kanbanVisibility.ts` + `boards.kanban_cleared_at`, set by RPC `clear_board_kanban`); `useDemands`/`demands-read` stay unfiltered because the demand list, reports and sprints share them.
+
+## Kanban stages
+
+- Every non-archived demand must sit in a stage whose name is active on its board, because the Kanban groups cards by stage name and silently drops the rest: trigger `a0_keep_demand_on_active_stage` (runs first among BEFORE triggers) remaps writes via `resolve_board_demand_status`, and `guard_board_stage_deactivation` refuses to switch off a stage that still holds demands (`STAGE_HAS_DEMANDS`) — the UI then calls RPC `deactivate_board_stage`, which moves them to a chosen non-timer stage and deactivates in one transaction.
+- Bulk stage moves set the transaction-local flag `soma.bulk_stage_move = on` so `notify_demand_status_changed` does not send one notification per demand.

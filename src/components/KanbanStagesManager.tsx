@@ -46,6 +46,7 @@ import {
   useAllBoardStatuses,
   useAvailableStatuses,
   useToggleBoardStatus,
+  useDeactivateBoardStage,
   useUpdateBoardStatusPositions,
   useAddBoardStatus,
   useDeleteBoardStatus,
@@ -58,10 +59,12 @@ import {
   AdjustmentType,
   BOARD_ROLES,
   BoardRoleType,
+  getStatusDisplayName,
 } from "@/hooks/useBoardStatuses";
 import { ColorPicker } from "@/components/ColorPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { deactivationTargets, defaultDeactivationTarget, stageHasDemandsCount } from "@/lib/stageDeactivation";
 
 interface KanbanStagesManagerProps {
   boardId: string;
@@ -233,6 +236,10 @@ export function KanbanStagesManager({ boardId }: KanbanStagesManagerProps) {
   const { data: demandCounts } = useBoardDemandCounts(boardId);
   
   const toggleStatus = useToggleBoardStatus();
+  const deactivateStage = useDeactivateBoardStage();
+  const [stageToDeactivate, setStageToDeactivate] = useState<BoardStatus | null>(null);
+  const [deactivateCount, setDeactivateCount] = useState(0);
+  const [deactivateTargetId, setDeactivateTargetId] = useState("");
   const updatePositions = useUpdateBoardStatusPositions();
   const addStatus = useAddBoardStatus();
   const deleteStatus = useDeleteBoardStatus();
@@ -362,20 +369,74 @@ export function KanbanStagesManager({ boardId }: KanbanStagesManagerProps) {
   }, [boardStatuses]);
 
   const handleToggleStatus = async (boardStatusId: string, isActive: boolean) => {
-    // Optimistic local update
-    setLocalStatuses(prev => prev.map(s => 
-      s.id === boardStatusId ? { ...s, is_active: isActive } : s
-    ));
+    // Ativar é otimista; desativar espera o banco, que recusa quando a etapa
+    // ainda tem demandas (elas sumiriam do Kanban) — aí pedimos um destino.
+    if (isActive) {
+      setLocalStatuses(prev => prev.map(s =>
+        s.id === boardStatusId ? { ...s, is_active: true } : s
+      ));
+    }
     try {
       await toggleStatus.mutateAsync({ boardStatusId, isActive, boardId });
+      if (!isActive) {
+        setLocalStatuses(prev => prev.map(s =>
+          s.id === boardStatusId ? { ...s, is_active: false } : s
+        ));
+      }
       toast.success(isActive ? "Etapa ativada" : "Etapa desativada");
     } catch (error) {
+      if (isActive) {
+        setLocalStatuses(prev => prev.map(s =>
+          s.id === boardStatusId ? { ...s, is_active: false } : s
+        ));
+      }
+      const pendingDemands = !isActive ? stageHasDemandsCount(error) : null;
+      if (pendingDemands !== null) {
+        const stage = localStatuses.find(s => s.id === boardStatusId) ?? null;
+        if (stage) {
+          setStageToDeactivate(stage);
+          setDeactivateCount(pendingDemands);
+          setDeactivateTargetId(defaultDeactivationTarget(localStatuses, stage.id)?.status_id ?? "");
+          return;
+        }
+      }
       console.error("Erro ao toggle etapa:", error);
-      // Revert optimistic update
-      setLocalStatuses(prev => prev.map(s => 
-        s.id === boardStatusId ? { ...s, is_active: !isActive } : s
-      ));
       toast.error("Erro ao alterar status da etapa");
+    }
+  };
+
+  const closeDeactivateDialog = () => {
+    if (deactivateStage.isPending) return;
+    setStageToDeactivate(null);
+    setDeactivateCount(0);
+    setDeactivateTargetId("");
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!stageToDeactivate || !deactivateTargetId) return;
+    const stage = stageToDeactivate;
+    const target = localStatuses.find(s => s.status_id === deactivateTargetId);
+    try {
+      const moved = await deactivateStage.mutateAsync({
+        boardStatusId: stage.id,
+        targetStatusId: deactivateTargetId,
+        boardId,
+      });
+      setLocalStatuses(prev => prev.map(s => (s.id === stage.id ? { ...s, is_active: false } : s)));
+      queryClient.invalidateQueries({ queryKey: ["board-demand-counts", boardId] });
+      toast.success("Etapa desativada", {
+        description: moved > 0
+          ? `${moved} demanda${moved === 1 ? "" : "s"} movida${moved === 1 ? "" : "s"} para "${getStatusDisplayName(target?.status.name)}".`
+          : undefined,
+      });
+      setStageToDeactivate(null);
+      setDeactivateCount(0);
+      setDeactivateTargetId("");
+    } catch (error) {
+      console.error("Erro ao desativar etapa:", error);
+      toast.error("Não foi possível desativar a etapa", {
+        description: error instanceof Error ? error.message : (error as { message?: string })?.message,
+      });
     }
   };
 
@@ -850,7 +911,7 @@ export function KanbanStagesManager({ boardId }: KanbanStagesManagerProps) {
                 <p className="text-xs text-muted-foreground mt-4">
                   A etapa "Entregue" é fixa e essencial para o fluxo de demandas. 
                   Arraste as demais etapas pelo ícone ⠿ para reordená-las.
-                  Desativar uma etapa apenas a oculta no Kanban.
+                  Ao desativar uma etapa que tem demandas, você escolhe para qual etapa elas vão — nenhuma demanda some do Kanban.
                 </p>
               </div>
             </DialogPrimitive.Content>
@@ -885,6 +946,73 @@ export function KanbanStagesManager({ boardId }: KanbanStagesManagerProps) {
           </div>
         </DialogPortal>
       </Dialog>
+
+      <AlertDialog open={!!stageToDeactivate} onOpenChange={(next) => { if (!next) closeDeactivateDialog(); }}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Desativar a etapa "{getStatusDisplayName(stageToDeactivate?.status.name)}"?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  Esta etapa tem <span className="font-semibold text-foreground">{deactivateCount} demanda{deactivateCount === 1 ? "" : "s"}</span>.
+                  Se ela sumir do Kanban, essas demandas deixam de aparecer para a equipe.
+                </p>
+                <p>Escolha para qual etapa elas serão movidas antes de desativar:</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {(() => {
+            const targets = stageToDeactivate ? deactivationTargets(localStatuses, stageToDeactivate.id) : [];
+            if (targets.length === 0) {
+              return (
+                <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                  Não há outra etapa ativa que possa receber essas demandas. Ative ou crie uma etapa antes de desativar esta.
+                </p>
+              );
+            }
+            return (
+              <div className="space-y-2">
+                <Label htmlFor="deactivate-target" className="text-xs font-medium">Mover demandas para</Label>
+                <Select value={deactivateTargetId} onValueChange={setDeactivateTargetId}>
+                  <SelectTrigger id="deactivate-target" className="h-9">
+                    <SelectValue placeholder="Escolha uma etapa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {targets.map((t) => (
+                      <SelectItem key={t.id} value={t.status_id}>
+                        <span className="flex items-center gap-2">
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.status.color }} />
+                          {getStatusDisplayName(t.status.name)}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <ul className="space-y-1 text-xs text-muted-foreground list-disc pl-4">
+                  <li>As demandas mantêm responsáveis, prazos e histórico.</li>
+                  <li>Os envolvidos não recebem uma notificação por demanda movida.</li>
+                  <li>"Fazendo" e "Em Ajuste" não aparecem aqui porque ligariam o cronômetro de todas de uma vez.</li>
+                </ul>
+              </div>
+            );
+          })()}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deactivateStage.isPending}>Cancelar</AlertDialogCancel>
+            <Button
+              onClick={handleConfirmDeactivate}
+              disabled={!deactivateTargetId || deactivateStage.isPending}
+            >
+              {deactivateStage.isPending
+                ? "Movendo..."
+                : `Mover ${deactivateCount} e desativar`}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

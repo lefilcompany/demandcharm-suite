@@ -4071,6 +4071,7 @@ export type Database = {
           title: string
         }[]
       }
+      board_entry_status_id: { Args: { _board_id: string }; Returns: string }
       bump_board_demands_version: {
         Args: { _board_id: string }
         Returns: undefined
@@ -4176,6 +4177,10 @@ export type Database = {
       create_demand_with_subdemands: {
         Args: { p_dependencies?: Json; p_parent: Json; p_subdemands?: Json }
         Returns: Json
+      }
+      deactivate_board_stage: {
+        Args: { _board_status_id: string; _target_status_id: string }
+        Returns: number
       }
       duplicate_demand: {
         Args: {
@@ -4487,6 +4492,10 @@ export type Database = {
       reschedule_demand: {
         Args: { p_demand_id: string; p_new_due_date: string; p_reason: string }
         Returns: Json
+      }
+      resolve_board_demand_status: {
+        Args: { _board_id: string; _status_id: string }
+        Returns: string
       }
       search_index_status: {
         Args: { p_board_id: string }

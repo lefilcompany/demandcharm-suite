@@ -99,6 +99,13 @@
       "when": 1791552330825,
       "tag": "0013_board_kanban_cleared_at",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792154503407,
+      "tag": "0014_keep_demands_on_active_board_stage",
+      "breakpoints": true
     }
   ]
 }

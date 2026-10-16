@@ -69,3 +69,11 @@ Causa provável no navegador: o worker guardava TODAS as respostas do backend po
 - [x] Faixa de projetos: aviso "Nenhum projeto neste quadro · N em outros quadros" com atalho para ver todos
 - [x] Verificado: build local + Playwright (2 contas no mesmo navegador, backend fora do ar: cada conta recebe só a própria cópia; anônimo nunca guardado); tela de erro com retry; aviso na faixa
 - [ ] Publicar; o usuário afetado aceita o aviso "Novidades no SoMA!" (ou fecha e reabre o app) — o worker novo apaga a cópia antiga por URL
+
+## Kanban vazio (demandas em etapas que o quadro não mostra)
+- [x] Causa: demandas recorrentes e etapas desativadas deixavam demandas fora de qualquer coluna (187 demandas em 16 quadros; 3 pessoas com 100% das suas demandas do Magalu invisíveis)
+- [x] Banco: toda gravação de demanda cai numa etapa ativa do quadro; reparo das 187 demandas e dos modelos recorrentes sem disparar notificações
+- [x] Desativar etapa com demandas pede o destino e move tudo de uma vez
+- [x] Kanban mostra erro com "Tentar novamente" quando a leitura falha e aviso "Limpar filtros" quando os filtros escondem tudo
+- [ ] Verificar no navegador o quadro Magalu e o diálogo de desativar etapa
+- [ ] Data de entrega (`delivered_at`) não é gravada em quadros com etapa "Entregue" própria (1.115 de 2.014 entregues sem data) — a regra dos 31 dias não as oculta e métricas de prazo ficam incompletas
