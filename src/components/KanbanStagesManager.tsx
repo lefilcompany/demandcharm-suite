@@ -236,6 +236,10 @@ export function KanbanStagesManager({ boardId }: KanbanStagesManagerProps) {
   const { data: demandCounts } = useBoardDemandCounts(boardId);
   
   const toggleStatus = useToggleBoardStatus();
+  const deactivateStage = useDeactivateBoardStage();
+  const [stageToDeactivate, setStageToDeactivate] = useState<BoardStatus | null>(null);
+  const [deactivateCount, setDeactivateCount] = useState(0);
+  const [deactivateTargetId, setDeactivateTargetId] = useState("");
   const updatePositions = useUpdateBoardStatusPositions();
   const addStatus = useAddBoardStatus();
   const deleteStatus = useDeleteBoardStatus();
@@ -365,20 +369,74 @@ export function KanbanStagesManager({ boardId }: KanbanStagesManagerProps) {
   }, [boardStatuses]);
 
   const handleToggleStatus = async (boardStatusId: string, isActive: boolean) => {
-    // Optimistic local update
-    setLocalStatuses(prev => prev.map(s => 
-      s.id === boardStatusId ? { ...s, is_active: isActive } : s
-    ));
+    // Ativar é otimista; desativar espera o banco, que recusa quando a etapa
+    // ainda tem demandas (elas sumiriam do Kanban) — aí pedimos um destino.
+    if (isActive) {
+      setLocalStatuses(prev => prev.map(s =>
+        s.id === boardStatusId ? { ...s, is_active: true } : s
+      ));
+    }
     try {
       await toggleStatus.mutateAsync({ boardStatusId, isActive, boardId });
+      if (!isActive) {
+        setLocalStatuses(prev => prev.map(s =>
+          s.id === boardStatusId ? { ...s, is_active: false } : s
+        ));
+      }
       toast.success(isActive ? "Etapa ativada" : "Etapa desativada");
     } catch (error) {
+      if (isActive) {
+        setLocalStatuses(prev => prev.map(s =>
+          s.id === boardStatusId ? { ...s, is_active: false } : s
+        ));
+      }
+      const pendingDemands = !isActive ? stageHasDemandsCount(error) : null;
+      if (pendingDemands !== null) {
+        const stage = localStatuses.find(s => s.id === boardStatusId) ?? null;
+        if (stage) {
+          setStageToDeactivate(stage);
+          setDeactivateCount(pendingDemands);
+          setDeactivateTargetId(defaultDeactivationTarget(localStatuses, stage.id)?.status_id ?? "");
+          return;
+        }
+      }
       console.error("Erro ao toggle etapa:", error);
-      // Revert optimistic update
-      setLocalStatuses(prev => prev.map(s => 
-        s.id === boardStatusId ? { ...s, is_active: !isActive } : s
-      ));
       toast.error("Erro ao alterar status da etapa");
+    }
+  };
+
+  const closeDeactivateDialog = () => {
+    if (deactivateStage.isPending) return;
+    setStageToDeactivate(null);
+    setDeactivateCount(0);
+    setDeactivateTargetId("");
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!stageToDeactivate || !deactivateTargetId) return;
+    const stage = stageToDeactivate;
+    const target = localStatuses.find(s => s.status_id === deactivateTargetId);
+    try {
+      const moved = await deactivateStage.mutateAsync({
+        boardStatusId: stage.id,
+        targetStatusId: deactivateTargetId,
+        boardId,
+      });
+      setLocalStatuses(prev => prev.map(s => (s.id === stage.id ? { ...s, is_active: false } : s)));
+      queryClient.invalidateQueries({ queryKey: ["board-demand-counts", boardId] });
+      toast.success("Etapa desativada", {
+        description: moved > 0
+          ? `${moved} demanda${moved === 1 ? "" : "s"} movida${moved === 1 ? "" : "s"} para "${getStatusDisplayName(target?.status.name)}".`
+          : undefined,
+      });
+      setStageToDeactivate(null);
+      setDeactivateCount(0);
+      setDeactivateTargetId("");
+    } catch (error) {
+      console.error("Erro ao desativar etapa:", error);
+      toast.error("Não foi possível desativar a etapa", {
+        description: error instanceof Error ? error.message : (error as { message?: string })?.message,
+      });
     }
   };
 
