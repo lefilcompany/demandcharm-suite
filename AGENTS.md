@@ -28,3 +28,7 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 
 - Every non-archived demand must sit in a stage whose name is active on its board, because the Kanban groups cards by stage name and silently drops the rest: trigger `a0_keep_demand_on_active_stage` (runs first among BEFORE triggers) remaps writes via `resolve_board_demand_status`, and `guard_board_stage_deactivation` refuses to switch off a stage that still holds demands (`STAGE_HAS_DEMANDS`) — the UI then calls RPC `deactivate_board_stage`, which moves them to a chosen non-timer stage and deactivates in one transaction.
 - Bulk stage moves set the transaction-local flag `soma.bulk_stage_move = on` so `notify_demand_status_changed` does not send one notification per demand.
+
+## Admin impersonation
+
+- System admins enter a user's account only through Edge `admin-impersonate` (checks `has_role admin`, refuses other admins, writes `admin_impersonation_log` before issuing a one-time login token); `src/lib/impersonation.ts` keeps the admin refresh token locally to return — so every access is server-checked and auditable.

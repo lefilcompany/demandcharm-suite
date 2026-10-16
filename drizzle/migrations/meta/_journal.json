@@ -113,6 +113,13 @@
       "when": 1792180136268,
       "tag": "0015_fix_delivered_at_by_stage_name",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792180552587,
+      "tag": "0016_admin_impersonation_log",
+      "breakpoints": true
     }
   ]
 }
