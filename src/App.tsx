@@ -15,6 +15,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { RequireTeam } from "@/components/RequireTeam";
 import { ProtectedLayout } from "@/components/ProtectedLayout";
 import { Toaster } from "@/components/ui/sonner";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { CommandMenu } from "@/components/CommandMenu";
 import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcuts";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
@@ -145,6 +146,7 @@ const App = () => {
                           <SwipeNavigationProvider>
                             <PipTimerProvider>
                             <Toaster position="top-right" richColors />
+                            <ImpersonationBanner />
                             <CommandMenu />
                             <PWAInstallPrompt />
                             <CreateDemandGlobal />
