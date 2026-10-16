@@ -911,7 +911,7 @@ export function KanbanStagesManager({ boardId }: KanbanStagesManagerProps) {
                 <p className="text-xs text-muted-foreground mt-4">
                   A etapa "Entregue" é fixa e essencial para o fluxo de demandas. 
                   Arraste as demais etapas pelo ícone ⠿ para reordená-las.
-                  Desativar uma etapa apenas a oculta no Kanban.
+                  Ao desativar uma etapa que tem demandas, você escolhe para qual etapa elas vão — nenhuma demanda some do Kanban.
                 </p>
               </div>
             </DialogPrimitive.Content>
@@ -946,6 +946,73 @@ export function KanbanStagesManager({ boardId }: KanbanStagesManagerProps) {
           </div>
         </DialogPortal>
       </Dialog>
+
+      <AlertDialog open={!!stageToDeactivate} onOpenChange={(next) => { if (!next) closeDeactivateDialog(); }}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Desativar a etapa "{getStatusDisplayName(stageToDeactivate?.status.name)}"?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  Esta etapa tem <span className="font-semibold text-foreground">{deactivateCount} demanda{deactivateCount === 1 ? "" : "s"}</span>.
+                  Se ela sumir do Kanban, essas demandas deixam de aparecer para a equipe.
+                </p>
+                <p>Escolha para qual etapa elas serão movidas antes de desativar:</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {(() => {
+            const targets = stageToDeactivate ? deactivationTargets(localStatuses, stageToDeactivate.id) : [];
+            if (targets.length === 0) {
+              return (
+                <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                  Não há outra etapa ativa que possa receber essas demandas. Ative ou crie uma etapa antes de desativar esta.
+                </p>
+              );
+            }
+            return (
+              <div className="space-y-2">
+                <Label htmlFor="deactivate-target" className="text-xs font-medium">Mover demandas para</Label>
+                <Select value={deactivateTargetId} onValueChange={setDeactivateTargetId}>
+                  <SelectTrigger id="deactivate-target" className="h-9">
+                    <SelectValue placeholder="Escolha uma etapa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {targets.map((t) => (
+                      <SelectItem key={t.id} value={t.status_id}>
+                        <span className="flex items-center gap-2">
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.status.color }} />
+                          {getStatusDisplayName(t.status.name)}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <ul className="space-y-1 text-xs text-muted-foreground list-disc pl-4">
+                  <li>As demandas mantêm responsáveis, prazos e histórico.</li>
+                  <li>Os envolvidos não recebem uma notificação por demanda movida.</li>
+                  <li>"Fazendo" e "Em Ajuste" não aparecem aqui porque ligariam o cronômetro de todas de uma vez.</li>
+                </ul>
+              </div>
+            );
+          })()}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deactivateStage.isPending}>Cancelar</AlertDialogCancel>
+            <Button
+              onClick={handleConfirmDeactivate}
+              disabled={!deactivateTargetId || deactivateStage.isPending}
+            >
+              {deactivateStage.isPending
+                ? "Movendo..."
+                : `Mover ${deactivateCount} e desativar`}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
