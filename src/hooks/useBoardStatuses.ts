@@ -312,7 +312,8 @@ export function useToggleBoardStatus() {
         .eq("id", boardStatusId);
 
       if (error) {
-        console.error("Erro ao toggle board_status:", error);
+        // STAGE_HAS_DEMANDS é esperado: a interface pede um destino e usa useDeactivateBoardStage.
+        if (error.message !== "STAGE_HAS_DEMANDS") console.error("Erro ao toggle board_status:", error);
         throw error;
       }
       
@@ -326,6 +327,40 @@ export function useToggleBoardStatus() {
       void invalidateServerCache({ resource: "board_statuses", boardId: variables.boardId });
       queryClient.invalidateQueries({ queryKey: ["board-statuses", variables.boardId] });
       queryClient.invalidateQueries({ queryKey: ["board-statuses-all", variables.boardId] });
+    },
+  });
+}
+
+/**
+ * Desativa uma etapa que ainda tem demandas, movendo-as antes para outra etapa
+ * ativa do quadro (RPC atômica `deactivate_board_stage`). Retorna quantas foram movidas.
+ */
+export function useDeactivateBoardStage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      boardStatusId,
+      targetStatusId,
+    }: {
+      boardStatusId: string;
+      targetStatusId: string;
+      boardId: string;
+    }) => {
+      const { data, error } = await supabase.rpc("deactivate_board_stage", {
+        _board_status_id: boardStatusId,
+        _target_status_id: targetStatusId,
+      });
+      if (error) throw error;
+      return Number(data ?? 0);
+    },
+    onSuccess: (_, variables) => {
+      void invalidateServerCache({ resource: "board_statuses", boardId: variables.boardId });
+      queryClient.invalidateQueries({ queryKey: ["board-statuses", variables.boardId] });
+      queryClient.invalidateQueries({ queryKey: ["board-statuses-all", variables.boardId] });
+      queryClient.invalidateQueries({ queryKey: ["board-demand-counts", variables.boardId] });
+      queryClient.invalidateQueries({ queryKey: ["demands", variables.boardId] });
+      queryClient.invalidateQueries({ queryKey: ["demands"] });
     },
   });
 }
