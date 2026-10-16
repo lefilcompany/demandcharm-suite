@@ -31,7 +31,6 @@ const TTL_SECONDS = 120;
 const STALE_TTL_SECONDS = 600;
 const LOCK_TTL_SECONDS = 10;
 const LOCK_WAIT_MS = 1500;
-const VERSION_TTL_SECONDS = 5;
 const MAX_CONCURRENT_DB_READS = 4;
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -124,21 +123,16 @@ Deno.serve(async (req) => {
       _user_id: userData.user.id,
     });
 
-    // Versão do quadro: cacheada por poucos segundos para não ler a tabela de
-    // versões a cada request. O dado em si continua protegido pela versão.
-    const versionKey = cacheKey(["demands-version", boardId]);
-    let version = await cacheGet<number>(versionKey);
+    // Versão do quadro: sempre lida do banco para não abrir janela de dado
+    // velho. É uma leitura por chave primária (board_id), muito barata.
+    const { data: versionRow } = await supabase
+      .from("board_cache_versions")
+      .select("demands_version")
+      .eq("board_id", boardId)
+      .maybeSingle();
 
-    if (typeof version !== "number") {
-      const { data: versionRow } = await supabase
-        .from("board_cache_versions")
-        .select("demands_version")
-        .eq("board_id", boardId)
-        .maybeSingle();
+    const version = versionRow?.demands_version ?? 0;
 
-      version = versionRow?.demands_version ?? 0;
-      await cacheSet(versionKey, version, VERSION_TTL_SECONDS);
-    }
 
     const roleKey = String(role ?? "none");
     const key = cacheKey(["demands", boardId, roleKey, `v${version}`]);

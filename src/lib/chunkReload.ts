@@ -64,6 +64,9 @@ let reloading = false;
 /** Reloads the page served by the current build (new worker first, if any). */
 export function reloadForFreshBuild(): void {
   if (reloading) return;
+  // Honor the 30s guard so a chunk that keeps failing can't trap the user in
+  // an endless reload loop — the AppErrorBoundary fallback must stay visible.
+  if (!shouldReload()) return;
   reloading = true;
   void activateWaitingWorker().finally(() => {
     window.location.reload();
@@ -74,10 +77,11 @@ export function installChunkReloadHandler() {
   if (typeof window === "undefined") return;
 
   window.addEventListener("vite:preloadError", (event) => {
-    // Only swallow the error when we are actually reloading. Calling
-    // preventDefault() without reloading makes the dynamic import resolve to
-    // `undefined`, which crashes React.lazy with "reading 'default'" (blank page).
-    if (shouldReload()) {
+    // reloadForFreshBuild() checks the guard itself; preventDefault only when
+    // the reload will actually happen, otherwise the import rejects as
+    // undefined and React.lazy crashes with "reading 'default'".
+    const last = Number((() => { try { return sessionStorage.getItem(GUARD_KEY); } catch { return 0; } })() || 0);
+    if (Date.now() - last >= GUARD_WINDOW_MS) {
       event.preventDefault();
       reloadForFreshBuild();
     }
@@ -85,12 +89,12 @@ export function installChunkReloadHandler() {
 
   window.addEventListener("error", (event) => {
     const msg = String((event as ErrorEvent).message || "");
-    if (isChunkLoadError(msg) && shouldReload()) reloadForFreshBuild();
+    if (isChunkLoadError(msg)) reloadForFreshBuild();
   });
 
   window.addEventListener("unhandledrejection", (event) => {
     const reason = (event as PromiseRejectionEvent).reason;
     const msg = reason instanceof Error ? reason.message : String(reason ?? "");
-    if (isChunkLoadError(msg) && shouldReload()) reloadForFreshBuild();
+    if (isChunkLoadError(msg)) reloadForFreshBuild();
   });
 }
