@@ -2527,10 +2527,13 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
             return (
               <div
                 key={column.key}
-                 style={{
+                style={{
                   ...(isActive ? {
-                     flex: "3",
-                     minWidth: `${closedColumnMinWidth}px`,
+                     // Fixed width so open stages never get squeezed — the
+                     // container scrolls horizontally instead.
+                     width: `${openColumnWidth}px`,
+                     minWidth: `${openColumnWidth}px`,
+                     flexShrink: 0,
                    } : {
                      minWidth: `${closedColumnMinWidth}px`,
                    }),
@@ -2540,7 +2543,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                    "rounded-lg flex flex-col min-h-0 overflow-hidden",
                    "transition-all duration-700 ease-in-out",
                    colorStyle.className,
-                   isActive ? "p-4 flex-[3]" : "p-2 cursor-pointer flex-1 hover:bg-primary/15 hover:shadow-lg",
+                   isActive ? "p-4" : "p-2 cursor-pointer flex-1 hover:bg-primary/15 hover:shadow-lg",
                   isDragTarget && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                 )}
                 onClick={() => toggleColumn(column.key)}
@@ -2646,8 +2649,11 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                 key={column.key}
                 style={{
                   ...(isActive ? {
-                     flex: "3",
-                     minWidth: `${closedColumnMinWidth}px`,
+                     // Fixed width so open stages never get squeezed — the
+                     // container scrolls horizontally instead.
+                     width: `${openColumnWidth}px`,
+                     minWidth: `${openColumnWidth}px`,
+                     flexShrink: 0,
                    } : {
                      minWidth: `${closedColumnMinWidth}px`,
                    }),
@@ -2657,7 +2663,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                    "rounded-lg flex flex-col min-h-0 overflow-hidden",
                    "transition-all duration-700 ease-in-out",
                    colorStyle.className,
-                   isActive ? "p-4 flex-[3]" : "p-2 cursor-pointer flex-1 hover:bg-primary/15 hover:shadow-lg",
+                   isActive ? "p-4" : "p-2 cursor-pointer flex-1 hover:bg-primary/15 hover:shadow-lg",
                   isDragTarget && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                 )}
                 onClick={() => toggleColumn(column.key)}
