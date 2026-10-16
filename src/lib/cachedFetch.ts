@@ -8,8 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
  */
 
 const CACHE_TIMEOUT_MS = 600;
-/** Demandas passam por lock/espera na função; damos mais folga antes de desistir. */
-const DEMANDS_TIMEOUT_MS = 1200;
+/**
+ * Demandas passam por lock/espera (~1.5 s) + jitter (até 250 ms) + leitura de
+ * versão na função; precisamos dar folga suficiente para não abrir o circuito
+ * (que mandaria todo mundo direto no banco — justamente a avalanche que o
+ * cache evita). 3 s cobre o caminho completo com margem.
+ */
+const DEMANDS_TIMEOUT_MS = 3000;
 
 /** Depois de N falhas seguidas, paramos de tentar por um tempo. */
 let consecutiveFailures = 0;

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,6 +109,13 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<Filter>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  // O diálogo é montado uma única vez no app (via CreateDemandMethodDialog),
+  // então o boardId inicial ficaria preso ao quadro aberto no primeiro load.
+  // Sincroniza com o quadro selecionado toda vez que o diálogo abre.
+  useEffect(() => {
+    if (open) setBoardId(selectedBoardId);
+  }, [open, selectedBoardId]);
 
   const { data: services } = useBoardServices(boardId);
   const { data: members } = useBoardMembers(boardId);

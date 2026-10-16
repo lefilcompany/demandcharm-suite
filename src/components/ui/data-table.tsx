@@ -110,14 +110,19 @@ export function DataTable<TData, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   onClick={() => onRowClick?.(row.original)}
-                  onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }} onAuxClick={(e) => {
-                    if (e.button !== 1 || !onRowAuxClick) return;
+                  // Só interceptamos o botão do meio quando há um handler
+                  // específico; sem handler, deixamos o scroll nativo do
+                  // navegador funcionar normalmente.
+                  onMouseDown={onRowAuxClick ? (e) => { if (e.button === 1) e.preventDefault(); } : undefined}
+                  onAuxClick={onRowAuxClick ? (e) => {
+                    if (e.button !== 1) return;
                     e.preventDefault();
                     e.stopPropagation();
                     onRowAuxClick(row.original);
-                  }}
+                  } : undefined}
                   className={onRowClick ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
                 >
+
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="text-center">
                       {flexRender(
