@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_impersonation_log: {
+        Row: {
+          admin_id: string
+          id: string
+          ip: string | null
+          reason: string | null
+          started_at: string
+          target_email: string | null
+          target_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          admin_id: string
+          id?: string
+          ip?: string | null
+          reason?: string | null
+          started_at?: string
+          target_email?: string | null
+          target_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          admin_id?: string
+          id?: string
+          ip?: string | null
+          reason?: string | null
+          started_at?: string
+          target_email?: string | null
+          target_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string
