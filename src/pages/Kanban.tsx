@@ -432,6 +432,8 @@ export default function Kanban() {
             initialColumnsOpen={preferences.defaultColumnsOpen}
             highlightDemandId={highlightDemandId}
           />
+          </div>
+          </div>
         )}
       </div>
       
