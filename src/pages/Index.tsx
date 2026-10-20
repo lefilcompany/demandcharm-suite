@@ -137,6 +137,7 @@ const Index = () => {
     return (
       <div className="space-y-4 md:space-y-6 animate-fade-in">
         <SEOHead title="Dashboard" path="/app" />
+        <h1 className="sr-only">Gestão de Demandas - Dashboard</h1>
         {/* Banner with filters inside */}
         <DashboardBanner 
           actions={
@@ -201,6 +202,7 @@ const Index = () => {
   return (
     <div className="space-y-4 md:space-y-6 animate-fade-in">
       <SEOHead title="Dashboard" path="/app" />
+        <h1 className="sr-only">Gestão de Demandas - Dashboard</h1>
       {/* Banner with customizer inside */}
       <DashboardBanner 
         actions={
