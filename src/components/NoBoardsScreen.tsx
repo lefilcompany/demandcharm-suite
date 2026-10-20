@@ -129,48 +129,96 @@ export function NoBoardsScreen() {
         </header>
 
         {/* Centered content */}
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-md text-center space-y-6 animate-fade-in">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-              <Bell className="h-9 w-9 text-muted-foreground" />
+        <div className="relative flex-1 flex items-center justify-center p-6 overflow-y-auto">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-1/3 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl"
+          />
+          <div className="relative w-full max-w-lg space-y-6 animate-fade-in">
+            <div className="text-center space-y-4">
+              <div className="mx-auto relative flex h-20 w-20 items-center justify-center">
+                <span className="absolute inset-0 rounded-full bg-primary/15 animate-ping [animation-duration:3s]" />
+                <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/25 to-primary/5 ring-1 ring-primary/20">
+                  <Bell className="h-9 w-9 text-primary" />
+                </span>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-primary">
+                  Olá{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}! Que bom ter você aqui
+                </p>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                  Estamos preparando seu espaço
+                </h1>
+                <p className="text-muted-foreground leading-relaxed">
+                  Você já faz parte{currentTeam?.name ? ` da ${currentTeam.name}` : " da equipe"}. Falta só um
+                  administrador incluir você em um quadro — enquanto isso, fique à vontade.
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">
-                Aguardando alocação
-              </h1>
-              <p className="text-muted-foreground leading-relaxed">
-                Você ainda não foi adicionado a nenhum quadro.
-                Quando um administrador alocar você a um quadro, ele aparecerá automaticamente aqui.
+            <div className="rounded-xl border border-border bg-card/80 backdrop-blur-sm p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">
+                O que acontece agora
               </p>
+              <ol className="space-y-4">
+                {[
+                  { title: "Você entrou na equipe", desc: "Seu acesso já está ativo.", done: true },
+                  { title: "Um administrador adiciona você a um quadro", desc: "Avise a pessoa responsável, se quiser agilizar.", active: true },
+                  { title: "Seu quadro aparece aqui sozinho", desc: "Não precisa recarregar a página." },
+                ].map((step, i) => (
+                  <li key={i} className="flex gap-3">
+                    <span
+                      className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                        step.done
+                          ? "bg-primary text-primary-foreground"
+                          : step.active
+                            ? "bg-primary/15 text-primary ring-1 ring-primary/40"
+                            : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {step.done ? "✓" : i + 1}
+                    </span>
+                    <div>
+                      <p className={`text-sm font-medium ${step.done || step.active ? "text-foreground" : "text-muted-foreground"}`}>
+                        {step.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{step.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
             </div>
 
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground/70 pt-2">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              Verificando em tempo real
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                Acompanhando em tempo real
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {currentTeam && (
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/app/teams/${currentTeam.id}`)} className="gap-2 rounded-full">
+                    <Users className="h-4 w-4" />
+                    Ver detalhes da equipe
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => navigate("/app/profile")} className="gap-2 rounded-full">
+                  <User className="h-4 w-4" />
+                  Completar meu perfil
+                </Button>
+              </div>
             </div>
-
-            {currentTeam && (
-              <Button variant="outline" size="sm" onClick={() => navigate(`/app/teams/${currentTeam.id}`)} className="gap-2">
-                <Users className="h-4 w-4" />
-                Ver detalhes da equipe
-              </Button>
-            )}
 
             {isAdmin && (
-              <div className="pt-4 border-t border-border">
+              <div className="pt-4 border-t border-border text-center">
                 <p className="text-sm text-muted-foreground mb-3">
                   Como administrador, você pode criar um quadro:
                 </p>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <Button onClick={() => navigate("/app/boards")} className="gap-2">
-                    <LayoutGrid className="h-4 w-4" />
-                    Criar Quadro
-                  </Button>
-                </div>
+                <Button onClick={() => navigate("/app/boards")} className="gap-2 rounded-full">
+                  <LayoutGrid className="h-4 w-4" />
+                  Criar Quadro
+                </Button>
               </div>
             )}
-
           </div>
         </div>
       </main>
