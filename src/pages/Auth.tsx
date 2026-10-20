@@ -642,7 +642,7 @@ export default function Auth() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <div />
           <div className="max-w-md">
-            <h1 className="text-4xl xl:text-5xl font-bold mb-6 leading-tight">{t("settings.description")}</h1>
+            <p className="text-4xl xl:text-5xl font-bold mb-6 leading-tight">{t("settings.description")}</p>
             <p className="text-lg xl:text-xl text-white/90 leading-relaxed">
               {t("welcome.subtitle")}
             </p>
@@ -843,7 +843,7 @@ export default function Auth() {
                         ...loginData,
                         password: e.target.value
                       })} required />
-                        <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowLoginPassword(!showLoginPassword)}>
+                        <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowLoginPassword(!showLoginPassword)} aria-label={showLoginPassword ? "Ocultar senha" : "Mostrar senha"}>
                           {showLoginPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                         </Button>
                       </div>
@@ -983,7 +983,7 @@ export default function Auth() {
                               ...signupData,
                               password: e.target.value
                             })} required />
-                              <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-2.5 hover:bg-transparent" onClick={() => setShowSignupPassword(!showSignupPassword)}>
+                              <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-2.5 hover:bg-transparent" onClick={() => setShowSignupPassword(!showSignupPassword)} aria-label={showSignupPassword ? "Ocultar senha" : "Mostrar senha"}>
                                 {showSignupPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                               </Button>
                             </div>
@@ -999,7 +999,7 @@ export default function Auth() {
                                 {signupData.confirmPassword && <span className="pr-1">
                                     {passwordsMatch ? <Check className="h-4 w-4 text-emerald-500" /> : <X className="h-4 w-4 text-destructive" />}
                                   </span>}
-                                <Button type="button" variant="ghost" size="icon" className="h-full px-2.5 hover:bg-transparent" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                <Button type="button" variant="ghost" size="icon" className="h-full px-2.5 hover:bg-transparent" onClick={() => setShowConfirmPassword(!showConfirmPassword)} aria-label={showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}>
                                   {showConfirmPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                                 </Button>
                               </div>
@@ -1189,7 +1189,7 @@ export default function Auth() {
                           autoFocus
                           required
                         />
-                        <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowResetPassword(!showResetPassword)}>
+                        <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowResetPassword(!showResetPassword)} aria-label={showResetPassword ? "Ocultar senha" : "Mostrar senha"}>
                           {showResetPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                         </Button>
                       </div>
