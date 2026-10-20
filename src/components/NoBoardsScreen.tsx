@@ -1,7 +1,6 @@
 import { useAuth } from "@/lib/auth";
 import { useSelectedTeam } from "@/contexts/TeamContext";
-import { useIsTeamAdmin } from "@/hooks/useTeamRole";
-import { Bell, LogOut, LayoutGrid, User, Settings, Users, Wrench } from "lucide-react";
+import { Bell, LogOut, User, Settings, Users, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
@@ -32,7 +31,6 @@ import {
 export function NoBoardsScreen() {
   const { user, signOut } = useAuth();
   const { currentTeam } = useSelectedTeam();
-  const { isAdmin } = useIsTeamAdmin(currentTeam?.id ?? null);
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -208,17 +206,6 @@ export function NoBoardsScreen() {
               </div>
             </div>
 
-            {isAdmin && (
-              <div className="pt-4 border-t border-border text-center">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Como administrador, você pode criar um quadro:
-                </p>
-                <Button onClick={() => navigate("/app/boards")} className="gap-2 rounded-full">
-                  <LayoutGrid className="h-4 w-4" />
-                  Criar Quadro
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       </main>
