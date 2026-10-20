@@ -120,6 +120,13 @@
       "when": 1792180552587,
       "tag": "0016_admin_impersonation_log",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792527803741,
+      "tag": "0017_team_admins_see_join_requests",
+      "breakpoints": true
     }
   ]
 }
