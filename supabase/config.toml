@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.request-demo]
 verify_jwt = false
+
+[functions.hub-metrics]
+verify_jwt = false
