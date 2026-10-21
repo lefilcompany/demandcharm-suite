@@ -4407,6 +4407,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      hub_metrics_by_email: { Args: never; Returns: Json }
       increment_release_delivery_attempts: {
         Args: { p_ids: string[] }
         Returns: undefined

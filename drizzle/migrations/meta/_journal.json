@@ -127,6 +127,13 @@
       "when": 1792527803741,
       "tag": "0017_team_admins_see_join_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792590120525,
+      "tag": "0018_hub_metrics_by_email",
+      "breakpoints": true
     }
   ]
 }
