@@ -669,6 +669,21 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     setActiveColumns(prev => prev.filter(c => c !== columnKey));
   }, []);
 
+  // Horizontal scroll container (desktop views) + jump-to-column from the chip bar.
+  // Uses scrollLeft only — never scrollIntoView (breaks the 100dvh shell).
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const jumpToColumn = useCallback((columnKey: string) => {
+    setActiveColumns(prev => (prev.includes(columnKey) ? prev : [...prev, columnKey]));
+    window.setTimeout(() => {
+      const container = scrollContainerRef.current;
+      const el = container?.querySelector<HTMLElement>(`[data-column-key="${CSS.escape(columnKey)}"]`);
+      if (!container || !el) return;
+      const containerRect = container.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      container.scrollTo({ left: container.scrollLeft + (elRect.left - containerRect.left) - 8, behavior: "smooth" });
+    }, 80);
+  }, []);
+
   const handleAdjustmentDialogChange = useCallback((open: boolean) => {
     setAdjustmentDialogOpen(open);
     if (!open) {
