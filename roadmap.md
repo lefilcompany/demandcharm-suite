@@ -101,4 +101,5 @@ Causa provável no navegador: o worker guardava TODAS as respostas do backend po
 - [x] Cards mais densos: padding e tipografia reduzidos
 - [x] Ação rápida "Mover para etapa" revelada no hover do card (desktop)
 - [x] Atalhos de teclado: `c` nova demanda, `m` minhas tarefas, `Esc` limpa filtros
-- Verificado com Playwright no viewport 1090x674: chips abrem/rolam, hover revela ação, `m` alterna filtro
+- [x] Botão "Agendadas" no Kanban no padrão dos demais (outline h-9 cantos 6px); continua pill na lista de demandas
+- Verificado com Playwright no viewport 1090x674: chips abrem/rolam, hover revela ação, `m` alterna filtro, todos os botões do topo do Kanban com raio 6px e altura 36
