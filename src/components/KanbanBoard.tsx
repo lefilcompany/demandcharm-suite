@@ -2684,17 +2684,19 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
 
     return (
       <div className="flex flex-col h-full gap-2">
+        {columnJumpBar}
         {/* Horizontal scroll container - carousel style, closed columns always flex to fill remaining space */}
-        <div className="flex gap-2 h-full min-h-0 overflow-x-auto pb-2 kanban-scroll">
+        <div ref={scrollContainerRef} className="flex gap-2 h-full min-h-0 overflow-x-auto pb-2 kanban-scroll">
           {columns.map((column) => {
             const isActive = activeColumns.includes(column.key);
             const columnDemands = getDemandsForColumn(column.key);
             const isDragTarget = dragOverColumn === column.key && draggedId;
             const colorStyle = getColumnBackgroundStyle(column.color);
-            
+
             return (
               <div
                 key={column.key}
+                data-column-key={column.key}
                 style={{
                   ...(isActive ? {
                      // Fixed width so open stages never get squeezed — the
