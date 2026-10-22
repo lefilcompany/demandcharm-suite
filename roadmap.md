@@ -2,7 +2,7 @@
 
 ## Documentos no assistente
 - [x] Anexar documentos no chat e reutilizar análise/revisão da importação, mantendo o quadro atual.
-- [ ] Conferir análise real, seleção e confirmação de criação.
+- [x] Conferir análise real, seleção e confirmação de criação; demanda de teste encontrada na lista do quadro; três testes de arquivos passando.
 
 ## Ampliação das ferramentas do assistente
 - [x] Consultas de riscos, capacidade, histórico, serviços, tempo, documentos, duplicidades, fluxo e relatórios.
