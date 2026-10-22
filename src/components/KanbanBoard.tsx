@@ -669,6 +669,21 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     setActiveColumns(prev => prev.filter(c => c !== columnKey));
   }, []);
 
+  // Horizontal scroll container (desktop views) + jump-to-column from the chip bar.
+  // Uses scrollLeft only — never scrollIntoView (breaks the 100dvh shell).
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const jumpToColumn = useCallback((columnKey: string) => {
+    setActiveColumns(prev => (prev.includes(columnKey) ? prev : [...prev, columnKey]));
+    window.setTimeout(() => {
+      const container = scrollContainerRef.current;
+      const el = container?.querySelector<HTMLElement>(`[data-column-key="${CSS.escape(columnKey)}"]`);
+      if (!container || !el) return;
+      const containerRect = container.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      container.scrollTo({ left: container.scrollLeft + (elRect.left - containerRect.left) - 8, behavior: "smooth" });
+    }, 80);
+  }, []);
+
   const handleAdjustmentDialogChange = useCallback((open: boolean) => {
     setAdjustmentDialogOpen(open);
     if (!open) {
@@ -1810,7 +1825,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
           highlightDemandId === demand.id && "ring-2 ring-primary shadow-lg",
         )}
       >
-        <CardContent className={cn("p-3 sm:p-4", isParentDemand && "p-2.5 sm:p-3")}>
+        <CardContent className={cn("p-2.5 sm:p-3", isParentDemand && "p-2 sm:p-2.5")}>
           <KanbanCardMenu demandId={demand.id} teamId={demand.team_id} boardId={demand.board_id} isDelivered={isDelivered} readOnly={readOnly} onDemandClick={onDemandClick} />
           <div className="flex items-start gap-2">
             {showDragHandle && (
@@ -1836,6 +1851,31 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 -ml-1 mt-0.5 bg-primary/10 hover:bg-primary/20" onClick={(e) => e.stopPropagation()}>
                     <ArrowRight className="h-4 w-4 text-primary" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-background">
+                  {availableStatuses.map((status) => (
+                    <DropdownMenuItem key={status.key} onClick={(e) => { e.stopPropagation(); handleMobileStatusChange(demand.id, status.key); }} className="cursor-pointer">
+                      <div className={cn("w-2 h-2 rounded-full mr-2", status.color.replace('/10', ''))} />
+                      Mover para {status.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Desktop: quick-move button revealed on hover */}
+            {!showMoveMenuFinal && !isMobile && !readOnly && !isDelivered && !isParentDemand && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 -ml-1 mt-0.5 bg-primary/10 hover:bg-primary/20 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
+                    title="Mover para outra etapa"
+                  >
+                    <ArrowRight className="h-3.5 w-3.5 text-primary" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="bg-background">
@@ -1892,7 +1932,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   </TooltipProvider>
                 )}
               </div>
-              <h4 className="font-medium text-sm line-clamp-2 mb-1 break-words overflow-hidden" title={demand.title}>
+              <h4 className="font-medium text-[13px] leading-snug line-clamp-2 mb-1 break-words overflow-hidden" title={demand.title}>
                 {truncateText(demand.title, 80)}
               </h4>
 
@@ -1915,7 +1955,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   </p>
                 );
               })()}
-              <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-3 mt-1.5">
+              <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-2 mt-1">
                 {showOfflineIndicator && (
                   <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-5 bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse" title={t("sync.offlineDescription")}>
                     <CloudOff className="h-2.5 w-2.5 mr-0.5" />{t("sync.offlinePending")}
@@ -2031,7 +2071,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   </div>
                 );
               })()}
-              <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center justify-between mt-1.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   {demand.status_changed_at && (
                     <div className="flex items-center gap-1">
@@ -2420,6 +2460,37 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
   );
 
 
+  // Jump bar: one chip per stage, click opens the stage and scrolls to it.
+  const columnJumpBar = (
+    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0" role="navigation" aria-label="Ir para etapa">
+      {columns.map((column) => {
+        const isActive = activeColumns.includes(column.key);
+        const count = getDemandsForColumn(column.key).length;
+        return (
+          <button
+            key={column.key}
+            type="button"
+            onClick={() => jumpToColumn(column.key)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors shrink-0",
+              isActive
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-background/60 text-muted-foreground hover:bg-primary/5 hover:text-foreground"
+            )}
+          >
+            <span>{column.shortLabel || column.label}</span>
+            <span className={cn(
+              "rounded-full px-1.5 text-[10px] font-semibold",
+              isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+            )}>
+              {count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
   // Mobile view with dropdown selector - shows move menu on cards
   if (isMobile) {
     const mobileActiveColumn = activeColumns[0];
@@ -2516,17 +2587,19 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
     
     return (
       <div className="flex flex-col h-full gap-2">
+        {columnJumpBar}
         {/* Horizontal scroll container - closed columns always flex to fill remaining space */}
-        <div className="flex gap-2 h-full min-h-0 overflow-x-auto pb-2 kanban-scroll">
+        <div ref={scrollContainerRef} className="flex gap-2 h-full min-h-0 overflow-x-auto pb-2 kanban-scroll">
           {columns.map((column) => {
             const isActive = activeColumns.includes(column.key);
             const columnDemands = getDemandsForColumn(column.key);
             const isDragTarget = dragOverColumn === column.key && draggedId;
             const colorStyle = getColumnBackgroundStyle(column.color);
-            
+
             return (
               <div
                 key={column.key}
+                data-column-key={column.key}
                 style={{
                   ...(isActive ? {
                      // Fixed width so open stages never get squeezed — the
@@ -2537,7 +2610,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                    } : {
                      minWidth: `${closedColumnMinWidth}px`,
                    }),
-                   ...colorStyle.style,
+                    ...colorStyle.style,
                  }}
                  className={cn(
                    "rounded-lg flex flex-col min-h-0 overflow-hidden",
@@ -2636,17 +2709,19 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
 
     return (
       <div className="flex flex-col h-full gap-2">
+        {columnJumpBar}
         {/* Horizontal scroll container - carousel style, closed columns always flex to fill remaining space */}
-        <div className="flex gap-2 h-full min-h-0 overflow-x-auto pb-2 kanban-scroll">
+        <div ref={scrollContainerRef} className="flex gap-2 h-full min-h-0 overflow-x-auto pb-2 kanban-scroll">
           {columns.map((column) => {
             const isActive = activeColumns.includes(column.key);
             const columnDemands = getDemandsForColumn(column.key);
             const isDragTarget = dragOverColumn === column.key && draggedId;
             const colorStyle = getColumnBackgroundStyle(column.color);
-            
+
             return (
               <div
                 key={column.key}
+                data-column-key={column.key}
                 style={{
                   ...(isActive ? {
                      // Fixed width so open stages never get squeezed — the

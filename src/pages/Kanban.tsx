@@ -40,6 +40,15 @@ import { ClearBoardKanbanDialog } from "@/components/ClearBoardKanbanDialog";
 import { isHiddenFromKanban } from "@/lib/kanbanVisibility";
 import { Eye, EyeOff } from "lucide-react";
 
+const defaultFilters: KanbanFiltersState = {
+  myTasks: false,
+  priority: null,
+  dueDate: null,
+  position: null,
+  assignee: null,
+  service: null,
+};
+
 export default function Kanban() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -103,14 +112,6 @@ export default function Kanban() {
   // Persist filters per user across board switches and tab reloads.
   // Cleared explicitly on signOut and on short-session expiry (see src/lib/auth.tsx).
   const filtersStorageKey = user?.id ? `kanban_filters:${user.id}` : null;
-  const defaultFilters: KanbanFiltersState = {
-    myTasks: false,
-    priority: null,
-    dueDate: null,
-    position: null,
-    assignee: null,
-    service: null,
-  };
 
   const readStoredFilters = (key: string | null): KanbanFiltersState => {
     if (!key || typeof window === "undefined") return defaultFilters;
@@ -254,6 +255,35 @@ export default function Kanban() {
     [filters]
   );
 
+  // Keyboard shortcuts: "c" nova demanda, "m" minhas tarefas, "Esc" limpa filtros.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Don't hijack keys while a dialog/menu is open (Esc belongs to the dialog).
+      if (document.querySelector('[role="dialog"], [role="menu"]')) return;
+
+      if (e.key === "c") {
+        e.preventDefault();
+        openCreateDemand();
+      } else if (e.key === "m") {
+        e.preventDefault();
+        setFilters((prev) => ({ ...prev, myTasks: !prev.myTasks }));
+      } else if (e.key === "Escape" && hasActiveFilters) {
+        setFilters(defaultFilters);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [openCreateDemand, hasActiveFilters]);
+
   // Count user's demands
   const myDemandsCount = useMemo(() => {
     if (!demands || !user?.id) return 0;
@@ -275,14 +305,14 @@ export default function Kanban() {
   }, [filteredDemands, demands, highlightDemandId]);
 
   return (
-    <div className="flex flex-col h-full animate-fade-in space-y-4">
+    <div className="flex flex-col h-full animate-fade-in space-y-3">
       <SEOHead title="Kanban" path="/app/kanban" />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between shrink-0 pb-4 md:pb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center justify-between shrink-0 pb-2 md:pb-3">
+        <div className="flex items-baseline gap-3 min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground shrink-0">
             {t("kanban.title")}
           </h1>
-          <p className="text-sm md:text-base text-muted-foreground">
+          <p className="hidden lg:block text-sm text-muted-foreground truncate">
             {isReadOnly ? t("kanban.dragHint") : t("kanban.dragHint")}
           </p>
         </div>
