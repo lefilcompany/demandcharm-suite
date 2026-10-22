@@ -15,7 +15,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { AlertTriangle, CalendarRange, CheckCircle2, Pencil, Play, Plus, RefreshCw, Rocket, Trash2, X } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
 import { KanbanBoard } from "@/components/KanbanBoard";
-import { SprintSnapshotDialog } from "@/components/SprintSnapshotDialog";
+import { SprintSnapshotDialog, buildSprintArtifactFiles } from "@/components/SprintSnapshotDialog";
+import { ArtifactsBrowser } from "@/components/artifacts/ArtifactsBrowser";
+import { uploadArtifact } from "@/hooks/useBoardArtifacts";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useSelectedBoard } from "@/contexts/BoardContext";
 import { useBoardRole } from "@/hooks/useBoardMembers";
@@ -50,7 +53,7 @@ export default function Sprints() {
   useRealtimeDemands(selectedBoardId || undefined);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [view, setView] = useState<"kanban" | "list">("kanban");
+  const [view, setView] = useState<"kanban" | "list" | "artifacts">("kanban");
   const [editing, setEditing] = useState<Partial<Sprint> | null>(null);
   const [adding, setAdding] = useState(false);
   const [completing, setCompleting] = useState(false);
@@ -197,6 +200,7 @@ export default function Sprints() {
                   <TabsList className="h-8">
                     <TabsTrigger value="kanban" className="text-xs">Kanban</TabsTrigger>
                     <TabsTrigger value="list" className="text-xs">Lista</TabsTrigger>
+                    <TabsTrigger value="artifacts" className="text-xs">Artefatos</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -225,8 +229,11 @@ export default function Sprints() {
           )}
 
           {sprint && (
-            <div className="h-[max(560px,65dvh)]">
-              {sprintDemands.length === 0 ? (
+            <div className={view === "artifacts" ? "" : "h-[max(560px,65dvh)]"}>
+              {view === "artifacts" ? (
+                <ArtifactsBrowser boardId={selectedBoardId} role={role} sprintId={sprint.id}
+                  sprints={(sprints ?? []).map((s) => ({ id: s.id, name: s.name }))} demands={demands as any} />
+              ) : sprintDemands.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">Nenhuma demanda nesta sprint ainda.</p>
               ) : view === "kanban" ? (
                 <KanbanBoard

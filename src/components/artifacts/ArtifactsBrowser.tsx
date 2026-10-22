@@ -199,7 +199,7 @@ export function ArtifactsBrowser({ boardId, role, sprints, demands, sprintId }: 
                           </DropdownMenuSub>
                         )}
                         {a.source === "authored" && !a.is_template && (
-                          <DropdownMenuItem onClick={() => meta.mutate({ id: a.id, is_template: false }, { onSuccess: () => setDraft({ kind: a.kind, title: a.title, content: a.content ?? "", sprintId: null, isTemplate: true }) })}>
+                          <DropdownMenuItem onClick={() => setDraft({ kind: a.kind, title: a.title, content: a.content ?? "", sprintId: null, isTemplate: true })}>
                             <LayoutTemplate className="h-4 w-4 mr-2" />Salvar cópia como modelo
                           </DropdownMenuItem>
                         )}
