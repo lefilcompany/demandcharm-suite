@@ -1,5 +1,9 @@
 # Roadmap
 
+## Serviços no assistente
+- [x] Catálogo verificado em cada mensagem; respostas antigas não prevalecem e falhas não viram catálogo vazio. Confirmados 84 serviços ativos no Testes.
+- [x] Oito testes passando; criação aprovada com serviço Nova funcionalidade e demanda encontrada na lista do Testes.
+
 ## Documentos no assistente
 - [x] Anexar documentos no chat e reutilizar análise/revisão da importação, mantendo o quadro atual.
 - [x] Conferir análise real, seleção e confirmação de criação; demanda de teste encontrada na lista do quadro; três testes de arquivos passando.
