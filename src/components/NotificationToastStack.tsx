@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { notificationToastBus } from "@/lib/notificationToastBus";
 import type { AppNotification } from "@/hooks/useNotifications";
+import { notificationNewsBus } from "@/lib/notificationNewsBus";
 
 const AUTO_DISMISS_MS = 6000;
 const MAX_VISIBLE = 4;
@@ -49,6 +50,7 @@ export function NotificationToastStack() {
   const dismissAll = () => items_set([]);
   const handleClick = (n: AppNotification) => {
     dismiss(n.id);
+    if (notificationNewsBus.open(n)) return;
     if (n.link) navigate(n.link);
   };
 
@@ -113,10 +115,10 @@ export function NotificationToastStack() {
                   )}
                   <p className="text-sm font-medium leading-tight truncate">{cleanTitle}</p>
                   <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
-                  {n.link && (
+                  {(n.link || n.type === "product_update") && (
                     <div className="flex items-center gap-1 mt-1 text-[10px] text-primary">
                       <ExternalLink className="h-3 w-3" />
-                      <span>Abrir</span>
+                      <span>{n.type === "product_update" ? "Ler notícia completa" : "Abrir"}</span>
                     </div>
                   )}
                 </div>

@@ -14,6 +14,7 @@ import { ptBR } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { notificationNewsBus } from "@/lib/notificationNewsBus";
 
 // Extract board name from notification title if present (format: "[Board Name] Title")
 function extractBoardName(title: string): { boardName: string | null; cleanTitle: string } {
@@ -32,6 +33,7 @@ export function NotificationDropdown() {
     if (!notification.read) {
       markAsRead(notification.id);
     }
+    if (notificationNewsBus.open(notification)) return;
     if (notification.link) {
       navigate(notification.link);
     }
@@ -53,7 +55,7 @@ export function NotificationDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-7 w-7">
+        <Button variant="ghost" size="icon" className="relative h-7 w-7" aria-label="Notificações">
           <Bell className="h-3.5 w-3.5" />
           {unreadCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center shadow-md">
@@ -134,7 +136,10 @@ export function NotificationDropdown() {
                             locale: ptBR,
                           })}
                         </span>
-                        {notification.link && (
+                        {isProductUpdate && (
+                          <span className="text-[10px] font-medium text-primary">Ler notícia completa</span>
+                        )}
+                        {notification.link && !isProductUpdate && (
                           <ExternalLink className="h-3 w-3 text-muted-foreground" />
                         )}
                       </div>

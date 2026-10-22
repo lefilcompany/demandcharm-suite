@@ -16,6 +16,7 @@ import { RequireTeam } from "@/components/RequireTeam";
 import { ProtectedLayout } from "@/components/ProtectedLayout";
 import { Toaster } from "@/components/ui/sonner";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { NotificationNewsDialog } from "@/components/NotificationNewsDialog";
 import { CommandMenu } from "@/components/CommandMenu";
 import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcuts";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
@@ -148,6 +149,7 @@ const App = () => {
                             <PipTimerProvider>
                             <Toaster position="top-right" richColors />
                             <ImpersonationBanner />
+                            <NotificationNewsDialog />
                             <CommandMenu />
                             <PWAInstallPrompt />
                             <CreateDemandGlobal />

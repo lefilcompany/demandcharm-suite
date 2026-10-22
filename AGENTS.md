@@ -37,3 +37,7 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 ## Sprint artifacts
 
 - Sprint/board documents live in `board_artifacts` + private bucket `sprint-artifacts` (path `<board_id>/<artifact_id>/<file>`, so storage RLS reuses `is_board_member`/`can_edit_board_sprints` on the first folder); ADR numbering per board and "accepted ADR is immutable" are enforced by trigger `trg_board_artifact_rules`, so every client obeys them. Completed sprints archive the PDF sheet and Excel list from the client after `complete_sprint`, never blocking completion.
+
+## Release news
+
+- Product-update clicks in the notification dropdown and toast stack use `notificationNewsBus` to open the shared `NotificationNewsDialog` with the recipient's stored notification text; the CTA stays separate from reading, avoiding new access to admin-only release tables.
