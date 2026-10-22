@@ -32,3 +32,4 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 ## Admin impersonation
 
 - System admins enter a user's account only through Edge `admin-impersonate` (checks `has_role admin`, refuses other admins, writes `admin_impersonation_log` before issuing a one-time login token); `src/lib/impersonation.ts` keeps the admin refresh token locally to return — so every access is server-checked and auditable.
+- The sprint "Ficha" PDF builds its diffs only from stored records (`sprint_demands.added_at`, `demand_due_date_changes`, `delivered_at`, `status_changed_at`) in pure `src/lib/sprintDevSheet.ts`; the "Agora é possível" list comes from Edge `sprint-release-notes`, which reads delivered demands under the caller's RLS — so the sheet never invents history and never leaks other boards.
