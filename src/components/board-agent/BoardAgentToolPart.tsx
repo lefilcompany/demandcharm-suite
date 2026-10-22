@@ -29,6 +29,7 @@ const TOOL_META: Record<string, ToolMeta> = {
   get_member_capacity: { title: "Carga por pessoa", icon: <Users className="size-4 text-primary" /> },
   get_sla_coverage: { title: "Cobertura de prazos", icon: <CalendarClock className="size-4 text-primary" /> },
   get_demand_history: { title: "Histórico da demanda", icon: <Clock className="size-4 text-primary" /> },
+  get_time_report: { title: "Lançamentos de tempo", icon: <Clock className="size-4 text-primary" /> },
   search_board_knowledge: { title: "Conhecimento do quadro", icon: <Inbox className="size-4 text-primary" /> },
   get_period_summary: { title: "Resumo do período", icon: <BarChart3 className="size-4 text-primary" /> },
   find_duplicate_demands: { title: "Possíveis duplicidades", icon: <ListChecks className="size-4 text-primary" /> },
@@ -352,7 +353,7 @@ export function BoardAgentToolPart({ part, onApprove }: { part: ToolUIPart | Dyn
           </div>
         )}
         {part.state === "approval-responded" && <p className="text-xs text-muted-foreground">{part.approval.approved ? "Autorizado. Processando…" : "Ação cancelada. Nenhuma alteração autorizada."}</p>}
-        {part.input !== undefined && Object.keys((part.input as object) ?? {}).some((k) => (part.input as Record<string, unknown>)[k] != null) ? (
+        {part.state === "approval-requested" ? null : part.input !== undefined && Object.keys((part.input as object) ?? {}).some((k) => (part.input as Record<string, unknown>)[k] != null) ? (
           <ToolInput input={part.input} />
         ) : (
           <p className="text-[11px] text-muted-foreground">Sem parâmetros: consulta do quadro inteiro.</p>
