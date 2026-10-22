@@ -5,7 +5,10 @@ Transformar o "Baixar resumo" da sprint numa ficha no estilo notas de versão, e
 ## O que a ficha terá
 
 1. **Cabeçalho da sprint** — nome, quadro, período, situação, objetivo, autor e data de geração.
-2. **O que agora é possível** — texto escrito pela IA a partir das demandas entregues na sprint: lista curta de novidades no formato "Agora é possível…", agrupada por serviço. Cada item cita as demandas de origem (#número).
+2. **O que agora é possível** — lista em tópicos gerada pela IA a partir das demandas entregues na sprint, um item por linha:
+   - Serviço (subtítulo)
+     - Agora é possível … (#número da demanda)
+     - Agora é possível … (#número da demanda)
 3. **Diffs da sprint** — o que mudou nas demandas durante o período, no estilo changelog:
    - `+ Entrou` / `- Saiu` da sprint
    - `✓ Entregue` (com data e se foi no prazo ou atrasada)
