@@ -1,5 +1,10 @@
 # Roadmap
 
+## Ampliação das ferramentas do assistente
+- [ ] Consultas de riscos, capacidade, histórico, serviços, tempo, documentos, duplicidades, fluxo e relatórios.
+- [ ] Criação/edição de demandas, comentários, ações em lote e planejamento de sprint com confirmação explícita.
+- [ ] Catálogo de todas as ferramentas disponíveis, testes e verificação na conversa real.
+
 ## Leitura completa das novidades
 - [x] Abrir o texto completo da novidade ao clicar no sino ou no aviso in-app, sem sair da tela atual.
 - [x] Conferir leitura e fechamento com uma notificação real; 9 testes passando, incluindo o acesso separado à funcionalidade anunciada.
