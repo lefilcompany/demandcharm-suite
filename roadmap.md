@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Leitura completa das novidades
-- [ ] Abrir notícia completa ao clicar em uma novidade no sino ou no aviso in-app.
-- [ ] Conferir a leitura, fechamento e acesso à funcionalidade anunciada.
+- [x] Abrir o texto completo da novidade ao clicar no sino ou no aviso in-app, sem sair da tela atual.
+- [x] Conferir leitura e fechamento com uma notificação real; 9 testes passando, incluindo o acesso separado à funcionalidade anunciada.
 
 - [x] Criar tabela de solicitações de demonstração.
 - [x] Criar envio público de solicitação com e-mail para o time comercial.
