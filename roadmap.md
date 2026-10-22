@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Documentos no assistente
-- [ ] Anexar documentos no chat e reutilizar análise/revisão da importação, mantendo o quadro atual.
+- [x] Anexar documentos no chat e reutilizar análise/revisão da importação, mantendo o quadro atual.
 - [ ] Conferir análise real, seleção e confirmação de criação.
 
 ## Ampliação das ferramentas do assistente
