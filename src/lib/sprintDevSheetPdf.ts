@@ -34,7 +34,7 @@ function ensure(doc: jsPDF, y: number, need: number, meta: SnapshotPdfMeta) {
 const lastY = (doc: jsPDF, f: number) =>
   (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? f;
 
-export function generateSprintDevSheetPDF(input: DevSheetPdfInput) {
+export function generateSprintDevSheetPDF(input: DevSheetPdfInput, opts: { asBlob?: boolean } = {}): Blob | void {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const w = doc.internal.pageSize.getWidth();
   const { meta, metrics } = input;
@@ -157,5 +157,6 @@ export function generateSprintDevSheetPDF(input: DevSheetPdfInput) {
   });
 
   drawFooter(doc);
+  if (opts.asBlob) return doc.output("blob");
   doc.save(`ficha-sprint-${slugify(input.sprint.name) || "sprint"}-${new Date().toISOString().substring(0, 10)}.pdf`);
 }
