@@ -1,5 +1,9 @@
 # Roadmap
 
+## Leitura completa das novidades
+- [ ] Abrir notícia completa ao clicar em uma novidade no sino ou no aviso in-app.
+- [ ] Conferir a leitura, fechamento e acesso à funcionalidade anunciada.
+
 - [x] Criar tabela de solicitações de demonstração.
 - [x] Criar envio público de solicitação com e-mail para o time comercial.
 - [x] Criar landing page pública SoMA+ sem preços.
