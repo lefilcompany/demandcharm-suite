@@ -2435,6 +2435,37 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
   );
 
 
+  // Jump bar: one chip per stage, click opens the stage and scrolls to it.
+  const columnJumpBar = (
+    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0" role="navigation" aria-label="Ir para etapa">
+      {columns.map((column) => {
+        const isActive = activeColumns.includes(column.key);
+        const count = getDemandsForColumn(column.key).length;
+        return (
+          <button
+            key={column.key}
+            type="button"
+            onClick={() => jumpToColumn(column.key)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors shrink-0",
+              isActive
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-background/60 text-muted-foreground hover:bg-primary/5 hover:text-foreground"
+            )}
+          >
+            <span>{column.shortLabel || column.label}</span>
+            <span className={cn(
+              "rounded-full px-1.5 text-[10px] font-semibold",
+              isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+            )}>
+              {count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
   // Mobile view with dropdown selector - shows move menu on cards
   if (isMobile) {
     const mobileActiveColumn = activeColumns[0];
