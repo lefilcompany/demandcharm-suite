@@ -41,3 +41,7 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 ## Release news
 
 - Product-update clicks in the notification dropdown and toast stack use `notificationNewsBus` to open the shared `NotificationNewsDialog` with the recipient's stored notification text; the CTA stays separate from reading, avoiding new access to admin-only release tables.
+
+## Board assistant actions
+
+- Assistant mutations use AI SDK manual approval with a server-signed input bound to user/board, then `execute_board_agent_action` (SECURITY INVOKER) validates live role/scope and commits changes plus per-user tool-call receipts atomically; replay returns the same result instead of duplicate demands/comments, while diagnostics keep canonical board metrics and explicitly flag incomplete history/sample limits.

@@ -14,6 +14,7 @@ import {
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "@/components/ai-elements/tool";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 type ToolMeta = { title: string; icon: ReactNode };
 
@@ -22,6 +23,24 @@ const TOOL_META: Record<string, ToolMeta> = {
   list_demands: { title: "Lista de demandas", icon: <ListChecks className="size-4 text-primary" /> },
   get_board_members: { title: "Membros do quadro", icon: <Users className="size-4 text-primary" /> },
   list_demand_requests: { title: "Solicitações de demanda", icon: <Inbox className="size-4 text-primary" /> },
+  get_demand: { title: "Detalhes da demanda", icon: <ListChecks className="size-4 text-primary" /> },
+  get_board_catalog: { title: "Etapas e serviços", icon: <ListChecks className="size-4 text-primary" /> },
+  get_risk_summary: { title: "Riscos da operação", icon: <AlertTriangle className="size-4 text-primary" /> },
+  get_member_capacity: { title: "Carga por pessoa", icon: <Users className="size-4 text-primary" /> },
+  get_sla_coverage: { title: "Cobertura de prazos", icon: <CalendarClock className="size-4 text-primary" /> },
+  get_demand_history: { title: "Histórico da demanda", icon: <Clock className="size-4 text-primary" /> },
+  search_board_knowledge: { title: "Conhecimento do quadro", icon: <Inbox className="size-4 text-primary" /> },
+  get_period_summary: { title: "Resumo do período", icon: <BarChart3 className="size-4 text-primary" /> },
+  find_duplicate_demands: { title: "Possíveis duplicidades", icon: <ListChecks className="size-4 text-primary" /> },
+  explain_board_workflow: { title: "Fluxo do quadro", icon: <ListChecks className="size-4 text-primary" /> },
+  generate_board_report: { title: "Relatório do quadro", icon: <BarChart3 className="size-4 text-primary" /> },
+  plan_sprint: { title: "Planejamento da sprint", icon: <CalendarClock className="size-4 text-primary" /> },
+  create_demand: { title: "Criar demanda", icon: <ListChecks className="size-4 text-primary" /> },
+  update_demand: { title: "Atualizar demanda", icon: <ListChecks className="size-4 text-primary" /> },
+  create_follow_up: { title: "Publicar acompanhamento", icon: <Inbox className="size-4 text-primary" /> },
+  bulk_update_demands: { title: "Alterar demandas em lote", icon: <ListChecks className="size-4 text-primary" /> },
+  apply_sprint_plan: { title: "Salvar plano da sprint", icon: <CalendarClock className="size-4 text-primary" /> },
+  list_available_tools: { title: "Ferramentas disponíveis", icon: <ListChecks className="size-4 text-primary" /> },
 };
 
 function fmt(n: unknown, suffix = ""): string {
@@ -300,24 +319,38 @@ function renderOutput(toolName: string, output: unknown): ReactNode {
       return <MembersView output={output as MembersOutput} />;
     case "list_demand_requests":
       return <RequestsView output={output as RequestsOutput} />;
+    case "list_available_tools":
+      return Array.isArray(o.tools) ? <ul className="divide-y divide-border text-xs">{o.tools.map((entry: { name: string; description: string; requires_confirmation: boolean }) => <li key={entry.name} className="space-y-1 py-2"><p className="font-medium">{TOOL_META[entry.name]?.title ?? entry.name}{entry.requires_confirmation && <Badge variant="outline" className="ml-2">Requer confirmação</Badge>}</p><p className="text-muted-foreground">{entry.description}</p></li>)}</ul> : null;
     default:
       return null;
   }
 }
 
-export function BoardAgentToolPart({ part }: { part: ToolUIPart | DynamicToolUIPart }) {
+export function BoardAgentToolPart({ part, onApprove }: { part: ToolUIPart | DynamicToolUIPart; onApprove?: (id: string, approved: boolean) => void }) {
   const toolName = part.type === "dynamic-tool" ? part.toolName : getToolName(part);
   const meta = TOOL_META[toolName] ?? { title: toolName, icon: undefined };
   const custom = part.state === "output-available" ? renderOutput(toolName, part.output) : null;
 
   return (
-    <Tool defaultOpen={false} className="mb-2 bg-card/60">
+    <Tool defaultOpen={part.state === "approval-requested"} className="mb-2 bg-card/60">
       {part.type === "dynamic-tool" ? (
         <ToolHeader type={part.type} state={part.state} toolName={part.toolName} title={meta.title} icon={meta.icon} className="py-2" />
       ) : (
         <ToolHeader type={part.type} state={part.state} title={meta.title} icon={meta.icon} className="py-2" />
       )}
       <ToolContent className="space-y-3 p-3">
+        {part.state === "approval-requested" && (
+          <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+            <p className="text-sm font-medium">Confirmar: {meta.title.toLowerCase()}?</p>
+            <p className="text-xs text-muted-foreground">Confira os dados abaixo antes de autorizar. Nada foi salvo ainda.</p>
+            <ApprovalPreview input={part.input} />
+            <div className="flex gap-2">
+              <Button size="sm" disabled={!onApprove} onClick={() => onApprove?.(part.approval.id, true)}>Confirmar e salvar</Button>
+              <Button size="sm" variant="outline" disabled={!onApprove} onClick={() => onApprove?.(part.approval.id, false)}>Cancelar</Button>
+            </div>
+          </div>
+        )}
+        {part.state === "approval-responded" && <p className="text-xs text-muted-foreground">{part.approval.approved ? "Autorizado. Processando…" : "Ação cancelada. Nenhuma alteração autorizada."}</p>}
         {part.input !== undefined && Object.keys((part.input as object) ?? {}).some((k) => (part.input as Record<string, unknown>)[k] != null) ? (
           <ToolInput input={part.input} />
         ) : (
@@ -334,4 +367,11 @@ export function BoardAgentToolPart({ part }: { part: ToolUIPart | DynamicToolUIP
       </ToolContent>
     </Tool>
   );
+}
+
+const FIELD_LABELS: Record<string,string> = { title: "Título", description: "Descrição", priority: "Prioridade", due_date: "Prazo", responsible_user_id: "Responsável", service_id: "Serviço", status_id: "Etapa", effort_points: "Esforço", demand_id: "Demanda", demand_ids: "Demandas", reason: "Justificativa", content: "Comentário", internal: "Canal interno", sprint_id: "Sprint", name: "Nome", goal: "Objetivo", start_date: "Início", end_date: "Fim" };
+function ApprovalPreview({ input }: { input: unknown }) {
+  if (!input || typeof input !== "object") return null;
+  const entries = Object.entries(input).flatMap(([k,v]) => k === "patch" && v && typeof v === "object" ? Object.entries(v) : [[k,v]]).filter(([,v]) => v != null);
+  return <dl className="space-y-2 text-xs">{entries.map(([key,value]) => <div key={String(key)} className="grid grid-cols-[100px_minmax(0,1fr)] gap-2"><dt className="text-muted-foreground">{FIELD_LABELS[String(key)] ?? String(key)}</dt><dd className="break-words whitespace-pre-wrap">{Array.isArray(value) ? value.join(", ") : typeof value === "boolean" ? value ? "Sim" : "Não" : String(value)}</dd></div>)}</dl>;
 }
