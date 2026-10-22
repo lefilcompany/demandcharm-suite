@@ -1,5 +1,9 @@
 # Roadmap
 
+## Serviços no assistente
+- [ ] Corrigir catálogo para reconhecer os serviços disponíveis na criação de demandas do quadro.
+- [ ] Testar o catálogo e a prévia de criação no quadro Testes.
+
 ## Documentos no assistente
 - [x] Anexar documentos no chat e reutilizar análise/revisão da importação, mantendo o quadro atual.
 - [x] Conferir análise real, seleção e confirmação de criação; demanda de teste encontrada na lista do quadro; três testes de arquivos passando.
