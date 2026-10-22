@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Clock, Play, Pause, Loader2, Users, PictureInPicture2 } from "lucide-react";
 import { useLiveTimer, formatTimeDisplay } from "@/hooks/useLiveTimer";
 import { useDemandTimeEntries, useDemandUserTimeStats, useUserTimerControl } from "@/hooks/useUserTimeTracking";
+import { useParentSyncedTime, getSyncedElapsedSeconds } from "@/hooks/useParentSyncedTime";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -114,6 +115,21 @@ export function UserTimeTrackingDisplay({
     lastStartedAt: activeStartedAt,
   });
 
+  // Synchronized time (own + subdemands): the parent counter runs whenever
+  // any subdemand timer is running.
+  const { data: synced } = useParentSyncedTime(demandId);
+  const hasSubdemands = synced?.hasSubdemands ?? false;
+  // Drives a re-render every second while any subdemand timer is running
+  useLiveTimer({
+    isActive: !!synced?.isActive,
+    baseSeconds: 0,
+    lastStartedAt: synced?.activeStartedAt || null,
+  });
+  const syncedSeconds = hasSubdemands
+    ? (synced?.totalSeconds || 0) + getSyncedElapsedSeconds(synced)
+    : 0;
+  const syncedActive = !!synced?.isActive;
+
   const { isSupported: isPipAvailable, openPip } = usePipTimer();
 
   // Calculate total time from all users
@@ -216,12 +232,21 @@ export function UserTimeTrackingDisplay({
           <Clock className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">Tempo de Execução</p>
+          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">
+            Tempo de Execução
+            {hasSubdemands && (
+              <span className="ml-1.5 normal-case font-normal text-emerald-600/80 dark:text-emerald-400/80">
+                (inclui subdemandas)
+              </span>
+            )}
+          </p>
           <div className="flex items-center gap-2">
             <span className="font-mono text-lg md:text-xl font-bold text-emerald-600 dark:text-emerald-400">
-              {currentUserLiveTime || formatTimeDisplay(totalSeconds) || "00:00:00:00"}
+              {hasSubdemands
+                ? formatTimeDisplay(syncedSeconds) || "00:00:00:00"
+                : currentUserLiveTime || formatTimeDisplay(totalSeconds) || "00:00:00:00"}
             </span>
-            {isTimerRunning && (
+            {(isTimerRunning || syncedActive) && (
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
