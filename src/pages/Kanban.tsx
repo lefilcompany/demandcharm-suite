@@ -40,6 +40,15 @@ import { ClearBoardKanbanDialog } from "@/components/ClearBoardKanbanDialog";
 import { isHiddenFromKanban } from "@/lib/kanbanVisibility";
 import { Eye, EyeOff } from "lucide-react";
 
+const defaultFilters: KanbanFiltersState = {
+  myTasks: false,
+  priority: null,
+  dueDate: null,
+  position: null,
+  assignee: null,
+  service: null,
+};
+
 export default function Kanban() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -103,14 +112,6 @@ export default function Kanban() {
   // Persist filters per user across board switches and tab reloads.
   // Cleared explicitly on signOut and on short-session expiry (see src/lib/auth.tsx).
   const filtersStorageKey = user?.id ? `kanban_filters:${user.id}` : null;
-  const defaultFilters: KanbanFiltersState = {
-    myTasks: false,
-    priority: null,
-    dueDate: null,
-    position: null,
-    assignee: null,
-    service: null,
-  };
 
   const readStoredFilters = (key: string | null): KanbanFiltersState => {
     if (!key || typeof window === "undefined") return defaultFilters;
