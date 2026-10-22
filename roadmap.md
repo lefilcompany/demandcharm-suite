@@ -1,5 +1,10 @@
 # Roadmap
 
+## Ampliação das ferramentas do assistente
+- [x] Consultas de riscos, capacidade, histórico, serviços, tempo, documentos, duplicidades, fluxo e relatórios.
+- [x] Criação/edição de demandas, comentários, ações em lote e planejamento de sprint com confirmação explícita.
+- [x] Catálogo de todas as ferramentas disponíveis, cinco testes e verificação na conversa real (catálogo, riscos, confirmação e comentário salvo).
+
 ## Leitura completa das novidades
 - [x] Abrir o texto completo da novidade ao clicar no sino ou no aviso in-app, sem sair da tela atual.
 - [x] Conferir leitura e fechamento com uma notificação real; 9 testes passando, incluindo o acesso separado à funcionalidade anunciada.
@@ -28,8 +33,8 @@ definições (aberta, entregue no prazo/atrasada, vencida, vence em breve, etapa
 - [x] Página `/app/board-agent` com chat, sugestões de perguntas, atividade das ferramentas e markdown
 - [x] Item "Assistente do Quadro" no menu lateral (+ redirecionamento do endereço antigo)
 - [x] MCP `board_summary_stats` passa a usar `get_board_metrics` (mesmas definições)
-- [ ] Verificar com uma pergunta real no quadro de teste — BLOQUEADO: limite de créditos de IA do workspace atingido (403 credit_limit_reached); precisa de ação do administrador do workspace
-- [ ] Depois de liberar créditos: revisar o tom das respostas e ajustar o prompt se necessário
+- [x] Verificar com perguntas reais no quadro de teste: catálogo e riscos respondidos; comentário interno aprovado e salvo.
+- [x] Revisar tom e regras de confirmação do assistente.
 - [ ] Opcional: histórico da conversa na nuvem (hoje fica só no navegador)
 - [ ] Opcional: usar `get_board_metrics` também no Resumo IA (`board-summary`) para eliminar as fórmulas duplicadas restantes
 

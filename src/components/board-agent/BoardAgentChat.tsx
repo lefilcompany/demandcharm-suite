@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, isToolUIPart, type UIMessage } from "ai";
+import { DefaultChatTransport, isToolUIPart, lastAssistantMessageIsCompleteWithApprovalResponses, type UIMessage } from "ai";
 import { AlertCircle, RotateCcw, MessageSquarePlus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { BoardAgentToolPart } from "@/components/board-agent/BoardAgentToolPart"
 import { clearBoardAgentMessages, loadBoardAgentMessages, saveBoardAgentMessages } from "@/lib/boardAgent/storage";
 import { cn } from "@/lib/utils";
 import somaIcon from "@/assets/logo-soma-icon.png";
+import { useQueryClient } from "@tanstack/react-query";
 
 const SUGGESTIONS = [
   "Quantas demandas estão abertas?",
@@ -23,6 +24,8 @@ const SUGGESTIONS = [
   "O que está aguardando aprovação?",
   "Como está a carga de trabalho por responsável?",
   "Quanto ainda posso criar do limite mensal?",
+  "Liste todas as ferramentas disponíveis",
+  "Sugira um plano para a próxima sprint",
 ];
 
 type Props = {
@@ -56,6 +59,7 @@ function readableError(error: Error): string {
 }
 
 export function BoardAgentChat({ boardId, boardName }: Props) {
+  const queryClient = useQueryClient();
   const composerRef = useRef<HTMLDivElement>(null);
   const [showClearDialog, setShowClearDialog] = useState(false);
   const initialMessages = useMemo(() => loadBoardAgentMessages(boardId), [boardId]);
@@ -80,10 +84,18 @@ export function BoardAgentChat({ boardId, boardName }: Props) {
     [boardId],
   );
 
-  const { messages, sendMessage, status, error, regenerate, stop, setMessages, clearError } = useChat({
+  const { messages, sendMessage, status, error, regenerate, stop, setMessages, clearError, addToolApprovalResponse } = useChat({
     id: `board-agent-${boardId}`,
     messages: initialMessages,
     transport,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+    onFinish: ({ message }) => {
+      if (message.parts.some(p => isToolUIPart(p) && p.state === "output-available" && typeof p.output === "object" && p.output !== null && "saved" in p.output && p.output.saved === true)) {
+        for (const key of ["demands", "sprints", "sprint-memberships", "demand-sprint", "demand-assignees", "demand-interactions", "board-services-usage"]) {
+          void queryClient.invalidateQueries({ queryKey: [key] });
+        }
+      }
+    },
   });
 
   const isBusy = status === "submitted" || status === "streaming";
@@ -157,7 +169,7 @@ export function BoardAgentChat({ boardId, boardName }: Props) {
           {messages.length === 0 ? (
             <EmptyState boardName={boardName} onPick={ask} disabled={isBusy} />
           ) : (
-            messages.map((message) => <ChatMessage key={message.id} message={message} isStreaming={status === "streaming" && message.id === lastMessage?.id} />)
+            messages.map((message) => <ChatMessage key={message.id} message={message} isStreaming={status === "streaming" && message.id === lastMessage?.id} onApprove={(id, approved) => { void addToolApprovalResponse({ id, approved }); }} />)
           )}
 
           {showThinking && (
@@ -303,7 +315,7 @@ function EmptyState({ boardName, onPick, disabled }: { boardName: string; onPick
   );
 }
 
-function ChatMessage({ message, isStreaming }: { message: UIMessage; isStreaming: boolean }) {
+function ChatMessage({ message, isStreaming, onApprove }: { message: UIMessage; isStreaming: boolean; onApprove: (id: string, approved: boolean) => void }) {
   if (message.role === "user") {
     const text = message.parts
       .filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
@@ -354,7 +366,7 @@ function ChatMessage({ message, isStreaming }: { message: UIMessage; isStreaming
               );
             }
             if (isToolUIPart(part)) {
-              return <BoardAgentToolPart key={key} part={part} />;
+              return <BoardAgentToolPart key={key} part={part} onApprove={onApprove} />;
             }
             return null;
           })}
