@@ -305,14 +305,14 @@ export default function Kanban() {
   }, [filteredDemands, demands, highlightDemandId]);
 
   return (
-    <div className="flex flex-col h-full animate-fade-in space-y-4">
+    <div className="flex flex-col h-full animate-fade-in space-y-3">
       <SEOHead title="Kanban" path="/app/kanban" />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between shrink-0 pb-4 md:pb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center justify-between shrink-0 pb-2 md:pb-3">
+        <div className="flex items-baseline gap-3 min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground shrink-0">
             {t("kanban.title")}
           </h1>
-          <p className="text-sm md:text-base text-muted-foreground">
+          <p className="hidden lg:block text-sm text-muted-foreground truncate">
             {isReadOnly ? t("kanban.dragHint") : t("kanban.dragHint")}
           </p>
         </div>
