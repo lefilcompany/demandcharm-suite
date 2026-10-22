@@ -94,3 +94,11 @@ Causa provável no navegador: o worker guardava TODAS as respostas do backend po
 - [x] Kanban mostra erro com "Tentar novamente" quando a leitura falha e aviso "Limpar filtros" quando os filtros escondem tudo
 - [x] Verificado: Hub LeFil mostra as recorrentes no Backlog; bloqueio e troca de etapa testados no banco (sem gravar)
 - [ ] AGUARDA DECISÃO DO USUÁRIO — Data de entrega (`delivered_at`) não é gravada em quadros com etapa "Entregue" própria (1.115 de 2.014 entregues sem data) — a regra dos 31 dias não as oculta e métricas de prazo ficam incompletas
+
+## Melhorias de UX/UI do Kanban (2026-10-22)
+- [x] Topo enxuto: título menor, subtítulo só em telas largas, menos espaço vertical
+- [x] Barra de atalhos por etapa (chips com contagem) que abre e rola até a etapa — scrollLeft, nunca scrollIntoView
+- [x] Cards mais densos: padding e tipografia reduzidos
+- [x] Ação rápida "Mover para etapa" revelada no hover do card (desktop)
+- [x] Atalhos de teclado: `c` nova demanda, `m` minhas tarefas, `Esc` limpa filtros
+- Verificado com Playwright no viewport 1090x674: chips abrem/rolam, hover revela ação, `m` alterna filtro
