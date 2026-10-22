@@ -60,13 +60,15 @@ export default function ServicesManagement() {
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm">{service.name}</p>
         {service.description && (
-          <p className="text-xs text-muted-foreground mt-0.5">{service.description}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-line">{service.description}</p>
         )}
       </div>
-      <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0 pt-0.5">
-        <Clock className="h-3 w-3" />
-        <span className="whitespace-nowrap">{formatServiceHours(service)}</span>
-      </div>
+      {!(service.is_catalog && service.hours_min == null && service.hours_max == null) && (
+        <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0 pt-0.5">
+          <Clock className="h-3 w-3" />
+          <span className="whitespace-nowrap">{formatServiceHours(service)}</span>
+        </div>
+      )}
     </div>
   );
 
