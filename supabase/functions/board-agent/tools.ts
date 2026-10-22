@@ -4,11 +4,14 @@
 import { tool } from "npm:ai@7.0.109";
 import { z } from "npm:zod@3.25.76";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { buildExtendedTools } from "./extended-tools.ts";
 
 export type ToolDeps = {
   supabase: SupabaseClient;
   boardId: string;
   tz: string;
+  userId: string;
+  role: string | null;
 };
 
 const LIST_DEFAULT_LIMIT = 20;
@@ -126,7 +129,7 @@ function compactFact(r: FactRow) {
   };
 }
 
-export function buildBoardTools({ supabase, boardId, tz }: ToolDeps) {
+export function buildBoardTools({ supabase, boardId, tz, userId, role }: ToolDeps) {
   const getBoardMetrics = tool({
     description:
       "Métricas consolidadas do quadro calculadas pela fonte oficial do banco. Retorna: estado ATUAL (abertas, entregues no total, vencidas, vencendo em 7 dias, hoje, sem prazo, sem responsável, backlog, em ajuste, na etapa Solicitações, subdemandas abertas, alta prioridade, médias de atraso, distribuição por etapa/prioridade/serviço/responsável), FLUXO DO PERÍODO (criadas, entregues, entregues no prazo x com atraso, taxa de pontualidade, tempo médio de entrega, solicitações por status, horas registradas) e LIMITE MENSAL. Use SEMPRE esta ferramenta para números; nunca estime. Sem período = histórico completo. Para restringir a um membro, informe member_id (obtenha em get_board_members).",
@@ -382,10 +385,19 @@ export function buildBoardTools({ supabase, boardId, tz }: ToolDeps) {
     },
   });
 
-  return {
+  const tools = {
     get_board_metrics: getBoardMetrics,
     list_demands: listDemands,
     get_board_members: getBoardMembers,
     list_demand_requests: listDemandRequests,
+    ...buildExtendedTools({ supabase, boardId, tz, userId, role }),
+  };
+  return {
+    ...tools,
+    list_available_tools: tool({
+      description: "Lista TODAS as ferramentas disponíveis para seu papel no quadro, nomes, descrições e quais exigem confirmação. Use quando perguntarem o que você consegue fazer ou pedirem a lista de tools.",
+      inputSchema: z.object({}),
+      execute: async () => ({ tools: [...Object.entries(tools).map(([name, t]) => ({ name, description: t.description, requires_confirmation: ["create_demand", "update_demand", "create_follow_up", "bulk_update_demands", "apply_sprint_plan"].includes(name) })), { name: "list_available_tools", description: "Listagem de todas as ferramentas disponíveis.", requires_confirmation: false }], total: Object.keys(tools).length + 1 }),
+    }),
   };
 }

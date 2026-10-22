@@ -14,6 +14,7 @@ import { createGoogleGenerativeAI } from "npm:@ai-sdk/google@4.0.78";
 import { z } from "npm:zod@3.25.76";
 import { buildBoardTools } from "./tools.ts";
 import { buildSystemPrompt } from "./prompt.ts";
+import { WRITE_TOOLS } from "./policies.ts";
 import {
   createLovableAiGatewayRunIdFetch,
   getLovableAiGatewayResponseHeaders,
@@ -109,8 +110,9 @@ Deno.serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) return json({ error: "Não autenticado" }, 401);
     const token = authHeader.slice("Bearer ".length);
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!supabaseUrl || !supabaseAnonKey) return json({ error: "O assistente não está configurado." }, 500);
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
     if (!geminiApiKey) {
       console.error("GEMINI_API_KEY não configurada");
@@ -192,11 +194,16 @@ Deno.serve(async (req) => {
       fetch: runIdFetch.fetch,
     });
 
+    const tools = buildBoardTools({ supabase, boardId, tz, userId: user.id, role: membership?.role ?? null });
     const result = streamText({
       model: google(MODEL_ID),
       system,
       messages: modelMessages,
-      tools: buildBoardTools({ supabase, boardId, tz }),
+      tools,
+      toolApproval: Object.fromEntries(WRITE_TOOLS.filter(name => name in tools).map(name => [name, "user-approval" as const])),
+      // Stable server-only signing key, bound to this user and board. Tampering with
+      // a saved tool input cannot turn an approved action into a different write.
+      experimental_toolApprovalSecret: `${geminiApiKey}:${user.id}:${boardId}`,
       stopWhen: isStepCount(50),
       abortSignal: req.signal,
       providerOptions: {
