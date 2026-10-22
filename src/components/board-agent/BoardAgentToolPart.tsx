@@ -15,6 +15,8 @@ import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 type ToolMeta = { title: string; icon: ReactNode };
 
@@ -371,9 +373,56 @@ export function BoardAgentToolPart({ part, onApprove }: { part: ToolUIPart | Dyn
   );
 }
 
-const FIELD_LABELS: Record<string,string> = { title: "Título", description: "Descrição", priority: "Prioridade", due_date: "Prazo", responsible_user_id: "Responsável", service_id: "Serviço", status_id: "Etapa", effort_points: "Esforço", demand_id: "Demanda", demand_ids: "Demandas", reason: "Justificativa", content: "Comentário", internal: "Canal interno", sprint_id: "Sprint", name: "Nome", goal: "Objetivo", start_date: "Início", end_date: "Fim" };
+const FIELD_LABELS: Record<string,string> = { title: "Título", description: "Descrição", priority: "Prioridade", due_date: "Prazo", responsible_user_id: "Responsável", service_id: "Serviço", status_id: "Etapa", effort_points: "Esforço", demand_id: "Demanda", demand_ids: "Demandas", reason: "Justificativa", content: "Comentário", internal: "Canal interno", sprint_id: "Sprint", assignee_ids: "Responsáveis", follower_ids: "Seguidores", name: "Nome", goal: "Objetivo", start_date: "Início", end_date: "Fim" };
+const ID_SOURCES: Record<string, { table: string; label: string }> = {
+  responsible_user_id: { table: "profiles", label: "full_name" }, assignee_ids: { table: "profiles", label: "full_name" }, follower_ids: { table: "profiles", label: "full_name" },
+  service_id: { table: "services", label: "name" }, status_id: { table: "demand_statuses", label: "name" },
+  sprint_id: { table: "board_sprints", label: "name" }, demand_id: { table: "demands", label: "title" }, demand_ids: { table: "demands", label: "title" },
+};
+const PRIORITY_LABEL: Record<string, string> = { alta: "Alta", "média": "Média", media: "Média", baixa: "Baixa", urgente: "Urgente" };
+const isUuid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
+
+// Mostra nomes legíveis em vez de identificadores internos na confirmação.
+function useIdNames(entries: [string, unknown][]) {
+  const byTable: Record<string, { label: string; ids: string[] }> = {};
+  for (const [k, v] of entries) {
+    const src = ID_SOURCES[k]; if (!src) continue;
+    const ids = (Array.isArray(v) ? v : [v]).filter(isUuid);
+    if (!ids.length) continue;
+    (byTable[src.table] ??= { label: src.label, ids: [] }).ids.push(...ids);
+  }
+  const key = JSON.stringify(byTable);
+  return useQuery({
+    queryKey: ["agent-approval-names", key],
+    enabled: Object.keys(byTable).length > 0,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const names: Record<string, string> = {};
+      await Promise.all(Object.entries(byTable).map(async ([table, { label, ids }]) => {
+        const extra = table === "demands" ? ",board_sequence_number" : "";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data } = await (supabase.from(table as any) as any).select(`id,${label}${extra}`).in("id", [...new Set(ids)]);
+        for (const row of (data ?? []) as Record<string, unknown>[]) {
+          const seq = row.board_sequence_number ? `#${String(row.board_sequence_number).padStart(4, "0")} ` : "";
+          names[String(row.id)] = `${seq}${row[label] ?? ""}`.trim();
+        }
+      }));
+      return names;
+    },
+  }).data ?? {};
+}
+
 function ApprovalPreview({ input }: { input: unknown }) {
-  if (!input || typeof input !== "object") return null;
-  const entries = Object.entries(input).flatMap(([k,v]) => k === "patch" && v && typeof v === "object" ? Object.entries(v) : [[k,v]]).filter(([,v]) => v != null);
-  return <dl className="space-y-2 text-xs">{entries.map(([key,value]) => <div key={String(key)} className="grid grid-cols-[100px_minmax(0,1fr)] gap-2"><dt className="text-muted-foreground">{FIELD_LABELS[String(key)] ?? String(key)}</dt><dd className="break-words whitespace-pre-wrap">{Array.isArray(value) ? value.join(", ") : typeof value === "boolean" ? value ? "Sim" : "Não" : String(value)}</dd></div>)}</dl>;
+  const entries = (input && typeof input === "object" ? Object.entries(input).flatMap(([k,v]) => k === "patch" && v && typeof v === "object" ? Object.entries(v) : [[k,v]]).filter(([,v]) => v != null) : []) as [string, unknown][];
+  const names = useIdNames(entries);
+  if (!entries.length) return null;
+  const show = (key: string, v: unknown): string => {
+    if (Array.isArray(v)) return v.map(x => show(key, x)).join(", ");
+    if (typeof v === "boolean") return v ? "Sim" : "Não";
+    if (isUuid(v)) return names[v] ?? "Carregando…";
+    if (key === "priority" && typeof v === "string") return PRIORITY_LABEL[v.toLowerCase()] ?? v;
+    if (key.endsWith("_date") && typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v)) { const [y,m,d] = v.substring(0,10).split("-"); return `${d}/${m}/${y}`; }
+    return String(v);
+  };
+  return <dl className="space-y-2 text-xs">{entries.map(([key,value]) => <div key={key} className="grid grid-cols-[100px_minmax(0,1fr)] gap-2"><dt className="text-muted-foreground">{FIELD_LABELS[key] ?? key}</dt><dd className="break-words whitespace-pre-wrap">{show(key, value)}</dd></div>)}</dl>;
 }
