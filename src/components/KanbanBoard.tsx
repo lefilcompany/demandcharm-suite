@@ -671,8 +671,17 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
 
   // Horizontal scroll container (desktop views) + jump-to-column from the chip bar.
   // Uses scrollLeft only — never scrollIntoView (breaks the 100dvh shell).
+  // Second consecutive click on the same chip closes that column.
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const lastJumpColumnRef = useRef<string | null>(null);
   const jumpToColumn = useCallback((columnKey: string) => {
+    if (lastJumpColumnRef.current === columnKey) {
+      // Segunda vez seguida no mesmo chip: fecha a etapa correspondente.
+      lastJumpColumnRef.current = null;
+      setActiveColumns(prev => prev.filter(c => c !== columnKey));
+      return;
+    }
+    lastJumpColumnRef.current = columnKey;
     setActiveColumns(prev => (prev.includes(columnKey) ? prev : [...prev, columnKey]));
     window.setTimeout(() => {
       const container = scrollContainerRef.current;
@@ -2471,6 +2480,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
             key={column.key}
             type="button"
             onClick={() => jumpToColumn(column.key)}
+            title={isActive ? "Clique novamente para fechar esta etapa" : "Abrir e ir para esta etapa"}
             className={cn(
               "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors shrink-0",
               isActive
