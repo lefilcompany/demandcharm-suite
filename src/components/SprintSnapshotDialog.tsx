@@ -41,7 +41,7 @@ async function loadHistory(sprint: Props["sprint"], ids: string[]) {
     addedAt: Object.fromEntries((own.data ?? []).map((r: any) => [r.demand_id, r.added_at])),
     carriedIds: new Set(
       (others.data ?? [])
-        .filter((r: any) => r.board_sprints.status === "completed" && r.board_sprints.end_date <= sprint.start_date.substring(0, 10) + "T99")
+        .filter((r: any) => r.board_sprints.status === "completed")
         .map((r: any) => r.demand_id as string)
     ),
     facts: Object.fromEntries((facts.data ?? []).map((f: any) => [f.id, f])),
