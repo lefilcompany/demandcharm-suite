@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { DynamicToolUIPart, ToolUIPart } from "ai";
 import { getToolName } from "ai";
 import {
@@ -327,12 +327,13 @@ function renderOutput(toolName: string, output: unknown): ReactNode {
 }
 
 export function BoardAgentToolPart({ part, onApprove }: { part: ToolUIPart | DynamicToolUIPart; onApprove?: (id: string, approved: boolean) => void }) {
+  const [expanded, setExpanded] = useState(false);
   const toolName = part.type === "dynamic-tool" ? part.toolName : getToolName(part);
   const meta = TOOL_META[toolName] ?? { title: toolName, icon: undefined };
   const custom = part.state === "output-available" ? renderOutput(toolName, part.output) : null;
 
   return (
-    <Tool defaultOpen={part.state === "approval-requested"} className="mb-2 bg-card/60">
+    <Tool open={part.state === "approval-requested" || expanded} onOpenChange={setExpanded} className="mb-2 bg-card/60">
       {part.type === "dynamic-tool" ? (
         <ToolHeader type={part.type} state={part.state} toolName={part.toolName} title={meta.title} icon={meta.icon} className="py-2" />
       ) : (

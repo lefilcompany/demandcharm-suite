@@ -260,7 +260,7 @@ export function buildBoardTools({ supabase, boardId, tz, userId, role }: ToolDep
       else if (filter === "delivered_late") q = q.order("days_late", { ascending: false, nullsFirst: false });
       else if (filter === "delivered" || filter === "delivered_on_time")
         q = q.order("delivered_on", { ascending: false, nullsFirst: false });
-      else q = q.order("created_at", { ascending: false });
+      else q = q.order("created_on", { ascending: false });
 
       const { data, error, count } = await q.limit(limit);
       if (error) return errorResult("Não foi possível listar as demandas.", error.message);

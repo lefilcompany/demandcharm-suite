@@ -109,7 +109,13 @@ export function buildExtendedTools({ supabase: sb, boardId, tz, userId, role }: 
       ]);
       return { demand, deadline_changes, interactions, note: "Etapas e responsáveis anteriores só podem ser relatados quando constarem nas interações. Ausência de evento não é ausência de mudança. Máximo de 100 registros por fonte." };
     }) }),
-    search_board_knowledge: tool({ description: "Busca documentos/ADRs/artefatos e notas por título ou conteúdo no quadro. Retorna conteúdo escrito no SoMA e links; arquivos enviados são encontrados mas não têm conteúdo extraído automaticamente.", inputSchema: z.object({ query: z.string(), kind: text }), execute: run(async ({ query, kind }) => {
+    get_time_report: tool({ description: "Consulta lançamentos de tempo de uma demanda do quadro, respeitando permissões. Sessões ativas aparecem separadas do tempo finalizado; solicitantes não têm acesso.", inputSchema: z.object({ demand_id: uuid }), execute: run(async ({ demand_id }) => {
+      if (!canWrite(role)) throw new Error("Seu papel não permite consultar horas.");
+      await oneDemand(demand_id);
+      const entries = await checked(sb.from("demand_time_entries").select("user_id,started_at,ended_at,duration_seconds").eq("demand_id",demand_id).order("started_at",{ascending:false}).limit(100));
+      return { entries, finalized_seconds_in_sample: entries.filter((e:any)=>e.ended_at).reduce((sum:number,e:any)=>sum+(e.duration_seconds??0),0), active_sessions: entries.filter((e:any)=>!e.ended_at), note: "Máximo de 100 lançamentos recentes; não soma sessões ativas como tempo finalizado." };
+    }) }),
+    search_board_knowledge: tool({ description: "Busca documentos/ADRs/artefatos por título ou conteúdo no quadro. Retorna conteúdo escrito no SoMA e links; arquivos enviados são encontrados mas não têm conteúdo extraído automaticamente.", inputSchema: z.object({ query: z.string(), kind: text }), execute: run(async ({ query, kind }) => {
       const term = clean(query); if (!term) throw new Error("Informe um termo para buscar.");
       let q = sb.from("board_artifacts").select("id,title,kind,source,content,file_name,adr_number,adr_status,sprint_id,updated_at").eq("board_id",boardId).or(`title.ilike.%${term}%,content.ilike.%${term}%`).limit(20);
       if (kind) q = q.eq("kind", kind);
