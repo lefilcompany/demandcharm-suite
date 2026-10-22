@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Clock, Play, Pause, Loader2, Users, PictureInPicture2 } from "lucide-react";
 import { useLiveTimer, formatTimeDisplay } from "@/hooks/useLiveTimer";
 import { useDemandTimeEntries, useDemandUserTimeStats, useUserTimerControl } from "@/hooks/useUserTimeTracking";
+import { useParentSyncedTime, getSyncedElapsedSeconds } from "@/hooks/useParentSyncedTime";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -113,6 +114,21 @@ export function UserTimeTrackingDisplay({
     baseSeconds: totalSeconds,
     lastStartedAt: activeStartedAt,
   });
+
+  // Synchronized time (own + subdemands): the parent counter runs whenever
+  // any subdemand timer is running.
+  const { data: synced } = useParentSyncedTime(demandId);
+  const hasSubdemands = synced?.hasSubdemands ?? false;
+  // Drives a re-render every second while any subdemand timer is running
+  useLiveTimer({
+    isActive: !!synced?.isActive,
+    baseSeconds: 0,
+    lastStartedAt: synced?.activeStartedAt || null,
+  });
+  const syncedSeconds = hasSubdemands
+    ? (synced?.totalSeconds || 0) + getSyncedElapsedSeconds(synced)
+    : 0;
+  const syncedActive = !!synced?.isActive;
 
   const { isSupported: isPipAvailable, openPip } = usePipTimer();
 
