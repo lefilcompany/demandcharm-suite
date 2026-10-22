@@ -160,6 +160,41 @@ export type Database = {
         }
         Relationships: []
       }
+      board_agent_action_receipts: {
+        Row: {
+          action: string
+          board_id: string
+          call_id: string
+          created_at: string
+          result: Json
+          user_id: string
+        }
+        Insert: {
+          action: string
+          board_id: string
+          call_id: string
+          created_at?: string
+          result: Json
+          user_id?: string
+        }
+        Update: {
+          action?: string
+          board_id?: string
+          call_id?: string
+          created_at?: string
+          result?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_agent_action_receipts_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_approval_notify_settings: {
         Row: {
           approval_type: string
@@ -4315,6 +4350,15 @@ export type Database = {
         Returns: Json
       }
       email_exists: { Args: { _email: string }; Returns: boolean }
+      execute_board_agent_action: {
+        Args: {
+          p_action: string
+          p_board_id: string
+          p_call_id: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
       get_board_metrics: {
         Args: {
           p_board_id: string
