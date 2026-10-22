@@ -18,6 +18,7 @@ import { useCreateDemand } from "@/hooks/useDemands";
 import { EFFORT_SCALE, PriorityCode, codeFromPriority, priorityFromCode } from "@/lib/importMapping";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { documentError } from "@/lib/boardAgent/documents";
 
 type Row = {
   key: string;
@@ -98,7 +99,14 @@ function PersonPicker({ members, value, onChange, disabled, trigger }: {
   );
 }
 
-export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+export function ImportDemandsDialog({ open, onOpenChange, initialFile, fixedBoardId, onAnalyzed, onCreated }: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  initialFile?: File | null;
+  fixedBoardId?: string;
+  onAnalyzed?: (fileName: string, rows: { title: string; description: string; priority: string; effort_points: number; due_date: string | null }[]) => void;
+  onCreated?: (count: number) => void;
+}) {
   const { boards, selectedBoardId } = useSelectedBoard();
   const [boardId, setBoardId] = useState<string | null>(selectedBoardId);
   const [file, setFile] = useState<File | null>(null);
@@ -114,8 +122,11 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
   // então o boardId inicial ficaria preso ao quadro aberto no primeiro load.
   // Sincroniza com o quadro selecionado toda vez que o diálogo abre.
   useEffect(() => {
-    if (open) setBoardId(selectedBoardId);
-  }, [open, selectedBoardId]);
+    if (open) {
+      setBoardId(fixedBoardId ?? selectedBoardId);
+      if (initialFile) setFile(initialFile);
+    }
+  }, [open, selectedBoardId, fixedBoardId, initialFile]);
 
   const { data: services } = useBoardServices(boardId);
   const { data: members } = useBoardMembers(boardId);
@@ -135,7 +146,8 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
 
   const analyze = async () => {
     if (!file || !boardId) return;
-    if (file.size > MAX_MB * 1024 * 1024) return toast.error(`Arquivo maior que ${MAX_MB} MB`);
+    const validationError = documentError(file);
+    if (validationError) return toast.error(validationError);
     setBusy(true);
     try {
       const content = await readFile(file);
@@ -158,6 +170,7 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
       if (!list.length) return toast.error("Nenhuma demanda encontrada no documento");
       setRows(list);
       setStep("review");
+      onAnalyzed?.(file.name, list);
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -205,6 +218,7 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
     if (!board || !status) return toast.error("Quadro sem etapas configuradas");
     const targets = rows.filter((r) => selected.has(r.key));
     if (!targets.length) return;
+    if (targets.some(rowError)) return toast.error("Revise as demandas selecionadas antes de criar.");
     setBusy(true); setProgress(0);
     const failed: Row[] = [];
     let ok = 0;
@@ -238,6 +252,7 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
     setRows((prev) => prev.map((r) => failed.find((f) => f.key === r.key) ?? r).filter((r) => !createdKeys.has(r.key)));
     setSelected(new Set());
     setBusy(false);
+    if (ok > 0) onCreated?.(ok);
     if (failed.length) {
       toast.error(`${ok} criada(s), ${failed.length} com erro`, { description: "As linhas com erro continuam na lista." });
     } else {
@@ -278,7 +293,7 @@ export function ImportDemandsDialog({ open, onOpenChange }: { open: boolean; onO
           <div className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Quadro de destino</label>
-              <Select value={boardId ?? undefined} onValueChange={setBoardId}>
+              <Select value={boardId ?? undefined} onValueChange={setBoardId} disabled={!!fixedBoardId}>
                 <SelectTrigger><SelectValue placeholder="Escolha o quadro" /></SelectTrigger>
                 <SelectContent>
                   {boards?.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
