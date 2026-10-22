@@ -33,3 +33,7 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 
 - System admins enter a user's account only through Edge `admin-impersonate` (checks `has_role admin`, refuses other admins, writes `admin_impersonation_log` before issuing a one-time login token); `src/lib/impersonation.ts` keeps the admin refresh token locally to return — so every access is server-checked and auditable.
 - The sprint "Ficha" PDF builds its diffs only from stored records (`sprint_demands.added_at`, `demand_due_date_changes`, `delivered_at`, `status_changed_at`) in pure `src/lib/sprintDevSheet.ts`; the "Agora é possível" list comes from Edge `sprint-release-notes`, which reads delivered demands under the caller's RLS — so the sheet never invents history and never leaks other boards.
+
+## Sprint artifacts
+
+- Sprint/board documents live in `board_artifacts` + private bucket `sprint-artifacts` (path `<board_id>/<artifact_id>/<file>`, so storage RLS reuses `is_board_member`/`can_edit_board_sprints` on the first folder); ADR numbering per board and "accepted ADR is immutable" are enforced by trigger `trg_board_artifact_rules`, so every client obeys them. Completed sprints archive the PDF sheet and Excel list from the client after `complete_sprint`, never blocking completion.

@@ -3,8 +3,8 @@ import { KanbanSnapshot, formatSnapshotDate } from "@/lib/kanbanSnapshot";
 /** Gera uma planilha Excel (.xlsx) com abas Panorama, Por etapa, Por responsável e Demandas. */
 export async function downloadSnapshotXlsx(
   snapshot: KanbanSnapshot,
-  opts: { title: string; fileName: string; extraInfo?: [string, string][] }
-) {
+  opts: { title: string; fileName: string; extraInfo?: [string, string][]; asBlob?: boolean }
+): Promise<Blob | void> {
   const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
 
@@ -52,6 +52,10 @@ export async function downloadSnapshotXlsx(
   ws4["!cols"] = [{ wch: 10 }, { wch: 50 }, { wch: 20 }, { wch: 24 }, { wch: 30 }, { wch: 12 }, { wch: 24 }, { wch: 12 }, { wch: 12 }];
   XLSX.utils.book_append_sheet(wb, ws4, "Demandas");
 
+  if (opts.asBlob) {
+    const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    return new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  }
   XLSX.writeFile(wb, opts.fileName);
 }
 

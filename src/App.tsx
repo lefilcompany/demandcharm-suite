@@ -59,6 +59,7 @@ const UserProfile = lazy(() => import("./pages/UserProfile"));
 const BoardSummary = lazy(() => import("./pages/BoardSummary"));
 const BoardAgent = lazy(() => import("./pages/BoardAgent"));
 const Sprints = lazy(() => import("./pages/Sprints"));
+const Artifacts = lazy(() => import("./pages/Artifacts"));
 const Store = lazy(() => import("./pages/Store"));
 const TeamDemands = lazy(() => import("./pages/TeamDemands"));
 const MyDemands = lazy(() => import("./pages/MyDemands"));
@@ -214,6 +215,7 @@ const App = () => {
                                 <Route path="/app/board-summary" element={<BoardSummary />} />
                                 <Route path="/app/board-agent" element={<BoardAgent />} />
                                 <Route path="/app/sprints" element={<Sprints />} />
+                                <Route path="/app/artifacts" element={<Artifacts />} />
                                 <Route path="/app/user/:userId" element={<UserProfile />} />
                                 <Route path="/app/team-demands" element={<TeamDemands />} />
                                 <Route path="/app/my-demands" element={<MyDemands />} />

@@ -204,6 +204,97 @@ export type Database = {
           },
         ]
       }
+      board_artifacts: {
+        Row: {
+          adr_number: number | null
+          adr_status: string | null
+          auto_generated: boolean
+          board_id: string
+          content: string | null
+          created_at: string
+          created_by: string
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          is_template: boolean
+          kind: string
+          mime_type: string | null
+          related_demand_ids: string[]
+          source: string
+          sprint_id: string | null
+          superseded_by: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          adr_number?: number | null
+          adr_status?: string | null
+          auto_generated?: boolean
+          board_id: string
+          content?: string | null
+          created_at?: string
+          created_by: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          is_template?: boolean
+          kind?: string
+          mime_type?: string | null
+          related_demand_ids?: string[]
+          source?: string
+          sprint_id?: string | null
+          superseded_by?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          adr_number?: number | null
+          adr_status?: string | null
+          auto_generated?: boolean
+          board_id?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          is_template?: boolean
+          kind?: string
+          mime_type?: string | null
+          related_demand_ids?: string[]
+          source?: string
+          sprint_id?: string | null
+          superseded_by?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_artifacts_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_artifacts_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "board_sprints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_artifacts_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "board_artifacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_cache_versions: {
         Row: {
           board_id: string
