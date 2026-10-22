@@ -285,7 +285,14 @@ export function ServiceSelector({
           )}
         </SelectContent>
       </Select>
-      
+
+      {selectedService?.description && (
+        <div className="rounded-md border bg-muted/40 px-3 py-2">
+          <p className="text-xs font-medium text-muted-foreground mb-1">Este serviço engloba:</p>
+          <p className="text-xs text-muted-foreground whitespace-pre-line">{selectedService.description}</p>
+        </div>
+      )}
+
       {/* Info about when time starts counting - only shown for requesters */}
       {userRole === "requester" && (
         <TooltipProvider>
