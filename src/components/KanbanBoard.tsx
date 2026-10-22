@@ -2071,7 +2071,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   </div>
                 );
               })()}
-              <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center justify-between mt-1.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   {demand.status_changed_at && (
                     <div className="flex items-center gap-1">
