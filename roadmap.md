@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Serviços no assistente
-- [ ] Corrigir catálogo para reconhecer os serviços disponíveis na criação de demandas do quadro.
-- [ ] Testar o catálogo e a prévia de criação no quadro Testes.
+- [x] Catálogo verificado em cada mensagem; respostas antigas não prevalecem e falhas não viram catálogo vazio. Confirmados 84 serviços ativos no Testes.
+- [x] Oito testes passando; criação aprovada com serviço Nova funcionalidade e demanda encontrada na lista do Testes.
 
 ## Documentos no assistente
 - [x] Anexar documentos no chat e reutilizar análise/revisão da importação, mantendo o quadro atual.
