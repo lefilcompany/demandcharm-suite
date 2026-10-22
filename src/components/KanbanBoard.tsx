@@ -1932,7 +1932,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   </TooltipProvider>
                 )}
               </div>
-              <h4 className="font-medium text-sm line-clamp-2 mb-1 break-words overflow-hidden" title={demand.title}>
+              <h4 className="font-medium text-[13px] leading-snug line-clamp-2 mb-1 break-words overflow-hidden" title={demand.title}>
                 {truncateText(demand.title, 80)}
               </h4>
 
@@ -1955,7 +1955,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                   </p>
                 );
               })()}
-              <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-3 mt-1.5">
+              <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-2 mt-1">
                 {showOfflineIndicator && (
                   <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-5 bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse" title={t("sync.offlineDescription")}>
                     <CloudOff className="h-2.5 w-2.5 mr-0.5" />{t("sync.offlinePending")}
