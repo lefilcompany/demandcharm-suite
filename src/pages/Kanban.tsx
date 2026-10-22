@@ -255,6 +255,35 @@ export default function Kanban() {
     [filters]
   );
 
+  // Keyboard shortcuts: "c" nova demanda, "m" minhas tarefas, "Esc" limpa filtros.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Don't hijack keys while a dialog/menu is open (Esc belongs to the dialog).
+      if (document.querySelector('[role="dialog"], [role="menu"]')) return;
+
+      if (e.key === "c") {
+        e.preventDefault();
+        openCreateDemand();
+      } else if (e.key === "m") {
+        e.preventDefault();
+        setFilters((prev) => ({ ...prev, myTasks: !prev.myTasks }));
+      } else if (e.key === "Escape" && hasActiveFilters) {
+        setFilters(defaultFilters);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [openCreateDemand, hasActiveFilters]);
+
   // Count user's demands
   const myDemandsCount = useMemo(() => {
     if (!demands || !user?.id) return 0;
