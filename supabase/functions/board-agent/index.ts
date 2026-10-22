@@ -15,6 +15,7 @@ import { z } from "npm:zod@3.25.76";
 import { buildBoardTools } from "./tools.ts";
 import { buildSystemPrompt } from "./prompt.ts";
 import { WRITE_TOOLS } from "./policies.ts";
+import { readBoardCatalog } from "./catalog.ts";
 import {
   createLovableAiGatewayRunIdFetch,
   getLovableAiGatewayResponseHeaders,
@@ -175,6 +176,14 @@ Deno.serve(async (req) => {
     }
 
     const today = todayIn(tz);
+    // Supply live catalog on EVERY turn, even if the model skips a tool call or
+    // the persisted conversation contains a previous incorrect/empty result.
+    let catalog;
+    try {
+      catalog = await readBoardCatalog(supabase, boardId);
+    } catch (error) {
+      return json({ error: error instanceof Error ? error.message : "Não foi possível consultar os serviços do quadro." }, 503);
+    }
     const system = buildSystemPrompt({
       boardName: board.name,
       boardDescription: board.description,
@@ -184,6 +193,7 @@ Deno.serve(async (req) => {
       today,
       tz,
       monthStart: `${today.slice(0, 7)}-01`,
+      catalog,
     });
 
     // Provider criado dentro da requisição: o wrapper de fetch guarda o run id por chamada.

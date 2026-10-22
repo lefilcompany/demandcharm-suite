@@ -2,6 +2,7 @@ import { tool } from "npm:ai@7.0.109";
 import { z } from "npm:zod@3.25.76";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { canWrite, WRITE_TOOLS, titleSimilarity, selectSprintCandidates } from "./policies.ts";
+import { readBoardCatalog } from "./catalog.ts";
 
 type Deps = { supabase: SupabaseClient; boardId: string; tz: string; userId: string; role: string | null };
 const text = z.string().nullable();
@@ -63,13 +64,7 @@ export function buildExtendedTools({ supabase: sb, boardId, tz, userId, role }: 
   }
   const tools = {
     get_demand: tool({ description: "Consulta completa de uma demanda deste quadro, incluindo descrição, etapa, prazo, responsável e seguidores. Resolva o UUID usando list_demands antes.", inputSchema: z.object({ demand_id: uuid }), execute: run(async ({ demand_id }) => ({ demand: await oneDemand(demand_id) })) }),
-    get_board_catalog: tool({ description: "Etapas ativas e serviços disponíveis no quadro, com seus UUIDs corretos, atividades abrangidas, horas de referência e limites. Consulte antes de criar ou atualizar.", inputSchema: z.object({}), execute: run(async () => {
-      const [stages, services] = await Promise.all([
-        checked(sb.from("board_statuses").select("status_id,position,adjustment_type,visible_to_roles,status:demand_statuses(name)").eq("board_id", boardId).eq("is_active", true).order("position")),
-        checked(sb.from("board_services").select("service_id,monthly_limit,service:services!inner(name,description,estimated_hours,is_active)").eq("board_id", boardId).eq("service.is_active", true)),
-      ]);
-      return { stages, services };
-    }) }),
+    get_board_catalog: tool({ description: "Etapas ativas e serviços disponíveis no quadro, com seus UUIDs corretos, atividades abrangidas, horas de referência e limites. Consulte antes de criar ou atualizar.", inputSchema: z.object({}), execute: run(() => readBoardCatalog(sb, boardId)) }),
     get_risk_summary: tool({ description: "Riscos reais: vencidas, sem prazo/responsável, paradas há N dias, próximas do prazo e dependências abertas. Números totais vêm das métricas oficiais; listas podem ser truncadas.", inputSchema: z.object({ stalled_days: number, member_id: text }), execute: run(async ({ stalled_days, member_id }) => {
       const snapshot = await facts(true);
       const rows = member_id ? snapshot.rows.filter((r: any) => r.responsible_id === member_id) : snapshot.rows;
