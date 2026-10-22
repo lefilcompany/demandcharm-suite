@@ -16,6 +16,7 @@ import { buildBoardTools } from "./tools.ts";
 import { buildSystemPrompt } from "./prompt.ts";
 import { WRITE_TOOLS } from "./policies.ts";
 import { readBoardCatalog } from "./catalog.ts";
+import { sanitizeHistory } from "./history.ts";
 import {
   createLovableAiGatewayRunIdFetch,
   getLovableAiGatewayResponseHeaders,
@@ -167,14 +168,6 @@ Deno.serve(async (req) => {
         ),
     })) as UIMessage[];
 
-    let modelMessages;
-    try {
-      modelMessages = await convertToModelMessages(history, { ignoreIncompleteToolCalls: true });
-    } catch (e) {
-      console.error("Falha ao converter mensagens:", e);
-      return json({ error: "Histórico de conversa inválido. Inicie uma nova conversa." }, 400);
-    }
-
     const today = todayIn(tz);
     // Supply live catalog on EVERY turn, even if the model skips a tool call or
     // the persisted conversation contains a previous incorrect/empty result.
@@ -183,6 +176,14 @@ Deno.serve(async (req) => {
       catalog = await readBoardCatalog(supabase, boardId);
     } catch (error) {
       return json({ error: error instanceof Error ? error.message : "Não foi possível consultar os serviços do quadro." }, 503);
+    }
+
+    let modelMessages;
+    try {
+      modelMessages = await convertToModelMessages(sanitizeHistory(history, catalog.services.length), { ignoreIncompleteToolCalls: true });
+    } catch (e) {
+      console.error("Falha ao converter mensagens:", e);
+      return json({ error: "Histórico de conversa inválido. Inicie uma nova conversa." }, 400);
     }
     const system = buildSystemPrompt({
       boardName: board.name,
