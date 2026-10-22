@@ -1825,7 +1825,7 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
           highlightDemandId === demand.id && "ring-2 ring-primary shadow-lg",
         )}
       >
-        <CardContent className={cn("p-3 sm:p-4", isParentDemand && "p-2.5 sm:p-3")}>
+        <CardContent className={cn("p-2.5 sm:p-3", isParentDemand && "p-2 sm:p-2.5")}>
           <KanbanCardMenu demandId={demand.id} teamId={demand.team_id} boardId={demand.board_id} isDelivered={isDelivered} readOnly={readOnly} onDemandClick={onDemandClick} />
           <div className="flex items-start gap-2">
             {showDragHandle && (
@@ -1851,6 +1851,31 @@ export function KanbanBoard({ demands, columns: propColumns, onDemandClick, read
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 -ml-1 mt-0.5 bg-primary/10 hover:bg-primary/20" onClick={(e) => e.stopPropagation()}>
                     <ArrowRight className="h-4 w-4 text-primary" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-background">
+                  {availableStatuses.map((status) => (
+                    <DropdownMenuItem key={status.key} onClick={(e) => { e.stopPropagation(); handleMobileStatusChange(demand.id, status.key); }} className="cursor-pointer">
+                      <div className={cn("w-2 h-2 rounded-full mr-2", status.color.replace('/10', ''))} />
+                      Mover para {status.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Desktop: quick-move button revealed on hover */}
+            {!showMoveMenuFinal && !isMobile && !readOnly && !isDelivered && !isParentDemand && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 -ml-1 mt-0.5 bg-primary/10 hover:bg-primary/20 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
+                    title="Mover para outra etapa"
+                  >
+                    <ArrowRight className="h-3.5 w-3.5 text-primary" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="bg-background">
