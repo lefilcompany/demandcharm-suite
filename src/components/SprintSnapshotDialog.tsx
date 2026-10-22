@@ -85,27 +85,7 @@ export function SprintSnapshotDialog({ boardName, authorName, sprint, columns, d
   const handlePDF = async () => {
     setBusy(true);
     try {
-      const ids = snapshot.rows.map((r) => r.id);
-      const h = await loadHistory(sprint, ids);
-      const devDemands: DevSheetDemand[] = snapshot.rows.map((r) => {
-        const f = h.facts[r.id] ?? {};
-        return {
-          id: r.id, code: r.code, title: r.title, stage: r.stage, isDelivered: r.isDelivered,
-          deliveredAt: f.delivered_at ?? null, dueDate: f.due_date ?? r.dueDate, statusChangedAt: f.status_changed_at ?? null,
-          effort: f.effort_points ?? null, responsible: r.responsible,
-        };
-      });
-      const input: DevSheetInput = { sprint, demands: devDemands, addedAt: h.addedAt, carriedIds: h.carriedIds, dueChanges: h.dueChanges, secondsByDemand: h.secondsByDemand };
-      generateSprintDevSheetPDF({
-        meta: { title: `Ficha da sprint — ${sprint.name}`, subtitle: `${boardName} · ${period}`, generatedAt: new Date(), scopeLabel, authorName: authorName || "—" },
-        sprint: { name: sprint.name, period, status: SPRINT_STATUS_LABEL[sprint.status], goal: sprint.goal },
-        boardName,
-        capabilities: caps ?? [],
-        events: buildDiffEvents(input),
-        metrics: buildDevSheetMetrics(input),
-        demands: devDemands,
-        extra: Object.fromEntries(snapshot.rows.map((r) => [r.id, { service: r.service, priority: r.priority }])),
-      });
+      await buildSprintDevSheet({ boardName, authorName, sprint, snapshot, caps: caps ?? [] });
       toast.success("Ficha da sprint baixada");
       setOpen(false);
     } catch (e) {
@@ -118,17 +98,7 @@ export function SprintSnapshotDialog({ boardName, authorName, sprint, columns, d
 
   const handleXlsx = async () => {
     try {
-      await downloadSnapshotXlsx(snapshot, {
-        title: `Resumo da sprint — ${sprint.name}`,
-        fileName: `${base}-${slugify(boardName) || "quadro"}-${new Date().toISOString().substring(0, 10)}.xlsx`,
-        extraInfo: [
-          ["Sprint", sprint.name],
-          ["Período", period],
-          ["Situação", SPRINT_STATUS_LABEL[sprint.status]],
-          ...(sprint.status !== "completed" ? [["Prazo", formatDaysRemaining(sprint.end_date)] as [string, string]] : []),
-          ...(sprint.goal ? [["Objetivo", sprint.goal] as [string, string]] : []),
-        ],
-      });
+      await buildSprintXlsx({ boardName, sprint, snapshot });
       toast.success("Planilha Excel baixada");
       setOpen(false);
     } catch {
@@ -186,4 +156,69 @@ export function SprintSnapshotDialog({ boardName, authorName, sprint, columns, d
       </DialogContent>
     </Dialog>
   );
+}
+
+type Snapshot = ReturnType<typeof buildKanbanSnapshot>;
+
+export async function buildSprintDevSheet(
+  { boardName, authorName, sprint, snapshot, caps }: { boardName: string; authorName: string; sprint: Props["sprint"]; snapshot: Snapshot; caps: CapabilityGroup[] },
+  asBlob = false,
+): Promise<Blob | void> {
+  const period = `${fmt(sprint.start_date)} – ${fmt(sprint.end_date)}`;
+  const scopeLabel = `Sprint ${sprint.name} · ${period} · ${SPRINT_STATUS_LABEL[sprint.status]}`;
+  const ids = snapshot.rows.map((r) => r.id);
+  const h = await loadHistory(sprint, ids);
+  const devDemands: DevSheetDemand[] = snapshot.rows.map((r) => {
+    const f = h.facts[r.id] ?? {};
+    return {
+      id: r.id, code: r.code, title: r.title, stage: r.stage, isDelivered: r.isDelivered,
+      deliveredAt: f.delivered_at ?? null, dueDate: f.due_date ?? r.dueDate, statusChangedAt: f.status_changed_at ?? null,
+      effort: f.effort_points ?? null, responsible: r.responsible,
+    };
+  });
+  const input: DevSheetInput = { sprint, demands: devDemands, addedAt: h.addedAt, carriedIds: h.carriedIds, dueChanges: h.dueChanges, secondsByDemand: h.secondsByDemand };
+  return generateSprintDevSheetPDF({
+    meta: { title: `Ficha da sprint — ${sprint.name}`, subtitle: `${boardName} · ${period}`, generatedAt: new Date(), scopeLabel, authorName: authorName || "—" },
+    sprint: { name: sprint.name, period, status: SPRINT_STATUS_LABEL[sprint.status], goal: sprint.goal },
+    boardName,
+    capabilities: caps,
+    events: buildDiffEvents(input),
+    metrics: buildDevSheetMetrics(input),
+    demands: devDemands,
+    extra: Object.fromEntries(snapshot.rows.map((r) => [r.id, { service: r.service, priority: r.priority }])),
+  }, { asBlob });
+}
+
+export async function buildSprintXlsx(
+  { boardName, sprint, snapshot }: { boardName: string; sprint: Props["sprint"]; snapshot: Snapshot },
+  asBlob = false,
+): Promise<Blob | void> {
+  const period = `${fmt(sprint.start_date)} – ${fmt(sprint.end_date)}`;
+  return downloadSnapshotXlsx(snapshot, {
+    title: `Resumo da sprint — ${sprint.name}`,
+    fileName: `sprint-${slugify(sprint.name) || "sprint"}-${slugify(boardName) || "quadro"}-${new Date().toISOString().substring(0, 10)}.xlsx`,
+    asBlob,
+    extraInfo: [
+      ["Sprint", sprint.name],
+      ["Período", period],
+      ["Situação", SPRINT_STATUS_LABEL[sprint.status]],
+      ...(sprint.status !== "completed" ? [["Prazo", formatDaysRemaining(sprint.end_date)] as [string, string]] : []),
+      ...(sprint.goal ? [["Objetivo", sprint.goal] as [string, string]] : []),
+    ],
+  });
+}
+
+/** Gera a ficha (PDF) e a lista de demandas (Excel) da sprint como arquivos, para guardar nos artefatos. */
+export async function buildSprintArtifactFiles(p: { boardName: string; authorName: string; sprint: Props["sprint"]; columns: SnapshotColumn[]; demands: SnapshotDemandInput[] }) {
+  const period = `${fmt(p.sprint.start_date)} – ${fmt(p.sprint.end_date)}`;
+  const scopeLabel = `Sprint ${p.sprint.name} · ${period} · ${SPRINT_STATUS_LABEL[p.sprint.status]}`;
+  const snapshot = buildKanbanSnapshot({ boardName: p.boardName || "Quadro", authorName: p.authorName || "—", scopeLabel, columns: p.columns, demands: p.demands });
+  let caps: CapabilityGroup[] = [];
+  try {
+    const { data } = await supabase.functions.invoke("sprint-release-notes", { body: { sprintId: p.sprint.id } });
+    caps = (data as any)?.groups ?? [];
+  } catch { /* ficha sai sem a lista da IA */ }
+  const pdf = (await buildSprintDevSheet({ ...p, snapshot, caps }, true)) as Blob;
+  const xlsx = (await buildSprintXlsx({ boardName: p.boardName, sprint: p.sprint, snapshot }, true)) as Blob;
+  return { pdf, xlsx };
 }
