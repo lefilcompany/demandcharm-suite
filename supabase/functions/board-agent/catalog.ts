@@ -3,7 +3,7 @@ type CatalogQuery = PromiseLike<{ data: unknown[] | null; error: unknown }> & {
   eq(column: string, value: unknown): CatalogQuery;
   order(column: string): CatalogQuery;
 };
-type CatalogClient = { from(table: string): CatalogQuery };
+type CatalogClient = { from(table: string): { select(columns: string): CatalogQuery } };
 
 // Shared live read: a failed query must never be described as an empty catalog.
 export async function readBoardCatalog(sb: CatalogClient, boardId: string) {
