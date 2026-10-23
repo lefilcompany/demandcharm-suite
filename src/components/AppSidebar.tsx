@@ -160,6 +160,7 @@ export function AppSidebar() {
 
 
   const showText = isMobile || !isCollapsed;
+  const menuItems: any[] = showText ? menuItemsRaw : menuItemsRaw.flatMap((i: any) => i.children ? [{ ...i, children: undefined }, ...i.children] : [i]);
 
   return (
     <Sidebar collapsible="icon" data-tour="sidebar">
