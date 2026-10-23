@@ -34,21 +34,18 @@ interface ServiceLookup {
   parent_id: string | null;
 }
 
-const COLORS = ["#F97316", "#8B5CF6", "#EC4899", "#7C3AED", "#06B6D4", "#84CC16", "#EF4444", "#F59E0B"];
+const COLORS = ["hsl(var(--plan-1))", "hsl(var(--plan-2))", "hsl(var(--plan-3))", "hsl(var(--plan-4))", "hsl(var(--plan-5))", "hsl(var(--ops-muted))"];
 const FALLBACK_SERVICE_LABEL = "Sem serviço";
 
 const STATUS_CHART_COLORS: Record<string, string> = {
-  "Solicitadas": "#D1D5DB",
-  "A Iniciar": "#3B82F6",
-  "Em Andamento": "#F59E0B",
-  "Entregue": "#10B981",
+  "Solicitadas": "hsl(var(--ops-muted))",
+  "A Iniciar": "hsl(var(--plan-4))",
+  "Em Andamento": "hsl(var(--plan-2))",
+  "Entregue": "hsl(var(--plan-1))",
 };
 
 // Extended palette for detailed statuses
-const DETAILED_STATUS_COLORS = [
-  "#3B82F6", "#F59E0B", "#8B5CF6", "#06B6D4", "#EC4899",
-  "#10B981", "#EF4444", "#84CC16", "#F97316", "#7C3AED",
-];
+const DETAILED_STATUS_COLORS = ["hsl(var(--plan-1))", "hsl(var(--plan-2))", "hsl(var(--plan-3))", "hsl(var(--plan-4))", "hsl(var(--plan-5))", "hsl(var(--ops-muted))"];
 
 const CustomPieTooltip = ({ active, payload, total }: any) => {
   if (active && payload?.length) {

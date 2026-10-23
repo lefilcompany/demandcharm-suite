@@ -13,7 +13,7 @@ import {
   TrialTimeline,
   type Arrival,
   type CommandMetric,
-} from "@/components/admin/dashboard/OpsParts";
+} from "@/components/ops/OpsParts";
 
 const subStatus: Record<string, string> = { active: "Ativo", trialing: "Trial", canceled: "Cancelado", past_due: "Vencido" };
 

@@ -55,7 +55,7 @@ export function DashboardCustomizer({ widgets, onChange, isSaving }: DashboardCu
   return (
     <Sheet open={open} onOpenChange={handleOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="ghost" size="sm" className="gap-2 h-7 text-ops-ink-foreground/80 hover:text-ops-ink-foreground hover:bg-ops-ink-foreground/10">
           {isSaving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (

@@ -62,13 +62,13 @@ function InsightCard({ insight, isExpanded, onToggle }: { insight: AIInsight; is
   }, [checkTruncation]);
 
   return (
-    <Card className={`p-3 md:p-4 border ${config.border} ${config.bg} transition-all duration-300 hover:shadow-md`}>
+    <Card className="p-3 md:p-4 border bg-card shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start gap-2.5">
-        <div className="p-1.5 rounded-lg bg-background/60 shrink-0">
+        <div className="pt-0.5 shrink-0">
           <Icon className={`h-4 w-4 ${config.iconColor}`} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className={`text-sm font-semibold leading-tight ${config.titleColor}`}>
+          <p className="text-sm font-semibold leading-tight text-foreground">
             {insight.title}
           </p>
           <p
@@ -172,6 +172,7 @@ export function DashboardAIInsights({ boardId }: DashboardAIInsightsProps) {
 
   return (
     <div className="space-y-2">
+      <span className="font-ops-label text-[10px] uppercase tracking-[0.18em] text-ops-muted">Leitura da IA</span>
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
         {insights.map((insight, i) => (
           <InsightCard
