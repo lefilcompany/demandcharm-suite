@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { DashboardBanner } from "@/components/DashboardBanner";
+import { BoardCommandStrip } from "@/components/dashboard/BoardCommandStrip";
+import { useAuth } from "@/lib/auth";
+import { useBoards } from "@/hooks/useBoards";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +60,9 @@ const Index = () => {
   } = useCanCreateDemandOnBoard(selectedBoardId, selectedTeamId);
   const { data: demandData, isLoading: demandsLoading } = useDemandsByPeriod(period);
   const { widgets, setWidgets, isSaving } = useDashboardWidgets();
+  const { user } = useAuth();
+  const { data: boardsList } = useBoards(selectedTeamId);
+  const boardName = (boardsList as any[] | undefined)?.find((b) => b.id === selectedBoardId)?.name;
 
   const isRequester = role === "requester" || (!role && teamMembershipRole === "requester");
 
@@ -135,14 +140,17 @@ const Index = () => {
   // Requester (Client) Dashboard View
   if (isRequester) {
     return (
-      <div className="space-y-4 md:space-y-6 animate-fade-in">
+      <div className="space-y-4 animate-fade-in">
         <SEOHead title="Dashboard" path="/app" />
         <h1 className="sr-only">Gestão de Demandas - Dashboard</h1>
         {/* Banner with filters inside */}
-        <DashboardBanner 
-          actions={
-            <DashboardCustomizer widgets={widgets} onChange={setWidgets} isSaving={isSaving} />
-          }
+        <BoardCommandStrip
+          boardName={boardName}
+          demands={demands as any}
+          userId={user?.id}
+          isRequester
+          scope={hasBoardLimit ? { used: monthlyCount, limit } : null}
+          actions={<DashboardCustomizer widgets={widgets} onChange={setWidgets} isSaving={isSaving} />}
         />
 
         {/* AI Insights */}
@@ -200,14 +208,15 @@ const Index = () => {
 
   // Default Dashboard View (Admin, Moderator, Executor)
   return (
-    <div className="space-y-4 md:space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       <SEOHead title="Dashboard" path="/app" />
         <h1 className="sr-only">Gestão de Demandas - Dashboard</h1>
       {/* Banner with customizer inside */}
-      <DashboardBanner 
-        actions={
-          <DashboardCustomizer widgets={widgets} onChange={setWidgets} isSaving={isSaving} />
-        }
+      <BoardCommandStrip
+        boardName={boardName}
+        demands={demands as any}
+        userId={user?.id}
+        actions={<DashboardCustomizer widgets={widgets} onChange={setWidgets} isSaving={isSaving} />}
       />
 
       {/* AI Insights */}

@@ -47,12 +47,12 @@ export interface CommandMetric {
 function Metric({ m, loading }: { m: CommandMetric; loading: boolean }) {
   const v = useCountUp(m.value, !loading);
   return (
-    <div className="flex flex-col gap-2 px-4 py-4 sm:px-6 sm:py-5 border-ops-ink-foreground/10 [&:not(:first-child)]:md:border-l odd:border-r md:odd:border-r-0 [&:nth-child(-n+2)]:border-b md:[&:nth-child(-n+2)]:border-b-0">
+    <div className="flex flex-col gap-1.5 px-4 py-3 sm:px-6 sm:py-3.5 border-ops-ink-foreground/10 [&:not(:first-child)]:md:border-l odd:border-r md:odd:border-r-0 [&:nth-child(-n+2)]:border-b md:[&:nth-child(-n+2)]:border-b-0">
       <OpsLabel>{m.label}</OpsLabel>
       {loading ? (
         <Skeleton className="h-10 w-20 bg-ops-ink-foreground/10" />
       ) : (
-        <span className="font-ops-display text-4xl sm:text-5xl font-semibold leading-none tabular-nums text-ops-ink-foreground">
+        <span className="font-ops-display text-3xl sm:text-4xl font-semibold leading-none tabular-nums text-ops-ink-foreground">
           {v.toLocaleString("pt-BR")}
         </span>
       )}
@@ -67,15 +67,33 @@ function Metric({ m, loading }: { m: CommandMetric; loading: boolean }) {
   );
 }
 
-export function CommandStrip({ metrics, loading, updatedAt }: { metrics: CommandMetric[]; loading: boolean; updatedAt: Date }) {
+export function CommandStrip({
+  metrics,
+  loading,
+  updatedAt,
+  title = "SoMA+ · operação",
+  subtitle,
+  actions,
+}: {
+  metrics: CommandMetric[];
+  loading: boolean;
+  updatedAt?: Date;
+  title?: string;
+  subtitle?: string;
+  actions?: ReactNode;
+}) {
   return (
-    <section aria-label="Números da plataforma" className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 sm:px-6 pt-4">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />
-          <OpsLabel className="text-ops-ink-foreground/80">SoMA+ · operação</OpsLabel>
+    <section aria-label="Números principais" className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl overflow-hidden">
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 pt-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="h-2 w-2 rounded-full bg-primary shrink-0" aria-hidden />
+          <OpsLabel className="text-ops-ink-foreground/80 truncate">{title}</OpsLabel>
+          {subtitle && <OpsLabel className="hidden sm:inline">· {subtitle}</OpsLabel>}
         </div>
-        <OpsLabel>Leitura {format(updatedAt, "dd/MM · HH:mm")}</OpsLabel>
+        <div className="flex items-center gap-2 shrink-0">
+          {updatedAt && <OpsLabel>Leitura {format(updatedAt, "dd/MM · HH:mm")}</OpsLabel>}
+          {actions}
+        </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4">
         {metrics.map((m) => (
