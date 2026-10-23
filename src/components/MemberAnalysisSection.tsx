@@ -154,7 +154,7 @@ export function MemberAnalysisSection({ demands }: MemberAnalysisSectionProps) {
       </CardHeader>
       <CardContent className="flex-1 p-4 md:p-5 pt-0 md:pt-0 space-y-3">
         {chartData.length > 0 ? (
-          <div className="flex flex-col 2xl:flex-row gap-4">
+          <div className="flex flex-col 2xl:flex-row gap-3">
             {/* Left side - Chart & summary */}
             <div className="2xl:flex-[3] min-w-0 space-y-4">
               {/* Summary */}
@@ -174,27 +174,11 @@ export function MemberAnalysisSection({ demands }: MemberAnalysisSectionProps) {
                 ))}
               </dl>
 
-              {/* Bar chart */}
-              <div className="w-full overflow-x-auto -mx-1 px-1">
-                <div className={isMobile ? "min-w-[260px]" : "min-w-[300px]"}>
-                  <ResponsiveContainer width="100%" height={chartData.length * rowHeight + 10}>
-                    <BarChart
-                      layout="vertical"
-                      data={chartData}
-                      margin={{ top: 0, right: isMobile ? 5 : 15, left: 0, bottom: 0 }}
-                      barSize={barSize}
-                    >
-                      <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
-                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={CustomYTick as any} width={isMobile ? 95 : 145} />
-                      <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.3)" }} />
-                      <Bar dataKey="toStart" stackId="a" fill={STATUS_COLORS.toStart} name="A Iniciar" radius={[4, 0, 0, 4]} />
-                      <Bar dataKey="inProgress" stackId="a" fill={STATUS_COLORS.inProgress} name="Em Andamento" />
-                      <Bar dataKey="delivered" stackId="a" fill={STATUS_COLORS.delivered} name="Entregue" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+              <div className="flex items-center gap-4 font-ops-label text-[10px] uppercase tracking-[0.14em] text-ops-muted">
+                {[["A iniciar", STATUS_COLORS.toStart], ["Em andamento", STATUS_COLORS.inProgress], ["Entregue", STATUS_COLORS.delivered]].map(([l, c]) => (
+                  <span key={l} className="flex items-center gap-1.5"><span className="h-1.5 w-3 rounded-full" style={{ backgroundColor: c }} />{l}</span>
+                ))}
               </div>
-
             </div>
 
             {/* Right side - Member list (3 visible + peek of 4th) */}
