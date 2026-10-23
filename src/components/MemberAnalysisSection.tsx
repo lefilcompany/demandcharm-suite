@@ -145,97 +145,67 @@ export function MemberAnalysisSection({ demands }: MemberAnalysisSectionProps) {
 
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 p-4 md:p-6 md:pb-2 space-y-2">
-        <CardTitle className="text-sm md:text-base font-bold tracking-wider uppercase text-foreground text-center flex items-center justify-center gap-2">
-          <Users className="h-4 w-4 md:h-5 md:w-5 text-foreground" />
-          Análise por Membro
+      <CardHeader className="p-4 md:p-5 pb-3 md:pb-3 flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
+        <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <Users className="h-4 w-4 text-ops-muted" />
+          Análise por membro
         </CardTitle>
-        <ChartPeriodSelector value={period} onChange={setPeriod} className="justify-center" />
+        <ChartPeriodSelector value={period} onChange={setPeriod} />
       </CardHeader>
-      <CardContent className="flex-1 p-2 md:p-4 pt-1 space-y-2">
+      <CardContent className="flex-1 p-4 md:p-5 pt-0 md:pt-0 space-y-3">
         {chartData.length > 0 ? (
-          <div className="flex flex-col 2xl:flex-row gap-4">
+          <div className="flex flex-col 2xl:flex-row gap-3">
             {/* Left side - Chart & summary */}
-            <div className="2xl:flex-[3] min-w-0 space-y-3">
+            <div className="2xl:flex-[3] min-w-0 space-y-4">
               {/* Summary */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-muted/60 border rounded-lg p-2 text-center">
-                  <Target className="h-3.5 w-3.5 text-ops-muted mx-auto mb-0.5" />
-                  <p className="text-base md:text-lg font-bold text-foreground">{totalAssigned}</p>
-                  <p className="text-[8px] md:text-[10px] text-muted-foreground">Atribuídas</p>
-                </div>
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 text-center">
-                  <TrendingUp className="h-3.5 w-3.5 text-amber-500 mx-auto mb-0.5" />
-                  <p className="text-base md:text-lg font-bold text-amber-600 dark:text-amber-400">{members.reduce((a, m) => a + m.inProgress, 0)}</p>
-                  <p className="text-[8px] md:text-[10px] text-muted-foreground">Andamento</p>
-                </div>
-                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 text-center">
-                  <Activity className="h-3.5 w-3.5 text-emerald-500 mx-auto mb-0.5" />
-                  <p className="text-base md:text-lg font-bold text-emerald-600 dark:text-emerald-400">{avgDeliveryRate}%</p>
-                  <p className="text-[8px] md:text-[10px] text-muted-foreground">Entrega</p>
-                </div>
-              </div>
+              <dl className="grid grid-cols-3 divide-x border-y py-3">
+                {[
+                  { label: "Atribuídas", value: totalAssigned, color: STATUS_COLORS.toStart },
+                  { label: "Em andamento", value: members.reduce((a, m) => a + m.inProgress, 0), color: STATUS_COLORS.inProgress },
+                  { label: "Taxa de entrega", value: `${avgDeliveryRate}%`, color: STATUS_COLORS.delivered },
+                ].map((k) => (
+                  <div key={k.label} className="px-3 first:pl-0 flex flex-col gap-1">
+                    <dt className="flex items-center gap-1.5 font-ops-label text-[10px] uppercase tracking-[0.14em] text-ops-muted">
+                      <span className="h-1.5 w-1.5 rounded-sm" style={{ backgroundColor: k.color }} />
+                      {k.label}
+                    </dt>
+                    <dd className="font-ops-display text-3xl font-semibold leading-none tabular-nums text-foreground">{k.value}</dd>
+                  </div>
+                ))}
+              </dl>
 
-              {/* Bar chart */}
-              <div className="w-full overflow-x-auto -mx-1 px-1">
-                <div className={isMobile ? "min-w-[260px]" : "min-w-[300px]"}>
-                  <ResponsiveContainer width="100%" height={chartData.length * rowHeight + 10}>
-                    <BarChart
-                      layout="vertical"
-                      data={chartData}
-                      margin={{ top: 0, right: isMobile ? 5 : 15, left: 0, bottom: 0 }}
-                      barSize={barSize}
-                    >
-                      <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
-                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={CustomYTick as any} width={isMobile ? 95 : 145} />
-                      <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.3)" }} />
-                      <Bar dataKey="toStart" stackId="a" fill={STATUS_COLORS.toStart} name="A Iniciar" radius={[4, 0, 0, 4]} />
-                      <Bar dataKey="inProgress" stackId="a" fill={STATUS_COLORS.inProgress} name="Em Andamento" />
-                      <Bar dataKey="delivered" stackId="a" fill={STATUS_COLORS.delivered} name="Entregue" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+              <div className="flex items-center gap-4 font-ops-label text-[10px] uppercase tracking-[0.14em] text-ops-muted">
+                {[["A iniciar", STATUS_COLORS.toStart], ["Em andamento", STATUS_COLORS.inProgress], ["Entregue", STATUS_COLORS.delivered]].map(([l, c]) => (
+                  <span key={l} className="flex items-center gap-1.5"><span className="h-1.5 w-3 rounded-full" style={{ backgroundColor: c }} />{l}</span>
+                ))}
               </div>
-
             </div>
 
             {/* Right side - Member list (3 visible + peek of 4th) */}
-             <div className="2xl:flex-[2] shrink-0 relative">
-               <div className="2xl:max-h-[260px] max-h-[200px] overflow-y-auto space-y-2 pr-1 pb-6 scrollbar-thin">
+            <div className="2xl:flex-[2] shrink-0 relative">
+              <ul className="2xl:max-h-[260px] max-h-[220px] overflow-y-auto divide-y pr-1 pb-6 scrollbar-thin">
                 {members.map(m => {
                   const initials = m.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+                  const total = Math.max(1, m.toStart + m.inProgress + m.delivered);
                   return (
-                    <div key={m.id} className="flex items-center justify-between p-2.5 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/50 transition-colors gap-2">
-                      <div className="flex flex-col gap-1 min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6 shrink-0">
-                            <AvatarImage src={m.avatar || undefined} />
-                            <AvatarFallback className="text-[8px] bg-primary/10 text-primary">{initials}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs font-semibold truncate">{m.name}</span>
-                        </div>
-                        <div className="flex items-center gap-3 pl-8 text-[10px] text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: STATUS_COLORS.toStart }} />
-                            Ini: <strong className="text-foreground">{m.toStart}</strong>
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: STATUS_COLORS.inProgress }} />
-                            And: <strong className="text-foreground">{m.inProgress}</strong>
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: STATUS_COLORS.delivered }} />
-                            Ent: <strong className="text-foreground">{m.delivered}</strong>
-                          </span>
-                        </div>
+                    <li key={m.id} className="py-2.5 first:pt-0 grid grid-cols-[24px_1fr_auto] items-center gap-x-2.5 gap-y-1.5">
+                      <Avatar className="h-6 w-6 row-span-2">
+                        <AvatarImage src={m.avatar || undefined} />
+                        <AvatarFallback className="text-[9px] bg-muted text-foreground">{initials}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs font-medium truncate">{m.name}</span>
+                      <span className="font-ops-display text-lg font-semibold leading-none tabular-nums row-span-2 self-center">
+                        {m.deliveryRate}<span className="text-xs text-ops-muted">%</span>
+                      </span>
+                      <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-muted gap-px" title={`A iniciar ${m.toStart} · Em andamento ${m.inProgress} · Entregues ${m.delivered}`}>
+                        <span style={{ width: `${(m.toStart / total) * 100}%`, backgroundColor: STATUS_COLORS.toStart }} />
+                        <span style={{ width: `${(m.inProgress / total) * 100}%`, backgroundColor: STATUS_COLORS.inProgress }} />
+                        <span style={{ width: `${(m.delivered / total) * 100}%`, backgroundColor: STATUS_COLORS.delivered }} />
                       </div>
-                      <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-semibold">
-                        {m.deliveryRate}%
-                      </Badge>
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
               {/* Fade gradient to hint more content */}
               {members.length > 3 && (
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-card to-transparent rounded-b-lg" />

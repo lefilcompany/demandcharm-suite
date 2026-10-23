@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ChartPeriodType = "month" | "3months" | "6months" | "year" | "all";
@@ -21,25 +20,27 @@ const PERIOD_OPTIONS: { value: ChartPeriodType; label: string; shortLabel: strin
 
 export function ChartPeriodSelector({ value, onChange, className, compact }: ChartPeriodSelectorProps) {
   return (
-    <div className={cn("flex items-center gap-0.5 flex-nowrap", className)}>
-      <Calendar className="h-3 w-3 text-muted-foreground mr-0.5 shrink-0 hidden sm:block" />
+    <div className={cn("flex items-center flex-nowrap", className)}>
+      <div role="group" aria-label="Período" className="inline-flex items-center rounded-md bg-muted p-0.5">
       {PERIOD_OPTIONS.map((option) => (
         <Button
           key={option.value}
-          variant={value === option.value ? "secondary" : "ghost"}
+          variant="ghost"
+          aria-pressed={value === option.value}
           size="sm"
           className={cn(
-            "font-medium shrink-0",
+            "font-medium shrink-0 rounded-[5px] text-muted-foreground hover:bg-transparent hover:text-foreground",
             compact
               ? "h-5 px-1.5 text-[9px] md:h-6 md:px-2 md:text-[10px]"
               : "h-6 px-2 text-[10px]",
-            value === option.value && "bg-primary/10 text-primary hover:bg-primary/20"
+            value === option.value && "bg-card text-foreground shadow-sm hover:bg-card"
           )}
           onClick={() => onChange(option.value)}
         >
           {compact ? option.shortLabel : option.label}
         </Button>
       ))}
+      </div>
     </div>
   );
 }
