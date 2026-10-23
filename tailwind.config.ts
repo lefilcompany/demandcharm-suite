@@ -28,8 +28,11 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         'space-grotesk': ['"Space Grotesk"', 'sans-serif'],
         poppins: ['Poppins', 'sans-serif'],
+        'ops-display': ['"Barlow Condensed"', 'sans-serif'],
+        'ops-label': ['"JetBrains Mono"', 'monospace'],
       },
       colors: {
+        ops: { ink: "hsl(var(--ops-ink))", "ink-foreground": "hsl(var(--ops-ink-foreground))", muted: "hsl(var(--ops-muted))", alert: "hsl(var(--ops-alert))" },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

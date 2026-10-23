@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=JetBrains+Mono:wght@500&display=swap');
 
 /* Tipografia exclusiva da landing page (não afeta o sistema) */
 .lp-root {
@@ -111,6 +112,15 @@ All colors MUST be HSL.
     /* Primary brand color - Orange #F28705 */
     --primary: 33 95% 49%;
     --primary-foreground: 0 0% 100%;
+    --ops-ink: 0 0% 11%;
+    --ops-ink-foreground: 0 0% 98%;
+    --ops-muted: 34 6% 51%;
+    --ops-alert: 26 90% 37%;
+    --plan-1: 33 95% 49%;
+    --plan-2: 28 80% 40%;
+    --plan-3: 25 45% 30%;
+    --plan-4: 20 15% 22%;
+    --plan-5: 0 0% 11%;
 
     /* Secondary colors - Support Orange #D95204 */
     --secondary: 24 96% 43%;
@@ -183,6 +193,11 @@ All colors MUST be HSL.
     /* Primary - Orange */
     --primary: 33 95% 49%;
     --primary-foreground: 0 0% 100%;
+    --ops-ink: 0 0% 7%;
+    --ops-ink-foreground: 0 0% 98%;
+    --ops-muted: 34 6% 60%;
+    --ops-alert: 32 90% 55%;
+    --plan-5: 0 0% 70%;
 
     /* Secondary - Deep Orange */
     --secondary: 24 96% 43%;
