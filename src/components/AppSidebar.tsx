@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 const logoSoma = "/logo-soma-sidebar.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, useSidebar } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePendingRequestsCount as usePendingDemandRequestsCount, useReturnedRequestsCount } from "@/hooks/useDemandRequests";
@@ -143,9 +143,9 @@ export function AppSidebar() {
   // Soma Notes - temporarily hidden (keep code for future re-activation)
   const notesMenuItems: typeof baseMenuItems = [];
 
-  const boardMenuItems = [...baseMenuItems.map(i => i.url === "/app/demands" && adminMenuItems.length ? { ...i, children: adminMenuItems } : i), ...requesterMenuItems, ...aiMenuItems, ...notesMenuItems];
+  const boardMenuItems = [...baseMenuItems, ...adminMenuItems, ...requesterMenuItems, ...aiMenuItems, ...notesMenuItems];
 
-  const menuItemsRaw = isTeamView ? teamViewMenuItems : boardMenuItems;
+  const menuItems = isTeamView ? teamViewMenuItems : boardMenuItems;
 
   // Keep team section expanded if on team/board routes
   const isOnTeamRoute = location.pathname.startsWith("/app/boards") || location.pathname.startsWith("/app/team-config") || location.pathname.includes("/services") || location.pathname.includes("/requests") || location.pathname === "/app/team-demands" || location.pathname === "/app/my-demands";
@@ -160,7 +160,6 @@ export function AppSidebar() {
 
 
   const showText = isMobile || !isCollapsed;
-  const menuItems: any[] = showText ? menuItemsRaw : menuItemsRaw.flatMap((i: any) => i.children ? [{ ...i, children: undefined }, ...i.children] : [i]);
 
   return (
     <Sidebar collapsible="icon" data-tour="sidebar">
@@ -272,25 +271,6 @@ export function AppSidebar() {
                       <Badge variant="outline" className="absolute -top-1 -right-1 h-4 min-w-4 flex items-center justify-center text-[10px] p-0 px-1 border-amber-500 text-amber-500 bg-amber-500/10">
                         {returnedRequestsCount}
                       </Badge>
-                    )}
-                    {(item as any).children && (
-                      <SidebarMenuSub className="mr-0 pr-0">
-                        {(item as any).children.map((sub: any) => (
-                          <SidebarMenuSubItem key={sub.title} className="relative">
-                            <SidebarMenuSubButton asChild>
-                              <NavLink to={sub.url} end onClick={closeMobileSidebar} className="flex w-full min-w-0 hover:bg-sidebar-accent transition-colors" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                                <sub.icon className="h-3.5 w-3.5 shrink-0" />
-                                <span className={`text-[13px] truncate ${sub.showDemandRequestBadge ? 'pr-6' : ''}`}>{sub.title === "Solicitações de Demanda" ? "Solicitações" : sub.title === "Gerenciamento de Tempo" ? "Tempo" : sub.title}</span>
-                              </NavLink>
-                            </SidebarMenuSubButton>
-                            {sub.showDemandRequestBadge && typeof pendingDemandRequests === "number" && pendingDemandRequests > 0 && (
-                              <Badge className="absolute right-1 top-1/2 -translate-y-1/2 h-4 min-w-4 flex items-center justify-center text-[10px] p-0 px-1 rounded-full bg-primary text-primary-foreground border-0 pointer-events-none">
-                                {pendingDemandRequests}
-                              </Badge>
-                            )}
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
                     )}
                   </SidebarMenuItem>
                 );
