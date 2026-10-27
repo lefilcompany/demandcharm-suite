@@ -45,10 +45,12 @@ const hint = (t: string) => (
 const hrs = (h: number) => `${h.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`;
 const monthLabel = (iso: string) => new Date(`${iso.substring(0, 10)}T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
 
-export default function Finance() {
-  const { selectedTeamId, currentTeam } = useSelectedTeam();
+export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: string | null; teamName?: string } = {}) {
+  const ctx = useSelectedTeam();
+  const selectedTeamId = forcedTeamId !== undefined ? forcedTeamId : ctx.selectedTeamId;
+  const currentTeam = forcedTeamId !== undefined ? { name: teamName } : ctx.currentTeam;
   const fin = useFinanceAccess(selectedTeamId);
-  const { data: boards = [] } = useBoards(selectedTeamId);
+  const { data: memberBoards = [] } = useBoards(forcedTeamId !== undefined ? null : selectedTeamId);
   const { data: members = [] } = useTeamMembers(selectedTeamId);
   const now = new Date();
   const defFrom = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString().substring(0, 7);
@@ -62,6 +64,12 @@ export default function Finance() {
   const lastDay = new Date(Number(to.substring(0, 4)), Number(to.substring(5, 7)), 0).getDate();
   const ov = useFinanceOverview(selectedTeamId, `${from}-01`, `${to}-${String(lastDay).padStart(2, "0")}`, canView && from <= to);
 
+  const boards = useMemo(() => {
+    if (forcedTeamId === undefined) return memberBoards as { id: string; name: string }[];
+    const m = new Map<string, string>();
+    (ov.data ?? []).forEach((r) => m.set(r.board_id, r.board_name));
+    return [...m.entries()].map(([id, name]) => ({ id, name }));
+  }, [forcedTeamId, memberBoards, ov.data]);
   const rows = useMemo(() => (ov.data ?? []).filter((r) => boardFilter === "all" || r.board_id === boardFilter), [ov.data, boardFilter]);
   const perBoard = useMemo(() => {
     const m = new Map<string, OverviewRow[]>();
