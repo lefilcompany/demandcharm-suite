@@ -41,6 +41,7 @@ export function AppSidebar() {
     currentTeam
   } = useSelectedTeam();
   const { selectedBoardId } = useSelectedBoardSafe();
+  const financeAccess = useFinanceAccess(selectedTeamId);
   const {
     data: role
   } = useTeamRole(selectedTeamId);

@@ -48,3 +48,8 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 
 - Assistant mutations use AI SDK manual approval with a server-signed input bound to user/board, then `execute_board_agent_action` (SECURITY INVOKER) validates live role/scope and commits changes plus per-user tool-call receipts atomically; replay returns the same result instead of duplicate demands/comments, while diagnostics keep canonical board metrics and explicitly flag incomplete history/sample limits.
 - Chat document attachments reuse the document-import extraction and review dialog pinned to the current board, with extracted text supplied as untrusted chat context; original files are not persisted, and demand creation still requires selecting valid reviewed rows and explicitly submitting them.
+
+## Financial intelligence
+
+- In the finance module each board is a project; access is a separate capability layer (`finance_permissions`, checked by `has_finance_permission`) that no team or board role grants automatically, grants/revokes go only through RPCs that forbid self-grants and log to `finance_audit_log`, and requesters are always excluded — so operational roles never leak salaries or margins.
+- Finance screens read aggregates only from RPC `get_finance_overview` (authorized boards only, team cost never per person) and compute results with the pure `src/lib/finance/engine.ts`, so formulas stay identical everywhere and confidential rows never reach unauthorized clients.
