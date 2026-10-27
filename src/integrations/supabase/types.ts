@@ -2164,6 +2164,190 @@ export type Database = {
           },
         ]
       }
+      finance_period_adjustments: {
+        Row: {
+          amount: number
+          board_id: string
+          created_at: string
+          created_by: string
+          id: string
+          period_id: string
+          reason: string
+          target: string
+          team_id: string
+        }
+        Insert: {
+          amount: number
+          board_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          period_id: string
+          reason: string
+          target: string
+          team_id: string
+        }
+        Update: {
+          amount?: number
+          board_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          period_id?: string
+          reason?: string
+          target?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_period_adjustments_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_period_adjustments_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "finance_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_period_adjustments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_period_snapshots: {
+        Row: {
+          allocated_expenses: number
+          allocations: Json
+          board_id: string
+          board_name: string
+          competence: string
+          direct_expenses: number
+          gross: number
+          hours_planned: number
+          hours_realized: number
+          hours_without_cost: number
+          id: string
+          margin_target: number
+          period_id: string
+          tax: number
+          team_cost: number
+          team_id: string
+        }
+        Insert: {
+          allocated_expenses?: number
+          allocations?: Json
+          board_id: string
+          board_name: string
+          competence: string
+          direct_expenses?: number
+          gross?: number
+          hours_planned?: number
+          hours_realized?: number
+          hours_without_cost?: number
+          id?: string
+          margin_target?: number
+          period_id: string
+          tax?: number
+          team_cost?: number
+          team_id: string
+        }
+        Update: {
+          allocated_expenses?: number
+          allocations?: Json
+          board_id?: string
+          board_name?: string
+          competence?: string
+          direct_expenses?: number
+          gross?: number
+          hours_planned?: number
+          hours_realized?: number
+          hours_without_cost?: number
+          id?: string
+          margin_target?: number
+          period_id?: string
+          tax?: number
+          team_cost?: number
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_period_snapshots_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_period_snapshots_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "finance_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_period_snapshots_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_periods: {
+        Row: {
+          checklist: Json
+          closed_at: string
+          closed_by: string
+          competence: string
+          id: string
+          rules_version: number
+          settings: Json
+          status: string
+          team_id: string
+          totals: Json
+        }
+        Insert: {
+          checklist?: Json
+          closed_at?: string
+          closed_by: string
+          competence: string
+          id?: string
+          rules_version?: number
+          settings?: Json
+          status?: string
+          team_id: string
+          totals?: Json
+        }
+        Update: {
+          checklist?: Json
+          closed_at?: string
+          closed_by?: string
+          competence?: string
+          id?: string
+          rules_version?: number
+          settings?: Json
+          status?: string
+          team_id?: string
+          totals?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_periods_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_permissions: {
         Row: {
           board_id: string | null
@@ -4561,6 +4745,27 @@ export type Database = {
           share: number
         }[]
       }
+      _finance_close_checklist: {
+        Args: { _month: string; _team_id: string }
+        Returns: Json
+      }
+      _finance_overview_all: {
+        Args: { _from: string; _team_id: string; _to: string }
+        Returns: {
+          allocated_expenses: number
+          board_id: string
+          board_name: string
+          competence: string
+          direct_expenses: number
+          gross: number
+          hours_planned: number
+          hours_realized: number
+          hours_without_cost: number
+          margin_target: number
+          tax: number
+          team_cost: number
+        }[]
+      }
       approve_demand_request: {
         Args: {
           p_assignee_ids?: string[]
@@ -4749,6 +4954,24 @@ export type Database = {
       }
       export_finance_scenarios: {
         Args: { _ids: string[]; _team_id: string }
+        Returns: Json
+      }
+      finance_add_adjustment: {
+        Args: {
+          _amount: number
+          _board_id: string
+          _period_id: string
+          _reason: string
+          _target: string
+        }
+        Returns: string
+      }
+      finance_close_period: {
+        Args: { _month: string; _team_id: string }
+        Returns: string
+      }
+      finance_close_preview: {
+        Args: { _month: string; _team_id: string }
         Returns: Json
       }
       get_board_metrics: {

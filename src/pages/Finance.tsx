@@ -9,6 +9,7 @@ import { useFinanceAccess, useFinanceOverview, useFinanceAllocation, useFinanceP
 import { CostsProductivity } from "@/components/finance/CostsProductivity";
 import { ExpensesAllocation } from "@/components/finance/ExpensesAllocation";
 import { PricingSimulator } from "@/components/finance/PricingSimulator";
+import { MonthlyClosing } from "@/components/finance/MonthlyClosing";
 import { computeFinance, FinanceResult, formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { MarginRuler, DeviationTag } from "@/components/finance/MarginRuler";
@@ -160,13 +161,14 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
         </div>
       </header>
 
-      <Tabs defaultValue={canView ? "overview" : "manage"}>
+      <Tabs defaultValue={canView ? "overview" : fin.can("finance.close_period") ? "closing" : "manage"}>
         <TabsList className="max-w-full justify-start overflow-x-auto">
           {canView && <TabsTrigger value="overview">Visão Geral</TabsTrigger>}
           {canView && <TabsTrigger value="projects">Rentabilidade por Projeto</TabsTrigger>}
           {canView && <TabsTrigger value="people">Custos e Produtividade</TabsTrigger>}
           {canView && <TabsTrigger value="allocation">Despesas e Rateios</TabsTrigger>}
           {canView && <TabsTrigger value="simulator">Simulador de Precificação</TabsTrigger>}
+          {(canView || fin.can("finance.close_period")) && <TabsTrigger value="closing">Fechamento</TabsTrigger>}
           {canManage && <TabsTrigger value="manage">Lançamentos e acesso</TabsTrigger>}
         </TabsList>
 
@@ -318,6 +320,12 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
           <TabsContent value="simulator">
             {ov.isError ? <p className="py-6 text-sm text-muted-foreground">Os quadros autorizados não puderam ser carregados. Tente novamente acima.</p> :
               <PricingSimulator key={selectedTeamId} teamId={selectedTeamId} boards={authorizedBoards} can={fin.can} isLoading={ov.isLoading} />}
+          </TabsContent>
+        )}
+
+        {(canView || fin.can("finance.close_period")) && selectedTeamId && (
+          <TabsContent value="closing">
+            <MonthlyClosing teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} />
           </TabsContent>
         )}
 
