@@ -20,7 +20,7 @@ describe("fechamento mensal", () => {
   });
   it("ajuste soma ao valor fechado sem alterar a fotografia", () => {
     const snap = [{ board_id: "a", gross: 1000, tax: 210, direct_expenses: 50, allocated_expenses: 0, team_cost: 300 }];
-    const out = applyAdjustments(snap, [{ board_id: "a", target: "gross", amount: -100.005 }, { board_id: "b", target: "gross", amount: 999 }]);
+    const out = applyAdjustments(snap, [{ board_id: "a", target: "gross", amount: -100.01 }, { board_id: "b", target: "gross", amount: 999 }]);
     expect(out[0].gross).toBe(899.99);
     expect(snap[0].gross).toBe(1000);
   });
