@@ -314,7 +314,7 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
 
         {canManage && selectedTeamId && (
           <TabsContent value="manage">
-            <FinanceManage teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} canAny={fin.canAny} isOwnerOrAdmin={isOwnerOrAdmin} />
+            <FinanceManage teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} canAny={fin.canAny} isOwnerOrAdmin={isOwnerOrAdmin} overview={ov.data ?? []} />
           </TabsContent>
         )}
       </Tabs>
