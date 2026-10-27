@@ -2015,6 +2015,293 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          after_data: Json | null
+          before_data: Json | null
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          team_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          team_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          team_id?: string
+        }
+        Relationships: []
+      }
+      finance_employee_costs: {
+        Row: {
+          competence: string
+          created_at: string
+          created_by: string
+          id: string
+          monthly_cost: number
+          notes: string | null
+          productive_hours: number
+          team_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          competence: string
+          created_at?: string
+          created_by: string
+          id?: string
+          monthly_cost: number
+          notes?: string | null
+          productive_hours?: number
+          team_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          competence?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          monthly_cost?: number
+          notes?: string | null
+          productive_hours?: number
+          team_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_employee_costs_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_expenses: {
+        Row: {
+          amount: number
+          board_id: string
+          category: string
+          competence: string
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          board_id: string
+          category?: string
+          competence: string
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          board_id?: string
+          category?: string
+          competence?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_expenses_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_expenses_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_permissions: {
+        Row: {
+          board_id: string | null
+          granted_at: string
+          granted_by: string
+          id: string
+          permission: string
+          revoked_at: string | null
+          revoked_by: string | null
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          board_id?: string | null
+          granted_at?: string
+          granted_by: string
+          id?: string
+          permission: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          board_id?: string | null
+          granted_at?: string
+          granted_by?: string
+          id?: string
+          permission?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_permissions_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_permissions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_revenues: {
+        Row: {
+          board_id: string
+          competence: string
+          created_at: string
+          created_by: string
+          description: string | null
+          gross_amount: number
+          id: string
+          tax_rate: number | null
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          board_id: string
+          competence: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          gross_amount: number
+          id?: string
+          tax_rate?: number | null
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          board_id?: string
+          competence?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          gross_amount?: number
+          id?: string
+          tax_rate?: number | null
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_revenues_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_revenues_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_settings: {
+        Row: {
+          board_id: string | null
+          id: string
+          margin_target: number
+          tax_rate: number
+          team_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          board_id?: string | null
+          id?: string
+          margin_target?: number
+          tax_rate?: number
+          team_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          board_id?: string | null
+          id?: string
+          margin_target?: number
+          tax_rate?: number
+          team_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_settings_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_settings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       google_calendar_connections: {
         Row: {
           connected_at: string | null
@@ -4260,6 +4547,10 @@ export type Database = {
         Args: { _channel: string; _demand_id: string; _user_id: string }
         Returns: boolean
       }
+      can_view_finance_board: {
+        Args: { _board_id: string; _team_id: string; _user_id: string }
+        Returns: boolean
+      }
       check_access_code_exists: { Args: { code: string }; Returns: boolean }
       check_plan_limit: {
         Args: { _resource: string; _team_id: string }
@@ -4378,6 +4669,22 @@ export type Database = {
         Returns: number
       }
       get_check_deadlines_cron_token: { Args: never; Returns: string }
+      get_finance_overview: {
+        Args: { _from: string; _team_id: string; _to: string }
+        Returns: {
+          board_id: string
+          board_name: string
+          competence: string
+          direct_expenses: number
+          gross: number
+          hours_planned: number
+          hours_realized: number
+          hours_without_cost: number
+          margin_target: number
+          tax: number
+          team_cost: number
+        }[]
+      }
       get_google_calendar_connection_status: {
         Args: never
         Returns: {
@@ -4404,6 +4711,7 @@ export type Database = {
         Args: { _month: number; _team_id: string; _year: number }
         Returns: number
       }
+      get_my_finance_access: { Args: { _team_id: string }; Returns: Json }
       get_recurring_demands_cron_token: { Args: never; Returns: string }
       get_release_detection_cron_token: { Args: never; Returns: string }
       get_request_meeting_readiness: {
@@ -4503,10 +4811,28 @@ export type Database = {
       get_user_board_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_id_by_email: { Args: { _email: string }; Returns: string }
       get_user_team_ids: { Args: { _user_id: string }; Returns: string[] }
+      grant_finance_permission: {
+        Args: {
+          _board_id?: string
+          _permission: string
+          _team_id: string
+          _user_id: string
+        }
+        Returns: string
+      }
       has_board_role: {
         Args: {
           _board_id: string
           _role: Database["public"]["Enums"]["team_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_finance_permission: {
+        Args: {
+          _board_id?: string
+          _permission: string
+          _team_id: string
           _user_id: string
         }
         Returns: boolean
@@ -4665,6 +4991,10 @@ export type Database = {
       resolve_board_demand_status: {
         Args: { _board_id: string; _status_id: string }
         Returns: string
+      }
+      revoke_finance_permission: {
+        Args: { _permission_id: string }
+        Returns: undefined
       }
       search_index_status: {
         Args: { p_board_id: string }

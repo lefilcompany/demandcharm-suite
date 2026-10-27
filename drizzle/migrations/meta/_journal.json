@@ -148,6 +148,13 @@
       "when": 1792676812262,
       "tag": "0020_board_assistant_confirmed_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793106983871,
+      "tag": "0021_finance_phase1",
+      "breakpoints": true
     }
   ]
 }
