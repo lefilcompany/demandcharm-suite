@@ -1,4 +1,5 @@
-import { LayoutDashboard, Users, User, Briefcase, Kanban, ChevronUp, Settings, FileText, Send, LayoutGrid, UserPlus, UsersRound, Clock, Sparkles, ShoppingCart, Layers, StickyNote, LayoutList, CornerUpLeft, MessageSquareText, Rocket, FolderArchive } from "lucide-react";
+import { LayoutDashboard, Users, User, Briefcase, Kanban, ChevronUp, Settings, FileText, Send, LayoutGrid, UserPlus, UsersRound, Clock, Sparkles, ShoppingCart, Layers, StickyNote, LayoutList, CornerUpLeft, MessageSquareText, Rocket, FolderArchive, Landmark } from "lucide-react";
+import { useFinanceAccess } from "@/hooks/useFinance";
 import { useTranslation } from "react-i18next";
 const logoSoma = "/logo-soma-sidebar.png";
 import { NavLink } from "@/components/NavLink";
@@ -40,6 +41,7 @@ export function AppSidebar() {
     currentTeam
   } = useSelectedTeam();
   const { selectedBoardId } = useSelectedBoardSafe();
+  const financeAccess = useFinanceAccess(selectedTeamId);
   const {
     data: role
   } = useTeamRole(selectedTeamId);
@@ -127,6 +129,12 @@ export function AppSidebar() {
   // Loja de Serviços temporarily hidden (keep code for future re-activation)
   const requesterMenuItems: any[] = [];
 
+  const financeMenuItems = financeAccess.hasModule && !isRequester ? [{
+    title: "Inteligência Financeira",
+    url: "/app/finance",
+    icon: Landmark
+  }] : [];
+
   const aiMenuItems = [
     {
       title: "Resumo IA",
@@ -143,7 +151,7 @@ export function AppSidebar() {
   // Soma Notes - temporarily hidden (keep code for future re-activation)
   const notesMenuItems: typeof baseMenuItems = [];
 
-  const boardMenuItems = [...baseMenuItems, ...adminMenuItems, ...requesterMenuItems, ...aiMenuItems, ...notesMenuItems];
+  const boardMenuItems = [...baseMenuItems, ...adminMenuItems, ...requesterMenuItems, ...financeMenuItems, ...aiMenuItems, ...notesMenuItems];
 
   const menuItems = isTeamView ? teamViewMenuItems : boardMenuItems;
 
