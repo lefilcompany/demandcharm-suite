@@ -169,6 +169,13 @@
       "when": 1793109747338,
       "tag": "0023_finance_pricing_scenarios",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793110094928,
+      "tag": "0024_finance_scenario_scope_guard_access",
+      "breakpoints": true
     }
   ]
 }
