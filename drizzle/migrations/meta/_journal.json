@@ -176,6 +176,13 @@
       "when": 1793110094928,
       "tag": "0024_finance_scenario_scope_guard_access",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793111006926,
+      "tag": "0025_finance_monthly_closing",
+      "breakpoints": true
     }
   ]
 }
