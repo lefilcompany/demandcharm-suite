@@ -8,6 +8,7 @@ import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useFinanceAccess, useFinanceOverview, useFinanceAllocation, useFinancePeople, OverviewRow } from "@/hooks/useFinance";
 import { CostsProductivity } from "@/components/finance/CostsProductivity";
 import { ExpensesAllocation } from "@/components/finance/ExpensesAllocation";
+import { PricingSimulator } from "@/components/finance/PricingSimulator";
 import { computeFinance, FinanceResult, formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { MarginRuler, DeviationTag } from "@/components/finance/MarginRuler";
@@ -160,11 +161,12 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
       </header>
 
       <Tabs defaultValue={canView ? "overview" : "manage"}>
-        <TabsList>
+        <TabsList className="max-w-full justify-start overflow-x-auto">
           {canView && <TabsTrigger value="overview">Visão Geral</TabsTrigger>}
           {canView && <TabsTrigger value="projects">Rentabilidade por Projeto</TabsTrigger>}
           {canView && <TabsTrigger value="people">Custos e Produtividade</TabsTrigger>}
           {canView && <TabsTrigger value="allocation">Despesas e Rateios</TabsTrigger>}
+          {canView && <TabsTrigger value="simulator">Simulador de Precificação</TabsTrigger>}
           {canManage && <TabsTrigger value="manage">Lançamentos e acesso</TabsTrigger>}
         </TabsList>
 
@@ -309,6 +311,13 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
         {canView && (
           <TabsContent value="allocation">
             <ExpensesAllocation rows={(alloc.data ?? []).filter((r) => boardFilter === "all" || !r.board_id || r.board_id === boardFilter)} isLoading={alloc.isLoading} isError={alloc.isError} onRetry={() => alloc.refetch()} boardOrder={boardOrder} />
+          </TabsContent>
+        )}
+
+        {canView && selectedTeamId && (
+          <TabsContent value="simulator">
+            {ov.isError ? <p className="py-6 text-sm text-muted-foreground">Os quadros autorizados não puderam ser carregados. Tente novamente acima.</p> :
+              <PricingSimulator key={selectedTeamId} teamId={selectedTeamId} boards={authorizedBoards} can={fin.can} isLoading={ov.isLoading} />}
           </TabsContent>
         )}
 

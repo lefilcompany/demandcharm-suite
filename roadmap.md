@@ -1,9 +1,9 @@
 # Roadmap
 
 ## Inteligência Financeira — Fase 3
-- [ ] Definir a próxima fase a partir do escopo original e apresentar o plano.
-- [ ] Implementar o escopo aprovado, mantendo permissões e cálculos centralizados.
-- [ ] Verificar cálculos, acesso e o fluxo de uso completo.
+- [x] Definir a próxima fase a partir do escopo original e apresentar o plano.
+- [x] Implementar o escopo aprovado, mantendo permissões e cálculos centralizados.
+- [x] Verificar cálculos (24 testes), fluxo autenticado de salvar/reabrir/renomear/comparar/exportar/excluir e auditoria; bloqueados usuário sem concessão e exportação de referência não autorizada. Matriz completa com outras contas não verificada.
 
 ## Serviços no assistente
 - [x] Catálogo verificado em cada mensagem; respostas antigas não prevalecem e falhas não viram catálogo vazio. Confirmados 84 serviços ativos no Testes.

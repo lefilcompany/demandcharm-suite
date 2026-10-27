@@ -2269,6 +2269,81 @@ export type Database = {
           },
         ]
       }
+      finance_scenarios: {
+        Row: {
+          board_id: string
+          client_label: string
+          competence: string
+          created_at: string
+          created_by: string
+          direct_expenses: number
+          gross: number
+          id: string
+          margin_target: number
+          name: string
+          planned_hours: number
+          shared_costs: number
+          tax_rate: number
+          team_cost: number
+          team_id: string
+          updated_at: string
+          variable_rate: number
+        }
+        Insert: {
+          board_id: string
+          client_label?: string
+          competence: string
+          created_at?: string
+          created_by?: string
+          direct_expenses?: number
+          gross?: number
+          id?: string
+          margin_target?: number
+          name: string
+          planned_hours?: number
+          shared_costs?: number
+          tax_rate?: number
+          team_cost?: number
+          team_id: string
+          updated_at?: string
+          variable_rate?: number
+        }
+        Update: {
+          board_id?: string
+          client_label?: string
+          competence?: string
+          created_at?: string
+          created_by?: string
+          direct_expenses?: number
+          gross?: number
+          id?: string
+          margin_target?: number
+          name?: string
+          planned_hours?: number
+          shared_costs?: number
+          tax_rate?: number
+          team_cost?: number
+          team_id?: string
+          updated_at?: string
+          variable_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_scenarios_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_scenarios_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_settings: {
         Row: {
           board_id: string | null
@@ -4670,6 +4745,10 @@ export type Database = {
           p_call_id: string
           p_payload: Json
         }
+        Returns: Json
+      }
+      export_finance_scenarios: {
+        Args: { _ids: string[]; _team_id: string }
         Returns: Json
       }
       get_board_metrics: {
