@@ -1,5 +1,9 @@
 # Roadmap
 
+## Inteligência Financeira — Fase 4 (fechamento mensal)
+- [x] Conferência, simulação, fechamento com fotografia, travamento dos lançamentos, ajustes auditáveis, histórico e CSV.
+- [x] Testado no banco (sem gravar): fechar, edição recusada, ajuste somado, refechar/mês atual/sem permissão recusados; 29 testes passando. Tela logada não conferida visualmente.
+
 ## Inteligência Financeira — Fase 3
 - [x] Definir a próxima fase a partir do escopo original e apresentar o plano.
 - [x] Implementar o escopo aprovado, mantendo permissões e cálculos centralizados.
