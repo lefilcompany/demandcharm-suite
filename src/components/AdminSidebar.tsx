@@ -1,4 +1,4 @@
-import { LayoutDashboard, Ticket, Building2, Users, CreditCard, MailCheck, BellRing, ScrollText, Rocket, MessageSquareText } from "lucide-react";
+import { LayoutDashboard, Ticket, Building2, Users, CreditCard, MailCheck, BellRing, ScrollText, Rocket, MessageSquareText, Wallet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -20,6 +20,7 @@ const navItems = [
   { to: "/admin/plans", icon: CreditCard, label: "Planos" },
   { to: "/admin/coupons", icon: Ticket, label: "Cupons" },
   { to: "/admin/teams", icon: Building2, label: "Equipes" },
+  { to: "/admin/finance", icon: Wallet, label: "Inteligência Financeira" },
   { to: "/admin/users", icon: Users, label: "Usuários" },
   { to: "/admin/email-test", icon: MailCheck, label: "Teste de e-mail" },
   { to: "/admin/push-test", icon: BellRing, label: "Teste de push" },
