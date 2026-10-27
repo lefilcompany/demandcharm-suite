@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 export type FinancePermission =
   | "finance.view_team" | "finance.view_board" | "finance.view_project" | "finance.view_cost_details"
   | "finance.view_employee_costs" | "finance.manage_revenue" | "finance.manage_expenses"
-  | "finance.manage_allocations" | "finance.manage_settings" | "finance.export";
+  | "finance.manage_allocations" | "finance.manage_settings" | "finance.export" | "finance.close_period";
 
 export const PERMISSION_LABELS: Record<FinancePermission, string> = {
   "finance.view_team": "Ver números da equipe",
@@ -18,6 +18,7 @@ export const PERMISSION_LABELS: Record<FinancePermission, string> = {
   "finance.manage_allocations": "Configurar rateios",
   "finance.manage_settings": "Configurar metas e alíquotas",
   "finance.export": "Exportar relatórios",
+  "finance.close_period": "Fechar mês",
 };
 
 export interface FinanceAccess {
@@ -95,6 +96,7 @@ export function useInvalidateFinance() {
     qc.invalidateQueries({ queryKey: ["finance-access"] });
     qc.invalidateQueries({ queryKey: ["finance-allocation"] });
     qc.invalidateQueries({ queryKey: ["finance-people"] });
+    qc.invalidateQueries({ queryKey: ["finance-closing"] });
   };
 }
 
@@ -136,6 +138,46 @@ export function useFinancePeople(teamId: string | null, from: string, to: string
       if (error) throw error;
       const n = (v: any) => (v == null ? null : Number(v));
       return ((data ?? []) as any[]).map((r) => ({ ...r, monthly_cost: n(r.monthly_cost), productive_hours: n(r.productive_hours), hours: Number(r.hours ?? 0), cost: n(r.cost) })) as PeopleRow[];
+    },
+  });
+}
+
+export interface ClosingPreview {
+  checklist: unknown;
+  period: { id: string; competence: string; closed_at: string; closed_by: string; totals: Record<string, number> } | null;
+  rows: OverviewRow[];
+}
+
+export function useClosingPreview(teamId: string | null, month: string, enabled: boolean) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["finance-closing", "preview", teamId, user?.id, month],
+    enabled: enabled && !!teamId && !!user && !!month,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("finance_close_preview", { _team_id: teamId!, _month: `${month}-01` });
+      if (error) throw error;
+      const d = data as any;
+      return { ...d, rows: ((d?.rows ?? []) as any[]).map((r) => ({ ...r, gross: Number(r.gross), tax: Number(r.tax), direct_expenses: Number(r.direct_expenses), allocated_expenses: Number(r.allocated_expenses), team_cost: Number(r.team_cost), hours_realized: Number(r.hours_realized), hours_planned: Number(r.hours_planned), hours_without_cost: Number(r.hours_without_cost), margin_target: Number(r.margin_target) })) } as ClosingPreview;
+    },
+  });
+}
+
+export interface PeriodRow { id: string; competence: string; closed_at: string; closed_by: string; totals: any }
+export interface AdjustmentRow { id: string; period_id: string; board_id: string; target: string; amount: number; reason: string; created_by: string; created_at: string }
+
+export function useClosingHistory(teamId: string | null, enabled: boolean) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["finance-closing", "history", teamId, user?.id],
+    enabled: enabled && !!teamId && !!user,
+    queryFn: async () => {
+      const [p, a] = await Promise.all([
+        supabase.from("finance_periods").select("id, competence, closed_at, closed_by, totals").eq("team_id", teamId!).order("competence", { ascending: false }),
+        supabase.from("finance_period_adjustments").select("*").eq("team_id", teamId!).order("created_at", { ascending: false }),
+      ]);
+      if (p.error) throw p.error;
+      if (a.error) throw a.error;
+      return { periods: (p.data ?? []) as PeriodRow[], adjustments: ((a.data ?? []) as any[]).map((r) => ({ ...r, amount: Number(r.amount) })) as AdjustmentRow[] };
     },
   });
 }
