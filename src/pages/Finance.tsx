@@ -5,7 +5,9 @@ import { ArrowDown, ArrowUp, Download, Info, Lock, RefreshCw } from "lucide-reac
 import { useSelectedTeam } from "@/contexts/TeamContext";
 import { useBoards } from "@/hooks/useBoards";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { useFinanceAccess, useFinanceOverview, OverviewRow } from "@/hooks/useFinance";
+import { useFinanceAccess, useFinanceOverview, useFinanceAllocation, useFinancePeople, OverviewRow } from "@/hooks/useFinance";
+import { CostsProductivity } from "@/components/finance/CostsProductivity";
+import { ExpensesAllocation } from "@/components/finance/ExpensesAllocation";
 import { computeFinance, FinanceResult, formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { MarginRuler, DeviationTag } from "@/components/finance/MarginRuler";
@@ -19,15 +21,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-type Agg = FinanceResult & { boardId: string; name: string; teamCost: number; directExpenses: number; hoursRealized: number; hoursPlanned: number; hoursWithoutCost: number; target: number };
+type Agg = FinanceResult & { boardId: string; name: string; teamCost: number; directExpenses: number; allocated: number; hoursRealized: number; hoursPlanned: number; hoursWithoutCost: number; target: number };
 
 function aggregate(rows: OverviewRow[]): Agg {
   const s = rows.reduce((a, r) => ({
-    gross: a.gross + r.gross, tax: a.tax + r.tax, teamCost: a.teamCost + r.team_cost, directExpenses: a.directExpenses + r.direct_expenses,
+    gross: a.gross + r.gross, tax: a.tax + r.tax, teamCost: a.teamCost + r.team_cost, directExpenses: a.directExpenses + r.direct_expenses, allocated: a.allocated + r.allocated_expenses,
     hoursRealized: a.hoursRealized + r.hours_realized, hoursPlanned: a.hoursPlanned + r.hours_planned, hoursWithoutCost: a.hoursWithoutCost + r.hours_without_cost,
-  }), { gross: 0, tax: 0, teamCost: 0, directExpenses: 0, hoursRealized: 0, hoursPlanned: 0, hoursWithoutCost: 0 });
+  }), { gross: 0, tax: 0, teamCost: 0, directExpenses: 0, allocated: 0, hoursRealized: 0, hoursPlanned: 0, hoursWithoutCost: 0 });
   const target = rows[0]?.margin_target ?? 0.4;
-  return { ...computeFinance({ ...s, marginTarget: target }), ...s, boardId: rows[0]?.board_id ?? "", name: rows[0]?.board_name ?? "", target };
+  return { ...computeFinance({ ...s, operationalAlloc: s.allocated, marginTarget: target }), ...s, boardId: rows[0]?.board_id ?? "", name: rows[0]?.board_name ?? "", target };
 }
 
 const STATUS_TONE: Record<string, string> = {
@@ -70,6 +72,10 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
     (ov.data ?? []).forEach((r) => m.set(r.board_id, r.board_name));
     return [...m.entries()].map(([id, name]) => ({ id, name }));
   }, [forcedTeamId, memberBoards, ov.data]);
+  const range = [`${from}-01`, `${to}-${String(lastDay).padStart(2, "0")}`] as const;
+  const alloc = useFinanceAllocation(selectedTeamId, range[0], range[1], canView && from <= to);
+  const people = useFinancePeople(selectedTeamId, range[0], range[1], canView && from <= to);
+  const boardOrder = useMemo(() => [...new Set((ov.data ?? []).map((r) => r.board_id))], [ov.data]);
   const rows = useMemo(() => (ov.data ?? []).filter((r) => boardFilter === "all" || r.board_id === boardFilter), [ov.data, boardFilter]);
   const perBoard = useMemo(() => {
     const m = new Map<string, OverviewRow[]>();
@@ -95,8 +101,8 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
   const canExport = fin.canAny("finance.export");
 
   const exportCsv = () => {
-    const head = ["Quadro", "Faturamento bruto", "Impostos", "Receita líquida", "Horas previstas", "Horas realizadas", "Custo da equipe", "Despesas diretas", "Custo total", "Resultado", "Margem", "Meta", "Desvio p.p.", "Status"];
-    const lines = sorted.filter((b) => fin.can("finance.export", b.boardId)).map((b) => [b.name, b.gross, b.tax, b.netRevenue, b.hoursPlanned, b.hoursRealized, b.teamCost, b.directExpenses, b.totalCost, b.result,
+    const head = ["Quadro", "Faturamento bruto", "Impostos", "Receita líquida", "Horas previstas", "Horas realizadas", "Custo da equipe", "Despesas diretas", "Rateio", "Custo total", "Resultado", "Margem", "Meta", "Desvio p.p.", "Status"];
+    const lines = sorted.filter((b) => fin.can("finance.export", b.boardId)).map((b) => [b.name, b.gross, b.tax, b.netRevenue, b.hoursPlanned, b.hoursRealized, b.teamCost, b.directExpenses, b.allocated, b.totalCost, b.result,
       b.margin === null ? "" : (b.margin * 100).toFixed(1), (b.target * 100).toFixed(1), b.deviationPp === null ? "" : b.deviationPp.toFixed(1), STATUS_LABEL[b.status]]
       .map((v) => typeof v === "number" ? v.toFixed(2).replace(".", ",") : `"${String(v).replace(/"/g, '""')}"`).join(";"));
     const blob = new Blob(["\ufeff" + [head.join(";"), ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
@@ -124,6 +130,7 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
   const memberList = members.map((m: any) => ({ user_id: m.user_id, name: m.profile?.full_name ?? "Usuário" }));
   const isOwnerOrAdmin = !!fin.access?.is_global_admin || !!fin.access?.is_team_owner;
   const detailRow = perBoard.find((b) => b.boardId === detail);
+  const detailAlloc = (alloc.data ?? []).filter((a) => a.board_id === detail);
   const detailMonths = (ov.data ?? []).filter((r) => r.board_id === detail).sort((a, b) => a.competence.localeCompare(b.competence));
 
   const Th = ({ k, children, right = true }: { k: keyof Agg; children: React.ReactNode; right?: boolean }) => (
@@ -156,6 +163,8 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
         <TabsList>
           {canView && <TabsTrigger value="overview">Visão Geral</TabsTrigger>}
           {canView && <TabsTrigger value="projects">Rentabilidade por Projeto</TabsTrigger>}
+          {canView && <TabsTrigger value="people">Custos e Produtividade</TabsTrigger>}
+          {canView && <TabsTrigger value="allocation">Despesas e Rateios</TabsTrigger>}
           {canManage && <TabsTrigger value="manage">Lançamentos e acesso</TabsTrigger>}
         </TabsList>
 
@@ -175,7 +184,7 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
                   { l: "Faturamento bruto", v: formatBRL(total.gross), h: "Soma do faturado nos quadros autorizados no período." },
                   { l: "− Impostos", v: formatBRL(total.tax), h: "Faturamento × alíquota (padrão 21%, ou a do lançamento/quadro)." },
                   { l: "= Receita líquida", v: formatBRL(total.netRevenue), h: "Faturamento bruto menos impostos." },
-                  { l: "− Custo total", v: formatBRL(total.totalCost), h: "Custo das horas apontadas + despesas diretas. Rateios entram na próxima fase." },
+                  { l: "− Custo total", v: formatBRL(total.totalCost), h: "Custo das horas apontadas + despesas diretas + rateio das despesas compartilhadas." },
                   { l: "= Resultado", v: formatBRL(total.result), h: "Receita líquida menos custo total.", tone: total.result < 0 ? "text-destructive" : "" },
                   { l: "Margem", v: formatPct(total.margin), h: "Resultado ÷ faturamento bruto. Indisponível quando não há faturamento." },
                 ].map((m) => (
@@ -266,20 +275,20 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
                 <thead className="border-b bg-muted/40">
                   <tr>
                     <Th k="name" right={false}>Projeto</Th><Th k="gross">Bruto</Th><Th k="tax">Impostos</Th><Th k="netRevenue">Líquida</Th>
-                    <Th k="hoursPlanned">H. prev.</Th><Th k="hoursRealized">H. real.</Th><Th k="teamCost">Equipe</Th><Th k="directExpenses">Despesas</Th>
+                    <Th k="hoursPlanned">H. prev.</Th><Th k="hoursRealized">H. real.</Th><Th k="teamCost">Equipe</Th><Th k="directExpenses">Diretas</Th><Th k="allocated">Rateio</Th>
                     <Th k="totalCost">Custo total</Th><Th k="result">Resultado</Th><Th k="margin">Margem</Th><Th k="deviationPp">Desvio</Th><Th k="status">Status</Th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {ov.isLoading && <tr><td colSpan={13} className="p-4"><Skeleton className="h-24 w-full" /></td></tr>}
-                  {!ov.isLoading && sorted.length === 0 && <tr><td colSpan={13} className="p-6 text-center text-muted-foreground">Nenhum quadro liberado para você no período.</td></tr>}
+                  {ov.isLoading && <tr><td colSpan={14} className="p-4"><Skeleton className="h-24 w-full" /></td></tr>}
+                  {!ov.isLoading && sorted.length === 0 && <tr><td colSpan={14} className="p-6 text-center text-muted-foreground">Nenhum quadro liberado para você no período.</td></tr>}
                   {sorted.map((b) => (
                     <tr key={b.boardId} className="hover:bg-muted/40 cursor-pointer" onClick={() => setDetail(b.boardId)}>
                       <td className="px-3 py-2 font-medium whitespace-nowrap">{b.name}</td>
                       {[b.gross, b.tax, b.netRevenue].map((v, i) => <td key={i} className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{formatBRL(v)}</td>)}
                       <td className="px-3 py-2 text-right tabular-nums">{hrs(b.hoursPlanned)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{hrs(b.hoursRealized)}</td>
-                      {[b.teamCost, b.directExpenses, b.totalCost].map((v, i) => <td key={i} className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{formatBRL(v)}</td>)}
+                      {[b.teamCost, b.directExpenses, b.allocated, b.totalCost].map((v, i) => <td key={i} className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{formatBRL(v)}</td>)}
                       <td className={cn("px-3 py-2 text-right tabular-nums whitespace-nowrap font-medium", b.result < 0 && "text-destructive")}>{formatBRL(b.result)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{formatPct(b.margin)}</td>
                       <td className="px-3 py-2 text-right"><DeviationTag margin={b.margin} target={b.target} /></td>
@@ -289,6 +298,17 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
                 </tbody>
               </table>
             </div>
+          </TabsContent>
+        )}
+
+        {canView && (
+          <TabsContent value="people">
+            <CostsProductivity rows={people.data ?? []} detailed={fin.can("finance.view_employee_costs")} isLoading={people.isLoading} isError={people.isError} onRetry={() => people.refetch()} boardOrder={boardOrder} />
+          </TabsContent>
+        )}
+        {canView && (
+          <TabsContent value="allocation">
+            <ExpensesAllocation rows={(alloc.data ?? []).filter((r) => boardFilter === "all" || !r.board_id || r.board_id === boardFilter)} isLoading={alloc.isLoading} isError={alloc.isError} onRetry={() => alloc.refetch()} boardOrder={boardOrder} />
           </TabsContent>
         )}
 
@@ -313,16 +333,29 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
                 <dl className="divide-y text-sm">
                   {[
                     ["Faturamento bruto", formatBRL(detailRow.gross)], ["Impostos", formatBRL(detailRow.tax)], ["Receita líquida", formatBRL(detailRow.netRevenue)],
-                    ["Custo da equipe (agregado)", formatBRL(detailRow.teamCost)], ["Despesas diretas", formatBRL(detailRow.directExpenses)],
+                    ["Custo da equipe (agregado)", formatBRL(detailRow.teamCost)], ["Despesas diretas", formatBRL(detailRow.directExpenses)], ["Rateio recebido", formatBRL(detailRow.allocated)],
                     ["Margem de contribuição", formatBRL(detailRow.contributionMargin)], ["Resultado gerencial", formatBRL(detailRow.result)],
                     ["Horas previstas / realizadas", `${hrs(detailRow.hoursPlanned)} / ${hrs(detailRow.hoursRealized)}`],
                   ].map(([k, v]) => <div key={k} className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">{k}</dt><dd className="tabular-nums font-medium">{v}</dd></div>)}
                 </dl>
+                {detailAlloc.length > 0 && (
+                  <div>
+                    <OpsLabel>De onde veio o rateio</OpsLabel>
+                    <ul className="mt-2 divide-y text-sm">
+                      {detailAlloc.map((a) => (
+                        <li key={a.expense_id} className="flex justify-between gap-3 py-2">
+                          <span className="truncate">{a.description} <span className="text-muted-foreground">· {monthLabel(a.competence)} · {Math.round((a.share ?? 0) * 100)}%</span></span>
+                          <span className="tabular-nums">{formatBRL(a.amount)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div>
                   <OpsLabel>Mês a mês</OpsLabel>
                   <ul className="mt-2 divide-y text-sm">
                     {detailMonths.map((r) => {
-                      const c = computeFinance({ gross: r.gross, tax: r.tax, teamCost: r.team_cost, directExpenses: r.direct_expenses, marginTarget: r.margin_target });
+                      const c = computeFinance({ gross: r.gross, tax: r.tax, teamCost: r.team_cost, directExpenses: r.direct_expenses, operationalAlloc: r.allocated_expenses, marginTarget: r.margin_target });
                       return (
                         <li key={r.competence} className="grid grid-cols-[60px_1fr_auto] items-center gap-3 py-2">
                           <span className="font-ops-label text-xs uppercase">{monthLabel(r.competence)}</span>
