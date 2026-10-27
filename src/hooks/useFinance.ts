@@ -50,7 +50,7 @@ export function useFinanceAccess(teamId: string | null) {
 
 export interface OverviewRow {
   board_id: string; board_name: string; competence: string;
-  gross: number; tax: number; direct_expenses: number; team_cost: number;
+  gross: number; tax: number; direct_expenses: number; allocated_expenses: number; team_cost: number;
   hours_realized: number; hours_planned: number; hours_without_cost: number; margin_target: number;
 }
 
@@ -64,7 +64,7 @@ export function useFinanceOverview(teamId: string | null, from: string, to: stri
       if (error) throw error;
       return ((data ?? []) as any[]).map((r) => ({
         ...r,
-        gross: Number(r.gross), tax: Number(r.tax), direct_expenses: Number(r.direct_expenses), team_cost: Number(r.team_cost),
+        gross: Number(r.gross), tax: Number(r.tax), direct_expenses: Number(r.direct_expenses), allocated_expenses: Number(r.allocated_expenses ?? 0), team_cost: Number(r.team_cost),
         hours_realized: Number(r.hours_realized), hours_planned: Number(r.hours_planned),
         hours_without_cost: Number(r.hours_without_cost), margin_target: Number(r.margin_target),
       })) as OverviewRow[];
@@ -93,10 +93,49 @@ export function useInvalidateFinance() {
     qc.invalidateQueries({ queryKey: ["finance-table"] });
     qc.invalidateQueries({ queryKey: ["finance-overview"] });
     qc.invalidateQueries({ queryKey: ["finance-access"] });
+    qc.invalidateQueries({ queryKey: ["finance-allocation"] });
+    qc.invalidateQueries({ queryKey: ["finance-people"] });
   };
 }
 
 export function useFinanceMutation<V>(fn: (v: V) => Promise<unknown>) {
   const inv = useInvalidateFinance();
   return useMutation({ mutationFn: fn, onSuccess: inv });
+}
+
+export interface AllocationRow {
+  expense_id: string; description: string; expense_type: string; allocation_method: string; competence: string;
+  total: number; board_id: string | null; board_name: string | null; amount: number; share: number | null;
+}
+
+export function useFinanceAllocation(teamId: string | null, from: string, to: string, enabled: boolean) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["finance-allocation", teamId, user?.id, from, to],
+    enabled: enabled && !!teamId && !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_finance_allocation", { _team_id: teamId!, _from: from, _to: to });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({ ...r, total: Number(r.total), amount: Number(r.amount), share: r.share == null ? null : Number(r.share) })) as AllocationRow[];
+    },
+  });
+}
+
+export interface PeopleRow {
+  user_id: string | null; full_name: string | null; competence: string; monthly_cost: number | null; productive_hours: number | null;
+  board_id: string | null; board_name: string | null; hours: number; cost: number | null;
+}
+
+export function useFinancePeople(teamId: string | null, from: string, to: string, enabled: boolean) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["finance-people", teamId, user?.id, from, to],
+    enabled: enabled && !!teamId && !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_finance_people", { _team_id: teamId!, _from: from, _to: to });
+      if (error) throw error;
+      const n = (v: any) => (v == null ? null : Number(v));
+      return ((data ?? []) as any[]).map((r) => ({ ...r, monthly_cost: n(r.monthly_cost), productive_hours: n(r.productive_hours), hours: Number(r.hours ?? 0), cost: n(r.cost) })) as PeopleRow[];
+    },
+  });
 }
