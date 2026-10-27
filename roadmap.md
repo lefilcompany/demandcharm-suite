@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Inteligência Financeira — Fase 3
-- [ ] Definir a próxima fase a partir do escopo original e apresentar o plano.
-- [ ] Implementar o escopo aprovado, mantendo permissões e cálculos centralizados.
+- [x] Definir a próxima fase a partir do escopo original e apresentar o plano.
+- [x] Implementar o escopo aprovado, mantendo permissões e cálculos centralizados.
 - [ ] Verificar cálculos, acesso e o fluxo de uso completo.
 
 ## Serviços no assistente
