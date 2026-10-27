@@ -2100,37 +2100,49 @@ export type Database = {
       }
       finance_expenses: {
         Row: {
+          allocation_board_ids: string[] | null
+          allocation_method: string | null
           amount: number
-          board_id: string
+          board_id: string | null
           category: string
           competence: string
           created_at: string
           created_by: string
           description: string
+          expense_type: string
+          hours_weight: number | null
           id: string
           team_id: string
           updated_at: string
         }
         Insert: {
+          allocation_board_ids?: string[] | null
+          allocation_method?: string | null
           amount: number
-          board_id: string
+          board_id?: string | null
           category?: string
           competence: string
           created_at?: string
           created_by: string
           description: string
+          expense_type?: string
+          hours_weight?: number | null
           id?: string
           team_id: string
           updated_at?: string
         }
         Update: {
+          allocation_board_ids?: string[] | null
+          allocation_method?: string | null
           amount?: number
-          board_id?: string
+          board_id?: string | null
           category?: string
           competence?: string
           created_at?: string
           created_by?: string
           description?: string
+          expense_type?: string
+          hours_weight?: number | null
           id?: string
           team_id?: string
           updated_at?: string
@@ -4464,6 +4476,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _finance_allocations: {
+        Args: { _from: string; _team_id: string; _to: string }
+        Returns: {
+          amount: number
+          board_id: string
+          competence: string
+          expense_id: string
+          share: number
+        }[]
+      }
       approve_demand_request: {
         Args: {
           p_assignee_ids?: string[]
@@ -4669,9 +4691,25 @@ export type Database = {
         Returns: number
       }
       get_check_deadlines_cron_token: { Args: never; Returns: string }
+      get_finance_allocation: {
+        Args: { _from: string; _team_id: string; _to: string }
+        Returns: {
+          allocation_method: string
+          amount: number
+          board_id: string
+          board_name: string
+          competence: string
+          description: string
+          expense_id: string
+          expense_type: string
+          share: number
+          total: number
+        }[]
+      }
       get_finance_overview: {
         Args: { _from: string; _team_id: string; _to: string }
         Returns: {
+          allocated_expenses: number
           board_id: string
           board_name: string
           competence: string
@@ -4683,6 +4721,20 @@ export type Database = {
           margin_target: number
           tax: number
           team_cost: number
+        }[]
+      }
+      get_finance_people: {
+        Args: { _from: string; _team_id: string; _to: string }
+        Returns: {
+          board_id: string
+          board_name: string
+          competence: string
+          cost: number
+          full_name: string
+          hours: number
+          monthly_cost: number
+          productive_hours: number
+          user_id: string
         }[]
       }
       get_google_calendar_connection_status: {

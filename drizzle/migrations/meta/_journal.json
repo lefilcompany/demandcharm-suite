@@ -155,6 +155,13 @@
       "when": 1793106983871,
       "tag": "0021_finance_phase1",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793108579645,
+      "tag": "0022_finance_shared_expense_allocation",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AllocationBar } from "@/components/finance/AllocationBar";
+import { allocate, AllocationMethod, EXPENSE_TYPE_LABEL, METHOD_LABEL } from "@/lib/finance/allocation";
+import type { OverviewRow } from "@/hooks/useFinance";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { formatBRL, formatPct } from "@/lib/finance/engine";
 import { FinancePermission, PERMISSION_LABELS, useFinanceMutation, useFinanceTable } from "@/hooks/useFinance";
@@ -18,6 +22,7 @@ interface Props {
   can: (p: FinancePermission, boardId?: string) => boolean;
   canAny: (p: FinancePermission) => boolean;
   isOwnerOrAdmin: boolean;
+  overview?: OverviewRow[];
 }
 
 const monthStart = (m: string) => `${m}-01`;
@@ -38,7 +43,7 @@ function Section({ title, hint, children }: { title: string; hint: string; child
   );
 }
 
-export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrAdmin }: Props) {
+export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrAdmin, overview = [] }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const thisMonth = new Date().toISOString().substring(0, 7);
@@ -54,7 +59,9 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
   const settings = useFinanceTable<any>("finance_settings", teamId, can("finance.manage_settings"));
 
   const [rev, setRev] = useState({ board: "", month: thisMonth, amount: "", tax: "", description: "" });
-  const [exp, setExp] = useState({ board: "", month: thisMonth, amount: "", description: "" });
+  const [exp, setExp] = useState({ board: "", month: thisMonth, amount: "", description: "", type: "operacional" });
+  const [sh, setSh] = useState<{ month: string; amount: string; description: string; type: string; method: AllocationMethod; weight: string; only: string[] }>(
+    { month: thisMonth, amount: "", description: "", type: "fixa", method: "hours", weight: "50", only: [] });
   const [cost, setCost] = useState({ user: "", month: thisMonth, amount: "", hours: "140" });
   const [perm, setPerm] = useState<{ user: string; permission: FinancePermission | ""; board: string }>({ user: "", permission: "", board: "all" });
   const teamSetting = settings.data?.find((s) => !s.board_id);
@@ -67,7 +74,13 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
   });
   const addExp = useFinanceMutation(async () => {
     const { error } = await supabase.from("finance_expenses").insert({ team_id: teamId, board_id: exp.board, competence: monthStart(exp.month),
-      amount: Number(exp.amount), description: exp.description, created_by: user!.id });
+      amount: Number(exp.amount), description: exp.description, expense_type: exp.type, created_by: user!.id });
+    if (error) throw error;
+  });
+  const addShared = useFinanceMutation(async () => {
+    const { error } = await supabase.from("finance_expenses").insert({ team_id: teamId, board_id: null, competence: monthStart(sh.month),
+      amount: Number(sh.amount), description: sh.description, expense_type: sh.type, allocation_method: sh.method,
+      hours_weight: sh.method === "mixed" ? Number(sh.weight) / 100 : null, allocation_board_ids: sh.only.length ? sh.only : null, created_by: user!.id });
     if (error) throw error;
   });
   const addCost = useFinanceMutation(async () => {
@@ -99,6 +112,12 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
 
   const revBoards = boards.filter((b) => can("finance.manage_revenue", b.id));
   const expBoards = boards.filter((b) => can("finance.manage_expenses", b.id));
+  const canShared = can("finance.manage_expenses");
+  const preview = allocate(
+    { amount: Number(sh.amount) || 0, method: sh.method, hoursWeight: Number(sh.weight) / 100, boardIds: sh.only },
+    overview.filter((r) => r.competence.substring(0, 7) === sh.month).map((r) => ({ boardId: r.board_id, hours: r.hours_realized, gross: r.gross })),
+  );
+  const previewOrder = boards.map((b) => b.id);
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">
@@ -118,15 +137,56 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
 
       {expBoards.length > 0 && (
         <Section title="Despesas diretas" hint="Gastos que pertencem a um só quadro, como uma licença usada só nesse projeto.">
-          <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addExp.mutate(undefined, { onSuccess: () => { done("Despesa lançada"); setExp({ ...exp, amount: "", description: "" }); }, onError: fail }); }}>
+          <form className="grid grid-cols-2 sm:grid-cols-6 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addExp.mutate(undefined, { onSuccess: () => { done("Despesa lançada"); setExp({ ...exp, amount: "", description: "" }); }, onError: fail }); }}>
             <BoardPick boards={expBoards} value={exp.board} onChange={(v) => setExp({ ...exp, board: v })} />
             <Field label="Mês"><Input type="month" value={exp.month} onChange={(e) => setExp({ ...exp, month: e.target.value })} required /></Field>
             <Field label="Descrição"><Input value={exp.description} onChange={(e) => setExp({ ...exp, description: e.target.value })} required /></Field>
+            <TypePick value={exp.type} onChange={(v) => setExp({ ...exp, type: v })} />
             <Field label="Valor (R$)"><Input type="number" min="0" step="0.01" value={exp.amount} onChange={(e) => setExp({ ...exp, amount: e.target.value })} required /></Field>
             <Button type="submit" disabled={!exp.board || addExp.isPending}>Lançar</Button>
           </form>
-          <Rows items={expenses.data} render={(r) => `${boardName(r.board_id)} · ${r.competence.substring(0, 7)} · ${r.description} · ${formatBRL(Number(r.amount))}`}
+          <Rows items={expenses.data?.filter((r) => r.board_id)} render={(r) => `${boardName(r.board_id)} · ${r.competence.substring(0, 7)} · ${r.description} · ${EXPENSE_TYPE_LABEL[r.expense_type] ?? ""} · ${formatBRL(Number(r.amount))}`}
             onDelete={(r) => del.mutate({ table: "finance_expenses", id: r.id }, { onSuccess: () => done("Despesa removida"), onError: fail })} canDelete={(r) => can("finance.manage_expenses", r.board_id)} />
+        </Section>
+      )}
+
+      {canShared && (
+        <Section title="Despesas compartilhadas" hint="Gastos da equipe toda (aluguel, ferramentas, administrativo). Cada uma é dividida entre os quadros e nunca conta duas vezes.">
+          <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); addShared.mutate(undefined, { onSuccess: () => { done("Despesa compartilhada lançada"); setSh({ ...sh, amount: "", description: "" }); }, onError: fail }); }}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
+              <Field label="Mês"><Input type="month" value={sh.month} onChange={(e) => setSh({ ...sh, month: e.target.value })} required /></Field>
+              <Field label="Descrição"><Input value={sh.description} onChange={(e) => setSh({ ...sh, description: e.target.value })} required /></Field>
+              <Field label="Valor (R$)"><Input type="number" min="0" step="0.01" value={sh.amount} onChange={(e) => setSh({ ...sh, amount: e.target.value })} required /></Field>
+              <TypePick value={sh.type} onChange={(v) => setSh({ ...sh, type: v })} />
+              <Field label="Dividir"><Select value={sh.method} onValueChange={(v) => setSh({ ...sh, method: v as AllocationMethod })}><SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{Object.entries(METHOD_LABEL).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent></Select></Field>
+              {sh.method === "mixed" && <Field label="% por horas"><Input type="number" min="0" max="100" step="5" value={sh.weight} onChange={(e) => setSh({ ...sh, weight: e.target.value })} /></Field>}
+            </div>
+            <fieldset className="space-y-1">
+              <legend className="text-xs font-medium">Só entre estes quadros <span className="text-muted-foreground font-normal">(vazio = todos)</span></legend>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {boards.map((b) => (
+                  <label key={b.id} className="flex items-center gap-1.5 text-sm">
+                    <Checkbox checked={sh.only.includes(b.id)} onCheckedChange={(c) => setSh({ ...sh, only: c ? [...sh.only, b.id] : sh.only.filter((x) => x !== b.id) })} />{b.name}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            {Number(sh.amount) > 0 && (
+              <div className="rounded-lg border p-3 space-y-2">
+                <OpsLabel>Prévia com os números atuais do mês</OpsLabel>
+                <AllocationBar total={Number(sh.amount)} unallocated={preview.unallocated} order={previewOrder}
+                  parts={preview.parts.map((p) => ({ key: p.boardId, label: boardName(p.boardId), amount: p.amount }))} />
+                <ul className="text-xs flex flex-wrap gap-x-4 tabular-nums">
+                  {preview.parts.map((p) => <li key={p.boardId}>{boardName(p.boardId)} {formatBRL(p.amount)}</li>)}
+                  {preview.unallocated > 0 && <li className="text-primary">Não rateado {formatBRL(preview.unallocated)}</li>}
+                </ul>
+              </div>
+            )}
+            <Button type="submit" disabled={addShared.isPending}>Lançar despesa compartilhada</Button>
+          </form>
+          <Rows items={expenses.data?.filter((r) => !r.board_id)} render={(r) => `${r.competence.substring(0, 7)} · ${r.description} · ${EXPENSE_TYPE_LABEL[r.expense_type] ?? ""} · ${METHOD_LABEL[r.allocation_method as AllocationMethod] ?? ""} · ${formatBRL(Number(r.amount))}`}
+            onDelete={(r) => del.mutate({ table: "finance_expenses", id: r.id }, { onSuccess: () => done("Despesa removida"), onError: fail })} canDelete={() => canShared} />
         </Section>
       )}
 
@@ -178,6 +238,13 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1 min-w-0"><Label className="text-xs">{label}</Label>{children}</div>;
+}
+
+function TypePick({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <Field label="Tipo"><Select value={value} onValueChange={onChange}><SelectTrigger><SelectValue /></SelectTrigger>
+      <SelectContent>{Object.entries(EXPENSE_TYPE_LABEL).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent></Select></Field>
+  );
 }
 
 function BoardPick({ boards, value, onChange }: { boards: { id: string; name: string }[]; value: string; onChange: (v: string) => void }) {
