@@ -27,6 +27,7 @@ interface Props {
 
 const monthStart = (m: string) => `${m}-01`;
 const ERR: Record<string, string> = {
+  PERIOD_CLOSED: "Este mês já foi fechado. Corrija pela aba Fechamento, com um ajuste.",
   CANNOT_GRANT_SELF: "Você não pode dar permissões financeiras a si mesmo.",
   FORBIDDEN: "Você não tem autorização para gerenciar permissões desta equipe.",
   USER_NOT_IN_TEAM: "Essa pessoa não faz parte da equipe.",
