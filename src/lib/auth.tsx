@@ -42,57 +42,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const intentionalSignOutRef = useRef(false);
 
-  // Function to schedule automatic token refresh
-  const scheduleTokenRefresh = useCallback((currentSession: Session | null) => {
-    // Clear any existing timeout
-    if (refreshTimeoutRef.current) {
-      clearTimeout(refreshTimeoutRef.current);
-      refreshTimeoutRef.current = null;
-    }
-
-    if (!currentSession?.expires_at) return;
-
-    // Calculate time until token expires (expires_at is in seconds)
-    const expiresAt = currentSession.expires_at * 1000; // Convert to ms
-    const now = Date.now();
-    const timeUntilExpiry = expiresAt - now;
-    
-    // Schedule refresh 5 minutes before expiry, or immediately if less than 5 minutes
-    const refreshIn = Math.max(timeUntilExpiry - TOKEN_REFRESH_MARGIN, 0);
-
-    if (refreshIn > 0 && refreshIn < 24 * 60 * 60 * 1000) { // Only schedule if within 24 hours
-      console.log(`Token refresh scheduled in ${Math.round(refreshIn / 1000 / 60)} minutes`);
-      
-      refreshTimeoutRef.current = setTimeout(async () => {
-        try {
-          const { data, error } = await supabase.auth.refreshSession();
-          if (error) {
-            console.error("Auto token refresh failed:", error.message);
-            const m = error.message || "";
-            // If refresh token is invalid/expired, force a clean local sign-out
-            // so the app doesn't keep making 401 requests. SIGNED_OUT will reset state.
-            if (
-              m.includes("Refresh Token") ||
-              m.includes("refresh_token") ||
-              m.includes("Invalid") ||
-              m.includes("expired")
-            ) {
-              console.log("Refresh token invalid — clearing local session");
-              await supabase.auth.signOut({ scope: "local" }).catch(() => {});
-            }
-          } else if (data.session) {
-            console.log("Token refreshed successfully");
-            // The onAuthStateChange (TOKEN_REFRESHED) listener will reschedule the next refresh
-          }
-        } catch (err) {
-          console.error("Token refresh error:", err);
-        }
-      }, refreshIn);
-    }
-  }, []);
+  // Token refresh is left entirely to supabase-js (autoRefreshToken), which has an
+  // internal lock against concurrent refreshes. Manual timers/visibility handlers
+  // used to race it — and the Lovable preview broker keeps a second copy of the
+  // session in the editor — so two refreshes fired with the same single-use refresh
+  // token, the backend revoked the whole session and every request turned 401.
 
   // Manual refresh function exposed to context
   const refreshSession = useCallback(async () => {
@@ -102,13 +57,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.session) {
         setSession(data.session);
         setUser(data.session.user);
-        scheduleTokenRefresh(data.session);
       }
     } catch (error: any) {
       console.error("Manual session refresh failed:", error.message);
       throw error;
     }
-  }, [scheduleTokenRefresh]);
+  }, []);
 
   useEffect(() => {
     // Determine if session should be cleared based on time-based expiry (30 days)
