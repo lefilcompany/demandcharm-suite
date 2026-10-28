@@ -144,11 +144,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
       setLoading(false);
-      
-      // Schedule token refresh for existing session
-      if (existingSession) {
-        scheduleTokenRefresh(existingSession);
-      }
     }).catch((err) => {
       // Catch any unexpected errors
       console.error("Unexpected getSession error:", err);
