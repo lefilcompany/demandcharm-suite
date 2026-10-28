@@ -100,21 +100,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 method: currentSession.user.app_metadata?.provider === "google" ? "google" : "password",
               });
             }
-            // Schedule next automatic refresh
-            scheduleTokenRefresh(currentSession);
             break;
           case "PASSWORD_RECOVERY":
             // User clicked on password recovery link - session is established
             // Do NOT redirect or logout - let them reset their password
             console.log("Password recovery event - user can now reset password");
-            scheduleTokenRefresh(currentSession);
             break;
           case "SIGNED_OUT":
-            // Clear refresh timeout
-            if (refreshTimeoutRef.current) {
-              clearTimeout(refreshTimeoutRef.current);
-              refreshTimeoutRef.current = null;
-            }
             break;
         }
       }
