@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, Search, Users } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Search, Users } from "lucide-react";
 import { useAdminTeams } from "@/hooks/admin/useAdminTeams";
 import Finance from "@/pages/Finance";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ export default function AdminFinance() {
   const { data: teams = [], isLoading, isError, refetch } = useAdminTeams();
   const [teamId, setTeamId] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [page, setPage] = useState(0);
+  const PAGE = 12;
   const list = teams as any[];
   const team = list.find((t) => t.id === teamId);
 
@@ -17,6 +19,9 @@ export default function AdminFinance() {
     const s = q.trim().toLowerCase();
     return s ? list.filter((t) => t.name?.toLowerCase().includes(s)) : list;
   }, [list, q]);
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
+  const cur = Math.min(page, pages - 1);
+  const visible = filtered.slice(cur * PAGE, cur * PAGE + PAGE);
 
   if (teamId) {
     return (
@@ -46,7 +51,7 @@ export default function AdminFinance() {
           <Input
             autoFocus
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => { setQ(e.target.value); setPage(0); }}
             placeholder="Buscar equipe pelo nome"
             className="h-10 bg-background pl-9 text-foreground"
           />
@@ -74,7 +79,7 @@ export default function AdminFinance() {
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((t) => {
+          {visible.map((t) => {
             const sub = Array.isArray(t.subscriptions) ? t.subscriptions[0] : t.subscriptions;
             const plan = sub?.plans?.name;
             return (
@@ -96,6 +101,20 @@ export default function AdminFinance() {
             );
           })}
         </div>
+      )}
+
+      {!isLoading && !isError && pages > 1 && (
+        <nav className="flex items-center justify-center gap-2" aria-label="Paginação">
+          <Button variant="outline" size="sm" className="h-8" disabled={cur === 0} onClick={() => setPage(cur - 1)}>
+            <ChevronLeft className="h-4 w-4" /> Anterior
+          </Button>
+          <span className="font-ops-label text-[11px] uppercase tracking-widest text-muted-foreground">
+            Página {cur + 1} de {pages}
+          </span>
+          <Button variant="outline" size="sm" className="h-8" disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)}>
+            Próxima <ChevronRight className="h-4 w-4" />
+          </Button>
+        </nav>
       )}
     </div>
   );
