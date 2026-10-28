@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -19,9 +19,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Token refresh interval (5 minutes before expiry)
-const TOKEN_REFRESH_MARGIN = 5 * 60 * 1000; // 5 minutes in ms
 
 // Saved session lifetime in the browser (24 hours, absolute from sign-in)
 const SESSION_DURATION = 24 * 60 * 60 * 1000;
@@ -45,57 +42,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const intentionalSignOutRef = useRef(false);
 
-  // Function to schedule automatic token refresh
-  const scheduleTokenRefresh = useCallback((currentSession: Session | null) => {
-    // Clear any existing timeout
-    if (refreshTimeoutRef.current) {
-      clearTimeout(refreshTimeoutRef.current);
-      refreshTimeoutRef.current = null;
-    }
-
-    if (!currentSession?.expires_at) return;
-
-    // Calculate time until token expires (expires_at is in seconds)
-    const expiresAt = currentSession.expires_at * 1000; // Convert to ms
-    const now = Date.now();
-    const timeUntilExpiry = expiresAt - now;
-    
-    // Schedule refresh 5 minutes before expiry, or immediately if less than 5 minutes
-    const refreshIn = Math.max(timeUntilExpiry - TOKEN_REFRESH_MARGIN, 0);
-
-    if (refreshIn > 0 && refreshIn < 24 * 60 * 60 * 1000) { // Only schedule if within 24 hours
-      console.log(`Token refresh scheduled in ${Math.round(refreshIn / 1000 / 60)} minutes`);
-      
-      refreshTimeoutRef.current = setTimeout(async () => {
-        try {
-          const { data, error } = await supabase.auth.refreshSession();
-          if (error) {
-            console.error("Auto token refresh failed:", error.message);
-            const m = error.message || "";
-            // If refresh token is invalid/expired, force a clean local sign-out
-            // so the app doesn't keep making 401 requests. SIGNED_OUT will reset state.
-            if (
-              m.includes("Refresh Token") ||
-              m.includes("refresh_token") ||
-              m.includes("Invalid") ||
-              m.includes("expired")
-            ) {
-              console.log("Refresh token invalid — clearing local session");
-              await supabase.auth.signOut({ scope: "local" }).catch(() => {});
-            }
-          } else if (data.session) {
-            console.log("Token refreshed successfully");
-            // The onAuthStateChange (TOKEN_REFRESHED) listener will reschedule the next refresh
-          }
-        } catch (err) {
-          console.error("Token refresh error:", err);
-        }
-      }, refreshIn);
-    }
-  }, []);
+  // Token refresh is left entirely to supabase-js (autoRefreshToken), which has an
+  // internal lock against concurrent refreshes. Manual timers/visibility handlers
+  // used to race it — and the Lovable preview broker keeps a second copy of the
+  // session in the editor — so two refreshes fired with the same single-use refresh
+  // token, the backend revoked the whole session and every request turned 401.
 
   // Manual refresh function exposed to context
   const refreshSession = useCallback(async () => {
@@ -105,13 +57,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.session) {
         setSession(data.session);
         setUser(data.session.user);
-        scheduleTokenRefresh(data.session);
       }
     } catch (error: any) {
       console.error("Manual session refresh failed:", error.message);
       throw error;
     }
-  }, [scheduleTokenRefresh]);
+  }, []);
 
   useEffect(() => {
     // Determine if session should be cleared based on time-based expiry (30 days)
@@ -149,21 +100,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 method: currentSession.user.app_metadata?.provider === "google" ? "google" : "password",
               });
             }
-            // Schedule next automatic refresh
-            scheduleTokenRefresh(currentSession);
             break;
           case "PASSWORD_RECOVERY":
             // User clicked on password recovery link - session is established
             // Do NOT redirect or logout - let them reset their password
             console.log("Password recovery event - user can now reset password");
-            scheduleTokenRefresh(currentSession);
             break;
           case "SIGNED_OUT":
-            // Clear refresh timeout
-            if (refreshTimeoutRef.current) {
-              clearTimeout(refreshTimeoutRef.current);
-              refreshTimeoutRef.current = null;
-            }
             break;
         }
       }
@@ -201,11 +144,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
       setLoading(false);
-      
-      // Schedule token refresh for existing session
-      if (existingSession) {
-        scheduleTokenRefresh(existingSession);
-      }
     }).catch((err) => {
       // Catch any unexpected errors
       console.error("Unexpected getSession error:", err);
@@ -228,75 +166,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           supabase.auth.getSession().then(({ data: { session: newSession } }) => {
             setSession(newSession);
             setUser(newSession?.user ?? null);
-            if (newSession) {
-              scheduleTokenRefresh(newSession);
-            }
           });
         }
       }
     };
 
-    // Refresh token when tab becomes visible again — covers cases where the tab
-    // was inactive past expiry and the in-memory timer was throttled by the browser.
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState !== "visible") return;
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (!currentSession?.expires_at) return;
-        const expiresAtMs = currentSession.expires_at * 1000;
-        const msUntilExpiry = expiresAtMs - Date.now();
-        // If token is already expired OR will expire within the refresh margin, refresh now
-        if (msUntilExpiry < TOKEN_REFRESH_MARGIN) {
-          const { data, error } = await supabase.auth.refreshSession();
-          if (error) {
-            const m = error.message || "";
-            // Stale refresh_token — let SIGNED_OUT handle cleanup; don't toast
-            if (m.includes("Refresh Token") || m.includes("refresh_token") || m.includes("Invalid")) {
-              console.log("Refresh token invalid on visibility change, clearing session");
-              await supabase.auth.signOut({ scope: "local" }).catch(() => {});
-            }
-          } else if (data.session) {
-            scheduleTokenRefresh(data.session);
-          }
-        } else {
-          // Reschedule timer in case the original timeout was paused while inactive
-          scheduleTokenRefresh(currentSession);
-        }
-      } catch (err) {
-        console.error("Visibility refresh error:", err);
-      }
-    };
-
-    // Refresh on reconnect — network may have been down past expiry
-    const handleOnline = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (!currentSession?.expires_at) return;
-        const msUntilExpiry = currentSession.expires_at * 1000 - Date.now();
-        if (msUntilExpiry < TOKEN_REFRESH_MARGIN) {
-          const { data, error } = await supabase.auth.refreshSession();
-          if (!error && data.session) scheduleTokenRefresh(data.session);
-        }
-      } catch (err) {
-        console.error("Online refresh error:", err);
-      }
-    };
-
     window.addEventListener('storage', handleStorageChange);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('online', handleOnline);
 
     // Cleanup on unmount
     return () => {
       subscription.unsubscribe();
       window.removeEventListener('storage', handleStorageChange);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('online', handleOnline);
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
     };
-  }, [scheduleTokenRefresh, navigate]);
+  }, [navigate]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
