@@ -12,6 +12,8 @@ import { PricingSimulator } from "@/components/finance/PricingSimulator";
 import { MonthlyClosing } from "@/components/finance/MonthlyClosing";
 import { computeFinance, FinanceResult, formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
 import { OpsLabel } from "@/components/ops/OpsParts";
+import { MonthRangeField } from "@/components/ops/MonthRangeField";
+
 import { MarginRuler, DeviationTag } from "@/components/finance/MarginRuler";
 import { FinanceManage } from "@/components/finance/FinanceManage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -152,8 +154,11 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
           <h1 className="text-xl md:text-2xl font-semibold">Inteligência Financeira</h1>
         </div>
         <div className="flex flex-wrap items-end gap-2">
-          <label className="space-y-1"><OpsLabel>De</OpsLabel><Input type="month" className="h-9 w-[150px]" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></label>
-          <label className="space-y-1"><OpsLabel>Até</OpsLabel><Input type="month" className="h-9 w-[150px]" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></label>
+          <div className="space-y-1">
+            <OpsLabel>Período</OpsLabel>
+            <MonthRangeField from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
+          </div>
+
           <div className="space-y-1"><OpsLabel>Quadro</OpsLabel>
             <Select value={boardFilter} onValueChange={setBoardFilter}><SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="all">Todos autorizados</SelectItem>{authorizedBoards.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent></Select></div>
