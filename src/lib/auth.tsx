@@ -166,75 +166,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           supabase.auth.getSession().then(({ data: { session: newSession } }) => {
             setSession(newSession);
             setUser(newSession?.user ?? null);
-            if (newSession) {
-              scheduleTokenRefresh(newSession);
-            }
           });
         }
       }
     };
 
-    // Refresh token when tab becomes visible again — covers cases where the tab
-    // was inactive past expiry and the in-memory timer was throttled by the browser.
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState !== "visible") return;
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (!currentSession?.expires_at) return;
-        const expiresAtMs = currentSession.expires_at * 1000;
-        const msUntilExpiry = expiresAtMs - Date.now();
-        // If token is already expired OR will expire within the refresh margin, refresh now
-        if (msUntilExpiry < TOKEN_REFRESH_MARGIN) {
-          const { data, error } = await supabase.auth.refreshSession();
-          if (error) {
-            const m = error.message || "";
-            // Stale refresh_token — let SIGNED_OUT handle cleanup; don't toast
-            if (m.includes("Refresh Token") || m.includes("refresh_token") || m.includes("Invalid")) {
-              console.log("Refresh token invalid on visibility change, clearing session");
-              await supabase.auth.signOut({ scope: "local" }).catch(() => {});
-            }
-          } else if (data.session) {
-            scheduleTokenRefresh(data.session);
-          }
-        } else {
-          // Reschedule timer in case the original timeout was paused while inactive
-          scheduleTokenRefresh(currentSession);
-        }
-      } catch (err) {
-        console.error("Visibility refresh error:", err);
-      }
-    };
-
-    // Refresh on reconnect — network may have been down past expiry
-    const handleOnline = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (!currentSession?.expires_at) return;
-        const msUntilExpiry = currentSession.expires_at * 1000 - Date.now();
-        if (msUntilExpiry < TOKEN_REFRESH_MARGIN) {
-          const { data, error } = await supabase.auth.refreshSession();
-          if (!error && data.session) scheduleTokenRefresh(data.session);
-        }
-      } catch (err) {
-        console.error("Online refresh error:", err);
-      }
-    };
-
     window.addEventListener('storage', handleStorageChange);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('online', handleOnline);
 
     // Cleanup on unmount
     return () => {
       subscription.unsubscribe();
       window.removeEventListener('storage', handleStorageChange);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('online', handleOnline);
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
     };
-  }, [scheduleTokenRefresh, navigate]);
+  }, [navigate]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
