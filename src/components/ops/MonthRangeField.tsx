@@ -105,10 +105,11 @@ function Segment({
                 className={cn(
                   "h-8 rounded-[3px] font-ops-label text-[11px] uppercase tracking-wider transition-colors",
                   focusRing,
-                  blocked && "cursor-not-allowed text-muted-foreground/30",
+                  blocked && "cursor-not-allowed text-muted-foreground/40",
                   !blocked && selected && "bg-primary font-semibold text-primary-foreground",
-                  !blocked && !selected && spanned && "bg-primary/10 hover:bg-primary/20",
+                  !blocked && !selected && spanned && "bg-primary/[0.16] font-medium text-foreground hover:bg-primary/25",
                   !blocked && !selected && !spanned && "text-muted-foreground hover:bg-muted hover:text-foreground",
+
                   iso === today && !selected && "ring-1 ring-inset ring-foreground/20",
                 )}
               >
@@ -128,7 +129,7 @@ function Segment({
                 setOpen(false);
               }}
               className={cn(
-                "flex-1 rounded px-1 py-1 font-ops-label text-[9px] uppercase tracking-[0.12em] text-ops-muted transition-colors hover:bg-muted hover:text-foreground",
+                "flex-1 rounded px-1 py-1.5 font-ops-label text-[10px] uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
                 focusRing,
               )}
             >
