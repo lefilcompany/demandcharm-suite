@@ -190,6 +190,13 @@
       "when": 1793271105291,
       "tag": "0026_finance_project_foundations",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793274789560,
+      "tag": "0027_admin_finance_scopes",
+      "breakpoints": true
     }
   ]
 }
