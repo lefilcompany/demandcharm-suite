@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { FolderShareDialog } from "@/components/FolderShareDialog";
 import { FolderDemandManager } from "@/components/FolderDemandManager";
+import { ProjectFinancePanel } from "@/components/finance/ProjectFinancePanel";
 import {
   Search, LayoutGrid, List, CalendarDays, ChevronDown, ChevronRight,
   FolderOpen, ArrowLeft, Eye, EyeOff, User, Pencil, Check, X, Users, Plus, Layers, LayoutList, Briefcase
@@ -563,6 +564,8 @@ export default function FolderDetail() {
           )}
         </div>
       )}
+
+      <ProjectFinancePanel projectId={folder.id} teamId={currentTeamId} />
 
       {folder.is_owner && (
         <FolderShareDialog
