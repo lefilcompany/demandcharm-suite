@@ -4941,6 +4941,19 @@ export type Database = {
           team_cost: number
         }[]
       }
+      _finance_time_slices: {
+        Args: { _competence: string; _team_id: string }
+        Returns: {
+          demand_id: string
+          entry_id: string
+          hours: number
+          is_running: boolean
+          is_split: boolean
+          overlapped: boolean
+          raw_hours: number
+          user_id: string
+        }[]
+      }
       admin_finance_scopes: {
         Args: never
         Returns: {
@@ -5275,6 +5288,10 @@ export type Database = {
         Returns: number
       }
       get_my_finance_access: { Args: { _team_id: string }; Returns: Json }
+      get_project_hours_costs: {
+        Args: { _competence: string; _project_id: string }
+        Returns: Json
+      }
       get_recurring_demands_cron_token: { Args: never; Returns: string }
       get_release_detection_cron_token: { Args: never; Returns: string }
       get_request_meeting_readiness: {
