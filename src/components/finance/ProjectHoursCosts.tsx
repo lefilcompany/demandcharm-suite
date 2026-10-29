@@ -50,6 +50,8 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
     URL.revokeObjectURL(url);
   };
 
+  if (q.isError && String((q.error as any)?.message).includes("FORBIDDEN")) return null;
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
