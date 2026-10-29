@@ -64,3 +64,5 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 ## Financial projects
 
 - A project (`projects`) is the financial cost centre and may group several boards over time (`project_boards` with validity); each demand has one financial destination per month in `finance_demand_attributions` (unique per demand+competence), set automatically by trigger only when its board is in exactly one finance-enabled project, otherwise `pending` — manual choices via RPC `finance_assign_demand` are never overwritten, so hours are never counted twice. Member employment kind lives in `finance_member_profiles` with non-overlapping validity, independent of team/board roles.
+
+- Project hours come only from `_finance_time_slices` (mirrored in pure `src/lib/finance/timeSlices.ts`): entries are cut at month boundaries in America/Sao_Paulo and a person's overlapping timers are counted once (shared equally), so cost is never duplicated; people with hours but no hourly cost are reported as "missing", never zero. RPC `get_project_hours_costs` returns per-person rows only with `finance.view_employee_costs`.
