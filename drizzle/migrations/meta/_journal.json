@@ -211,6 +211,13 @@
       "when": 1793275671355,
       "tag": "0029_finance_project_hours_costs",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793275716866,
+      "tag": "0030_finance_project_hours_costs_volatile",
+      "breakpoints": true
     }
   ]
 }
