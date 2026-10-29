@@ -50,7 +50,7 @@ const hint = (t: string) => (
 const hrs = (h: number) => `${h.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`;
 const monthLabel = (iso: string) => new Date(`${iso.substring(0, 10)}T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
 
-export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: string | null; teamName?: string } = {}) {
+export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: { teamId?: string | null; teamName?: string; boardScope?: string[] } = {}) {
   const ctx = useSelectedTeam();
   const selectedTeamId = forcedTeamId !== undefined ? forcedTeamId : ctx.selectedTeamId;
   const currentTeam = forcedTeamId !== undefined ? { name: teamName } : ctx.currentTeam;
@@ -68,18 +68,19 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
   const canView = fin.canAny("finance.view_board") || fin.canAny("finance.view_team");
   const lastDay = new Date(Number(to.substring(0, 4)), Number(to.substring(5, 7)), 0).getDate();
   const ov = useFinanceOverview(selectedTeamId, `${from}-01`, `${to}-${String(lastDay).padStart(2, "0")}`, canView && from <= to);
+  const scopedOv = useMemo(() => (ov.data ?? []).filter((r) => !boardScope || boardScope.includes(r.board_id)), [ov.data, boardScope]);
 
   const boards = useMemo(() => {
     if (forcedTeamId === undefined) return memberBoards as { id: string; name: string }[];
     const m = new Map<string, string>();
-    (ov.data ?? []).forEach((r) => m.set(r.board_id, r.board_name));
+    scopedOv.forEach((r) => m.set(r.board_id, r.board_name));
     return [...m.entries()].map(([id, name]) => ({ id, name }));
-  }, [forcedTeamId, memberBoards, ov.data]);
+  }, [forcedTeamId, memberBoards, scopedOv]);
   const range = [`${from}-01`, `${to}-${String(lastDay).padStart(2, "0")}`] as const;
   const alloc = useFinanceAllocation(selectedTeamId, range[0], range[1], canView && from <= to);
   const people = useFinancePeople(selectedTeamId, range[0], range[1], canView && from <= to);
-  const boardOrder = useMemo(() => [...new Set((ov.data ?? []).map((r) => r.board_id))], [ov.data]);
-  const rows = useMemo(() => (ov.data ?? []).filter((r) => boardFilter === "all" || r.board_id === boardFilter), [ov.data, boardFilter]);
+  const boardOrder = useMemo(() => [...new Set(scopedOv.map((r) => r.board_id))], [scopedOv]);
+  const rows = useMemo(() => scopedOv.filter((r) => boardFilter === "all" || r.board_id === boardFilter), [scopedOv, boardFilter]);
   const perBoard = useMemo(() => {
     const m = new Map<string, OverviewRow[]>();
     rows.forEach((r) => m.set(r.board_id, [...(m.get(r.board_id) ?? []), r]));
@@ -99,7 +100,7 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
     return ((av ?? -Infinity) > (bv ?? -Infinity) ? 1 : (av ?? -Infinity) < (bv ?? -Infinity) ? -1 : 0) * sort.dir;
   }), [perBoard, sort]);
   const belowTarget = perBoard.filter((b) => b.status === "atencao" || b.status === "prejuizo");
-  const authorizedBoards = boards.filter((b) => (ov.data ?? []).some((r) => r.board_id === b.id));
+  const authorizedBoards = boards.filter((b) => scopedOv.some((r) => r.board_id === b.id));
   const canManage = fin.canAny("finance.manage_revenue") || fin.canAny("finance.manage_expenses") || fin.can("finance.view_employee_costs") || fin.can("finance.manage_settings");
   const canExport = fin.canAny("finance.export");
 
@@ -134,7 +135,7 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
   const isOwnerOrAdmin = !!fin.access?.is_global_admin || !!fin.access?.is_team_owner;
   const detailRow = perBoard.find((b) => b.boardId === detail);
   const detailAlloc = (alloc.data ?? []).filter((a) => a.board_id === detail);
-  const detailMonths = (ov.data ?? []).filter((r) => r.board_id === detail).sort((a, b) => a.competence.localeCompare(b.competence));
+  const detailMonths = scopedOv.filter((r) => r.board_id === detail).sort((a, b) => a.competence.localeCompare(b.competence));
 
   const Th = ({ k, children, right = true }: { k: keyof Agg; children: React.ReactNode; right?: boolean }) => (
     <th className={cn("px-3 py-2 font-normal whitespace-nowrap", right && "text-right")}>
@@ -335,7 +336,7 @@ export default function Finance({ teamId: forcedTeamId, teamName }: { teamId?: s
 
         {canManage && selectedTeamId && (
           <TabsContent value="manage">
-            <FinanceManage teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} canAny={fin.canAny} isOwnerOrAdmin={isOwnerOrAdmin} overview={ov.data ?? []} />
+            <FinanceManage teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} canAny={fin.canAny} isOwnerOrAdmin={isOwnerOrAdmin} overview={scopedOv} />
           </TabsContent>
         )}
       </Tabs>

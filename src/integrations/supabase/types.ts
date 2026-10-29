@@ -4941,6 +4941,18 @@ export type Database = {
           team_cost: number
         }[]
       }
+      admin_finance_scopes: {
+        Args: never
+        Returns: {
+          board_ids: string[]
+          finance_enabled: boolean
+          kind: string
+          name: string
+          scope_id: string
+          team_id: string
+          team_name: string
+        }[]
+      }
       approve_demand_request: {
         Args: {
           p_assignee_ids?: string[]
