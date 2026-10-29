@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Landmark, Link2, Unlink, AlertTriangle } from "lucide-react";
 import { useCanManageFinance, useTeamBoards, useProjectBoards, usePendingDemands, useFinanceMutation } from "@/hooks/useProjectFinance";
 import { PENDING_REASON_LABEL } from "@/lib/finance/attribution";
+import { ProjectHoursCosts } from "./ProjectHoursCosts";
 
 const ERR: Record<string, string> = {
   PROJECT_BOARD_OVERLAP: "Esse quadro já está vinculado a este projeto nesse período.",
@@ -122,6 +123,8 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
             </div>
           )}
         </div>
+
+        <ProjectHoursCosts projectId={projectId} canExport={!!canManage} />
 
         {canManage && (
           <div className="space-y-2">
