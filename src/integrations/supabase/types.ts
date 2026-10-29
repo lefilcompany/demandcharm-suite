@@ -2051,6 +2051,67 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_demand_attributions: {
+        Row: {
+          competence: string
+          created_at: string
+          decided_by: string | null
+          demand_id: string
+          id: string
+          project_id: string | null
+          reason: string | null
+          status: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          competence: string
+          created_at?: string
+          decided_by?: string | null
+          demand_id: string
+          id?: string
+          project_id?: string | null
+          reason?: string | null
+          status: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          competence?: string
+          created_at?: string
+          decided_by?: string | null
+          demand_id?: string
+          id?: string
+          project_id?: string | null
+          reason?: string | null
+          status?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_demand_attributions_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_demand_attributions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_demand_attributions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_employee_costs: {
         Row: {
           competence: string
@@ -2157,6 +2218,53 @@ export type Database = {
           },
           {
             foreignKeyName: "finance_expenses_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_member_profiles: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          kind: string
+          notes: string | null
+          team_id: string
+          updated_at: string
+          user_id: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind: string
+          notes?: string | null
+          team_id: string
+          updated_at?: string
+          user_id: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: string
+          notes?: string | null
+          team_id?: string
+          updated_at?: string
+          user_id?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_member_profiles_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
@@ -3276,6 +3384,64 @@ export type Database = {
           },
         ]
       }
+      project_boards: {
+        Row: {
+          board_id: string
+          created_at: string
+          created_by: string
+          id: string
+          project_id: string
+          team_id: string
+          updated_at: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          board_id: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          project_id: string
+          team_id: string
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          board_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          project_id?: string
+          team_id?: string
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_boards_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_boards_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_boards_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_demands: {
         Row: {
           added_at: string
@@ -3357,9 +3523,12 @@ export type Database = {
           color: string
           created_at: string
           created_by: string
+          finance_enabled: boolean
           id: string
+          integration_key: string
           name: string
           team_id: string
+          unit_external_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3367,9 +3536,12 @@ export type Database = {
           color?: string
           created_at?: string
           created_by: string
+          finance_enabled?: boolean
           id?: string
+          integration_key?: string
           name: string
           team_id: string
+          unit_external_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3377,9 +3549,12 @@ export type Database = {
           color?: string
           created_at?: string
           created_by?: string
+          finance_enabled?: boolean
           id?: string
+          integration_key?: string
           name?: string
           team_id?: string
+          unit_external_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -4845,6 +5020,10 @@ export type Database = {
         Args: { _demand_id: string; _user_id: string }
         Returns: boolean
       }
+      can_read_finance_structure: {
+        Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_view_demand_channel: {
         Args: { _channel: string; _demand_id: string; _user_id: string }
         Returns: boolean
@@ -4966,6 +5145,14 @@ export type Database = {
         }
         Returns: string
       }
+      finance_assign_demand: {
+        Args: { _competence: string; _demand_id: string; _project_id: string }
+        Returns: undefined
+      }
+      finance_auto_attribute_demand: {
+        Args: { _competence: string; _demand_id: string }
+        Returns: undefined
+      }
       finance_close_period: {
         Args: { _month: string; _team_id: string }
         Returns: string
@@ -4973,6 +5160,16 @@ export type Database = {
       finance_close_preview: {
         Args: { _month: string; _team_id: string }
         Returns: Json
+      }
+      finance_pending_demands: {
+        Args: { _competence: string; _team_id: string }
+        Returns: {
+          board_id: string
+          board_name: string
+          demand_id: string
+          reason: string
+          title: string
+        }[]
       }
       get_board_metrics: {
         Args: {
