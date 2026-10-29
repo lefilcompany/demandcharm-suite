@@ -197,6 +197,13 @@
       "when": 1793274789560,
       "tag": "0027_admin_finance_scopes",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793275108774,
+      "tag": "0028_admin_finance_scopes_per_board",
+      "breakpoints": true
     }
   ]
 }

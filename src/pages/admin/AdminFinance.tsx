@@ -42,8 +42,8 @@ export default function AdminFinance() {
           <Button variant="ghost" size="sm" onClick={() => setTeamId(null)} className="h-8 gap-1.5">
             <ArrowLeft className="h-4 w-4" /> Trocar projeto
           </Button>
-          <span className="font-ops-label text-[11px] uppercase tracking-widest text-muted-foreground">{team?.kind === "project" ? "Projeto" : "Quadros sem projeto"}</span>
-          <span className="truncate text-sm font-semibold">{team?.kind === "project" ? team?.name : team?.team_name}</span>
+          <span className="font-ops-label text-[11px] uppercase tracking-widest text-muted-foreground">{team?.kind === "project" ? "Projeto" : "Quadro sem projeto"}</span>
+          <span className="truncate text-sm font-semibold">{team?.name}</span>
           <span className="truncate text-xs text-muted-foreground">· {team?.team_name}</span>
         </div>
         {team && <Finance key={teamId} teamId={team.team_id} teamName={team.team_name} boardScope={team.board_ids} />}
@@ -105,9 +105,16 @@ export default function AdminFinance() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold group-hover:text-primary">{t.name}</span>
-                  <span className="block truncate font-ops-label text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {t.team_name} · {t.board_ids.length} {t.board_ids.length === 1 ? "quadro" : "quadros"}{!unlinked && !t.finance_enabled ? " · financeiro desligado" : ""}
-                  </span>
+                  {unlinked ? (
+                    <span className="mt-1 flex min-w-0 items-center gap-1.5">
+                      <span className="shrink-0 rounded border border-dashed border-muted-foreground/40 px-1.5 py-px font-ops-label text-[9px] uppercase tracking-wider text-muted-foreground">Sem projeto</span>
+                      <span className="truncate font-ops-label text-[10px] uppercase tracking-wider text-muted-foreground">{t.team_name}</span>
+                    </span>
+                  ) : (
+                    <span className="block truncate font-ops-label text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {t.team_name} · {t.board_ids.length} {t.board_ids.length === 1 ? "quadro" : "quadros"}{!t.finance_enabled ? " · financeiro desligado" : ""}
+                    </span>
+                  )}
                 </span>
               </button>
             );
