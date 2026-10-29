@@ -1,0 +1,1 @@
+ALTER FUNCTION public.get_project_hours_costs(uuid, date) VOLATILE;

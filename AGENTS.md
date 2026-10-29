@@ -1,17 +1,17 @@
 # AGENTS.md — technical decisions
 
-Rules for anyone (human or agent) changing this codebase. One rule per decision, with the reason.
+One rule per decision, with the reason.
 
 ## PWA / service worker
 
 - The service worker is hand-written in `src/sw.ts` (vite-plugin-pwa `injectManifest`), not generated from config — because the hosting deletes the previous hashed files on every publish, so caching behaviour must be explicit and auditable.
-- `index.html` is never precached; navigations use NetworkFirst with a single cache key (`<scope>index.html`) used only as an offline fallback — a stale cached page points to chunks that no longer exist on the server (404 → blank screen, only fixed with Ctrl+Shift+R).
-- Same-origin `/assets/*` requests go through a CacheFirst route that writes into the precache cache — so a partial install or a wiped cache self-heals from the network instead of forcing full re-downloads.
-- Heavy on-demand vendor chunks (shiki, mermaid and their dependencies, see `LAZY_VENDOR_RE` in `vite.config.ts`) are emitted under `assets/lazy/` and excluded from the precache — they were ~19 MB / ~690 files downloaded by every user at each publish; they are cached at runtime only when used.
+- `index.html` is never precached; navigations use NetworkFirst with a single cache key (`<scope>index.html`) used only as an offline fallback — a stale page points to deleted chunks (404 → blank screen).
+- Same-origin `/assets/*` requests go through a CacheFirst route that writes into the precache cache — so a partial or wiped cache self-heals from the network.
+- Heavy on-demand vendor chunks (shiki, mermaid and their dependencies, see `LAZY_VENDOR_RE` in `vite.config.ts`) are emitted under `assets/lazy/` and excluded from the precache — they were ~19 MB per publish for every user; cached at runtime only when used.
 - The precache contains only JS/CSS/icons/fonts: no HTML, no JSON (`build-info.json` and `release-manifest.json` must always be fresh for release detection) and no raster images (runtime `images-cache` covers them).
 - Updates stay in `prompt` mode (`UpdateModal`), but the update flow must not delete caches — the new worker cleans the previous version on activate; wiping the precache left the app with no offline copy.
 - `src/lib/chunkReload.ts` is the single recovery path for missing-chunk errors: activate a waiting worker if any, then reload once (30 s guard). `AppErrorBoundary` in `main.tsx` is the last line of defence so the screen is never blank.
-- Backend reads (`/rest/v1/` GET) are the only API responses the worker may store, with NetworkFirst and **no network timeout**, cache keys scoped per user (`src/lib/swApiCache.ts` appends the JWT `sub`), and anonymous requests never cached — a URL-only key with a 10 s timeout served empty/other-account lists to signed-in users ("all my projects disappeared"). Auth, Edge Functions and realtime are never cached.
+- Backend reads (`/rest/v1/` GET) are the only API responses the worker may store, with NetworkFirst and **no network timeout**, cache keys scoped per user (`src/lib/swApiCache.ts` appends the JWT `sub`), and anonymous requests never cached — URL-only keys with a timeout served empty/other-account lists. Auth, Edge Functions and realtime are never cached.
 
 ## Data lists
 
@@ -27,7 +27,7 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 ## Kanban stages
 
 - Every non-archived demand must sit in a stage whose name is active on its board, because the Kanban groups cards by stage name and silently drops the rest: trigger `a0_keep_demand_on_active_stage` (runs first among BEFORE triggers) remaps writes via `resolve_board_demand_status`, and `guard_board_stage_deactivation` refuses to switch off a stage that still holds demands (`STAGE_HAS_DEMANDS`) — the UI then calls RPC `deactivate_board_stage`, which moves them to a chosen non-timer stage and deactivates in one transaction.
-- Bulk stage moves set the transaction-local flag `soma.bulk_stage_move = on` so `notify_demand_status_changed` does not send one notification per demand.
+- Bulk stage moves set local flag `soma.bulk_stage_move = on` so `notify_demand_status_changed` skips per-demand notifications.
 
 ## Admin impersonation
 
@@ -64,3 +64,5 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 ## Financial projects
 
 - A project (`projects`) is the financial cost centre and may group several boards over time (`project_boards` with validity); each demand has one financial destination per month in `finance_demand_attributions` (unique per demand+competence), set automatically by trigger only when its board is in exactly one finance-enabled project, otherwise `pending` — manual choices via RPC `finance_assign_demand` are never overwritten, so hours are never counted twice. Member employment kind lives in `finance_member_profiles` with non-overlapping validity, independent of team/board roles.
+
+- Project hours come only from `_finance_time_slices` (mirror: `src/lib/finance/timeSlices.ts`): cut at São Paulo month boundaries, a person's overlapping timers counted once, missing hourly cost reported as missing (never zero); `get_project_hours_costs` shows per-person rows only with `finance.view_employee_costs` — so cost is never duplicated or hidden.
