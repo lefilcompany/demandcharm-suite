@@ -34,6 +34,7 @@ const ERR: Record<string, string> = {
   USER_NOT_ON_BOARD: "Essa pessoa não participa do quadro (ou é solicitante).",
 };
 const msg = (e: any) => Object.entries(ERR).find(([k]) => String(e?.message).includes(k))?.[1] ?? "Não foi possível salvar. Confira os campos e tente de novo.";
+import { MemberProfilesPanel } from "@/components/finance/MemberProfilesPanel";
 
 function Section({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
   return (
@@ -122,6 +123,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">
+      {can("finance.manage_settings") && <MemberProfilesPanel teamId={teamId} members={members} canManage />}
       {revBoards.length > 0 && (
         <Section title="Faturamento" hint="Valor bruto faturado por quadro no mês. Deixe a alíquota vazia para usar a padrão.">
           <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addRev.mutate(undefined, { onSuccess: () => { done("Faturamento lançado"); setRev({ ...rev, amount: "", description: "" }); }, onError: fail }); }}>
