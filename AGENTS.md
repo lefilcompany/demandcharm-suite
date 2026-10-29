@@ -60,3 +60,7 @@ Rules for anyone (human or agent) changing this codebase. One rule per decision,
 ## Auth / sessão
 
 - A renovação de token é exclusiva do `autoRefreshToken` do supabase-js (que tem trava interna); nunca adicionar timers, handlers de `visibilitychange`/`online` ou outras chamadas manuais de `refreshSession` em `auth.tsx` — o preview do Lovable mantém uma segunda cópia da sessão no editor (broker postMessage), e refreshes concorrentes com o mesmo refresh token de uso único revogam a sessão inteira (401 em tudo).
+
+## Financial projects
+
+- A project (`projects`) is the financial cost centre and may group several boards over time (`project_boards` with validity); each demand has one financial destination per month in `finance_demand_attributions` (unique per demand+competence), set automatically by trigger only when its board is in exactly one finance-enabled project, otherwise `pending` — manual choices via RPC `finance_assign_demand` are never overwritten, so hours are never counted twice. Member employment kind lives in `finance_member_profiles` with non-overlapping validity, independent of team/board roles.
