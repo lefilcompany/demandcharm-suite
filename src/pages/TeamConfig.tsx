@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { useRedeemCoupon } from "@/hooks/useTrialCoupon";
 import { Ticket, CheckCircle2 } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
+import { FinanceAccessManager } from "@/components/finance/FinanceAccessManager";
 
 const roleLabels: Record<string, string> = {
   admin: "Administrador",
@@ -551,6 +552,10 @@ export default function TeamConfig() {
             )}
           </CardContent>
         </Card>
+
+        {isAdmin && selectedTeamId && (
+          <FinanceAccessManager teamId={selectedTeamId} members={members ?? []} currentUserId={user?.id} />
+        )}
       </div>
 
       {/* Coupon Section */}

@@ -5045,6 +5045,10 @@ export type Database = {
         Args: { _demand_id: string; _user_id: string }
         Returns: boolean
       }
+      can_manage_finance_access: {
+        Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_read_finance_structure: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean

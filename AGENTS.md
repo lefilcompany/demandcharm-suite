@@ -4,7 +4,7 @@ One rule per decision, with the reason.
 
 ## PWA / service worker
 
-- The service worker is hand-written in `src/sw.ts` (vite-plugin-pwa `injectManifest`), not generated from config — because the hosting deletes the previous hashed files on every publish, so caching behaviour must be explicit and auditable.
+- The service worker is hand-written in `src/sw.ts` (vite-plugin-pwa `injectManifest`), not generated from config — hosting deletes old hashed files on every publish, so caching must be explicit.
 - `index.html` is never precached; navigations use NetworkFirst with a single cache key (`<scope>index.html`) used only as an offline fallback — a stale page points to deleted chunks (404 → blank screen).
 - Same-origin `/assets/*` requests go through a CacheFirst route that writes into the precache cache — so a partial or wiped cache self-heals from the network.
 - Heavy on-demand vendor chunks (shiki, mermaid and their dependencies, see `LAZY_VENDOR_RE` in `vite.config.ts`) are emitted under `assets/lazy/` and excluded from the precache — they were ~19 MB per publish for every user; cached at runtime only when used.
@@ -51,7 +51,7 @@ One rule per decision, with the reason.
 
 ## Financial intelligence
 
-- In the finance module each board is a project; access is a separate capability layer (`finance_permissions`, checked by `has_finance_permission`) that no team or board role grants automatically, grants/revokes go only through RPCs that forbid self-grants and log to `finance_audit_log`, and requesters are always excluded — so operational roles never leak salaries or margins.
+- In the finance module each board is a project; access is a separate capability layer (`finance_permissions`, checked by `has_finance_permission`) that no team or board role grants automatically, grants/revokes go only through RPCs (team owner or system admin only) that forbid self-grants and log to `finance_audit_log`, and requesters are always excluded — so operational roles never leak salaries/margins.
 - Finance screens read aggregates only from RPC `get_finance_overview` (authorized boards only, team cost never per person) and compute results with the pure `src/lib/finance/engine.ts`, so formulas stay identical everywhere and confidential rows never reach unauthorized clients.
 - Shared expenses (`finance_expenses.board_id IS NULL` + `allocation_method`) are split across boards at read time by internal `_finance_allocations` (mirrored in pure `src/lib/finance/allocation.ts`), using all team boards as the base so shares never depend on the viewer; an expense is either direct or shared (CHECK), rounding cents go to the largest share, and zero-base amounts stay "unallocated" instead of vanishing.
 - Pricing scenarios store only aggregate, versioned assumptions in `finance_scenarios`, never employee planning rows; RLS requires authorized board reads plus revenue-management for writes, immutable scope prevents reassignment, and CSV uses audited `export_finance_scenarios` with per-board export checks. `simulator.ts` calculates variable costs once and reuses the financial engine so estimates never mutate operational or actual financial records.
