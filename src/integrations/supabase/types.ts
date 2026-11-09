@@ -2507,6 +2507,53 @@ export type Database = {
           },
         ]
       }
+      finance_project_settings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          margin_target: number
+          project_id: string
+          tax_rate: number
+          team_id: string
+          updated_at: string
+          valid_from: string
+          variable_rate: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          margin_target: number
+          project_id: string
+          tax_rate: number
+          team_id: string
+          updated_at?: string
+          valid_from: string
+          variable_rate?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          margin_target?: number
+          project_id?: string
+          tax_rate?: number
+          team_id?: string
+          updated_at?: string
+          valid_from?: string
+          variable_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_project_settings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_revenues: {
         Row: {
           board_id: string
@@ -4941,6 +4988,10 @@ export type Database = {
           team_cost: number
         }[]
       }
+      _finance_project_month: {
+        Args: { _competence: string; _project_id: string }
+        Returns: Json
+      }
       _finance_time_slices: {
         Args: { _competence: string; _team_id: string }
         Returns: {
@@ -5138,6 +5189,10 @@ export type Database = {
         Args: { p_dependencies?: Json; p_parent: Json; p_subdemands?: Json }
         Returns: Json
       }
+      create_finance_api_key: {
+        Args: { _name: string; _team_id: string }
+        Returns: string
+      }
       deactivate_board_stage: {
         Args: { _board_status_id: string; _target_status_id: string }
         Returns: number
@@ -5174,6 +5229,15 @@ export type Database = {
         }
         Returns: string
       }
+      finance_api_v1_page: {
+        Args: {
+          _competence: string
+          _cursor: string
+          _limit: number
+          _team_id: string
+        }
+        Returns: Json
+      }
       finance_assign_demand: {
         Args: { _competence: string; _demand_id: string; _project_id: string }
         Returns: undefined
@@ -5198,6 +5262,16 @@ export type Database = {
           demand_id: string
           reason: string
           title: string
+        }[]
+      }
+      finance_people_gaps: {
+        Args: { _competence: string; _team_id: string }
+        Returns: {
+          hours: number
+          missing_cost: boolean
+          missing_kind: boolean
+          name: string
+          user_id: string
         }[]
       }
       get_board_metrics: {
@@ -5292,6 +5366,10 @@ export type Database = {
         Returns: number
       }
       get_my_finance_access: { Args: { _team_id: string }; Returns: Json }
+      get_project_finance_overview: {
+        Args: { _from: string; _project_id: string; _to: string }
+        Returns: Json
+      }
       get_project_hours_costs: {
         Args: { _competence: string; _project_id: string }
         Returns: Json

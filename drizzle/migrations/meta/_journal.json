@@ -225,6 +225,13 @@
       "when": 1793359584455,
       "tag": "0031_team_owner_grants_finance",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794234284603,
+      "tag": "0032_finance_project_rollup_and_api",
+      "breakpoints": true
     }
   ]
 }
