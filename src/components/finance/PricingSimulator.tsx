@@ -1,3 +1,4 @@
+import { MonthField } from "@/components/ops/MonthField";
 import { useMemo, useState } from "react";
 import { Calculator, Check, Download, FolderOpen, Plus, RefreshCw, Save, Trash2, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -125,7 +126,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
           <label className="space-y-1.5 text-xs text-muted-foreground">Nome do cenário<Input aria-label="Nome do cenário" value={draft.name} maxLength={160} required onChange={(e) => update("name", e.target.value)} className="h-9" /></label>
           <label className="space-y-1.5 text-xs text-muted-foreground">Cliente / proposta<Input aria-label="Cliente / proposta" value={draft.client_label} maxLength={160} onChange={(e) => update("client_label", e.target.value)} className="h-9" /></label>
           <div className="space-y-1.5"><span className="text-xs text-muted-foreground">Quadro / projeto</span><Select value={boardId} disabled={!!editing} onValueChange={(v) => update("board_id", v)}><SelectTrigger aria-label="Quadro do cenário" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{boards.map((b) => <SelectItem value={b.id} key={b.id}>{b.name}</SelectItem>)}</SelectContent></Select></div>
-          <label className="space-y-1.5 text-xs text-muted-foreground">Competência<Input aria-label="Competência do cenário" type="month" required value={draft.competence.substring(0, 7)} onChange={(e) => { update("competence", `${e.target.value}-01`); setPerson(""); }} className="h-9" /></label>
+          <label className="space-y-1.5 text-xs text-muted-foreground">Competência<MonthField aria-label="Competência do cenário" value={draft.competence.substring(0, 7)} onChange={(v) => { update("competence", `${v}-01`); setPerson(""); }} /></label>
         </div>
         <section className="space-y-3 border-t pt-4"><OpsLabel>01 · Receita e meta</OpsLabel><div className="grid gap-3 sm:grid-cols-2">
           <Numeric label="Receita estimada (R$)" value={draft.gross} onChange={(v) => update("gross", v)} />

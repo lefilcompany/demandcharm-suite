@@ -1,3 +1,4 @@
+import { MonthField } from "@/components/ops/MonthField";
 import { useMemo, useState } from "react";
 import { CheckCircle2, Download, Lock, RefreshCw, TriangleAlert, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,7 +101,7 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
           <div className="space-y-1">
             <OpsLabel>Competência</OpsLabel>
             <div className="flex items-center gap-2">
-              <Input type="month" value={month} max={prevMonth()} onChange={(e) => e.target.value && setMonth(e.target.value)} className="h-9 w-[160px] bg-transparent border-ops-ink-foreground/20" aria-label="Mês do fechamento" />
+              <MonthField tone="ink" value={month} max={prevMonth()} onChange={setMonth} className="w-[160px]" aria-label="Mês do fechamento" />
               <span className={cn("font-ops-label text-[11px] uppercase tracking-[0.18em] rounded border px-2 py-1",
                 period ? "border-primary text-primary" : "border-ops-ink-foreground/30 text-ops-ink-foreground/70")}>
                 {period ? (periodAdjustments.length ? "Fechado + ajustes" : "Fechado") : "Aberto"}
@@ -117,19 +118,21 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
         ) : preview.isLoading ? <Skeleton className="h-28 w-full bg-ops-ink-foreground/10" /> : (
           <>
             {/* Checklist ruler: one tick per check */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-px rounded-lg overflow-hidden bg-ops-ink-foreground/10">
+            <ul className="grid gap-x-6 sm:grid-cols-2 divide-y divide-ops-ink-foreground/10 sm:divide-y-0">
               {items.map((i) => {
                 const ok = i.count === 0;
                 const Icon = ok ? CheckCircle2 : i.severity === "block" ? XCircle : TriangleAlert;
+                const value = i.amount != null && i.count ? (i.code === "hours_without_cost" ? `${i.count} · ${i.amount.toLocaleString("pt-BR")} h` : formatBRL(i.amount)) : String(i.count);
                 return (
-                  <div key={i.code} title={CHECKLIST_TEXT[i.code].help} className={cn("bg-ops-ink p-3 space-y-1 border-t-2", ok ? "border-ops-ink-foreground/20" : i.severity === "block" ? "border-destructive" : "border-primary")}>
-                    <div className="flex items-center gap-1.5"><Icon className={cn("h-3.5 w-3.5", ok ? "text-ops-ink-foreground/50" : i.severity === "block" ? "text-destructive" : "text-primary")} /><OpsLabel className="text-ops-ink-foreground/60 tracking-[0.1em]">{ok ? "OK" : i.severity === "block" ? "Bloqueia" : "Aviso"}</OpsLabel></div>
-                    <div className="font-ops-display text-2xl font-semibold tabular-nums leading-none">{i.amount != null && i.count ? (i.code === "hours_without_cost" ? `${i.count}` : formatBRL(i.amount)) : i.count}</div>
-                    <p className="text-xs leading-tight text-ops-ink-foreground/80">{CHECKLIST_TEXT[i.code].label}{i.code === "hours_without_cost" && i.count > 0 && i.amount != null ? ` · ${i.amount.toLocaleString("pt-BR")} h` : ""}</p>
-                  </div>
+                  <li key={i.code} title={CHECKLIST_TEXT[i.code].help} className="flex items-center gap-2.5 py-2 sm:border-b sm:border-ops-ink-foreground/10">
+                    <Icon className={cn("h-4 w-4 shrink-0", ok ? "text-ops-ink-foreground/40" : i.severity === "block" ? "text-destructive" : "text-primary")} />
+                    <span className={cn("flex-1 min-w-0 text-sm", ok ? "text-ops-ink-foreground/60" : "text-ops-ink-foreground")}>{CHECKLIST_TEXT[i.code].label}</span>
+                    {!ok && <OpsLabel className={cn("tracking-[0.1em]", i.severity === "block" ? "text-destructive" : "text-primary")}>{i.severity === "block" ? "Bloqueia" : "Aviso"}</OpsLabel>}
+                    <span className="font-ops-mono text-sm tabular-nums">{ok ? "OK" : value}</span>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
             {!period && (
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-ops-ink-foreground/80">

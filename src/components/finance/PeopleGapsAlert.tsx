@@ -1,3 +1,4 @@
+import { MonthField } from "@/components/ops/MonthField";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +32,7 @@ export function PeopleGapsAlert({ teamId, onFixCost, onFixKind }: { teamId: stri
         <h3 className="font-semibold flex-1">
           {q.data.length ? `${q.data.length} pessoa(s) com horas e cadastro incompleto` : "Todos com horas no mês têm vínculo e custo"}
         </h3>
-        <Input type="month" aria-label="Mês das pendências" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} className="h-8 w-40" />
+        <MonthField aria-label="Mês das pendências" value={month} onChange={setMonth} className="h-8 w-40" />
       </div>
       {q.data.length > 0 && (
         <ul className="divide-y text-sm">

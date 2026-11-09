@@ -1,3 +1,4 @@
+import { MonthField } from "@/components/ops/MonthField";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,7 @@ export function MemberProfilesPanel({ teamId, members, canManage, preselectUser 
             <SelectContent>{members.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.name}</SelectItem>)}</SelectContent></Select>
           <Select value={form.kind} onValueChange={(v) => setForm({ ...form, kind: v as MemberKind })}><SelectTrigger id="finance-kind-select"><SelectValue placeholder="Vínculo" /></SelectTrigger>
             <SelectContent>{Object.entries(MEMBER_KIND_LABEL).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent></Select>
-          <Input type="month" value={form.from} onChange={(e) => setForm({ ...form, from: e.target.value })} required aria-label="A partir de" />
+          <MonthField value={form.from} onChange={(v) => setForm({ ...form, from: v })} aria-label="A partir de" />
           <Button type="submit" disabled={!form.user || !form.kind || save.isPending}>Salvar vínculo</Button>
         </form>
       )}
