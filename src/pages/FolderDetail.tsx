@@ -565,7 +565,7 @@ export default function FolderDetail() {
         </div>
       )}
 
-      <ProjectFinancePanel projectId={folder.id} teamId={currentTeamId} projectName={folder.name} />
+      <ProjectFinancePanel projectId={folder.id} teamId={currentTeamId} />
 
       {folder.is_owner && (
         <FolderShareDialog

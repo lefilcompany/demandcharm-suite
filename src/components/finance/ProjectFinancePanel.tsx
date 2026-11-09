@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Download, Link2, Unlink, AlertTriangle } from "lucide-react";
+import { Landmark, Link2, Unlink, AlertTriangle } from "lucide-react";
 import { useCanManageFinance, useTeamBoards, useProjectBoards, usePendingDemands, useFinanceMutation } from "@/hooks/useProjectFinance";
 import { PENDING_REASON_LABEL } from "@/lib/finance/attribution";
-import { ProjectHoursCosts, useProjectHoursCosts, downloadHoursCsv } from "./ProjectHoursCosts";
-import { ProjectHero, ProjectOverviewBody, ProjectMonthStatus, ProjectFinanceSettings } from "./ProjectFinanceSummary";
+import { ProjectHoursCosts } from "./ProjectHoursCosts";
+import { ProjectFinanceSummary, ProjectFinanceSettings } from "./ProjectFinanceSummary";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ERR: Record<string, string> = {
@@ -22,9 +22,7 @@ const ERR: Record<string, string> = {
 const msg = (e: any) => Object.entries(ERR).find(([k]) => String(e?.message).includes(k))?.[1] ?? "Não foi possível salvar.";
 const fmt = (d: string) => d.substring(0, 10).split("-").reverse().join("/");
 
-type Props = { projectId: string; teamId: string | null; projectName?: string; teamName?: string; onBack?: () => void; canExport?: boolean };
-
-export function ProjectFinancePanel({ projectId, teamId, projectName, teamName, onBack, canExport }: Props) {
+export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; teamId: string | null }) {
   const { toast } = useToast();
   const competence = `${new Date().toISOString().substring(0, 7)}-01`;
   const { data: canManage } = useCanManageFinance(teamId);
@@ -68,48 +66,36 @@ export function ProjectFinancePanel({ projectId, teamId, projectName, teamName, 
     if (error) throw error;
   });
 
-  const hours = useProjectHoursCosts(projectId, `${month}-01`);
-  const exportable = (canExport || !!canManage) && !!hours.data;
-
   if (isError) return null;
   const enabled = !!project.data?.finance_enabled;
   const candidates = boards.filter((b) => !active.some((l: any) => l.board_id === b.id));
 
   return (
     <section className="rounded-xl border bg-card p-4 space-y-4">
-      <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        {onBack && (
-          <Button variant="ghost" size="sm" onClick={onBack} className="h-8 gap-1.5 -ml-2"><ArrowLeft className="h-4 w-4" />Voltar</Button>
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="font-ops-label text-[11px] uppercase tracking-widest text-muted-foreground">Base financeira{teamName ? ` · ${teamName}` : ""}</p>
-          <h2 className="truncate font-ops-display text-xl font-semibold uppercase leading-tight">{projectName ?? "Projeto"}</h2>
+      <div className="flex flex-wrap items-center gap-3">
+        <Landmark className="h-5 w-5 text-primary" />
+        <div className="flex-1 min-w-0">
+          <h2 className="font-semibold">Base financeira do projeto</h2>
+          <p className="text-sm text-muted-foreground">Quadros vinculados somam horas neste projeto. Cada demanda tem um único destino financeiro por mês.</p>
         </div>
-        <ProjectMonthStatus projectId={projectId} month={month} />
-        <Input type="month" aria-label="Mês" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} className="h-8 w-40" />
-        {exportable && (
-          <Button variant="outline" size="sm" className="h-8" onClick={() => downloadHoursCsv(hours.data!, month)}><Download className="h-4 w-4 mr-1" />CSV</Button>
-        )}
         {canManage && (
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <label className="flex items-center gap-2 text-sm">
             <Switch checked={enabled} onCheckedChange={(v) => saveCfg.mutate({ finance_enabled: v }, { onError: fail })} />
-            {enabled ? "Controle ativo" : "Controle desligado"}
+            Controle financeiro {enabled ? "ativo" : "desligado"}
           </label>
         )}
-      </header>
+      </div>
 
-      <ProjectHero projectId={projectId} month={month} />
-
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue="result">
         <TabsList className="h-9">
-          <TabsTrigger value="overview">Visão geral</TabsTrigger>
-          <TabsTrigger value="hours">Equipe e horas</TabsTrigger>
+          <TabsTrigger value="result">Resultado</TabsTrigger>
+          <TabsTrigger value="hours">Horas e custos</TabsTrigger>
           <TabsTrigger value="boards">Quadros e pendências</TabsTrigger>
           <TabsTrigger value="config">Configuração</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="pt-2"><ProjectOverviewBody projectId={projectId} month={month} /></TabsContent>
-        <TabsContent value="hours" className="pt-2"><ProjectHoursCosts projectId={projectId} month={month} /></TabsContent>
-        <TabsContent value="config" className="pt-2"><ProjectFinanceSettings projectId={projectId} canManage={!!canManage} /></TabsContent>
+        <TabsContent value="result"><ProjectFinanceSummary projectId={projectId} month={month} onMonth={setMonth} /></TabsContent>
+        <TabsContent value="hours"><ProjectHoursCosts projectId={projectId} canExport={!!canManage} /></TabsContent>
+        <TabsContent value="config"><ProjectFinanceSettings projectId={projectId} canManage={!!canManage} /></TabsContent>
         <TabsContent value="boards">
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-2">
