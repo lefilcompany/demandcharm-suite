@@ -6,8 +6,7 @@ import Finance from "@/pages/Finance";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProjectFinanceSummary } from "@/components/finance/ProjectFinanceSummary";
-import { ProjectHoursCosts } from "@/components/finance/ProjectHoursCosts";
+import { ProjectFinancePanel } from "@/components/finance/ProjectFinancePanel";
 
 type Scope = { kind: "project" | "unlinked"; scope_id: string; name: string; team_id: string; team_name: string; board_ids: string[]; finance_enabled: boolean };
 
@@ -38,6 +37,9 @@ export default function AdminFinance() {
   const cur = Math.min(page, pages - 1);
   const visible = filtered.slice(cur * PAGE, cur * PAGE + PAGE);
 
+  if (teamId && team?.kind === "project") {
+    return <ProjectFinancePanel key={teamId} projectId={team.scope_id} teamId={team.team_id} projectName={team.name} teamName={team.team_name} onBack={() => setTeamId(null)} canExport />;
+  }
   if (teamId) {
     return (
       <div className="space-y-2">
@@ -45,16 +47,10 @@ export default function AdminFinance() {
           <Button variant="ghost" size="sm" onClick={() => setTeamId(null)} className="h-8 gap-1.5">
             <ArrowLeft className="h-4 w-4" /> Trocar projeto
           </Button>
-          <span className="font-ops-label text-[11px] uppercase tracking-widest text-muted-foreground">{team?.kind === "project" ? "Projeto" : "Quadro sem projeto"}</span>
+          <span className="font-ops-label text-[11px] uppercase tracking-widest text-muted-foreground">Quadro sem projeto</span>
           <span className="truncate text-sm font-semibold">{team?.name}</span>
           <span className="truncate text-xs text-muted-foreground">· {team?.team_name}</span>
         </div>
-        {team?.kind === "project" && (
-          <div className="grid gap-4 rounded-xl border bg-card p-4 xl:grid-cols-2">
-            <ProjectFinanceSummary projectId={team.scope_id} month={month} onMonth={setMonth} />
-            <ProjectHoursCosts projectId={team.scope_id} canExport />
-          </div>
-        )}
         {team && <Finance key={teamId} teamId={team.team_id} teamName={team.team_name} boardScope={team.board_ids} />}
       </div>
     );
