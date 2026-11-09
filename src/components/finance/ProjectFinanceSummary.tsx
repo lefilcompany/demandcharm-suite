@@ -19,6 +19,7 @@ export function useProjectFinanceOverview(projectId: string, month: string) {
   return useQuery({
     queryKey: ["project-finance-overview", projectId, month, user?.id],
     enabled: !!user && !!projectId,
+    retry: (n, e: any) => !String(e?.message).includes("FORBIDDEN") && n < 2,
     queryFn: async () => {
       const d = `${month}-01`;
       const { data, error } = await supabase.rpc("get_project_finance_overview", { _project_id: projectId, _from: d, _to: d });
@@ -40,7 +41,8 @@ function Cell({ label, value, note, warn }: { label: string; value: string; note
 
 export function ProjectFinanceSummary({ projectId, month, onMonth }: { projectId: string; month: string; onMonth: (m: string) => void }) {
   const q = useProjectFinanceOverview(projectId, month);
-  if (q.isError && String((q.error as any)?.message).includes("FORBIDDEN")) return null;
+  if (q.isError && String((q.error as any)?.message).includes("FORBIDDEN"))
+    return <p className="text-sm text-muted-foreground">Você ainda não tem acesso aos números deste projeto. O dono da equipe pode liberar em Configurações da equipe.</p>;
   const r = q.data && q.data.length ? projectResult(q.data) : null;
   const m0 = q.data?.[0];
 
