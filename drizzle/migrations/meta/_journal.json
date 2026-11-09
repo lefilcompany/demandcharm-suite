@@ -239,6 +239,13 @@
       "when": 1794235174818,
       "tag": "0033_finance_project_closing",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794235511930,
+      "tag": "0034_finance_project_adjustments",
+      "breakpoints": true
     }
   ]
 }
