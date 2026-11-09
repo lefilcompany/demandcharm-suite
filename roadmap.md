@@ -112,3 +112,14 @@ Causa provável no navegador: o worker guardava TODAS as respostas do backend po
 - [x] Atalhos de teclado: `c` nova demanda, `m` minhas tarefas, `Esc` limpa filtros
 - [x] Botão "Agendadas" no Kanban no padrão dos demais (outline h-9 cantos 6px); continua pill na lista de demandas
 - Verificado com Playwright no viewport 1090x674: chips abrem/rolam, hover revela ação, `m` alterna filtro, todos os botões do topo do Kanban com raio 6px e altura 36
+
+## Base financeira — Sprint 02 (resíduo) e Sprint 03 (2026-11-09)
+- [x] Aviso em Lançamentos: pessoas com horas sem vínculo/custo, com atalho para cadastrar
+- [x] Admin: resultado + horas e custos ao abrir um projeto
+- [x] Configuração por projeto com vigência (impostos, custos variáveis, meta)
+- [x] Resultado consolidado por projeto/mês (todos os quadros vinculados)
+- [x] API v1 para o painel externo + chave criada pelo dono da equipe
+- [x] Aba do projeto: Resultado / Horas e custos / Quadros e pendências / Configuração
+- [x] Testes: unidade (centavos, vigência), banco (cálculo, vigência, paginação), API (401/400/200, isolamento)
+- [ ] Visão Geral/Rentabilidade com linha por projeto (hoje por quadro dentro do projeto)
+- [ ] Conferência visual com conta que tenha acesso financeiro numa equipe

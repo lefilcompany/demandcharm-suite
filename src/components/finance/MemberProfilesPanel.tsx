@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useMemberProfiles, useFinanceMutation } from "@/hooks/useProjectFinance";
 import { MEMBER_KIND_LABEL, type MemberKind } from "@/lib/finance/attribution";
 
-export function MemberProfilesPanel({ teamId, members, canManage }: { teamId: string; members: { user_id: string; name: string }[]; canManage: boolean }) {
+export function MemberProfilesPanel({ teamId, members, canManage, preselectUser }: { teamId: string; members: { user_id: string; name: string }[]; canManage: boolean; preselectUser?: string | null }) {
   const { toast } = useToast();
   const { data: profiles = [] } = useMemberProfiles(teamId);
   const [form, setForm] = useState<{ user: string; kind: MemberKind | ""; from: string }>({ user: "", kind: "", from: new Date().toISOString().substring(0, 7) });
+  useEffect(() => { if (preselectUser) setForm((f) => ({ ...f, user: preselectUser })); }, [preselectUser]);
 
   const current = (uid: string) => profiles.find((p: any) => p.user_id === uid && !p.valid_to);
   const save = useFinanceMutation(async () => {
@@ -38,7 +39,7 @@ export function MemberProfilesPanel({ teamId, members, canManage }: { teamId: st
           onError: (err: any) => toast({ title: String(err?.message).includes("OVERLAP") ? "Já existe vínculo nesse período." : "Não foi possível salvar.", variant: "destructive" }) }); }}>
           <Select value={form.user} onValueChange={(v) => setForm({ ...form, user: v })}><SelectTrigger><SelectValue placeholder="Pessoa" /></SelectTrigger>
             <SelectContent>{members.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.name}</SelectItem>)}</SelectContent></Select>
-          <Select value={form.kind} onValueChange={(v) => setForm({ ...form, kind: v as MemberKind })}><SelectTrigger><SelectValue placeholder="Vínculo" /></SelectTrigger>
+          <Select value={form.kind} onValueChange={(v) => setForm({ ...form, kind: v as MemberKind })}><SelectTrigger id="finance-kind-select"><SelectValue placeholder="Vínculo" /></SelectTrigger>
             <SelectContent>{Object.entries(MEMBER_KIND_LABEL).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent></Select>
           <Input type="month" value={form.from} onChange={(e) => setForm({ ...form, from: e.target.value })} required aria-label="A partir de" />
           <Button type="submit" disabled={!form.user || !form.kind || save.isPending}>Salvar vínculo</Button>
