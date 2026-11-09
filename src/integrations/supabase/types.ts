@@ -2554,6 +2554,51 @@ export type Database = {
           },
         ]
       }
+      finance_project_snapshots: {
+        Row: {
+          competence: string
+          created_at: string
+          data: Json
+          id: string
+          period_id: string
+          project_id: string
+          team_id: string
+        }
+        Insert: {
+          competence: string
+          created_at?: string
+          data: Json
+          id?: string
+          period_id: string
+          project_id: string
+          team_id: string
+        }
+        Update: {
+          competence?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          period_id?: string
+          project_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_project_snapshots_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "finance_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_project_snapshots_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_revenues: {
         Row: {
           board_id: string
@@ -4992,6 +5037,10 @@ export type Database = {
         Args: { _competence: string; _project_id: string }
         Returns: Json
       }
+      _finance_project_month_live: {
+        Args: { _competence: string; _project_id: string }
+        Returns: Json
+      }
       _finance_time_slices: {
         Args: { _competence: string; _team_id: string }
         Returns: {
@@ -5469,6 +5518,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_team_projects_finance: {
+        Args: { _from: string; _team_id: string; _to: string }
+        Returns: Json
       }
       get_user_board_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_id_by_email: { Args: { _email: string }; Returns: string }
