@@ -10,6 +10,8 @@ import { Landmark, Link2, Unlink, AlertTriangle } from "lucide-react";
 import { useCanManageFinance, useTeamBoards, useProjectBoards, usePendingDemands, useFinanceMutation } from "@/hooks/useProjectFinance";
 import { PENDING_REASON_LABEL } from "@/lib/finance/attribution";
 import { ProjectHoursCosts } from "./ProjectHoursCosts";
+import { ProjectFinanceSummary, ProjectFinanceSettings } from "./ProjectFinanceSummary";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ERR: Record<string, string> = {
   PROJECT_BOARD_OVERLAP: "Esse quadro já está vinculado a este projeto nesse período.",
@@ -36,6 +38,7 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
   });
   const pending = usePendingDemands(teamId, competence, !!canManage);
   const [boardToAdd, setBoardToAdd] = useState("");
+  const [month, setMonth] = useState(competence.substring(0, 7));
   const [unit, setUnit] = useState<string | null>(null);
   const fail = (e: any) => toast({ title: msg(e), variant: "destructive" });
 
@@ -83,6 +86,17 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
         )}
       </div>
 
+      <Tabs defaultValue="result">
+        <TabsList className="h-9">
+          <TabsTrigger value="result">Resultado</TabsTrigger>
+          <TabsTrigger value="hours">Horas e custos</TabsTrigger>
+          <TabsTrigger value="boards">Quadros e pendências</TabsTrigger>
+          <TabsTrigger value="config">Configuração</TabsTrigger>
+        </TabsList>
+        <TabsContent value="result"><ProjectFinanceSummary projectId={projectId} month={month} onMonth={setMonth} /></TabsContent>
+        <TabsContent value="hours"><ProjectHoursCosts projectId={projectId} canExport={!!canManage} /></TabsContent>
+        <TabsContent value="config"><ProjectFinanceSettings projectId={projectId} canManage={!!canManage} /></TabsContent>
+        <TabsContent value="boards">
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-2">
           <h3 className="text-sm font-medium">Quadros vinculados ({active.length})</h3>
@@ -124,7 +138,6 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
           )}
         </div>
 
-        <ProjectHoursCosts projectId={projectId} canExport={!!canManage} />
 
         {canManage && (
           <div className="space-y-2">
@@ -145,6 +158,8 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
           </div>
         )}
       </div>
+        </TabsContent>
+      </Tabs>
     </section>
   );
 }

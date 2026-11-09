@@ -46,6 +46,12 @@ export default function AdminFinance() {
           <span className="truncate text-sm font-semibold">{team?.name}</span>
           <span className="truncate text-xs text-muted-foreground">· {team?.team_name}</span>
         </div>
+        {team?.kind === "project" && (
+          <div className="grid gap-4 rounded-xl border bg-card p-4 xl:grid-cols-2">
+            <ProjectFinanceSummary projectId={team.scope_id} month={month} onMonth={setMonth} />
+            <ProjectHoursCosts projectId={team.scope_id} canExport />
+          </div>
+        )}
         {team && <Finance key={teamId} teamId={team.team_id} teamName={team.team_name} boardScope={team.board_ids} />}
       </div>
     );
