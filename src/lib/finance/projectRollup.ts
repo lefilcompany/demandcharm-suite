@@ -20,6 +20,13 @@ export interface ProjectMonth {
   hours: number;
   hours_without_cost: number;
   people_without_cost: number;
+  has_adjustments?: boolean;
+  adjustments?: ProjectAdjustment[];
+}
+
+export interface ProjectAdjustment {
+  id: string; board_id: string; board_name: string | null; target: string; amount: number;
+  reason: string; author: string | null; created_at: string;
 }
 
 const cents = (v: number) => Math.round(v * 100) / 100;
