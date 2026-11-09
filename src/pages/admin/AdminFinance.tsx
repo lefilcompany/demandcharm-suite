@@ -21,7 +21,6 @@ export default function AdminFinance() {
   });
   const [teamId, setTeamId] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  const [month, setMonth] = useState(new Date().toISOString().substring(0, 7));
   const [page, setPage] = useState(0);
   const PAGE = 12;
   const list = useMemo(() => [...scopes].sort((a, b) =>
