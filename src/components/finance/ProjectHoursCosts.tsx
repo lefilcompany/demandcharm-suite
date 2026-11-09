@@ -1,9 +1,9 @@
+import { MonthField } from "@/components/ops/MonthField";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { AlertTriangle, Download, RotateCw } from "lucide-react";
@@ -56,7 +56,7 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-medium flex-1">Horas e custos</h3>
-        <Input type="month" aria-label="Mês" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} className="h-8 w-40" />
+        <MonthField aria-label="Mês" value={month} onChange={setMonth} className="h-8 w-40" />
         {canExport && r && <Button variant="outline" size="sm" className="h-8" onClick={download}><Download className="h-4 w-4 mr-1" />CSV</Button>}
       </div>
 

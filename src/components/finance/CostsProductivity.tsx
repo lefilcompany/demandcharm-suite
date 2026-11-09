@@ -45,7 +45,7 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
 
   return (
     <div className="space-y-4">
-      <section className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl grid grid-cols-1 sm:grid-cols-3">
+      <section className="rounded-xl bg-ops-ink text-ops-ink-foreground grid grid-cols-1 sm:grid-cols-3">
         {[
           { l: "Horas apontadas", v: hrs(totals.hours) },
           { l: "Custo das horas", v: formatBRL(totals.cost) },

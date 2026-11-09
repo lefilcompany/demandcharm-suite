@@ -46,7 +46,7 @@ export function ExpensesAllocation({ rows, isLoading, isError, onRetry, boardOrd
 
   return (
     <div className="space-y-4">
-      <section className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl p-4 sm:p-5 space-y-3">
+      <section className="rounded-xl bg-ops-ink text-ops-ink-foreground p-4 sm:p-5 space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div><OpsLabel>Rateio recebido pelos quadros</OpsLabel><div className="font-ops-display text-3xl font-semibold tabular-nums">{formatBRL(received)}</div></div>
           {unallocated > 0 && <div className="text-right"><OpsLabel>Não rateado</OpsLabel><div className="font-ops-display text-2xl font-semibold tabular-nums text-primary">{formatBRL(unallocated)}</div></div>}

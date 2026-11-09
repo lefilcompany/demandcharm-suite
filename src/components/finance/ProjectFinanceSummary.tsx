@@ -1,3 +1,4 @@
+import { MonthField } from "@/components/ops/MonthField";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,7 +52,7 @@ export function ProjectFinanceSummary({ projectId, month, onMonth }: { projectId
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-medium flex-1">Resultado do projeto</h3>
         {m0 && m0.period_status !== "open" && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" />{m0.has_adjustments ? "Fechado + ajustes" : "Mês fechado"}</span>}
-        <Input type="month" aria-label="Mês do resultado" value={month} onChange={(e) => e.target.value && onMonth(e.target.value)} className="h-8 w-40" />
+        <MonthField aria-label="Mês do resultado" value={month} onChange={onMonth} className="h-8 w-40" />
       </div>
       {q.isError ? (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/40 p-3 text-sm text-destructive">
@@ -150,7 +151,7 @@ export function ProjectFinanceSettings({ projectId, canManage }: { projectId: st
       {canManage && (
         <form onSubmit={save} className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end">
           <label className="space-y-1"><span className="text-xs text-muted-foreground">A partir de</span>
-            <Input type="month" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} required className="h-9" /></label>
+            <MonthField value={f.from} onChange={(v) => setF({ ...f, from: v })} aria-label="A partir de" /></label>
           <label className="space-y-1"><span className="text-xs text-muted-foreground">Impostos %</span>
             <Input type="number" min={0} max={99} step="0.01" value={f.tax} onChange={(e) => setF({ ...f, tax: e.target.value })} required className="h-9" /></label>
           <label className="space-y-1"><span className="text-xs text-muted-foreground">Custos variáveis %</span>

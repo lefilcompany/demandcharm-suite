@@ -1,3 +1,5 @@
+import { ChevronDown } from "lucide-react";
+import { MonthField } from "@/components/ops/MonthField";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -40,10 +42,13 @@ import { FinanceApiKeyCard } from "@/components/finance/FinanceApiKeyCard";
 
 function Section({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border bg-card p-4 sm:p-5 space-y-4">
-      <div><h3 className="font-semibold">{title}</h3><p className="text-sm text-muted-foreground">{hint}</p></div>
-      {children}
-    </section>
+    <details open className="group rounded-xl border bg-card [&_summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-3 px-4 py-3 sm:px-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
+        <div><h3 className="text-sm font-semibold">{title}</h3><p className="text-xs text-muted-foreground">{hint}</p></div>
+        <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="space-y-4 border-t px-4 py-4 sm:px-5">{children}</div>
+    </details>
   );
 }
 
@@ -137,7 +142,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
         <Section title="Faturamento" hint="Valor bruto faturado por quadro no mês. Deixe a alíquota vazia para usar a padrão.">
           <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addRev.mutate(undefined, { onSuccess: () => { done("Faturamento lançado"); setRev({ ...rev, amount: "", description: "" }); }, onError: fail }); }}>
             <BoardPick boards={revBoards} value={rev.board} onChange={(v) => setRev({ ...rev, board: v })} />
-            <Field label="Mês"><Input type="month" value={rev.month} onChange={(e) => setRev({ ...rev, month: e.target.value })} required /></Field>
+            <Field label="Mês"><MonthField value={rev.month} onChange={(v) => setRev({ ...rev, month: v })} aria-label="Mês" /></Field>
             <Field label="Valor (R$)"><Input type="number" min="0" step="0.01" value={rev.amount} onChange={(e) => setRev({ ...rev, amount: e.target.value })} required /></Field>
             <Field label="Alíquota %"><Input type="number" min="0" max="99" step="0.01" placeholder="padrão" value={rev.tax} onChange={(e) => setRev({ ...rev, tax: e.target.value })} /></Field>
             <Button type="submit" disabled={!rev.board || addRev.isPending}>Lançar</Button>
@@ -151,7 +156,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
         <Section title="Despesas diretas" hint="Gastos que pertencem a um só quadro, como uma licença usada só nesse projeto.">
           <form className="grid grid-cols-2 sm:grid-cols-6 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addExp.mutate(undefined, { onSuccess: () => { done("Despesa lançada"); setExp({ ...exp, amount: "", description: "" }); }, onError: fail }); }}>
             <BoardPick boards={expBoards} value={exp.board} onChange={(v) => setExp({ ...exp, board: v })} />
-            <Field label="Mês"><Input type="month" value={exp.month} onChange={(e) => setExp({ ...exp, month: e.target.value })} required /></Field>
+            <Field label="Mês"><MonthField value={exp.month} onChange={(v) => setExp({ ...exp, month: v })} aria-label="Mês" /></Field>
             <Field label="Descrição"><Input value={exp.description} onChange={(e) => setExp({ ...exp, description: e.target.value })} required /></Field>
             <TypePick value={exp.type} onChange={(v) => setExp({ ...exp, type: v })} />
             <Field label="Valor (R$)"><Input type="number" min="0" step="0.01" value={exp.amount} onChange={(e) => setExp({ ...exp, amount: e.target.value })} required /></Field>
@@ -166,7 +171,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
         <Section title="Despesas compartilhadas" hint="Gastos da equipe toda (aluguel, ferramentas, administrativo). Cada uma é dividida entre os quadros e nunca conta duas vezes.">
           <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); addShared.mutate(undefined, { onSuccess: () => { done("Despesa compartilhada lançada"); setSh({ ...sh, amount: "", description: "" }); }, onError: fail }); }}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
-              <Field label="Mês"><Input type="month" value={sh.month} onChange={(e) => setSh({ ...sh, month: e.target.value })} required /></Field>
+              <Field label="Mês"><MonthField value={sh.month} onChange={(v) => setSh({ ...sh, month: v })} aria-label="Mês" /></Field>
               <Field label="Descrição"><Input value={sh.description} onChange={(e) => setSh({ ...sh, description: e.target.value })} required /></Field>
               <Field label="Valor (R$)"><Input type="number" min="0" step="0.01" value={sh.amount} onChange={(e) => setSh({ ...sh, amount: e.target.value })} required /></Field>
               <TypePick value={sh.type} onChange={(v) => setSh({ ...sh, type: v })} />
@@ -208,7 +213,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
             <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addCost.mutate(undefined, { onSuccess: () => { done("Custo salvo"); setCost({ ...cost, amount: "" }); }, onError: fail }); }}>
               <Field label="Pessoa"><Select value={cost.user} onValueChange={(v) => setCost({ ...cost, user: v })}><SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger>
                 <SelectContent>{members.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.name}</SelectItem>)}</SelectContent></Select></Field>
-              <Field label="Mês"><Input type="month" value={cost.month} onChange={(e) => setCost({ ...cost, month: e.target.value })} required /></Field>
+              <Field label="Mês"><MonthField value={cost.month} onChange={(v) => setCost({ ...cost, month: v })} aria-label="Mês" /></Field>
               <Field label="Custo mensal (R$)"><Input id="finance-cost-amount" type="number" min="0" step="0.01" value={cost.amount} onChange={(e) => setCost({ ...cost, amount: e.target.value })} required /></Field>
               <Field label="Horas produtivas"><Input type="number" min="1" step="1" value={cost.hours} onChange={(e) => setCost({ ...cost, hours: e.target.value })} required /></Field>
               <Button type="submit" disabled={!cost.user || addCost.isPending}>Salvar</Button>
