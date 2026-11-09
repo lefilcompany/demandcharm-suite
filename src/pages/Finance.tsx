@@ -10,6 +10,7 @@ import { CostsProductivity } from "@/components/finance/CostsProductivity";
 import { ExpensesAllocation } from "@/components/finance/ExpensesAllocation";
 import { PricingSimulator } from "@/components/finance/PricingSimulator";
 import { MonthlyClosing } from "@/components/finance/MonthlyClosing";
+import { TeamProjectsFinance } from "@/components/finance/TeamProjectsFinance";
 import { computeFinance, FinanceResult, formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { MonthRangeField } from "@/components/ops/MonthRangeField";
@@ -169,7 +170,8 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
       <Tabs defaultValue={canView ? "overview" : fin.can("finance.close_period") ? "closing" : "manage"}>
         <TabsList className="max-w-full justify-start overflow-x-auto">
           {canView && <TabsTrigger value="overview">Visão Geral</TabsTrigger>}
-          {canView && <TabsTrigger value="projects">Rentabilidade por Projeto</TabsTrigger>}
+          {canView && <TabsTrigger value="byProject">Por projeto</TabsTrigger>}
+          {canView && <TabsTrigger value="projects">Rentabilidade por quadro</TabsTrigger>}
           {canView && <TabsTrigger value="people">Custos e Produtividade</TabsTrigger>}
           {canView && <TabsTrigger value="allocation">Despesas e Rateios</TabsTrigger>}
           {canView && <TabsTrigger value="simulator">Simulador de Precificação</TabsTrigger>}
@@ -307,6 +309,12 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                 </tbody>
               </table>
             </div>
+          </TabsContent>
+        )}
+
+        {canView && (
+          <TabsContent value="byProject">
+            <TeamProjectsFinance teamId={selectedTeamId} from={from} to={to} />
           </TabsContent>
         )}
 
