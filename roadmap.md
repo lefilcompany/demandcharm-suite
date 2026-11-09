@@ -1,6 +1,8 @@
 # Roadmap
 
 ## Base financeira — Sprint 04
+- [x] Ajustes pós-fechamento somados ao resultado do projeto e listados na aba Resultado; 3 cenários homologados no banco (sem gravar).
+- [ ] Ligar controle financeiro nos projetos reais — aguardando decisão do usuário (nenhum projeto ligado hoje).
 - [x] Fechamento por projeto (fotografia ao fechar o mês).
 - [x] Aba "Por projeto" na tela de finanças.
 - [x] Validador do contrato da API externa com paginação (testes).

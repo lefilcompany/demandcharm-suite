@@ -50,7 +50,7 @@ export function ProjectFinanceSummary({ projectId, month, onMonth }: { projectId
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-medium flex-1">Resultado do projeto</h3>
-        {m0?.period_status === "closed" && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" />Mês fechado</span>}
+        {m0 && m0.period_status !== "open" && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" />{m0.has_adjustments ? "Fechado + ajustes" : "Mês fechado"}</span>}
         <Input type="month" aria-label="Mês do resultado" value={month} onChange={(e) => e.target.value && onMonth(e.target.value)} className="h-8 w-40" />
       </div>
       {q.isError ? (
@@ -74,9 +74,30 @@ export function ProjectFinanceSummary({ projectId, month, onMonth }: { projectId
           {m0.board_ids.length === 0 && <p className="px-4 pb-3 text-xs text-ops-ink-foreground/70">Nenhum quadro vinculado neste mês.</p>}
         </section>
       )}
+      {m0?.adjustments && m0.adjustments.length > 0 && (
+        <div className="rounded-lg border text-sm">
+          <p className="px-3 py-2 text-xs font-medium text-muted-foreground border-b">Ajustes depois do fechamento</p>
+          <ul className="divide-y">
+            {m0.adjustments.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-3 py-2">
+                <span className="font-medium">{a.board_name ?? "Quadro"}</span>
+                <span className="text-muted-foreground">{ADJ_LABEL[a.target] ?? a.target}</span>
+                <span className={cn("tabular-nums ml-auto", a.amount < 0 && "text-destructive")}>{formatBRL(Number(a.amount))}</span>
+                <span className="basis-full text-xs text-muted-foreground">
+                  {a.reason} · {a.author ?? "—"} · {a.created_at.substring(0, 10).split("-").reverse().join("/")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
+
+const ADJ_LABEL: Record<string, string> = {
+  gross: "Faturamento", tax: "Impostos", direct_expenses: "Despesas diretas", allocated_expenses: "Rateios", team_cost: "Custo de pessoal",
+};
 
 type SettingRow = { id: string; valid_from: string; tax_rate: number; variable_rate: number; margin_target: number };
 
