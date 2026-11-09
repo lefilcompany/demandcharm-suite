@@ -100,14 +100,14 @@ export default function AdminFinance() {
           Nenhum projeto com “{q}”. Tente outro nome.
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((t) => {
             const unlinked = t.kind === "unlinked";
             return (
               <button
                 key={key(t)}
                 onClick={() => setTeamId(key(t))}
-                className={`group flex items-center gap-3 rounded-xl border bg-card p-4 text-left transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${unlinked ? "border-dashed" : ""}`}
+                className={`group flex items-center gap-3.5 rounded-xl border bg-card px-5 py-4 text-left transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${unlinked ? "border-dashed" : ""}`}
               >
                 <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-ops-display text-lg font-semibold uppercase ${unlinked ? "bg-muted text-muted-foreground" : "bg-ops-ink text-primary"}`}>
                   {unlinked ? <FolderKanban className="h-4 w-4" /> : t.name?.trim()?.[0]}
