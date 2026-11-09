@@ -232,6 +232,13 @@
       "when": 1794234284603,
       "tag": "0032_finance_project_rollup_and_api",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794235174818,
+      "tag": "0033_finance_project_closing",
+      "breakpoints": true
     }
   ]
 }
