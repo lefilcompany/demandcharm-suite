@@ -35,6 +35,8 @@ const ERR: Record<string, string> = {
 };
 const msg = (e: any) => Object.entries(ERR).find(([k]) => String(e?.message).includes(k))?.[1] ?? "Não foi possível salvar. Confira os campos e tente de novo.";
 import { MemberProfilesPanel } from "@/components/finance/MemberProfilesPanel";
+import { PeopleGapsAlert } from "@/components/finance/PeopleGapsAlert";
+import { FinanceApiKeyCard } from "@/components/finance/FinanceApiKeyCard";
 
 function Section({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
   return (
@@ -65,6 +67,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
   const [sh, setSh] = useState<{ month: string; amount: string; description: string; type: string; method: AllocationMethod; weight: string; only: string[] }>(
     { month: thisMonth, amount: "", description: "", type: "fixa", method: "hours", weight: "50", only: [] });
   const [cost, setCost] = useState({ user: "", month: thisMonth, amount: "", hours: "140" });
+  const [kindUser, setKindUser] = useState<string | null>(null);
   const [perm, setPerm] = useState<{ user: string; permission: FinancePermission | ""; board: string }>({ user: "", permission: "", board: "all" });
   const teamSetting = settings.data?.find((s) => !s.board_id);
   const [cfg, setCfg] = useState<{ tax: string; target: string } | null>(null);
@@ -123,7 +126,13 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      {can("finance.manage_settings") && <MemberProfilesPanel teamId={teamId} members={members} canManage />}
+      {(can("finance.manage_settings") || can("finance.view_employee_costs") || isOwnerOrAdmin) && (
+        <PeopleGapsAlert teamId={teamId}
+          onFixCost={(uid, month) => { setCost({ ...cost, user: uid, month, amount: "" }); setTimeout(() => document.getElementById("finance-cost-amount")?.focus(), 50); }}
+          onFixKind={(uid) => { setKindUser(uid); setTimeout(() => document.getElementById("finance-kind-select")?.focus(), 50); }} />
+      )}
+      {can("finance.manage_settings") && <MemberProfilesPanel teamId={teamId} members={members} canManage preselectUser={kindUser} />}
+      {isOwnerOrAdmin && <FinanceApiKeyCard teamId={teamId} />}
       {revBoards.length > 0 && (
         <Section title="Faturamento" hint="Valor bruto faturado por quadro no mês. Deixe a alíquota vazia para usar a padrão.">
           <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addRev.mutate(undefined, { onSuccess: () => { done("Faturamento lançado"); setRev({ ...rev, amount: "", description: "" }); }, onError: fail }); }}>
@@ -200,7 +209,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
               <Field label="Pessoa"><Select value={cost.user} onValueChange={(v) => setCost({ ...cost, user: v })}><SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger>
                 <SelectContent>{members.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.name}</SelectItem>)}</SelectContent></Select></Field>
               <Field label="Mês"><Input type="month" value={cost.month} onChange={(e) => setCost({ ...cost, month: e.target.value })} required /></Field>
-              <Field label="Custo mensal (R$)"><Input type="number" min="0" step="0.01" value={cost.amount} onChange={(e) => setCost({ ...cost, amount: e.target.value })} required /></Field>
+              <Field label="Custo mensal (R$)"><Input id="finance-cost-amount" type="number" min="0" step="0.01" value={cost.amount} onChange={(e) => setCost({ ...cost, amount: e.target.value })} required /></Field>
               <Field label="Horas produtivas"><Input type="number" min="1" step="1" value={cost.hours} onChange={(e) => setCost({ ...cost, hours: e.target.value })} required /></Field>
               <Button type="submit" disabled={!cost.user || addCost.isPending}>Salvar</Button>
             </form>
