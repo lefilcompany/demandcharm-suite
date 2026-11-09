@@ -6,6 +6,8 @@ import Finance from "@/pages/Finance";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProjectFinanceSummary } from "@/components/finance/ProjectFinanceSummary";
+import { ProjectHoursCosts } from "@/components/finance/ProjectHoursCosts";
 
 type Scope = { kind: "project" | "unlinked"; scope_id: string; name: string; team_id: string; team_name: string; board_ids: string[]; finance_enabled: boolean };
 
@@ -20,6 +22,7 @@ export default function AdminFinance() {
   });
   const [teamId, setTeamId] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [month, setMonth] = useState(new Date().toISOString().substring(0, 7));
   const [page, setPage] = useState(0);
   const PAGE = 12;
   const list = useMemo(() => [...scopes].sort((a, b) =>
