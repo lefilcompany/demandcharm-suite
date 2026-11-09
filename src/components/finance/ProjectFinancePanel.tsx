@@ -11,7 +11,8 @@ import { useCanManageFinance, useTeamBoards, useProjectBoards, usePendingDemands
 import { PENDING_REASON_LABEL } from "@/lib/finance/attribution";
 import { ProjectHoursCosts } from "./ProjectHoursCosts";
 import { ProjectFinanceSummary, ProjectFinanceSettings } from "./ProjectFinanceSummary";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { FinanceTabsList, FinanceTab } from "@/components/ops/FinanceUI";
 
 const ERR: Record<string, string> = {
   PROJECT_BOARD_OVERLAP: "Esse quadro já está vinculado a este projeto nesse período.",
@@ -87,12 +88,12 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
       </div>
 
       <Tabs defaultValue="result">
-        <TabsList className="h-9">
-          <TabsTrigger value="result">Resultado</TabsTrigger>
-          <TabsTrigger value="hours">Horas e custos</TabsTrigger>
-          <TabsTrigger value="boards">Quadros e pendências</TabsTrigger>
-          <TabsTrigger value="config">Configuração</TabsTrigger>
-        </TabsList>
+        <FinanceTabsList>
+          <FinanceTab value="result">Resultado</FinanceTab>
+          <FinanceTab value="hours">Horas e custos</FinanceTab>
+          <FinanceTab value="boards">Quadros e pendências</FinanceTab>
+          <FinanceTab value="config">Configuração</FinanceTab>
+        </FinanceTabsList>
         <TabsContent value="result"><ProjectFinanceSummary projectId={projectId} month={month} onMonth={setMonth} /></TabsContent>
         <TabsContent value="hours"><ProjectHoursCosts projectId={projectId} canExport={!!canManage} /></TabsContent>
         <TabsContent value="config"><ProjectFinanceSettings projectId={projectId} canManage={!!canManage} /></TabsContent>

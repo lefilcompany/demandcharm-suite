@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { FinanceTabsList, FinanceTab, FinanceNotice, FinanceSection } from "@/components/ops/FinanceUI";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 import { ArrowDown, ArrowUp, Download, Info, Lock, RefreshCw } from "lucide-react";
 import { useSelectedTeam } from "@/contexts/TeamContext";
@@ -63,6 +64,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
   const [from, setFrom] = useState(defFrom);
   const [to, setTo] = useState(now.toISOString().substring(0, 7));
   const [boardFilter, setBoardFilter] = useState("all");
+  const [params, setParams] = useSearchParams();
   const [detail, setDetail] = useState<string | null>(null);
   const [sort, setSort] = useState<{ key: keyof Agg; dir: 1 | -1 }>({ key: "result", dir: -1 });
 
@@ -139,7 +141,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
   const detailMonths = scopedOv.filter((r) => r.board_id === detail).sort((a, b) => a.competence.localeCompare(b.competence));
 
   const Th = ({ k, children, right = true }: { k: keyof Agg; children: React.ReactNode; right?: boolean }) => (
-    <th className={cn("px-3 py-2 font-normal whitespace-nowrap", right && "text-right")}>
+    <th className={cn("px-3 py-1.5 font-normal whitespace-nowrap", right && "text-right")}>
       <button className="inline-flex items-center gap-1 font-ops-label text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
         onClick={() => setSort((s) => ({ key: k, dir: s.key === k ? (s.dir === 1 ? -1 : 1) : -1 }))}>
         {children}{sort.key === k && (sort.dir === 1 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
@@ -149,41 +151,37 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
 
   return (
     <div className="space-y-4 p-3 sm:p-4 md:p-6 max-w-[1600px] mx-auto w-full">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <OpsLabel>{currentTeam?.name ?? "Equipe"} · cada quadro é um projeto</OpsLabel>
-          <h1 className="text-xl md:text-2xl font-semibold">Inteligência Financeira</h1>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <OpsLabel>{currentTeam?.name ?? "Equipe"}</OpsLabel>
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Inteligência Financeira</h1>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="space-y-1">
-            <OpsLabel>Período</OpsLabel>
-            <MonthRangeField from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
-          </div>
-
-          <div className="space-y-1"><OpsLabel>Quadro</OpsLabel>
-            <Select value={boardFilter} onValueChange={setBoardFilter}><SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-1.5">
+          <MonthRangeField from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
+          <div>
+            <Select value={boardFilter} onValueChange={setBoardFilter}><SelectTrigger className="h-9 w-[180px] border-0 bg-muted/50" aria-label="Quadro"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="all">Todos autorizados</SelectItem>{authorizedBoards.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent></Select></div>
           {canExport && <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={exportCsv} disabled={!sorted.length}><Download className="h-4 w-4" />CSV</Button>}
         </div>
       </header>
 
-      <Tabs defaultValue={canView ? "overview" : fin.can("finance.close_period") ? "closing" : "manage"}>
-        <TabsList className="max-w-full justify-start overflow-x-auto">
-          {canView && <TabsTrigger value="overview">Visão Geral</TabsTrigger>}
-          {canView && <TabsTrigger value="byProject">Por projeto</TabsTrigger>}
-          {canView && <TabsTrigger value="projects">Rentabilidade por quadro</TabsTrigger>}
-          {canView && <TabsTrigger value="people">Custos e Produtividade</TabsTrigger>}
-          {canView && <TabsTrigger value="allocation">Despesas e Rateios</TabsTrigger>}
-          {canView && <TabsTrigger value="simulator">Simulador de Precificação</TabsTrigger>}
-          {(canView || fin.can("finance.close_period")) && <TabsTrigger value="closing">Fechamento</TabsTrigger>}
-          {canManage && <TabsTrigger value="manage">Lançamentos e acesso</TabsTrigger>}
-        </TabsList>
+      <Tabs value={params.get("aba") ?? (canView ? "overview" : fin.can("finance.close_period") ? "closing" : "manage")}
+        onValueChange={(v) => { const n = new URLSearchParams(params); n.set("aba", v); setParams(n, { replace: true }); }} className="space-y-4">
+        <FinanceTabsList>
+          {canView && <FinanceTab value="overview">Visão geral</FinanceTab>}
+          {canView && <FinanceTab value="byProject">Por projeto</FinanceTab>}
+          {canView && <FinanceTab value="projects" full="Rentabilidade por quadro">Por quadro</FinanceTab>}
+          {canView && <FinanceTab value="people" full="Custos e produtividade">Pessoas</FinanceTab>}
+          {canView && <FinanceTab value="allocation" full="Despesas e rateios">Rateios</FinanceTab>}
+          {canView && <FinanceTab value="simulator" full="Simulador de precificação">Simulador</FinanceTab>}
+          {(canView || fin.can("finance.close_period")) && <FinanceTab value="closing">Fechamento</FinanceTab>}
+          {canManage && <FinanceTab value="manage" full="Lançamentos e acesso">Lançamentos</FinanceTab>}
+        </FinanceTabsList>
 
         {canView && ov.isError && (
-          <div className="mt-4 rounded-xl border p-6 text-center space-y-2">
-            <p className="text-sm">Não foi possível carregar os números financeiros.</p>
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => ov.refetch()}><RefreshCw className="h-4 w-4" />Tentar de novo</Button>
-          </div>
+          <FinanceNotice tone="error" action={<Button size="sm" variant="outline" className="gap-1.5" onClick={() => ov.refetch()}><RefreshCw className="h-4 w-4" />Tentar de novo</Button>}>
+            Não foi possível carregar os números financeiros.
+          </FinanceNotice>
         )}
 
         {canView && !ov.isError && (
@@ -199,7 +197,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                   { l: "= Resultado", v: formatBRL(total.result), h: "Receita líquida menos custo total.", tone: total.result < 0 ? "text-destructive" : "" },
                   { l: "Margem", v: formatPct(total.margin), h: "Resultado ÷ faturamento bruto. Indisponível quando não há faturamento." },
                 ].map((m) => (
-                  <div key={m.l} className="px-4 py-3 sm:px-5 border-ops-ink-foreground/10 border-b xl:border-b-0 [&:not(:first-child)]:xl:border-l">
+                  <div key={m.l} className="px-4 py-4 sm:px-5 border-ops-ink-foreground/10 border-b xl:border-b-0 [&:not(:first-child)]:xl:border-l">
                     <div className="flex items-center gap-1.5"><OpsLabel>{m.l}</OpsLabel>{hint(m.h)}</div>
                     {ov.isLoading ? <Skeleton className="mt-1 h-8 w-24 bg-ops-ink-foreground/10" /> :
                       <div className={cn("font-ops-display text-2xl sm:text-3xl font-semibold tabular-nums leading-tight", m.tone)}>{m.v}</div>}
@@ -212,14 +210,14 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
             </section>
 
             {total.hoursWithoutCost > 0 && (
-              <p className="text-sm rounded-lg border border-primary/40 px-3 py-2">
+              <FinanceNotice tone="warn">
                 {hrs(total.hoursWithoutCost)} apontadas por pessoas sem custo cadastrado no mês. O custo da equipe está subestimado até que esses custos sejam lançados.
-              </p>
+              </FinanceNotice>
             )}
 
             <div className="grid gap-4 2xl:grid-cols-[3fr_2fr]">
               <section className="rounded-xl border bg-card p-4">
-                <OpsLabel>Evolução mensal</OpsLabel>
+                <h2 className="text-sm font-semibold">Evolução mensal</h2>
                 <div className="h-64 mt-2">
                   {ov.isLoading ? <Skeleton className="h-full w-full" /> : (
                     <ResponsiveContainer width="100%" height="100%">
@@ -239,7 +237,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
               </section>
 
               <section className="rounded-xl border bg-card p-4 space-y-3">
-                <div className="flex items-center justify-between"><OpsLabel>Margem por projeto</OpsLabel><OpsLabel>{belowTarget.length} abaixo da meta</OpsLabel></div>
+                <div className="flex items-center justify-between"><h2 className="text-sm font-semibold">Margem por quadro</h2><OpsLabel>{belowTarget.length} abaixo da meta</OpsLabel></div>
                 {ov.isLoading ? <Skeleton className="h-40 w-full" /> : perBoard.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhum quadro liberado para você no período.</p>
                 ) : (
@@ -260,30 +258,34 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
               </section>
             </div>
 
-            <section className="rounded-xl border bg-card p-4">
-              <OpsLabel>Horas previstas × realizadas</OpsLabel>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            <FinanceSection title="Horas previstas × realizadas" description="Barra laranja: passou do previsto.">
+              <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
                 {perBoard.map((b) => {
                   const ratio = b.hoursPlanned > 0 ? b.hoursRealized / b.hoursPlanned : null;
                   return (
-                    <div key={b.boardId} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
-                      <span className="truncate">{b.name}</span>
-                      <span className={cn("font-ops-label text-xs tabular-nums shrink-0", ratio !== null && ratio > 1 && "text-primary")}>
-                        {hrs(b.hoursRealized)} / {b.hoursPlanned ? hrs(b.hoursPlanned) : "sem previsão"}
-                      </span>
+                    <div key={b.boardId} className="space-y-1 text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate">{b.name}</span>
+                        <span className={cn("font-ops-label text-xs tabular-nums shrink-0 text-muted-foreground", ratio !== null && ratio > 1 && "text-primary")}>
+                          {hrs(b.hoursRealized)} / {b.hoursPlanned ? hrs(b.hoursPlanned) : "sem previsão"}
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className={cn("h-full rounded-full", ratio !== null && ratio > 1 ? "bg-primary" : "bg-foreground/60")} style={{ width: `${ratio === null ? 0 : Math.min(100, ratio * 100)}%` }} />
+                      </div>
                     </div>
                   );
                 })}
               </div>
-            </section>
+            </FinanceSection>
           </TabsContent>
         )}
 
         {canView && !ov.isError && (
           <TabsContent value="projects">
-            <div className="rounded-xl border bg-card overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b bg-muted/40">
+            <div className="rounded-xl border bg-card overflow-auto max-h-[70dvh]">
+              <table className="w-full text-sm [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-card [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-muted">
+                <thead className="sticky top-0 z-10 border-b bg-muted">
                   <tr>
                     <Th k="name" right={false}>Projeto</Th><Th k="gross">Bruto</Th><Th k="tax">Impostos</Th><Th k="netRevenue">Líquida</Th>
                     <Th k="hoursPlanned">H. prev.</Th><Th k="hoursRealized">H. real.</Th><Th k="teamCost">Equipe</Th><Th k="directExpenses">Diretas</Th><Th k="allocated">Rateio</Th>
@@ -295,15 +297,15 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                   {!ov.isLoading && sorted.length === 0 && <tr><td colSpan={14} className="p-6 text-center text-muted-foreground">Nenhum quadro liberado para você no período.</td></tr>}
                   {sorted.map((b) => (
                     <tr key={b.boardId} className="hover:bg-muted/40 cursor-pointer" onClick={() => setDetail(b.boardId)}>
-                      <td className="px-3 py-2 font-medium whitespace-nowrap">{b.name}</td>
-                      {[b.gross, b.tax, b.netRevenue].map((v, i) => <td key={i} className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{formatBRL(v)}</td>)}
-                      <td className="px-3 py-2 text-right tabular-nums">{hrs(b.hoursPlanned)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{hrs(b.hoursRealized)}</td>
-                      {[b.teamCost, b.directExpenses, b.allocated, b.totalCost].map((v, i) => <td key={i} className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{formatBRL(v)}</td>)}
-                      <td className={cn("px-3 py-2 text-right tabular-nums whitespace-nowrap font-medium", b.result < 0 && "text-destructive")}>{formatBRL(b.result)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{formatPct(b.margin)}</td>
-                      <td className="px-3 py-2 text-right"><DeviationTag margin={b.margin} target={b.target} /></td>
-                      <td className="px-3 py-2 text-right"><span className={cn("inline-block rounded-md border px-2 py-0.5 text-xs whitespace-nowrap", STATUS_TONE[b.status])}>{STATUS_LABEL[b.status]}</span></td>
+                      <td className="px-3 py-1.5 font-medium whitespace-nowrap">{b.name}</td>
+                      {[b.gross, b.tax, b.netRevenue].map((v, i) => <td key={i} className="px-3 py-1.5 text-right tabular-nums whitespace-nowrap">{formatBRL(v)}</td>)}
+                      <td className="px-3 py-1.5 text-right tabular-nums">{hrs(b.hoursPlanned)}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums">{hrs(b.hoursRealized)}</td>
+                      {[b.teamCost, b.directExpenses, b.allocated, b.totalCost].map((v, i) => <td key={i} className="px-3 py-1.5 text-right tabular-nums whitespace-nowrap">{formatBRL(v)}</td>)}
+                      <td className={cn("px-3 py-1.5 text-right tabular-nums whitespace-nowrap font-medium", b.result < 0 && "text-destructive")}>{formatBRL(b.result)}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums">{formatPct(b.margin)}</td>
+                      <td className="px-3 py-1.5 text-right"><DeviationTag margin={b.margin} target={b.target} /></td>
+                      <td className="px-3 py-1.5 text-right"><span className={cn("inline-block rounded-md border px-2 py-0.5 text-xs whitespace-nowrap", STATUS_TONE[b.status])}>{STATUS_LABEL[b.status]}</span></td>
                     </tr>
                   ))}
                 </tbody>
