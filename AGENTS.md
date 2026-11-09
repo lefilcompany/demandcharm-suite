@@ -67,4 +67,4 @@ One rule per decision, with the reason.
 
 - Project hours come only from `_finance_time_slices` (mirror `timeSlices.ts`): SP month cut, overlaps counted once, missing cost reported, never zero.
 - Project×month numbers come only from `_finance_project_month`, shared by RPC `get_project_finance_overview` and Edge `finance-api-v1` (sha256 `sk_fin_` keys) — UI and external panel never diverge.
-- Closing a month snapshots each finance-enabled project (`finance_project_snapshots`); `_finance_project_month` serves it, live math in `_finance_project_month_live` — closed numbers match everywhere.
+- Closing a month snapshots each finance-enabled project (`finance_project_snapshots`); `_finance_project_month` serves it plus board adjustments of the project's boards (live math in `_finance_project_month_live`) — closed numbers and corrections match everywhere.
