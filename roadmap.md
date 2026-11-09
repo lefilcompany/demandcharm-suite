@@ -1,5 +1,11 @@
 # Roadmap
 
+## Base financeira — Sprint 04
+- [x] Fechamento por projeto (fotografia ao fechar o mês).
+- [x] Aba "Por projeto" na tela de finanças.
+- [x] Validador do contrato da API externa com paginação (testes).
+- [ ] Homologação na tela com conta com acesso financeiro e projeto com dados reais.
+
 ## Inteligência Financeira — Fase 4 (fechamento mensal)
 - [x] Conferência, simulação, fechamento com fotografia, travamento dos lançamentos, ajustes auditáveis, histórico e CSV.
 - [x] Testado no banco (sem gravar): fechar, edição recusada, ajuste somado, refechar/mês atual/sem permissão recusados; 29 testes passando. Tela logada não conferida visualmente.
