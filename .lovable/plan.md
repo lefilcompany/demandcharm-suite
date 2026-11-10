@@ -19,6 +19,13 @@ Os dois nunca se misturam: ser Admin de quadro não dá acesso a Finanças, e te
    - Opção "Escopo": **Todos os projetos** ou **Só estes projetos** (seleção múltipla).
 3. **Telas de Finanças** passam a mostrar só os projetos do escopo da pessoa.
 
+4. **Agente interno x externo em toda a plataforma**
+   - Cada membro da equipe tem um tipo: **Interno**, **Externo (cliente)** ou **Prestador**. Hoje isso só existe no financeiro; passa a valer para a equipe toda.
+   - O dono define o tipo na lista de membros (mesma tela dos perfis).
+   - Etiqueta discreta "Externo"/"Prestador" ao lado do nome: lista de membros da equipe e do quadro, seletor de responsáveis, cards do Kanban e detalhe da demanda. Interno não mostra etiqueta.
+   - Filtro "Interno / Externo" na lista de membros e no filtro de responsáveis do Kanban.
+   - O tipo não muda o que a pessoa faz no quadro (isso continua pelo papel do quadro).
+
 ## Regras
 - Ninguém ganha perfil automaticamente; dono da equipe e administrador geral concedem.
 - O dono não altera o próprio perfil (continua a regra atual).
@@ -32,5 +39,7 @@ Os dois nunca se misturam: ser Admin de quadro não dá acesso a Finanças, e te
 - RPCs SECURITY DEFINER: `upsert_access_profile`, `delete_access_profile`, `assign_access_profile` (valida dono/admin, self-grant, solicitante/externo), todas auditadas.
 - Backfill de `finance_permissions` → perfis; tabela antiga fica marcada como DEPRECATED (não é apagada).
 - Frontend: `src/lib/access/profiles.ts` (catálogo de permissões, detecção de perfil pronto) + testes; `AccessProfilesManager.tsx` e `MemberAccessList.tsx` em TeamConfig, substituindo `FinanceAccessManager`; hooks com user id na chave.
+- Tipo do membro: nova coluna `member_kind` em `team_members` (padrão `internal`), preenchida a partir do vínculo atual em `finance_member_profiles`; alteração só via RPC `set_member_kind` (dono/admin, auditada). O vínculo financeiro com vigência continua para cálculo de custo e passa a sugerir o valor.
+- Hook `useMemberKinds(teamId)` + componente `MemberKindBadge` reutilizado nas telas listadas.
 - Testes: regras de conversão, bloqueio de solicitante, escopo por projeto e verificação no banco de que ninguém perdeu acesso após a migração.
 - AGENTS.md: substituir a regra de acesso financeiro pela de perfis por módulo.
