@@ -24,6 +24,7 @@ export interface TeamMember {
   joined_at: string;
   position_id: string | null;
   position: TeamMemberPosition | null;
+  member_kind: "internal" | "client_external" | "contractor";
   profile: {
     full_name: string;
     email: string | null;
@@ -45,6 +46,7 @@ export function useTeamMembers(teamId: string | null) {
           role,
           joined_at,
           position_id,
+          member_kind,
           profiles!team_members_user_id_fkey(full_name, email, avatar_url),
           team_positions(id, name, color, text_color)
         `)
@@ -59,6 +61,7 @@ export function useTeamMembers(teamId: string | null) {
         role: mapDbRole(member.role as string),
         joined_at: member.joined_at,
         position_id: member.position_id,
+        member_kind: ((member as any).member_kind ?? "internal") as TeamMember["member_kind"],
         position: member.team_positions ? {
           id: (member.team_positions as any).id,
           name: (member.team_positions as any).name,
