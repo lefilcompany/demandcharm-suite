@@ -31,7 +31,8 @@ import { toast } from "sonner";
 import { useRedeemCoupon } from "@/hooks/useTrialCoupon";
 import { Ticket, CheckCircle2 } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
-import { FinanceAccessManager } from "@/components/finance/FinanceAccessManager";
+import { AccessProfilesManager } from "@/components/team/AccessProfilesManager";
+import { MemberKindBadge } from "@/components/team/MemberKindBadge";
 
 const roleLabels: Record<string, string> = {
   admin: "Administrador",
@@ -467,6 +468,7 @@ export default function TeamConfig() {
                         <div className="min-w-0 flex-1">
                           <p className="font-medium truncate">
                             {member.profile?.full_name || "Usuário"}
+                            <MemberKindBadge kind={member.member_kind} className="ml-2 align-middle" />
                             {isCurrentUser && <span className="text-muted-foreground ml-2">(você)</span>}
                           </p>
                           <div className="flex flex-wrap items-center gap-1.5 mt-1">
@@ -554,7 +556,7 @@ export default function TeamConfig() {
         </Card>
 
         {isAdmin && selectedTeamId && (
-          <FinanceAccessManager teamId={selectedTeamId} members={members ?? []} currentUserId={user?.id} />
+          <AccessProfilesManager teamId={selectedTeamId} members={members ?? []} currentUserId={user?.id} />
         )}
       </div>
 
