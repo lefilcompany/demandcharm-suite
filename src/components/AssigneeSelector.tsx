@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useBoardMembers } from "@/hooks/useBoardMembers";
+import { MemberKindBadge } from "@/components/team/MemberKindBadge";
 import { Users, X, Check, ShieldCheck, Shield, Zap, User, Search, Crown, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InfoTooltip } from "@/components/InfoTooltip";
@@ -142,6 +143,7 @@ export function AssigneeSelector({
     : allMembers;
 
   const isLoading = boardId ? loadingBoard : loadingTeam;
+  const kindOf = (uid: string) => teamMembers?.find((t) => t.user_id === uid)?.member_kind;
 
   const filteredMembers = useMemo(() => {
     if (!members) return [];
@@ -382,6 +384,7 @@ export function AssigneeSelector({
                             <div className="pt-8 text-center space-y-1.5">
                               <p className="font-semibold text-sm line-clamp-2 min-h-[2.5rem]">
                                 {member.profile?.full_name}
+<MemberKindBadge kind={kindOf(member.user_id)} className="ml-1.5" />
                               </p>
                               <Badge className={cn("text-xs", config.badgeColor)}>
                                 {config.icon}
@@ -456,6 +459,7 @@ export function AssigneeSelector({
                               <div className="pt-8 text-center space-y-1.5">
                                 <p className="font-semibold text-sm line-clamp-2 min-h-[2.5rem]">
                                   {member.profile?.full_name}
+<MemberKindBadge kind={kindOf(member.user_id)} className="ml-1.5" />
                                 </p>
                                 <Badge className={cn("text-xs", config.badgeColor)}>
                                   {config.icon}
