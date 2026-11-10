@@ -53,3 +53,16 @@ export function matchProfile(perms: string[], profiles: AccessProfile[]): Access
   const sorted = [...profiles].sort((a, b) => Number(b.is_system) - Number(a.is_system));
   return sorted.find((p) => p.permissions.length === set.size && p.permissions.every((x) => set.has(x))) ?? null;
 }
+
+export interface ModuleAccess { full: boolean; permissions: string[] }
+/** Team owner / system admin always pass; others need the permission in their profile. */
+export const canUseModule = (a: ModuleAccess | null | undefined, perm: ModulePermission) =>
+  !!a && (a.full || a.permissions.includes(perm));
+
+export type KindFilter = "internal" | "external" | null;
+/** "external" = any assignee is external or contractor; "internal" = none is. */
+export function matchesKindFilter(assigneeIds: string[], kinds: Map<string, MemberKind>, f: KindFilter) {
+  if (!f) return true;
+  const ext = assigneeIds.some((id) => (kinds.get(id) ?? "internal") !== "internal");
+  return f === "external" ? ext : assigneeIds.length > 0 && !ext;
+}

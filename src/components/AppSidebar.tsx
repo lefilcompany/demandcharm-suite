@@ -1,5 +1,7 @@
 import { LayoutDashboard, Users, User, Briefcase, Kanban, ChevronUp, Settings, FileText, Send, LayoutGrid, UserPlus, UsersRound, Clock, Sparkles, ShoppingCart, Layers, StickyNote, LayoutList, CornerUpLeft, MessageSquareText, Rocket, FolderArchive, Landmark } from "lucide-react";
 import { useFinanceAccess } from "@/hooks/useFinance";
+import { useModuleAccess } from "@/hooks/useModuleAccess";
+import { canUseModule } from "@/lib/access/profiles";
 import { useTranslation } from "react-i18next";
 const logoSoma = "/logo-soma-sidebar.png";
 import { NavLink } from "@/components/NavLink";
@@ -42,6 +44,9 @@ export function AppSidebar() {
   } = useSelectedTeam();
   const { selectedBoardId } = useSelectedBoardSafe();
   const financeAccess = useFinanceAccess(selectedTeamId);
+  const moduleAccess = useModuleAccess();
+  const canProjects = canUseModule(moduleAccess.data, "projects.view");
+  const canReports = canUseModule(moduleAccess.data, "reports.view");
   const {
     data: role
   } = useTeamRole(selectedTeamId);
@@ -75,7 +80,7 @@ export function AppSidebar() {
         
         { title: "Visão Geral", url: "/app/team-demands", icon: Layers },
         { title: "Meus Quadros", url: "/app/boards", icon: LayoutGrid },
-        { title: "Projetos", url: "/app/projects", icon: Briefcase },
+        ...(canProjects ? [{ title: "Projetos", url: "/app/projects", icon: Briefcase }] : []),
         ...(selectedTeamId
           ? [{ title: "Participantes", url: `/app/teams/${selectedTeamId}`, icon: UsersRound, end: true }]
           : []),
@@ -88,11 +93,11 @@ export function AppSidebar() {
       ]
     : [];
 
-  const baseMenuItems = [{
+  const baseMenuItems = [...(canReports ? [{
     title: t("dashboard.title"),
     url: "/app",
     icon: LayoutDashboard
-  }, {
+  }] : []), {
     title: t("kanban.title"),
     url: "/app/kanban",
     icon: Kanban
@@ -118,7 +123,7 @@ export function AppSidebar() {
       icon: Send,
       showDemandRequestBadge: true
     },
-    ...((isBoardAdminOrModerator) ? [{
+    ...((isBoardAdminOrModerator && canReports) ? [{
       title: "Gerenciamento de Tempo",
       url: "/app/time-management",
       icon: Clock
@@ -433,7 +438,7 @@ export function AppSidebar() {
                       </NavLink>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+                    {canProjects && <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
                       <NavLink
                         to="/app/projects"
                         onClick={() => { setPopoverOpen(false); closeMobileSidebar(); }}
@@ -443,7 +448,7 @@ export function AppSidebar() {
                         <Briefcase className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                         <span className="text-sm text-gray-700 dark:text-gray-200">Projetos</span>
                       </NavLink>
-                    </DropdownMenuItem>
+                    </DropdownMenuItem>}
                     
                     {selectedTeamId && (
                       <DropdownMenuItem asChild className="p-0 focus:bg-transparent">

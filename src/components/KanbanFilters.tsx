@@ -21,6 +21,7 @@ export interface KanbanFiltersState {
   position: string | null;
   assignee: string | null;
   service: string | null;
+  memberKind?: "internal" | "external" | null;
 }
 
 interface KanbanFiltersProps {
@@ -352,6 +353,18 @@ export function KanbanFilters({ teamId, boardId, filters, onChange }: KanbanFilt
                 value={filters.assignee}
                 onChange={(v) => onChange({ ...filters, assignee: v })}
                 members={members}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <User className="h-3 w-3" /> Interno / Externo
+              </label>
+              <NativeSelect
+                value={filters.memberKind ?? null}
+                onChange={(v) => onChange({ ...filters, memberKind: v as KanbanFiltersState["memberKind"] })}
+                options={[{ value: "internal", label: "Internos" }, { value: "external", label: "Externos e prestadores" }]}
+                placeholder="Todos"
               />
             </div>
 

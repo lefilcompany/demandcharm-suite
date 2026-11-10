@@ -29,6 +29,8 @@ import { lazy, Suspense, useEffect } from "react";
 import { PageSkeleton } from "@/components/skeletons/PageSkeleton";
 import { prefetchAppRoutes } from "@/lib/routePrefetch";
 
+import { ModuleGate } from "@/components/access/ModuleGate";
+import { DashboardGate } from "@/components/access/DashboardGate";
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Welcome = lazy(() => import("./pages/Welcome"));
@@ -197,7 +199,7 @@ const App = () => {
                               <Route path="/app/subscription/success" element={<RequireAuth><SubscriptionSuccess /></RequireAuth>} />
 
                               <Route element={<RequireTeam><ProtectedLayout /></RequireTeam>}>
-                                <Route path="/app" element={<Index />} />
+                                <Route path="/app" element={<DashboardGate><Index /></DashboardGate>} />
                                 <Route path="/app/teams" element={<Teams />} />
                                 <Route path="/app/teams/:id" element={<TeamDetail />} />
                                 <Route path="/app/teams/:id/requests" element={<TeamRequests />} />
@@ -208,15 +210,15 @@ const App = () => {
                                 <Route path="/app/team-config" element={<TeamConfig />} />
                                 <Route path="/app/demands" element={<Demands />} />
                                 <Route path="/app/folders/:folderId" element={<FolderDetail />} />
-                                <Route path="/app/projects" element={<Projects />} />
-                                <Route path="/app/projects/:folderId" element={<FolderDetail />} />
+                                <Route path="/app/projects" element={<ModuleGate perm="projects.view"><Projects /></ModuleGate>} />
+                                <Route path="/app/projects/:folderId" element={<ModuleGate perm="projects.view"><FolderDetail /></ModuleGate>} />
                                 <Route path="/app/demands/create" element={<CreateDemandRoute />} />
                                 <Route path="/app/demands/request" element={<CreateDemandRequest />} />
                                 <Route path="/app/demands/:id" element={<DemandDetail />} />
                                 <Route path="/app/demand-requests" element={<DemandRequests />} />
                                 <Route path="/app/store" element={<Store />} />
                                 <Route path="/app/kanban" element={<Kanban />} />
-                                <Route path="/app/time-management" element={<TimeManagement />} />
+                                <Route path="/app/time-management" element={<ModuleGate perm="reports.view"><TimeManagement /></ModuleGate>} />
                                 <Route path="/app/finance" element={<Finance />} />
                                 <Route path="/app/board-summary" element={<BoardSummary />} />
                                 <Route path="/app/board-agent" element={<BoardAgent />} />
@@ -227,7 +229,7 @@ const App = () => {
                                 <Route path="/app/my-demands" element={<MyDemands />} />
                                 <Route path="/app/notes" element={<Notes />} />
                                 <Route path="/app/notes/:noteId" element={<NoteDetail />} />
-                                <Route path="/app/reports" element={<Reports />} />
+                                <Route path="/app/reports" element={<ModuleGate perm="reports.view"><Reports /></ModuleGate>} />
                                 <Route path="/app/profile" element={<Profile />} />
                                 <Route path="/app/settings" element={<Settings />} />
                                 <Route path="/app/pricing" element={<Pricing />} />

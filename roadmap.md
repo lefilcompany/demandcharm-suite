@@ -135,5 +135,5 @@ Causa provável no navegador: o worker guardava TODAS as respostas do backend po
 ## Perfis de acesso por módulo + interno/externo (2026-11-10)
 - [x] Perfis prontos e personalizados, escopo por projeto, servidor checa
 - [x] Tipo de membro Interno/Externo/Prestador com etiqueta (equipe, seletor de responsáveis) e filtro na tela de acessos
-- [ ] Etiqueta também nos cards do Kanban, detalhe da demanda e membros do quadro; filtro interno/externo no Kanban
-- [ ] Permissões de Projetos/Relatórios ainda não bloqueiam essas telas (só Finanças é aplicado)
+- [x] Etiqueta também nos cards do Kanban, detalhe da demanda e membros do quadro; filtro interno/externo no Kanban
+- [x] Projetos e Relatórios bloqueados por perfil (telas, menu e dados de projetos no servidor)
