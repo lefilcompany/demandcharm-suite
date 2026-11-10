@@ -20,3 +20,20 @@ describe("access profiles", () => {
     expect(hasFinance(["finance.export"])).toBe(true);
   });
 });
+
+import { canUseModule, matchesKindFilter } from "./profiles";
+describe("module access", () => {
+  it("owner/admin always pass, others need the permission", () => {
+    expect(canUseModule({ full: true, permissions: [] }, "projects.view")).toBe(true);
+    expect(canUseModule({ full: false, permissions: [] }, "reports.view")).toBe(false);
+    expect(canUseModule({ full: false, permissions: ["reports.view"] }, "reports.view")).toBe(true);
+    expect(canUseModule(null, "projects.view")).toBe(false);
+  });
+  it("filters demands by internal/external assignees", () => {
+    const k = new Map([["a", "internal"], ["b", "contractor"]] as const) as any;
+    expect(matchesKindFilter(["a", "b"], k, "external")).toBe(true);
+    expect(matchesKindFilter(["a"], k, "external")).toBe(false);
+    expect(matchesKindFilter(["a"], k, "internal")).toBe(true);
+    expect(matchesKindFilter(["a", "b"], k, "internal")).toBe(false);
+  });
+});
