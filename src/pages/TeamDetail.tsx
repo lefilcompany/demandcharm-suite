@@ -18,6 +18,7 @@ import { useTeamMembers, useRemoveMember, useUpdateMemberRole } from "@/hooks/us
 import { useTeamAvailability, type TeamMemberAvailability } from "@/hooks/useTeamAvailability";
 import { useIsTeamAdmin, useTeamRole } from "@/hooks/useTeamRole";
 import { useTeamScope } from "@/hooks/useTeamScope";
+import { useSelectedTeam } from "@/contexts/TeamContext";
 import { useTeamPositions, useAssignPosition } from "@/hooks/useTeamPositions";
 import { MemberCard } from "@/components/MemberCard";
 import { TeamAvailabilitySummary } from "@/components/TeamAvailabilitySummary";
@@ -61,6 +62,7 @@ export default function TeamDetail() {
   const {
     data: scope
   } = useTeamScope(id || undefined);
+  const { selectedTeamId, setSelectedTeamId } = useSelectedTeam();
   const { data: positions } = useTeamPositions(id);
   const removeMember = useRemoveMember();
   const updateMemberRole = useUpdateMemberRole();
@@ -97,6 +99,13 @@ export default function TeamDetail() {
       }
     );
   };
+  // A tela de configurações usa a equipe selecionada no contexto; garante que seja esta.
+  const openTeamSettings = () => {
+    if (!id) return;
+    if (selectedTeamId !== id) setSelectedTeamId(id);
+    navigate("/app/team-config");
+  };
+
   const handleCopyCode = () => {
     if (team?.access_code) {
       navigator.clipboard.writeText(team.access_code);
@@ -149,12 +158,26 @@ export default function TeamDetail() {
   return <div className="space-y-6 animate-fade-in">
       <SEOHead title={`Equipe - ${team.name}`} />
       {/* Breadcrumbs */}
-      <PageBreadcrumb
-        items={[
-          
-          { label: team.name, isCurrent: true },
-        ]}
-      />
+      <div className="flex items-start justify-between gap-3">
+        <PageBreadcrumb
+          items={[
+            { label: team.name, isCurrent: true },
+          ]}
+        />
+        {canManage && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openTeamSettings}
+            aria-label="Configurações da equipe"
+            title="Perfis de acesso, cargos e código de convite"
+            className="shrink-0 gap-2 border-border/80 bg-card text-foreground/80 transition-colors hover:border-primary/45 hover:bg-primary/[0.06] hover:text-primary"
+          >
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Configurações da equipe</span>
+          </Button>
+        )}
+      </div>
 
       {/* Team Access Code Card - For Admins/Moderators */}
       {canManage && (
