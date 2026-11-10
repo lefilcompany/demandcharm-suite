@@ -39,6 +39,8 @@ import { TrashDemandsModal } from "@/components/TrashDemandsModal";
 import { ClearBoardKanbanDialog } from "@/components/ClearBoardKanbanDialog";
 import { isHiddenFromKanban } from "@/lib/kanbanVisibility";
 import { Eye, EyeOff } from "lucide-react";
+import { useMemberKinds } from "@/hooks/useModuleAccess";
+import { matchesKindFilter } from "@/lib/access/profiles";
 
 const defaultFilters: KanbanFiltersState = {
   myTasks: false,
@@ -47,6 +49,7 @@ const defaultFilters: KanbanFiltersState = {
   position: null,
   assignee: null,
   service: null,
+  memberKind: null,
 };
 
 export default function Kanban() {
@@ -94,6 +97,7 @@ export default function Kanban() {
 
   const { openCreateDemand } = useCreateDemandModal();
   const { user } = useAuth();
+  const { data: memberKinds } = useMemberKinds();
   const { selectedBoardId, currentTeamId } = useSelectedBoard();
   const {
     data: allBoardDemands,
@@ -246,9 +250,14 @@ export default function Kanban() {
         }
       }
       
+      if (filters.memberKind && memberKinds) {
+        const ids = [...(d.demand_assignees?.map((a) => a.user_id) ?? []), ...(d.assigned_to ? [d.assigned_to] : [])];
+        if (!matchesKindFilter(ids, memberKinds, filters.memberKind)) return false;
+      }
+
       return true;
     });
-  }, [demands, filters, user?.id, membersByPosition, serviceChildMap]);
+  }, [demands, filters, user?.id, membersByPosition, serviceChildMap, memberKinds]);
 
   const hasActiveFilters = useMemo(
     () => Object.values(filters).some((v) => v !== null && v !== false),

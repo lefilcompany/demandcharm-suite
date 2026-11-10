@@ -1,4 +1,7 @@
 import { useNavigate } from "react-router-dom";
+import { useMemberKinds } from "@/hooks/useModuleAccess";
+import { MemberKindBadge } from "@/components/team/MemberKindBadge";
+import { MEMBER_KIND_LABEL } from "@/lib/access/profiles";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -23,6 +26,7 @@ const sizeClasses = {
 
 export function AssigneeAvatars({ assignees, maxVisible = 3, size = "md", clickable = true }: AssigneeAvatarsProps) {
   const navigate = useNavigate();
+  const { data: kinds } = useMemberKinds();
   
   // Filter out any assignees with missing profile data
   const validAssignees = assignees?.filter(a => a?.profile) || [];
@@ -46,7 +50,9 @@ export function AssigneeAvatars({ assignees, maxVisible = 3, size = "md", clicka
     navigate(`/app/user/${userId}`);
   };
 
+  const ext = validAssignees.map((a) => kinds?.get(a.user_id)).find((k) => k && k !== "internal");
   return (
+    <div className="flex items-center gap-1">
     <div className="flex -space-x-2">
       {visible.map((assignee) => (
         <Tooltip key={assignee.user_id}>
@@ -62,7 +68,7 @@ export function AssigneeAvatars({ assignees, maxVisible = 3, size = "md", clicka
             </Avatar>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{assignee.profile.full_name}</p>
+            <p>{assignee.profile.full_name}{kinds?.get(assignee.user_id) && kinds.get(assignee.user_id) !== "internal" ? ` · ${MEMBER_KIND_LABEL[kinds.get(assignee.user_id)!]}` : ""}</p>
           </TooltipContent>
         </Tooltip>
       ))}
@@ -80,6 +86,8 @@ export function AssigneeAvatars({ assignees, maxVisible = 3, size = "md", clicka
           </TooltipContent>
         </Tooltip>
       )}
+    </div>
+    <MemberKindBadge kind={ext} />
     </div>
   );
 }

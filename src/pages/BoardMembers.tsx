@@ -60,7 +60,10 @@ const roleColors: Record<string, string> = {
 
 const roleOptions: BoardRole[] = ["admin", "moderator", "executor", "requester"];
 
+import { MemberKindBadge } from "@/components/team/MemberKindBadge";
+import { useMemberKinds } from "@/hooks/useModuleAccess";
 export default function BoardMembers() {
+  const { data: memberKinds } = useMemberKinds();
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -180,6 +183,7 @@ export default function BoardMembers() {
                         >
                           {member.profile?.full_name || "Usuário"}
                         </button>
+                        <MemberKindBadge kind={memberKinds?.get(member.user_id)} className="shrink-0" />
                         {isCurrentUser && (
                           <Badge variant="secondary" className="text-xs shrink-0">
                             Você

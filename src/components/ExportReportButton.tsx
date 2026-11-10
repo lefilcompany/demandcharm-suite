@@ -1,3 +1,5 @@
+import { useModuleAccess } from "@/hooks/useModuleAccess";
+import { canUseModule } from "@/lib/access/profiles";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -37,6 +39,7 @@ export function ExportReportButton({
   periodLabel,
   stats 
 }: ExportReportButtonProps) {
+  const moduleAccess = useModuleAccess();
   
   const exportToCSV = () => {
     try {
@@ -145,6 +148,7 @@ export function ExportReportButton({
     }
   };
 
+  if (!canUseModule(moduleAccess.data, "reports.view")) return null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
