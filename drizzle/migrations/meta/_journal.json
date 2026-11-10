@@ -260,6 +260,13 @@
       "when": 1794308397268,
       "tag": "0036_projects_module_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794308448268,
+      "tag": "0037_get_my_module_access",
+      "breakpoints": true
     }
   ]
 }

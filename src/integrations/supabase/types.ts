@@ -5551,6 +5551,7 @@ export type Database = {
         Returns: number
       }
       get_my_finance_access: { Args: { _team_id: string }; Returns: Json }
+      get_my_module_access: { Args: { _team_id: string }; Returns: Json }
       get_project_finance_overview: {
         Args: { _from: string; _project_id: string; _to: string }
         Returns: Json
