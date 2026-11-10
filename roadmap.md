@@ -131,3 +131,9 @@ Causa provável no navegador: o worker guardava TODAS as respostas do backend po
 - [x] Testes: unidade (centavos, vigência), banco (cálculo, vigência, paginação), API (401/400/200, isolamento)
 - [ ] Visão Geral/Rentabilidade com linha por projeto (hoje por quadro dentro do projeto)
 - [ ] Conferência visual com conta que tenha acesso financeiro numa equipe
+
+## Perfis de acesso por módulo + interno/externo (2026-11-10)
+- [x] Perfis prontos e personalizados, escopo por projeto, servidor checa
+- [x] Tipo de membro Interno/Externo/Prestador com etiqueta (equipe, seletor de responsáveis) e filtro na tela de acessos
+- [ ] Etiqueta também nos cards do Kanban, detalhe da demanda e membros do quadro; filtro interno/externo no Kanban
+- [ ] Permissões de Projetos/Relatórios ainda não bloqueiam essas telas (só Finanças é aplicado)
