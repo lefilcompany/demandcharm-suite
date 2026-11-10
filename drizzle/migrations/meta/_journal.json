@@ -253,6 +253,13 @@
       "when": 1794307701071,
       "tag": "0035_access_profiles_and_member_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794308397268,
+      "tag": "0036_projects_module_permission",
+      "breakpoints": true
     }
   ]
 }
