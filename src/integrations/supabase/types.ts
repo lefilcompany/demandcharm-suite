@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_profiles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          permissions: string[]
+          system_key: string | null
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          permissions?: string[]
+          system_key?: string | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          permissions?: string[]
+          system_key?: string | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_profiles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_impersonation_log: {
         Row: {
           admin_id: string
@@ -2893,6 +2940,81 @@ export type Database = {
         }
         Relationships: []
       }
+      member_access_profiles: {
+        Row: {
+          all_projects: boolean
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          profile_id: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          all_projects?: boolean
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          profile_id: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          all_projects?: boolean
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          profile_id?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_access_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "access_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_access_profiles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_access_project_scope: {
+        Row: {
+          assignment_id: string
+          project_id: string
+        }
+        Insert: {
+          assignment_id: string
+          project_id: string
+        }
+        Update: {
+          assignment_id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_access_project_scope_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "member_access_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_access_project_scope_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_share_tokens: {
         Row: {
           created_at: string
@@ -4319,6 +4441,7 @@ export type Database = {
         Row: {
           id: string
           joined_at: string
+          member_kind: string
           position_id: string | null
           role: Database["public"]["Enums"]["team_role"]
           team_id: string
@@ -4327,6 +4450,7 @@ export type Database = {
         Insert: {
           id?: string
           joined_at?: string
+          member_kind?: string
           position_id?: string | null
           role?: Database["public"]["Enums"]["team_role"]
           team_id: string
@@ -4335,6 +4459,7 @@ export type Database = {
         Update: {
           id?: string
           joined_at?: string
+          member_kind?: string
           position_id?: string | null
           role?: Database["public"]["Enums"]["team_role"]
           team_id?: string
@@ -5074,6 +5199,16 @@ export type Database = {
         }
         Returns: Json
       }
+      assign_access_profile: {
+        Args: {
+          _all_projects: boolean
+          _profile_id: string
+          _project_ids: string[]
+          _team_id: string
+          _user_id: string
+        }
+        Returns: string
+      }
       board_demand_facts: {
         Args: { p_board_id: string; p_tz?: string }
         Returns: {
@@ -5246,6 +5381,7 @@ export type Database = {
         Args: { _board_status_id: string; _target_status_id: string }
         Returns: number
       }
+      delete_access_profile: { Args: { _id: string }; Returns: undefined }
       duplicate_demand: {
         Args: {
           p_demand_id: string
@@ -5560,6 +5696,15 @@ export type Database = {
         Args: { _folder_id: string; _user_id: string }
         Returns: boolean
       }
+      has_module_permission: {
+        Args: {
+          _permission: string
+          _project_id?: string
+          _team_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_project_access: {
         Args: { _project_id: string; _user_id: string }
         Returns: boolean
@@ -5661,6 +5806,15 @@ export type Database = {
         }[]
       }
       password_reset_required: { Args: { _email: string }; Returns: boolean }
+      profile_grants: {
+        Args: {
+          _board_id: string
+          _permission: string
+          _team_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       promote_to_admin_by_email: {
         Args: { p_email: string }
         Returns: undefined
@@ -5722,6 +5876,10 @@ export type Database = {
         Args: { _team_id: string }
         Returns: undefined
       }
+      set_member_kind: {
+        Args: { _kind: string; _team_id: string; _user_id: string }
+        Returns: undefined
+      }
       update_trial_coupon: {
         Args: {
           p_coupon_id: string
@@ -5733,6 +5891,16 @@ export type Database = {
           p_trial_days: number
         }
         Returns: Json
+      }
+      upsert_access_profile: {
+        Args: {
+          _description: string
+          _id: string
+          _name: string
+          _permissions: string[]
+          _team_id: string
+        }
+        Returns: string
       }
       upsert_demand_meeting: {
         Args: {
