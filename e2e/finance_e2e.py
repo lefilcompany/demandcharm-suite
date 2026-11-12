@@ -7,6 +7,7 @@ from playwright.async_api import async_playwright, expect
 BASE = "http://localhost:8080"
 OUT = Path("/tmp/browser/finance-e2e"); OUT.mkdir(parents=True, exist_ok=True)
 TAG = f"E2E-FIN-{int(time.time())}"
+START_ISO = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 60))
 results = []
 
 def session():
@@ -104,7 +105,7 @@ async def main():
             await sec.get_by_role("button", name=button).click()
             await expect(page.get_by_text(re.compile("lançad|salv", re.I)).first).to_be_visible(timeout=10000)
 
-        await step("Faturamento lançado", lambda: launch("Faturamento", [("Valor (R$)", "20000"), ("Descrição", TAG + " receita")], "Lançar"), page)
+        await step("Faturamento lançado", lambda: launch("Faturamento", [("Valor (R$)", "20000")], "Lançar"), page)
         await step("Despesa direta lançada", lambda: launch("Despesas diretas", [("Descrição", TAG + " licença"), ("Valor (R$)", "500")], "Lançar"), page)
 
         async def pct_method(sec):
@@ -137,15 +138,19 @@ async def main():
         await b.close()
     return S
 
+def api():
+    import requests
+    env = open(".env").read()
+    g = lambda k: os.environ.get(k) or env.split(k + "=")[1].split()[0].strip('"')
+    tok = json.loads(session()[1])["access_token"]
+    return requests, g("VITE_SUPABASE_URL"), {"apikey": g("VITE_SUPABASE_PUBLISHABLE_KEY"), "Authorization": f"Bearer {tok}", "Prefer": "return=representation"}
+
 def cleanup():
     """Remove tudo que tenha sido criado por execuções deste teste (nome/descrição E2E-FIN-*)."""
-    import requests
-    url = os.environ.get("VITE_SUPABASE_URL") or open(".env").read().split("VITE_SUPABASE_URL=")[1].split()[0].strip('"')
-    anon = os.environ.get("VITE_SUPABASE_PUBLISHABLE_KEY") or open(".env").read().split("VITE_SUPABASE_PUBLISHABLE_KEY=")[1].split()[0].strip('"')
-    tok = json.loads(session()[1])["access_token"]
-    h = {"apikey": anon, "Authorization": f"Bearer {tok}", "Prefer": "return=representation"}
+    requests, url, h = api()
     out = {}
-    for t, f in [("finance_revenues", "description=like.E2E-FIN-*"), ("finance_expenses", "description=like.E2E-FIN-*")]:
+    since = sys.argv[sys.argv.index("--since") + 1] if "--since" in sys.argv else START_ISO
+    for t, f in [("finance_revenues", f"gross_amount=eq.20000&description=is.null&created_at=gte.{since}"), ("finance_expenses", "description=like.E2E-FIN-*")]:
         out[t] = len(requests.delete(f"{url}/rest/v1/{t}?{f}", headers=h).json())
     projs = requests.get(f"{url}/rest/v1/projects?name=like.E2E-FIN-*&select=id", headers=h).json()
     for pr in projs:
@@ -162,7 +167,12 @@ def cleanup():
 DEFAULTS_CREATED_BY_TEST = [a for a in sys.argv[1:] if re.fullmatch(r"[0-9a-f-]{36}", a)]
 if "--cleanup-only" in sys.argv:
     cleanup(); sys.exit(0)
+requests, url, h = api()
+month0 = time.strftime("%Y-%m-01")
+before = {r["id"] for r in requests.get(f"{url}/rest/v1/finance_team_defaults?valid_from=eq.{month0}&select=id", headers=h).json()}
 S = asyncio.run(main())
+if not before:
+    DEFAULTS_CREATED_BY_TEST += [r["id"] for r in requests.get(f"{url}/rest/v1/finance_team_defaults?valid_from=eq.{month0}&select=id", headers=h).json()]
 cleanup()
 json.dump({"tag": TAG, **{k: v for k, v in S.items()}}, open(OUT / "state.json", "w"))
 for n, st, m in results: print(f"[{st}] {n} {m}")
