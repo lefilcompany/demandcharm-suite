@@ -124,11 +124,24 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
                 const Icon = ok ? CheckCircle2 : i.severity === "block" ? XCircle : TriangleAlert;
                 const value = i.amount != null && i.count ? (i.code === "hours_without_cost" ? `${i.count} · ${i.amount.toLocaleString("pt-BR")} h` : formatBRL(i.amount)) : String(i.count);
                 return (
-                  <li key={i.code} title={CHECKLIST_TEXT[i.code].help} className="flex items-center gap-2.5 py-2 sm:border-b sm:border-ops-ink-foreground/10">
+                  <li key={i.code} title={CHECKLIST_TEXT[i.code].help} className="flex flex-wrap items-center gap-2.5 py-2 sm:border-b sm:border-ops-ink-foreground/10">
                     <Icon className={cn("h-4 w-4 shrink-0", ok ? "text-ops-ink-foreground/40" : i.severity === "block" ? "text-destructive" : "text-primary")} />
                     <span className={cn("flex-1 min-w-0 text-sm", ok ? "text-ops-ink-foreground/60" : "text-ops-ink-foreground")}>{CHECKLIST_TEXT[i.code].label}</span>
                     {!ok && <OpsLabel className={cn("tracking-[0.1em]", i.severity === "block" ? "text-destructive" : "text-primary")}>{i.severity === "block" ? "Bloqueia" : "Aviso"}</OpsLabel>}
                     <span className="font-ops-mono text-sm tabular-nums">{ok ? "OK" : value}</span>
+                    {!ok && i.details.length > 0 && (
+                      <details className="basis-full -mt-1 mb-1 pl-6 text-xs">
+                        <summary className="cursor-pointer text-ops-ink-foreground/70 hover:text-ops-ink-foreground">Ver {i.details.length === 1 ? "o item" : `os ${i.details.length} itens`} · {CHECKLIST_TEXT[i.code].help}</summary>
+                        <ul className="mt-1.5 divide-y divide-ops-ink-foreground/10">
+                          {i.details.map((d, k) => (
+                            <li key={k} className="flex justify-between gap-3 py-1">
+                              <span className="min-w-0"><span className="text-ops-ink-foreground">{d.label}</span>{d.detail && <span className="text-ops-ink-foreground/60"> · {d.detail}</span>}</span>
+                              {d.value != null && <span className="shrink-0 font-ops-mono tabular-nums">{d.kind === "money" ? formatBRL(Number(d.value)) : d.kind === "hours" ? `${Number(d.value).toLocaleString("pt-BR")} h` : d.value}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                   </li>
                 );
               })}
@@ -137,7 +150,7 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-ops-ink-foreground/80">
                   {!ended ? "Este mês ainda não terminou; você pode simular, mas não fechar."
-                    : blocked.length ? `${blocked.length} pendência(s) bloqueiam o fechamento. Passe o mouse sobre cada item para ver o que corrigir.`
+                    : blocked.length ? `${blocked.length} pendência(s) bloqueiam o fechamento. Abra cada item para ver exatamente o que corrigir.`
                     : "Conferência sem bloqueios. Revise a simulação abaixo antes de confirmar."}
                 </p>
                 <Button disabled={!ended || !canClose(items) || busy} onClick={() => setConfirmOpen(true)} className="gap-1.5"><Lock className="h-4 w-4" />Fechar {monthName(month)}</Button>
