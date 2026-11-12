@@ -27,8 +27,19 @@ export function FinanceTab({ full, children, className, ...p }: React.ComponentP
       {children}
     </TabsTrigger>
   );
+  // O TooltipTrigger com `asChild` injeta o próprio data-state ("closed"/"open") no
+  // TabsTrigger, apagando o data-state="active" do Radix Tabs — e aí os estilos da aba
+  // ativa (negrito, borda laranja) nunca se aplicam. Envolver em um span mantém o
+  // data-state do tabs intacto no botão.
   if (!full) return t;
-  return <Tooltip><TooltipTrigger asChild>{t}</TooltipTrigger><TooltipContent>{full}</TooltipContent></Tooltip>;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex">{t}</span>
+      </TooltipTrigger>
+      <TooltipContent>{full}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 const TONE = {
