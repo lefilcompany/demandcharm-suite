@@ -73,8 +73,8 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
   const [sh, setSh] = useState<{ month: string; amount: string; description: string; type: string; method: AllocationMethod; weight: string; pct: string; only: string[] }>(
     { month: thisMonth, amount: "", description: "", type: "fixa", method: "hours", weight: "50", pct: "", only: [] });
   const [cost, setCost] = useState({ user: "", month: thisMonth, amount: "", hours: "140" });
-  // People with hours in the month who are no longer team members still need a cost to close the month.
-  const monthPeople = useFinancePeople(teamId, `${cost.month}-01`, `${cost.month}-01`, can("finance.view_employee_costs"));
+  // People with hours in the last 12 months who are no longer team members still need a cost to close the month.
+  const monthPeople = useFinancePeople(teamId, `${Number(cost.month.substring(0, 4)) - 1}${cost.month.substring(4)}-01`, `${cost.month}-01`, can("finance.view_employee_costs"));
   const costPeople = [...members, ...Array.from(new Map((monthPeople.data ?? [])
     .filter((p: any) => p.user_id && !members.some((m) => m.user_id === p.user_id))
     .map((p: any) => [p.user_id, { user_id: p.user_id as string, name: `${p.full_name ?? "Pessoa"} (fora da equipe)` }])).values())];
