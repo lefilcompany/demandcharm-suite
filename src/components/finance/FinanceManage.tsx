@@ -39,6 +39,7 @@ const msg = (e: any) => Object.entries(ERR).find(([k]) => String(e?.message).inc
 import { MemberProfilesPanel } from "@/components/finance/MemberProfilesPanel";
 import { PeopleGapsAlert } from "@/components/finance/PeopleGapsAlert";
 import { FinanceApiKeyCard } from "@/components/finance/FinanceApiKeyCard";
+import { TeamDefaultsPanel } from "@/components/finance/TeamDefaultsPanel";
 
 function Section({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
   return (
@@ -69,8 +70,8 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
 
   const [rev, setRev] = useState({ board: "", month: thisMonth, amount: "", tax: "", description: "" });
   const [exp, setExp] = useState({ board: "", month: thisMonth, amount: "", description: "", type: "operacional" });
-  const [sh, setSh] = useState<{ month: string; amount: string; description: string; type: string; method: AllocationMethod; weight: string; only: string[] }>(
-    { month: thisMonth, amount: "", description: "", type: "fixa", method: "hours", weight: "50", only: [] });
+  const [sh, setSh] = useState<{ month: string; amount: string; description: string; type: string; method: AllocationMethod; weight: string; pct: string; only: string[] }>(
+    { month: thisMonth, amount: "", description: "", type: "fixa", method: "hours", weight: "50", pct: "", only: [] });
   const [cost, setCost] = useState({ user: "", month: thisMonth, amount: "", hours: "140" });
   const [kindUser, setKindUser] = useState<string | null>(null);
   const [perm, setPerm] = useState<{ user: string; permission: FinancePermission | ""; board: string }>({ user: "", permission: "", board: "all" });
@@ -90,7 +91,8 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
   const addShared = useFinanceMutation(async () => {
     const { error } = await supabase.from("finance_expenses").insert({ team_id: teamId, board_id: null, competence: monthStart(sh.month),
       amount: Number(sh.amount), description: sh.description, expense_type: sh.type, allocation_method: sh.method,
-      hours_weight: sh.method === "mixed" ? Number(sh.weight) / 100 : null, allocation_board_ids: sh.only.length ? sh.only : null, created_by: user!.id });
+      hours_weight: sh.method === "mixed" ? Number(sh.weight) / 100 : null,
+      allocation_pct: sh.method === "revenue_pct" ? Number(sh.pct) : null, allocation_board_ids: sh.only.length ? sh.only : null, created_by: user!.id });
     if (error) throw error;
   });
   const addCost = useFinanceMutation(async () => {
@@ -124,7 +126,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
   const expBoards = boards.filter((b) => can("finance.manage_expenses", b.id));
   const canShared = can("finance.manage_expenses");
   const preview = allocate(
-    { amount: Number(sh.amount) || 0, method: sh.method, hoursWeight: Number(sh.weight) / 100, boardIds: sh.only },
+    { amount: Number(sh.amount) || 0, method: sh.method, hoursWeight: Number(sh.weight) / 100, pct: Number(sh.pct) || 0, boardIds: sh.only },
     overview.filter((r) => r.competence.substring(0, 7) === sh.month).map((r) => ({ boardId: r.board_id, hours: r.hours_realized, gross: r.gross })),
   );
   const previewOrder = boards.map((b) => b.id);
@@ -138,6 +140,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
       )}
       {can("finance.manage_settings") && <MemberProfilesPanel teamId={teamId} members={members} canManage preselectUser={kindUser} />}
       {isOwnerOrAdmin && <FinanceApiKeyCard teamId={teamId} />}
+      {(can("finance.manage_settings") || isOwnerOrAdmin) && <TeamDefaultsPanel teamId={teamId} />}
       {revBoards.length > 0 && (
         <Section title="Faturamento" hint="Valor bruto faturado por quadro no mês. Deixe a alíquota vazia para usar a padrão.">
           <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addRev.mutate(undefined, { onSuccess: () => { done("Faturamento lançado"); setRev({ ...rev, amount: "", description: "" }); }, onError: fail }); }}>
@@ -177,6 +180,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
               <TypePick value={sh.type} onChange={(v) => setSh({ ...sh, type: v })} />
               <Field label="Dividir"><Select value={sh.method} onValueChange={(v) => setSh({ ...sh, method: v as AllocationMethod })}><SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(METHOD_LABEL).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent></Select></Field>
+              {sh.method === "revenue_pct" && <Field label="% da receita de cada quadro"><Input type="number" min="0.01" max="100" step="0.01" value={sh.pct} onChange={(e) => setSh({ ...sh, pct: e.target.value })} required /></Field>}
               {sh.method === "mixed" && <Field label="% por horas"><Input type="number" min="0" max="100" step="5" value={sh.weight} onChange={(e) => setSh({ ...sh, weight: e.target.value })} /></Field>}
             </div>
             <fieldset className="space-y-1">
@@ -189,6 +193,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
                 ))}
               </div>
             </fieldset>
+            {sh.method === "revenue_pct" && <p className="text-xs text-muted-foreground">Cada contrato paga sempre o mesmo percentual do próprio faturamento. Entrar um contrato novo não diminui o valor dos outros: o que passar da despesa vira folga, o que faltar aparece como custo não absorvido.</p>}
             {Number(sh.amount) > 0 && (
               <div className="rounded-lg border p-3 space-y-2">
                 <OpsLabel>Prévia com os números atuais do mês</OpsLabel>
@@ -196,13 +201,14 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
                   parts={preview.parts.map((p) => ({ key: p.boardId, label: boardName(p.boardId), amount: p.amount }))} />
                 <ul className="text-xs flex flex-wrap gap-x-4 tabular-nums">
                   {preview.parts.map((p) => <li key={p.boardId}>{boardName(p.boardId)} {formatBRL(p.amount)}</li>)}
-                  {preview.unallocated > 0 && <li className="text-primary">Não rateado {formatBRL(preview.unallocated)}</li>}
+                  {preview.unallocated > 0 && <li className="text-primary">{sh.method === "revenue_pct" ? "Custo não absorvido" : "Não rateado"} {formatBRL(preview.unallocated)}</li>}
+                  {preview.surplus > 0 && <li className="text-muted-foreground">Folga de rateio {formatBRL(preview.surplus)}</li>}
                 </ul>
               </div>
             )}
             <Button type="submit" disabled={addShared.isPending}>Lançar despesa compartilhada</Button>
           </form>
-          <Rows items={expenses.data?.filter((r) => !r.board_id)} render={(r) => `${r.competence.substring(0, 7)} · ${r.description} · ${EXPENSE_TYPE_LABEL[r.expense_type] ?? ""} · ${METHOD_LABEL[r.allocation_method as AllocationMethod] ?? ""} · ${formatBRL(Number(r.amount))}`}
+          <Rows items={expenses.data?.filter((r) => !r.board_id)} render={(r) => `${r.competence.substring(0, 7)} · ${r.description} · ${EXPENSE_TYPE_LABEL[r.expense_type] ?? ""} · ${METHOD_LABEL[r.allocation_method as AllocationMethod] ?? ""}${r.allocation_pct != null ? ` ${Number(r.allocation_pct)}%` : ""} · ${formatBRL(Number(r.amount))}`}
             onDelete={(r) => del.mutate({ table: "finance_expenses", id: r.id }, { onSuccess: () => done("Despesa removida"), onError: fail })} canDelete={() => canShared} />
         </Section>
       )}
