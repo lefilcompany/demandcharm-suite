@@ -182,7 +182,9 @@ export default function NoteDetail() {
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `covers/${fileName}`;
+      const { data: { user: uploader } } = await supabase.auth.getUser();
+      if (!uploader) throw new Error("Sessão expirada");
+      const filePath = `${uploader.id}/covers/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("inline-images")
