@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyAdjustments, canClose, monthEnded, normalizeChecklist } from "./closing";
+import { applyAdjustments, canClose, monthEnded, normalizeChecklist, pendingCostMonths } from "./closing";
 
 describe("fechamento mensal", () => {
   it("um item bloqueante com ocorrência impede fechar", () => {
@@ -23,5 +23,17 @@ describe("fechamento mensal", () => {
     const out = applyAdjustments(snap, [{ board_id: "a", target: "gross", amount: -100.01 }, { board_id: "b", target: "gross", amount: 999 }]);
     expect(out[0].gross).toBe(899.99);
     expect(snap[0].gross).toBe(1000);
+  });
+  it("custo lançado em novembro não cobre horas de outubro", () => {
+    const rows = [
+      { user_id: "u1", competence: "2026-10-01", monthly_cost: null, hours: 0.03 },
+      { user_id: "u1", competence: "2026-11-01", monthly_cost: 2000, hours: 0 },
+      { user_id: "u2", competence: "2026-10-01", monthly_cost: null, hours: 5 },
+    ];
+    expect(pendingCostMonths(rows, "u1")).toEqual(["2026-10"]);
+  });
+  it("detalhe de horas sem custo traz pessoa e mês para o atalho de lançamento", () => {
+    const [i] = normalizeChecklist([{ code: "hours_without_cost", severity: "block", count: 1, amount: 2, details: [{ label: "Ana", value: "2", kind: "hours", user_id: "u1", month: "2026-10" }] }]);
+    expect(i.details[0]).toMatchObject({ userId: "u1", month: "2026-10" });
   });
 });

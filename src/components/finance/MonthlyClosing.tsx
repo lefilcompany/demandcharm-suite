@@ -1,5 +1,6 @@
 import { MonthField } from "@/components/ops/MonthField";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { CheckCircle2, Download, Lock, RefreshCw, TriangleAlert, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { FinancePermission, useClosingHistory, useClosingPreview, useInvalidateFinance } from "@/hooks/useFinance";
@@ -38,6 +39,8 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
   const { toast } = useToast();
   const invalidate = useInvalidateFinance();
   const [month, setMonth] = useState(prevMonth());
+  const [params, setParams] = useSearchParams();
+  const goFixCost = (userId: string, m: string) => { const n = new URLSearchParams(params); n.set("aba", "manage"); n.set("sec", "people"); n.set("custo", userId); n.set("mes", m); setParams(n); };
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
@@ -134,9 +137,12 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
                         <summary className="cursor-pointer text-ops-ink-foreground/70 hover:text-ops-ink-foreground">Ver {i.details.length === 1 ? "o item" : `os ${i.details.length} itens`} · {CHECKLIST_TEXT[i.code].help}</summary>
                         <ul className="mt-1.5 divide-y divide-ops-ink-foreground/10">
                           {i.details.map((d, k) => (
-                            <li key={k} className="flex justify-between gap-3 py-1">
+                            <li key={k} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-1">
                               <span className="min-w-0"><span className="text-ops-ink-foreground">{d.label}</span>{d.detail && <span className="text-ops-ink-foreground/60"> · {d.detail}</span>}</span>
                               {d.value != null && <span className="shrink-0 font-ops-mono tabular-nums">{d.kind === "money" ? formatBRL(Number(d.value)) : d.kind === "hours" ? `${Number(d.value).toLocaleString("pt-BR")} h` : d.value}</span>}
+                              {i.code === "hours_without_cost" && d.userId && can("finance.manage_settings") && (
+                                <button type="button" onClick={() => goFixCost(d.userId!, d.month ?? month)} className="shrink-0 font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">Lançar custo de {monthName(d.month ?? month)}</button>
+                              )}
                             </li>
                           ))}
                         </ul>

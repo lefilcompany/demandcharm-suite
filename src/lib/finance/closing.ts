@@ -4,7 +4,7 @@ export type ChecklistCode =
   | "running_timers" | "unclassified_expenses" | "revenue_without_value" | "hours_without_cost"
   | "incomplete_allocations" | "unallocated_amount" | "totals_mismatch" | "boards_without_revenue";
 
-export interface ChecklistDetail { label: string; detail: string | null; value: string | null; kind?: "money" | "hours" }
+export interface ChecklistDetail { label: string; detail: string | null; value: string | null; kind?: "money" | "hours"; userId?: string; month?: string }
 export interface ChecklistItem { code: ChecklistCode; severity: "block" | "warn"; count: number; amount: number | null; details: ChecklistDetail[] }
 
 export const CHECKLIST_TEXT: Record<ChecklistCode, { label: string; help: string }> = {
@@ -22,7 +22,7 @@ export const normalizeChecklist = (raw: unknown): ChecklistItem[] =>
   ((raw as any[]) ?? []).map((i) => ({
     code: i.code, severity: i.severity === "block" ? "block" : "warn",
     count: Number(i.count ?? 0), amount: i.amount == null ? null : Number(i.amount),
-    details: Array.isArray(i.details) ? i.details.map((d: any) => ({ label: String(d.label ?? ""), detail: d.detail ?? null, value: d.value ?? null, kind: d.kind })) : [],
+    details: Array.isArray(i.details) ? i.details.map((d: any) => ({ label: String(d.label ?? ""), detail: d.detail ?? null, value: d.value ?? null, kind: d.kind, userId: d.user_id ?? undefined, month: d.month ?? undefined })) : [],
   }));
 
 export const blockingItems = (items: ChecklistItem[]) => items.filter((i) => i.severity === "block" && i.count > 0);
@@ -46,4 +46,11 @@ export function applyAdjustments<T extends SnapshotValues>(snap: T[], adj: Adjus
     for (const a of adj) if (a.board_id === s.board_id) out[a.target] = Math.round((out[a.target] + a.amount) * 100) / 100;
     return out;
   });
+}
+
+/** Months (YYYY-MM, newest first) where a person has hours but no cost — the cost of another month never covers them. */
+export function pendingCostMonths(rows: { user_id: string | null; competence: string; monthly_cost: number | null; hours: number | null }[], userId: string): string[] {
+  const months = new Set<string>();
+  for (const r of rows) if (r.user_id === userId && r.monthly_cost == null && Number(r.hours ?? 0) > 0) months.add(r.competence.substring(0, 7));
+  return [...months].sort().reverse();
 }
