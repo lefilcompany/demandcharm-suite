@@ -30,8 +30,8 @@ export function generateProfitabilityPdf(input: {
   y = sectionTitle(doc, "Visão geral", y);
   const t = input.total;
   const tiles = [
-    ["FATURAMENTO BRUTO", formatBRL(t.gross)], ["− IMPOSTOS", formatBRL(t.tax)], ["= RECEITA LÍQUIDA", formatBRL(t.netRevenue)],
-    ["− CUSTO TOTAL", formatBRL(t.totalCost)], ["= RESULTADO", formatBRL(t.result)], ["MARGEM", formatPct(t.margin)],
+    ["FATURAMENTO BRUTO", formatBRL(t.gross)], ["- IMPOSTOS", formatBRL(t.tax)], ["= RECEITA LÍQUIDA", formatBRL(t.netRevenue)],
+    ["- CUSTO TOTAL", formatBRL(t.totalCost)], ["= RESULTADO", formatBRL(t.result)], ["MARGEM", formatPct(t.margin)],
   ];
   const stripH = 34, x0 = 14, sw = w - 28, cw = sw / tiles.length;
   doc.setFillColor(...GRAPHITE); doc.roundedRect(x0, y, sw, stripH, 2.5, 2.5, "F");
@@ -95,6 +95,7 @@ export function generateProfitabilityPdf(input: {
     margin: { left: 14, right: 14, top: 44 },
     didDrawPage: () => drawHeader(doc, meta),
     didParseCell: (d) => {
+      if (d.section === "foot" && d.column.index > 0) d.cell.styles.halign = "right";
       if (d.section !== "body") return;
       const b = input.boards[d.row.index];
       if (d.column.index === 9 && b.result < 0) { d.cell.styles.textColor = DANGER; d.cell.styles.fontStyle = "bold"; }
