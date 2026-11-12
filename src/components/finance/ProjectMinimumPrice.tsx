@@ -4,23 +4,24 @@ import { OpsLabel } from "@/components/ops/OpsParts";
 import { formatBRL, formatPct } from "@/lib/finance/engine";
 import { settingsFor } from "@/lib/finance/projectRollup";
 import { minimumPrice } from "@/lib/finance/pricing";
-import { useTeamDefaults } from "@/hooks/useTeamDefaults";
+import { useTeamDefaults, useTeamHourlyCost } from "@/hooks/useTeamDefaults";
 
 export function ProjectMinimumPrice({ teamId }: { teamId: string | null }) {
   const rows = useTeamDefaults(teamId);
   const [hours, setHours] = useState("160");
   const month = new Date().toISOString().substring(0, 7);
   const d = settingsFor(rows.data ?? [], month);
+  const hourly = useTeamHourlyCost(teamId, month);
 
-  if (rows.isError) return <p className="text-sm text-destructive">Não foi possível carregar os valores padrão.</p>;
-  if (rows.isLoading) return null;
+  if (rows.isError || hourly.isError) return <p className="text-sm text-destructive">Não foi possível carregar os valores padrão.</p>;
+  if (rows.isLoading || hourly.isLoading) return null;
   if (!d) return (
     <div className="rounded-xl border bg-card p-6 text-center text-sm space-y-1">
       <p className="font-medium">Sem valores padrão cadastrados.</p>
-      <p className="text-muted-foreground">Cadastre hora/homem, alíquotas e meta em Finanças → Lançamentos e acesso → Valores padrão.</p>
+      <p className="text-muted-foreground">Cadastre alíquotas e meta em Finanças → Lançamentos e acesso → Valores padrão.</p>
     </div>
   );
-  const vals = { hourlyCost: Number(d.hourly_cost), taxRate: Number(d.tax_rate), variableRate: Number(d.variable_rate),
+  const vals = { hourlyCost: Number(hourly.data?.hourly_cost ?? 0), taxRate: Number(d.tax_rate), variableRate: Number(d.variable_rate),
     allocationPct: Number(d.allocation_pct), marginTarget: Number(d.margin_target), maxDiscount: Number(d.max_discount) };
   const r = minimumPrice(Number(hours) || 0, vals);
 
@@ -36,6 +37,7 @@ export function ProjectMinimumPrice({ teamId }: { teamId: string | null }) {
         <div><OpsLabel>Custo de horas</OpsLabel>
           <div className="font-ops-display text-2xl font-semibold tabular-nums">{formatBRL(r.laborCost)}</div></div>
       </section>
+      {hourly.data?.hourly_cost == null && <p className="text-primary">Sem custo de pessoal lançado: a hora/homem vem da média do custo e das horas de cada pessoa.</p>}
       {!r.ok && <p className="text-primary">Impostos, custos variáveis, rateio e meta somam {formatPct(r.takeRate)}: não existe preço que cubra tudo. Revise os valores padrão.</p>}
       <p className="text-muted-foreground tabular-nums">
         Base: {formatBRL(vals.hourlyCost)}/h · Impostos {formatPct(vals.taxRate)} · Variáveis {formatPct(vals.variableRate)} · Rateio {formatPct(vals.allocationPct)} · Meta {formatPct(vals.marginTarget)} · Desconto máx. {formatPct(vals.maxDiscount)}
