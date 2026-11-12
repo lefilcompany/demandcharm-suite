@@ -159,7 +159,7 @@ export function AccessProfilesManager({ teamId, members, currentUserId }: { team
                       <SelectTrigger className="h-8 w-[150px] text-xs" aria-label="Tipo de membro"><SelectValue /></SelectTrigger>
                       <SelectContent>{(Object.keys(MEMBER_KIND_LABEL) as MemberKind[]).map((k) => <SelectItem key={k} value={k}>{MEMBER_KIND_LABEL[k]}</SelectItem>)}</SelectContent>
                     </Select>
-                    <Select value={a?.profile_id ?? noneId} disabled={isBusy || isMe}
+                    <Select value={a?.profile_id ?? noneId} disabled={isBusy}
                       onValueChange={(v) => assign(m.user_id, v, a?.all_projects ?? true, scope)}>
                       <SelectTrigger className="h-8 w-[180px] text-xs" aria-label="Perfil de acesso"><SelectValue placeholder="Sem acesso" /></SelectTrigger>
                       <SelectContent>
@@ -170,7 +170,7 @@ export function AccessProfilesManager({ teamId, members, currentUserId }: { team
                     </Select>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 text-xs" disabled={!a || isBusy || isMe || a.profile_id === noneId}>
+                        <Button variant="outline" size="sm" className="h-8 text-xs" disabled={!a || isBusy || a.profile_id === noneId}>
                           {!a || a.all_projects ? "Todos os projetos" : `${scope.length} projeto${scope.length === 1 ? "" : "s"}`}
                         </Button>
                       </PopoverTrigger>
