@@ -16,7 +16,7 @@ import { allocate, AllocationMethod, EXPENSE_TYPE_LABEL, METHOD_LABEL } from "@/
 import type { OverviewRow } from "@/hooks/useFinance";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { formatBRL, formatPct } from "@/lib/finance/engine";
-import { FinancePermission, PERMISSION_LABELS, useFinanceMutation, useFinanceTable } from "@/hooks/useFinance";
+import { FinancePermission, PERMISSION_LABELS, useFinanceMutation, useFinancePeople, useFinanceTable } from "@/hooks/useFinance";
 
 interface Props {
   teamId: string;
@@ -58,7 +58,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
   const { toast } = useToast();
   const thisMonth = new Date().toISOString().substring(0, 7);
   const boardName = (id: string | null) => (id ? boards.find((b) => b.id === id)?.name ?? "Quadro" : "Equipe toda");
-  const memberName = (id: string) => members.find((m) => m.user_id === id)?.name ?? "Pessoa";
+  const memberName = (id: string) => costPeople.find((m) => m.user_id === id)?.name ?? "Pessoa";
   const done = (t: string) => toast({ title: t });
   const fail = (e: any) => toast({ title: msg(e), variant: "destructive" });
 
@@ -73,6 +73,11 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
   const [sh, setSh] = useState<{ month: string; amount: string; description: string; type: string; method: AllocationMethod; weight: string; pct: string; only: string[] }>(
     { month: thisMonth, amount: "", description: "", type: "fixa", method: "hours", weight: "50", pct: "", only: [] });
   const [cost, setCost] = useState({ user: "", month: thisMonth, amount: "", hours: "140" });
+  // People with hours in the month who are no longer team members still need a cost to close the month.
+  const monthPeople = useFinancePeople(teamId, `${cost.month}-01`, `${cost.month}-01`, can("finance.view_employee_costs"));
+  const costPeople = [...members, ...Array.from(new Map((monthPeople.data ?? [])
+    .filter((p: any) => p.user_id && !members.some((m) => m.user_id === p.user_id))
+    .map((p: any) => [p.user_id, { user_id: p.user_id as string, name: `${p.full_name ?? "Pessoa"} (fora da equipe)` }])).values())];
   const [kindUser, setKindUser] = useState<string | null>(null);
   const [perm, setPerm] = useState<{ user: string; permission: FinancePermission | ""; board: string }>({ user: "", permission: "", board: "all" });
   const teamSetting = settings.data?.find((s) => !s.board_id);
@@ -138,7 +143,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
           {can("finance.manage_settings") && (
             <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addCost.mutate(undefined, { onSuccess: () => { done("Custo salvo"); setCost({ ...cost, amount: "" }); }, onError: fail }); }}>
               <Field label="Pessoa"><Select value={cost.user} onValueChange={(v) => setCost({ ...cost, user: v })}><SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger>
-                <SelectContent>{members.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.name}</SelectItem>)}</SelectContent></Select></Field>
+                <SelectContent>{costPeople.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.name}</SelectItem>)}</SelectContent></Select></Field>
               <Field label="Mês"><MonthField value={cost.month} onChange={(v) => setCost({ ...cost, month: v })} aria-label="Mês" /></Field>
               <Field label="Custo mensal (R$)"><Input id="finance-cost-amount" type="number" min="0" step="0.01" value={cost.amount} onChange={(e) => setCost({ ...cost, amount: e.target.value })} required /></Field>
               <Field label="Horas produtivas"><Input type="number" min="1" step="1" value={cost.hours} onChange={(e) => setCost({ ...cost, hours: e.target.value })} required /></Field>
