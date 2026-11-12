@@ -137,5 +137,5 @@ Causa provável no navegador: o worker guardava TODAS as respostas do backend po
 - [x] Tipo de membro Interno/Externo/Prestador com etiqueta (equipe, seletor de responsáveis) e filtro na tela de acessos
 - [x] Etiqueta também nos cards do Kanban, detalhe da demanda e membros do quadro; filtro interno/externo no Kanban
 - [x] Projetos e Relatórios bloqueados por perfil (telas, menu e dados de projetos no servidor)
-- [ ] Rateio por percentual fixo da receita (travado por despesa)
-- [ ] Valores padrão da equipe + preço mínimo no simulador do projeto
+- [x] Rateio por percentual fixo da receita
+- [x] Valores padrão + preço mínimo
