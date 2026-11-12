@@ -58,7 +58,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
   const { toast } = useToast();
   const thisMonth = new Date().toISOString().substring(0, 7);
   const boardName = (id: string | null) => (id ? boards.find((b) => b.id === id)?.name ?? "Quadro" : "Equipe toda");
-  const memberName = (id: string) => members.find((m) => m.user_id === id)?.name ?? "Pessoa";
+  const memberName = (id: string) => costPeople.find((m) => m.user_id === id)?.name ?? "Pessoa";
   const done = (t: string) => toast({ title: t });
   const fail = (e: any) => toast({ title: msg(e), variant: "destructive" });
 
