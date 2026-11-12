@@ -86,7 +86,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
     if (editing || manualRef.current || !boardMembers.isSuccess || !people.isSuccess) return;
     if (!autoPlans.length) { if (autoFilled) { setAutoFilled(false); setPersonPlans([]); setDraft((d) => ({ ...d, team_cost: 0, planned_hours: 0 })); } return; }
     setPersonPlans(autoPlans.map(({ userId, hours, rate }) => ({ userId, hours, rate })));
-    setDraft((d) => ({ ...d, team_cost: autoPlans.reduce((s, p) => s + p.hours * p.rate, 0), planned_hours: autoPlans.reduce((s, p) => s + p.hours, 0) }));
+    setDraft((d) => ({ ...d, team_cost: autoPlans.reduce((s, p) => s + p.hours * p.rate, 0), planned_hours: autoPlans.reduce((s, p) => Math.max(s, p.hours), 0) }));
     setAutoFilled(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoKey, autoPlans, editing, boardMembers.isSuccess, people.isSuccess]);
@@ -149,7 +149,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
   const applyPlans = (plans: PersonPlan[]) => {
     markManual();
     setPersonPlans(plans);
-    setDraft((d) => ({ ...d, team_cost: plans.reduce((sum, p) => sum + p.hours * p.rate, 0), planned_hours: plans.reduce((sum, p) => sum + p.hours, 0) }));
+    setDraft((d) => ({ ...d, team_cost: plans.reduce((sum, p) => sum + p.hours * p.rate, 0), planned_hours: plans.reduce((m, p) => Math.max(m, p.hours), 0) }));
   };
 
   if (isLoading) return <Skeleton className="h-96 w-full" />;
@@ -177,7 +177,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
           <div className="grid gap-3 sm:grid-cols-2"><Numeric label="Horas previstas" value={draft.planned_hours} onChange={(v) => { markManual(); update("planned_hours", v); setPersonPlans([]); }} /><Numeric label="Custo estimado da equipe (R$)" value={draft.team_cost} onChange={(v) => { markManual(); update("team_cost", v); setPersonPlans([]); }} /></div>
           {autoFilled && autoPlans.length > 0 && <div role="note" className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs space-y-2">
             <p className="flex items-start gap-1.5 font-medium text-foreground"><Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />Preenchido automaticamente com os custos cadastrados</p>
-            <p className="text-muted-foreground">{autoPlans.length === 1 ? "1 participante" : `${autoPlans.length} participantes`} de “{boards.find((b) => b.id === boardId)?.name ?? "quadro"}” têm custo lançado em {draft.competence.substring(5, 7)}/{draft.competence.substring(0, 4)}. Horas previstas = soma das horas produtivas; custo da equipe = horas × hora/homem de cada pessoa (custo mensal ÷ horas produtivas).</p>
+            <p className="text-muted-foreground">{autoPlans.length === 1 ? "1 participante" : `${autoPlans.length} participantes`} de “{boards.find((b) => b.id === boardId)?.name ?? "quadro"}” têm custo lançado em {draft.competence.substring(5, 7)}/{draft.competence.substring(0, 4)}. Horas previstas = maior carga individual de horas produtivas (as pessoas trabalham em paralelo); custo da equipe = horas × hora/homem de cada pessoa (custo mensal ÷ horas produtivas).</p>
             <ul className="divide-y divide-primary/15">{autoPlans.map((p) => <li key={p.userId} className="flex justify-between gap-2 py-1 tabular-nums"><span className="truncate">{p.name}</span><span className="shrink-0 text-muted-foreground">{p.hours.toLocaleString("pt-BR")} h × {formatBRL(p.rate)}/h = <span className="text-foreground font-medium">{formatBRL(p.hours * p.rate)}</span></span></li>)}</ul>
             <p className="text-muted-foreground">Edite os campos acima para usar outros valores.</p>
           </div>}
