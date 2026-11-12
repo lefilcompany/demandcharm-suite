@@ -173,7 +173,7 @@ export function FolderDemandManager({
                 >
                   <div className="flex items-center gap-1 rounded-lg hover:bg-muted/50 transition-colors">
                   <Checkbox
-                    className="ml-2 shrink-0"
+                    className="ml-2 shrink-0 data-[state=indeterminate]:bg-primary/30"
                     aria-label={`Incluir o quadro inteiro ${group.boardName}`}
                     title="Incluir o quadro inteiro"
                     checked={
