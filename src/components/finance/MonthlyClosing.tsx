@@ -1,3 +1,4 @@
+import { downloadFinancePdf } from "@/lib/finance/pdfExport";
 import { MonthField } from "@/components/ops/MonthField";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -85,7 +86,7 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
 
   const adjBoards = boards.filter((b) => can(adj.target === "gross" || adj.target === "tax" ? "finance.manage_revenue" : "finance.manage_expenses", b.id));
 
-  const exportCsv = () => {
+  const buildCsv = () => {
     const head = ["Mês", "Evento", "Quadro", "Campo", "Valor", "Motivo", "Autor", "Data"];
     const lines: (string | number)[][] = [];
     for (const p of history.data?.periods ?? []) {
@@ -93,7 +94,11 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
       for (const a of (history.data?.adjustments ?? []).filter((x) => x.period_id === p.id))
         lines.push([p.competence.substring(0, 7), "Ajuste", boardName(a.board_id), ADJUSTMENT_LABEL[a.target as AdjustmentTarget], a.amount, a.reason.replace(/[;\n]/g, " "), nameOf(a.created_by), dt(a.created_at)]);
     }
-    const blob = new Blob(["\ufeff" + [head, ...lines].map((l) => l.join(";")).join("\n")], { type: "text/csv;charset=utf-8" });
+    return [head, ...lines].map((l) => l.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";")).join("\n");
+  };
+  const exportPdf = () => downloadFinancePdf(buildCsv(), "Histórico de fechamentos", "fechamentos.pdf");
+  const exportCsv = () => {
+    const blob = new Blob(["\ufeff" + buildCsv()], { type: "text/csv;charset=utf-8" });
     const el = document.createElement("a"); el.href = URL.createObjectURL(blob); el.download = "fechamentos.csv"; el.click(); URL.revokeObjectURL(el.href);
   };
 
@@ -202,7 +207,8 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
 
       <section className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex items-center justify-between"><OpsLabel>Histórico de fechamentos e ajustes</OpsLabel>
-          {can("finance.export") && (history.data?.periods.length ?? 0) > 0 && <Button size="sm" variant="outline" className="gap-1.5" onClick={exportCsv}><Download className="h-4 w-4" />CSV</Button>}</div>
+          {can("finance.export") && (history.data?.periods.length ?? 0) > 0 && <Button size="sm" variant="outline" className="gap-1.5" onClick={exportCsv}><Download className="h-4 w-4" />CSV</Button>}
+          {can("finance.export") && (history.data?.periods.length ?? 0) > 0 && <Button size="sm" variant="outline" className="gap-1.5" onClick={exportPdf}><Download className="h-4 w-4" />PDF</Button>}</div>
         {history.isError ? <div className="flex items-center gap-3 text-sm"><span>Não foi possível carregar o histórico.</span><Button size="sm" variant="outline" onClick={() => history.refetch()}>Tentar de novo</Button></div>
           : history.isLoading ? <Skeleton className="h-20 w-full" />
           : !history.data?.periods.length ? <p className="text-sm text-muted-foreground">Nenhum mês fechado ainda.</p> : (

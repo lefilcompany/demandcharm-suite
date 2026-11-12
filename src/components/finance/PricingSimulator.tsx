@@ -1,3 +1,4 @@
+import { downloadFinancePdf } from "@/lib/finance/pdfExport";
 import { MonthField } from "@/components/ops/MonthField";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -134,13 +135,14 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
     } catch { fail("Não foi possível excluir o cenário"); }
     finally { setBusy(false); }
   };
-  const exportSelected = async () => {
+  const exportSelected = async (format: "csv" | "pdf" = "csv") => {
     if (!canExport || busy) return;
     setBusy(true);
     try {
       const { data, error } = await supabase.rpc("export_finance_scenarios", { _team_id: teamId, _ids: compared.map((s) => s.id) });
       if (error) throw error;
       const saved = data as unknown as (Scenario & { board_name: string })[];
+      if (format === "pdf") { downloadFinancePdf(scenarioCsv(saved), "Cenários de precificação", "cenarios-precificacao.pdf"); return; }
       const url = URL.createObjectURL(new Blob([scenarioCsv(saved)], { type: "text/csv;charset=utf-8" }));
       const a = document.createElement("a"); a.href = url; a.download = "cenarios-precificacao.csv"; a.click(); URL.revokeObjectURL(url);
     } catch { fail("Não foi possível exportar os cenários"); }
@@ -208,7 +210,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
       </aside>
     </div>
 
-    <section className="border-t pt-5 space-y-3"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-medium">Cenários salvos</h2><div className="flex items-center gap-3"><span className="text-xs text-muted-foreground">{compared.length}/{MAX_COMPARISON} em comparação</span>{canExport && <Button variant="outline" size="sm" onClick={exportSelected} disabled={busy}><Download className="mr-1.5 h-4 w-4" />CSV dos cenários</Button>}</div></div>
+    <section className="border-t pt-5 space-y-3"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-medium">Cenários salvos</h2><div className="flex items-center gap-3"><span className="text-xs text-muted-foreground">{compared.length}/{MAX_COMPARISON} em comparação</span>{canExport && <Button variant="outline" size="sm" onClick={() => exportSelected("csv")} disabled={busy}><Download className="mr-1.5 h-4 w-4" />CSV dos cenários</Button>}{canExport && <Button variant="outline" size="sm" onClick={() => exportSelected("pdf")} disabled={busy}><Download className="mr-1.5 h-4 w-4" />PDF</Button>}</div></div>
       {scenarios.isLoading ? <Skeleton className="h-28 w-full" /> : scenarios.isError ? <div className="space-y-2 py-4"><p className="text-sm">Não foi possível carregar os cenários salvos.</p><Button variant="outline" size="sm" onClick={() => scenarios.refetch()}><RefreshCw className="mr-1.5 h-4 w-4" />Tentar novamente</Button></div> : !scenarios.data?.length ? <p className="py-5 text-sm text-muted-foreground">Nenhum cenário salvo nesta equipe.</p> : <ul className="divide-y">{scenarios.data.map((s) => {
         const r = simulatePricing(s);
         return <li key={s.id} className={cn("flex flex-wrap items-center gap-3 py-3", editing === s.id && "bg-muted/40")}>

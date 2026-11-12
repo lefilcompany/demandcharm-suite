@@ -1,3 +1,4 @@
+import { downloadFinancePdf } from "@/lib/finance/pdfExport";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { FinanceTabsList, FinanceTab, FinanceNotice, FinanceSection } from "@/components/ops/FinanceUI";
@@ -107,12 +108,16 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
   const canManage = fin.canAny("finance.manage_revenue") || fin.canAny("finance.manage_expenses") || fin.can("finance.view_employee_costs") || fin.can("finance.manage_settings");
   const canExport = fin.canAny("finance.export");
 
-  const exportCsv = () => {
+  const buildCsv = () => {
     const head = ["Quadro", "Faturamento bruto", "Impostos", "Receita líquida", "Horas previstas", "Horas realizadas", "Custo da equipe", "Despesas diretas", "Rateio", "Custo total", "Resultado", "Margem", "Meta", "Desvio p.p.", "Status"];
     const lines = sorted.filter((b) => fin.can("finance.export", b.boardId)).map((b) => [b.name, b.gross, b.tax, b.netRevenue, b.hoursPlanned, b.hoursRealized, b.teamCost, b.directExpenses, b.allocated, b.totalCost, b.result,
       b.margin === null ? "" : (b.margin * 100).toFixed(1), (b.target * 100).toFixed(1), b.deviationPp === null ? "" : b.deviationPp.toFixed(1), STATUS_LABEL[b.status]]
       .map((v) => typeof v === "number" ? v.toFixed(2).replace(".", ",") : `"${String(v).replace(/"/g, '""')}"`).join(";"));
-    const blob = new Blob(["\ufeff" + [head.join(";"), ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
+    return [head.join(";"), ...lines].join("\n");
+  };
+  const exportPdf = () => downloadFinancePdf(buildCsv(), `Rentabilidade ${from} a ${to}`, `rentabilidade-${from}-a-${to}.pdf`);
+  const exportCsv = () => {
+    const blob = new Blob(["\ufeff" + buildCsv()], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `rentabilidade-${from}-a-${to}.csv`;
@@ -162,6 +167,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
             <Select value={boardFilter} onValueChange={setBoardFilter}><SelectTrigger className="h-9 w-[180px] border-0 bg-muted/50" aria-label="Quadro"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="all">Todos autorizados</SelectItem>{authorizedBoards.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent></Select></div>
           {canExport && <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={exportCsv} disabled={!sorted.length}><Download className="h-4 w-4" />CSV</Button>}
+          {canExport && <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={exportPdf} disabled={!sorted.length}><Download className="h-4 w-4" />PDF</Button>}
         </div>
       </header>
 
