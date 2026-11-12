@@ -46,3 +46,20 @@ describe("allocate", () => {
     expect(o.parts).toEqual([{ boardId: "b", share: 1, amount: 1000 }]);
   });
 });
+
+describe("revenue_pct fixed allocation", () => {
+  const three = [{ boardId: "a", hours: 0, gross: 10000 }, { boardId: "b", hours: 0, gross: 10000 }, { boardId: "c", hours: 0, gross: 10000 }];
+  it("a 4th contract does not lower what the first 3 pay", () => {
+    const before = allocate({ amount: 3000, method: "revenue_pct", pct: 10 }, three);
+    const after = allocate({ amount: 3000, method: "revenue_pct", pct: 10 }, [...three, { boardId: "d", hours: 0, gross: 10000 }]);
+    expect(before.parts.map((p) => p.amount)).toEqual([1000, 1000, 1000]);
+    expect(after.parts.map((p) => p.amount)).toEqual([1000, 1000, 1000, 1000]);
+    expect(after.surplus).toBe(1000);
+    expect(after.unallocated).toBe(0);
+  });
+  it("shortfall stays as unallocated cost", () => {
+    const o = allocate({ amount: 5000, method: "revenue_pct", pct: 10 }, three);
+    expect(o.unallocated).toBe(2000);
+    expect(o.surplus).toBe(0);
+  });
+});
