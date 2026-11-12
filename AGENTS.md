@@ -65,7 +65,3 @@ One rule per decision, with the reason.
 
 - A project (`projects`) is the financial cost centre and may group several boards over time (`project_boards` with validity); each demand has one financial destination per month in `finance_demand_attributions` (unique per demand+competence), set automatically by trigger only when its board is in exactly one finance-enabled project, otherwise `pending` — manual choices via RPC `finance_assign_demand` are never overwritten, so hours are never counted twice. Member employment kind lives in `finance_member_profiles` with non-overlapping validity, independent of team/board roles.
 
-- Finance month cuts on timestamps use `_sp_month`/`_sp_month_start` (São Paulo), like `_finance_time_slices` — so screens agree at month ends.
-- Project hours come only from `_finance_time_slices` (mirror `timeSlices.ts`): SP month cut, overlaps counted once, missing cost reported, never zero.
-- Project×month numbers come only from `_finance_project_month`, shared by RPC `get_project_finance_overview` and Edge `finance-api-v1` (sha256 `sk_fin_` keys) — UI and external panel never diverge.
-- Closing snapshots each finance-enabled project (`finance_project_snapshots`); `_finance_project_month` serves it plus its boards' adjustments — closed numbers match everywhere.
