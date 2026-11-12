@@ -4,7 +4,8 @@ export type ChecklistCode =
   | "running_timers" | "unclassified_expenses" | "revenue_without_value" | "hours_without_cost"
   | "incomplete_allocations" | "unallocated_amount" | "totals_mismatch" | "boards_without_revenue";
 
-export interface ChecklistItem { code: ChecklistCode; severity: "block" | "warn"; count: number; amount: number | null }
+export interface ChecklistDetail { label: string; detail: string | null; value: string | null; kind?: "money" | "hours" }
+export interface ChecklistItem { code: ChecklistCode; severity: "block" | "warn"; count: number; amount: number | null; details: ChecklistDetail[] }
 
 export const CHECKLIST_TEXT: Record<ChecklistCode, { label: string; help: string }> = {
   running_timers: { label: "Apontamentos em andamento", help: "Timers ainda ligados que começaram até o fim do mês. Encerre-os para que as horas fiquem completas." },
@@ -21,6 +22,7 @@ export const normalizeChecklist = (raw: unknown): ChecklistItem[] =>
   ((raw as any[]) ?? []).map((i) => ({
     code: i.code, severity: i.severity === "block" ? "block" : "warn",
     count: Number(i.count ?? 0), amount: i.amount == null ? null : Number(i.amount),
+    details: Array.isArray(i.details) ? i.details.map((d: any) => ({ label: String(d.label ?? ""), detail: d.detail ?? null, value: d.value ?? null, kind: d.kind })) : [],
   }));
 
 export const blockingItems = (items: ChecklistItem[]) => items.filter((i) => i.severity === "block" && i.count > 0);
