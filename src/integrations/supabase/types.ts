@@ -5515,6 +5515,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      finance_team_hourly_cost: {
+        Args: { _month: string; _team_id: string }
+        Returns: Json
+      }
       get_board_metrics: {
         Args: {
           p_board_id: string

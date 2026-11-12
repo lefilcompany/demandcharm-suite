@@ -288,6 +288,13 @@
       "when": 1794480769406,
       "tag": "0040_finance_fixed_pct_allocation_and_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794481117139,
+      "tag": "0041_finance_team_hourly_cost",
+      "breakpoints": true
     }
   ]
 }
