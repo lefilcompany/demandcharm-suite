@@ -51,7 +51,7 @@ export function TeamDefaultsPanel({ teamId }: { teamId: string }) {
   };
 
   return (
-    <details open className="group rounded-xl border bg-card xl:col-span-2">
+    <details open className="group rounded-xl border bg-card">
       <summary className="cursor-pointer list-none px-4 py-3 sm:px-5">
         <h3 className="text-sm font-semibold">Valores padrão</h3>
         <p className="text-xs text-muted-foreground">Alíquotas, rateio, meta e desconto. São copiados para o projeto quando um quadro é incorporado e alimentam o preço mínimo do contrato.</p>
