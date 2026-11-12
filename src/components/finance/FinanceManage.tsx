@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { MonthField } from "@/components/ops/MonthField";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,7 @@ import { allocate, AllocationMethod, EXPENSE_TYPE_LABEL, METHOD_LABEL } from "@/
 import type { OverviewRow } from "@/hooks/useFinance";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { formatBRL, formatPct } from "@/lib/finance/engine";
+import { pendingCostMonths } from "@/lib/finance/closing";
 import { FinancePermission, PERMISSION_LABELS, useFinanceMutation, useFinancePeople, useFinanceTable } from "@/hooks/useFinance";
 
 interface Props {
@@ -137,11 +138,22 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
   const previewOrder = boards.map((b) => b.id);
   const [params, setParams] = useSearchParams();
   const group = params.get("sec");
+  // Deep link from the closing checklist: ?custo=<user>&mes=YYYY-MM preselects person and month.
+  useEffect(() => {
+    const u = params.get("custo"), m = params.get("mes");
+    if (!u || !m || !/^\d{4}-\d{2}$/.test(m)) return;
+    setCost((c) => ({ ...c, user: u, month: m, amount: "" }));
+    const n = new URLSearchParams(params); n.delete("custo"); n.delete("mes"); setParams(n, { replace: true });
+    setTimeout(() => document.getElementById("finance-cost-amount")?.focus(), 80);
+  }, [params, setParams]);
+  const monthLabel = (m: string) => new Date(Number(m.substring(0, 4)), Number(m.substring(5, 7)) - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const pendingMonths = cost.user ? pendingCostMonths((monthPeople.data ?? []) as any[], cost.user) : [];
+  const otherPending = pendingMonths.filter((m) => m !== cost.month);
   const costSection = (
     <>{can("finance.view_employee_costs") && (
         <Section title="Custo das pessoas" hint="Custo mensal completo (salário, encargos, benefícios, férias, 13º) e horas produtivas do mês. O custo/hora sai da divisão.">
           {can("finance.manage_settings") && (
-            <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addCost.mutate(undefined, { onSuccess: () => { done("Custo salvo"); setCost({ ...cost, amount: "" }); }, onError: fail }); }}>
+            <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); const who = memberName(cost.user), when = monthLabel(cost.month); addCost.mutate(undefined, { onSuccess: () => { done(`Custo de ${who} salvo para ${when}`); setCost({ ...cost, amount: "" }); }, onError: fail }); }}>
               <Field label="Pessoa"><Select value={cost.user} onValueChange={(v) => setCost({ ...cost, user: v })}><SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger>
                 <SelectContent>{costPeople.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.name}</SelectItem>)}</SelectContent></Select></Field>
               <Field label="Mês"><MonthField value={cost.month} onChange={(v) => setCost({ ...cost, month: v })} aria-label="Mês" /></Field>
@@ -149,6 +161,14 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
               <Field label="Horas produtivas"><Input type="number" min="1" step="1" value={cost.hours} onChange={(e) => setCost({ ...cost, hours: e.target.value })} required /></Field>
               <Button type="submit" disabled={!cost.user || addCost.isPending}>Salvar</Button>
             </form>
+          )}
+          {can("finance.manage_settings") && otherPending.length > 0 && (
+            <div role="note" className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs">
+              <span className="flex-1 min-w-0">{memberName(cost.user)} tem horas sem custo em {otherPending.map(monthLabel).join(", ")}. O custo vale só para o mês escolhido.</span>
+              {otherPending.slice(0, 3).map((m) => (
+                <Button key={m} type="button" size="sm" variant="outline" className="h-7" onClick={() => { setCost((c) => ({ ...c, month: m })); document.getElementById("finance-cost-amount")?.focus(); }}>Usar {monthLabel(m)}</Button>
+              ))}
+            </div>
           )}
           <Rows items={costs.data} render={(r) => `${memberName(r.user_id)} · ${r.competence.substring(0, 7)} · ${formatBRL(Number(r.monthly_cost))} · ${formatBRL(Number(r.monthly_cost) / Number(r.productive_hours))}/h`}
             onDelete={(r) => del.mutate({ table: "finance_employee_costs", id: r.id }, { onSuccess: () => done("Custo removido"), onError: fail })} canDelete={() => can("finance.manage_settings")} />
@@ -182,7 +202,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
 
       {current?.id === "people" && (<div className="space-y-4">
       {(can("finance.manage_settings") || can("finance.view_employee_costs") || isOwnerOrAdmin) && (
-        <PeopleGapsAlert teamId={teamId}
+        <PeopleGapsAlert teamId={teamId} month={cost.month} onMonthChange={(m) => setCost((c) => ({ ...c, month: m }))}
           onFixCost={(uid, month) => { setCost({ ...cost, user: uid, month, amount: "" }); setTimeout(() => document.getElementById("finance-cost-amount")?.focus(), 50); }}
           onFixKind={(uid) => { setKindUser(uid); setTimeout(() => document.getElementById("finance-kind-select")?.focus(), 50); }} />
       )}

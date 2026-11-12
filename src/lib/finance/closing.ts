@@ -11,7 +11,7 @@ export const CHECKLIST_TEXT: Record<ChecklistCode, { label: string; help: string
   running_timers: { label: "Apontamentos em andamento", help: "Timers ainda ligados que começaram até o fim do mês. Encerre-os para que as horas fiquem completas." },
   unclassified_expenses: { label: "Despesas não classificadas", help: "Despesas do mês sem categoria ou sem descrição." },
   revenue_without_value: { label: "Receitas sem valor", help: "Lançamentos de faturamento do mês com valor zero. Toda receita já tem mês de competência obrigatório." },
-  hours_without_cost: { label: "Colaboradores sem custo/hora", help: "Pessoas com horas apontadas no mês e sem custo mensal cadastrado para a competência." },
+  hours_without_cost: { label: "Colaboradores sem custo/hora", help: "Pessoas com horas apontadas no mês e sem custo mensal cadastrado nesse mesmo mês. Custo lançado em outro mês não conta." },
   incomplete_allocations: { label: "Rateios incompletos", help: "Despesas compartilhadas cujo filtro de quadros está vazio ou aponta para quadros de fora da equipe." },
   unallocated_amount: { label: "Valores não distribuídos", help: "Parte de despesas compartilhadas que não encontrou base (horas ou faturamento) para ser dividida." },
   totals_mismatch: { label: "Inconsistência nos totais", help: "Diferença entre o total de despesas da equipe e a soma distribuída nos quadros." },
