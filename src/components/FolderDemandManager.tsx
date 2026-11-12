@@ -84,6 +84,15 @@ export function FolderDemandManager({
     });
   };
 
+  // Inclui (ou retira) todas as demandas do quadro de uma vez.
+  const toggleWholeBoard = (demandIds: string[], include: boolean) => {
+    setDraftIds((prev) => {
+      const next = new Set(prev);
+      demandIds.forEach((id) => (include ? next.add(id) : next.delete(id)));
+      return next;
+    });
+  };
+
   const toggleBoard = (boardId: string) => {
     setOpenBoards((prev) => ({ ...prev, [boardId]: !prev[boardId] }));
   };
@@ -162,7 +171,26 @@ export function FolderDemandManager({
                   open={isBoardOpen(group.boardId)}
                   onOpenChange={() => toggleBoard(group.boardId)}
                 >
-                  <CollapsibleTrigger className="flex items-center gap-2 w-full px-2 py-2 rounded-lg hover:bg-muted/50 transition-colors text-left">
+                  <div className="flex items-center gap-1 rounded-lg hover:bg-muted/50 transition-colors">
+                  <Checkbox
+                    className="ml-2 shrink-0"
+                    aria-label={`Incluir o quadro inteiro ${group.boardName}`}
+                    title="Incluir o quadro inteiro"
+                    checked={
+                      boardSelected === 0
+                        ? false
+                        : boardSelected === group.demands.length
+                        ? true
+                        : "indeterminate"
+                    }
+                    onCheckedChange={() =>
+                      toggleWholeBoard(
+                        group.demands.map((d: any) => d.id),
+                        boardSelected !== group.demands.length
+                      )
+                    }
+                  />
+                  <CollapsibleTrigger className="flex items-center gap-2 flex-1 min-w-0 px-2 py-2 text-left">
                     {isBoardOpen(group.boardId) ? (
                       <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
                     ) : (
@@ -180,6 +208,7 @@ export function FolderDemandManager({
                       <span className="text-[10px] text-muted-foreground">{group.demands.length} total</span>
                     </span>
                   </CollapsibleTrigger>
+                  </div>
                   <CollapsibleContent>
                     <div className="ml-2 border-l border-border/50 pl-2 space-y-0.5 mb-1">
                       {group.demands.map((d: any) => (
