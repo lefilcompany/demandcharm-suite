@@ -274,6 +274,13 @@
       "when": 1794478673660,
       "tag": "0038_harden_catalog_and_inline_images",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794479022848,
+      "tag": "0039_owner_default_finance_manager",
+      "breakpoints": true
     }
   ]
 }
