@@ -260,7 +260,8 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="space-y-1 min-w-0"><Label className="text-xs">{label}</Label>{children}</div>;
+  // <label> wraps the control so the visible text is its accessible name (screen readers, tests).
+  return <label className="block space-y-1 min-w-0"><span className="text-xs font-medium leading-none">{label}</span>{children}</label>;
 }
 
 function TypePick({ value, onChange }: { value: string; onChange: (v: string) => void }) {

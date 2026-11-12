@@ -83,7 +83,7 @@ async def main():
         # 4. Configuração copiada dos padrões
         async def config_copied():
             await tab("Configuração")
-            await expect(page.get_by_role("tabpanel")).to_contain_text(re.compile(r"Em vigor: impostos 10[,.]0?%"), timeout=10000)
+            await expect(page.get_by_role("tabpanel")).to_contain_text(re.compile(r"Em vigor: impostos 10([,.]0+)?%"), timeout=10000)
         await step("Projeto herdou valores padrão", config_copied, page)
 
         # 5. Preço mínimo
