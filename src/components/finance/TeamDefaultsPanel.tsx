@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MonthField } from "@/components/ops/MonthField";
 import { formatBRL, formatPct } from "@/lib/finance/engine";
-import { useTeamDefaults } from "@/hooks/useTeamDefaults";
+import { useTeamDefaults, useTeamHourlyCost } from "@/hooks/useTeamDefaults";
 
 const FIELDS = [
-  { k: "hourly", label: "Hora/homem (R$)", pct: false },
   { k: "tax", label: "Impostos %", pct: true },
   { k: "variable", label: "Custos variáveis %", pct: true },
   { k: "alloc", label: "Rateio %", pct: true },
@@ -26,8 +25,9 @@ export function TeamDefaultsPanel({ teamId }: { teamId: string }) {
   const rows = useTeamDefaults(teamId);
   const thisMonth = new Date().toISOString().substring(0, 7);
   const [from, setFrom] = useState(thisMonth);
-  const [f, setF] = useState<Record<Key, string>>({ hourly: "", tax: "", variable: "", alloc: "", target: "", discount: "" });
+  const [f, setF] = useState<Record<Key, string>>({ tax: "", variable: "", alloc: "", target: "", discount: "" });
   const [busy, setBusy] = useState(false);
+  const hourly = useTeamHourlyCost(teamId, thisMonth);
   const refresh = () => qc.invalidateQueries({ queryKey: ["finance-team-defaults", teamId] });
   const p = (v: string) => Number(v || 0) / 100;
 
@@ -36,7 +36,7 @@ export function TeamDefaultsPanel({ teamId }: { teamId: string }) {
     if (p(f.tax) + p(f.variable) + p(f.alloc) + p(f.target) >= 1) return toast({ title: "Impostos, custos, rateio e meta somam 100% ou mais.", variant: "destructive" });
     setBusy(true);
     const { error } = await supabase.from("finance_team_defaults").upsert({
-      team_id: teamId, valid_from: `${from}-01`, hourly_cost: Number(f.hourly || 0), tax_rate: p(f.tax), variable_rate: p(f.variable),
+      team_id: teamId, valid_from: `${from}-01`, tax_rate: p(f.tax), variable_rate: p(f.variable),
       allocation_pct: p(f.alloc), margin_target: p(f.target), max_discount: p(f.discount), created_by: user!.id, updated_at: new Date().toISOString(),
     }, { onConflict: "team_id,valid_from" });
     setBusy(false);
@@ -54,16 +54,20 @@ export function TeamDefaultsPanel({ teamId }: { teamId: string }) {
     <details open className="group rounded-xl border bg-card xl:col-span-2">
       <summary className="cursor-pointer list-none px-4 py-3 sm:px-5">
         <h3 className="text-sm font-semibold">Valores padrão</h3>
-        <p className="text-xs text-muted-foreground">Hora/homem, alíquotas, rateio, meta e desconto. São copiados para o projeto quando um quadro é incorporado e alimentam o preço mínimo do contrato.</p>
+        <p className="text-xs text-muted-foreground">Alíquotas, rateio, meta e desconto. São copiados para o projeto quando um quadro é incorporado e alimentam o preço mínimo do contrato.</p>
       </summary>
       <div className="space-y-3 border-t px-4 py-4 sm:px-5 text-sm">
-        <form onSubmit={save} className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 items-end">
+        <p className="text-muted-foreground">
+          Hora/homem da equipe: <strong className="text-foreground tabular-nums">{hourly.data?.hourly_cost != null ? `${formatBRL(Number(hourly.data.hourly_cost))}/h` : "—"}</strong>
+          {hourly.data?.competence ? ` · média de ${hourly.data.people} pessoa(s) em ${hourly.data.competence.substring(0, 7).split("-").reverse().join("/")}, pelo custo e horas lançados para cada um` : " · lance o custo de cada pessoa em \"Custos de pessoal\" para calcular"}
+        </p>
+        <form onSubmit={save} className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 items-end">
           <label className="space-y-1"><span className="text-xs text-muted-foreground">Vale a partir de</span>
             <MonthField value={from} onChange={setFrom} aria-label="Vale a partir de" /></label>
           {FIELDS.map((x) => (
             <label key={x.k} className="space-y-1"><span className="text-xs text-muted-foreground">{x.label}</span>
               <Input type="number" min={0} max={x.pct ? 99 : undefined} step="0.01" value={f[x.k]} onChange={(e) => setF({ ...f, [x.k]: e.target.value })}
-                required={x.k === "hourly"} className="h-9" /></label>
+                className="h-9" /></label>
           ))}
           <Button type="submit" size="sm" className="h-9" disabled={busy}>Salvar</Button>
         </form>
@@ -74,7 +78,7 @@ export function TeamDefaultsPanel({ teamId }: { teamId: string }) {
               <li key={r.id} className="flex flex-wrap items-center gap-3 px-3 py-2">
                 <span className="w-20 tabular-nums">{r.valid_from.substring(0, 7).split("-").reverse().join("/")}</span>
                 <span className="flex-1 text-muted-foreground tabular-nums">
-                  {formatBRL(Number(r.hourly_cost))}/h · Impostos {formatPct(Number(r.tax_rate))} · Variáveis {formatPct(Number(r.variable_rate))} · Rateio {formatPct(Number(r.allocation_pct))} · Meta {formatPct(Number(r.margin_target))} · Desconto máx. {formatPct(Number(r.max_discount))}
+                  Impostos {formatPct(Number(r.tax_rate))} · Variáveis {formatPct(Number(r.variable_rate))} · Rateio {formatPct(Number(r.allocation_pct))} · Meta {formatPct(Number(r.margin_target))} · Desconto máx. {formatPct(Number(r.max_discount))}
                 </span>
                 <Button variant="ghost" size="sm" className="h-7" onClick={() => remove(r.id)}>Remover</Button>
               </li>

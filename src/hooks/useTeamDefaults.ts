@@ -19,3 +19,17 @@ export function useTeamDefaults(teamId: string | null | undefined) {
     },
   });
 }
+
+/** Team man-hour cost: weighted average of each person's monthly cost / productive hours (latest month with costs). */
+export function useTeamHourlyCost(teamId: string | null | undefined, month: string) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["finance-team-hourly-cost", teamId, month, user?.id],
+    enabled: !!teamId && !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("finance_team_hourly_cost", { _team_id: teamId!, _month: `${month}-01` });
+      if (error) throw error;
+      return data as { competence: string | null; hourly_cost: number | null; people: number };
+    },
+  });
+}
