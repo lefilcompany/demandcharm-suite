@@ -65,10 +65,10 @@ async def main():
             await sec.get_by_label("Custo mensal (R$)").fill("16000")
             await sec.get_by_label("Horas produtivas").fill("160")
             await sec.get_by_role("button", name="Salvar").click()
-            await expect(page.get_by_text("Custo salvo").first).to_be_visible(timeout=10000)
-            await expect(sec).to_contain_text(S["person"])
-            await page.reload(wait_until="domcontentloaded"); await page.wait_for_timeout(3500)
-            await expect(page.locator("details", has_text="Valores padrão").first).to_contain_text(re.compile(r"Hora/homem da equipe: R\$\s*[\d.]+,\d\d/h"), timeout=15000)
+            await expect(sec).to_contain_text(re.compile(re.escape(S["person"]) + r" · \d{4}-\d\d · R\$\s*16\.000,00"), timeout=10000)
+            # sem recarregar a página: a hora/homem precisa refletir o custo novo na hora
+            await expect(page.locator("details", has_text="Valores padrão").first).to_contain_text(
+                re.compile(rf"Hora/homem da equipe: R\$\s*[\d.]+,\d\d/h · média de {len(COSTED_NAMES) + 1} pessoa"), timeout=10000)
         await step("Custo de pessoa lançado e hora/homem calculada", person_cost, page)
 
         # 2. Criar projeto
