@@ -104,7 +104,7 @@ async def main():
             await sec.get_by_role("button", name=button).click()
             await expect(page.get_by_text(re.compile("lançad|salv", re.I)).first).to_be_visible(timeout=10000)
 
-        await step("Faturamento lançado", lambda: launch("Faturamento", [("Valor (R$)", "20000")], "Lançar"), page)
+        await step("Faturamento lançado", lambda: launch("Faturamento", [("Valor (R$)", "20000"), ("Descrição", TAG + " receita")], "Lançar"), page)
         await step("Despesa direta lançada", lambda: launch("Despesas diretas", [("Descrição", TAG + " licença"), ("Valor (R$)", "500")], "Lançar"), page)
 
         async def pct_method(sec):
@@ -126,14 +126,44 @@ async def main():
 
         async def project_result():
             await page.goto(S["project_url"], wait_until="domcontentloaded"); await page.wait_for_timeout(4000)
-            await expect(page.get_by_role("tabpanel")).to_contain_text(re.compile(r"20\.000"), timeout=15000)
+            panel = page.get_by_role("tabpanel")
+            await expect(panel).to_contain_text("Faturamento", timeout=15000)
+            txt = await panel.inner_text()
+            m = re.search(r"R\$\s*([\d.]+),\d\d", txt)
+            assert m and int(m.group(1).replace(".", "")) >= 20000, f"faturamento do projeto não inclui o lançamento: {m and m.group(0)}"
         await step("Resultado do projeto mostra faturamento", project_result, page)
 
         S["errors"] = errors
         await b.close()
     return S
 
+def cleanup():
+    """Remove tudo que tenha sido criado por execuções deste teste (nome/descrição E2E-FIN-*)."""
+    import requests
+    url = os.environ.get("VITE_SUPABASE_URL") or open(".env").read().split("VITE_SUPABASE_URL=")[1].split()[0].strip('"')
+    anon = os.environ.get("VITE_SUPABASE_PUBLISHABLE_KEY") or open(".env").read().split("VITE_SUPABASE_PUBLISHABLE_KEY=")[1].split()[0].strip('"')
+    tok = json.loads(session()[1])["access_token"]
+    h = {"apikey": anon, "Authorization": f"Bearer {tok}", "Prefer": "return=representation"}
+    out = {}
+    for t, f in [("finance_revenues", "description=like.E2E-FIN-*"), ("finance_expenses", "description=like.E2E-FIN-*")]:
+        out[t] = len(requests.delete(f"{url}/rest/v1/{t}?{f}", headers=h).json())
+    projs = requests.get(f"{url}/rest/v1/projects?name=like.E2E-FIN-*&select=id", headers=h).json()
+    for pr in projs:
+        requests.delete(f"{url}/rest/v1/finance_project_settings?project_id=eq.{pr['id']}", headers=h)
+        requests.delete(f"{url}/rest/v1/project_boards?project_id=eq.{pr['id']}", headers=h)
+        requests.delete(f"{url}/rest/v1/projects?id=eq.{pr['id']}", headers=h)
+    out["projects"] = len(projs)
+    if DEFAULTS_CREATED_BY_TEST:
+        out["defaults"] = len(requests.delete(f"{url}/rest/v1/finance_team_defaults?id=in.({','.join(DEFAULTS_CREATED_BY_TEST)})", headers=h).json())
+    left = requests.get(f"{url}/rest/v1/projects?name=like.E2E-FIN-*&select=id", headers=h).json()
+    print("limpeza:", out, "| projetos restantes:", len(left))
+
+# Valores padrão: só apaga a linha do mês se ela não existia antes do teste.
+DEFAULTS_CREATED_BY_TEST = [a for a in sys.argv[1:] if re.fullmatch(r"[0-9a-f-]{36}", a)]
+if "--cleanup-only" in sys.argv:
+    cleanup(); sys.exit(0)
 S = asyncio.run(main())
+cleanup()
 json.dump({"tag": TAG, **{k: v for k, v in S.items()}}, open(OUT / "state.json", "w"))
 for n, st, m in results: print(f"[{st}] {n} {m}")
 print("erros de página:", len(S.get("errors", [])), S.get("errors", [])[:3])
