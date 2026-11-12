@@ -5235,6 +5235,8 @@ export type Database = {
           user_id: string
         }[]
       }
+      _sp_month: { Args: { _ts: string }; Returns: string }
+      _sp_month_start: { Args: { _d: string }; Returns: string }
       admin_finance_scopes: {
         Args: never
         Returns: {

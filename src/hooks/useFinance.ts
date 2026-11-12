@@ -98,6 +98,11 @@ export function useInvalidateFinance() {
     qc.invalidateQueries({ queryKey: ["finance-people"] });
     qc.invalidateQueries({ queryKey: ["finance-closing"] });
     qc.invalidateQueries({ queryKey: ["finance-team-hourly-cost"] });
+    // Person costs also drive these screens; their keys do not share a prefix with the ones above.
+    qc.invalidateQueries({ queryKey: ["finance-people-gaps"] });
+    qc.invalidateQueries({ queryKey: ["project-hours-costs"] });
+    qc.invalidateQueries({ queryKey: ["project-finance-overview"] });
+    qc.invalidateQueries({ queryKey: ["team-projects-finance"] });
   };
 }
 

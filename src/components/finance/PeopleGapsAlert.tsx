@@ -10,9 +10,11 @@ import { fmtHours } from "@/lib/finance/timeSlices";
 type Gap = { user_id: string; name: string; hours: number; missing_kind: boolean; missing_cost: boolean };
 
 /** Lists people with hours in the month but without link or hourly cost, so cost is never silently zero. */
-export function PeopleGapsAlert({ teamId, onFixCost, onFixKind }: { teamId: string; onFixCost: (userId: string, month: string) => void; onFixKind: (userId: string) => void }) {
+export function PeopleGapsAlert({ teamId, onFixCost, onFixKind, month: ctrlMonth, onMonthChange }: { teamId: string; onFixCost: (userId: string, month: string) => void; onFixKind: (userId: string) => void; month?: string; onMonthChange?: (m: string) => void }) {
   const { user } = useAuth();
-  const [month, setMonth] = useState(new Date().toISOString().substring(0, 7));
+  const [ownMonth, setOwnMonth] = useState(new Date().toISOString().substring(0, 7));
+  const month = ctrlMonth ?? ownMonth;
+  const setMonth = (m: string) => (onMonthChange ? onMonthChange(m) : setOwnMonth(m));
   const q = useQuery({
     queryKey: ["finance-people-gaps", teamId, month, user?.id],
     enabled: !!user,
