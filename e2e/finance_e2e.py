@@ -53,6 +53,24 @@ async def main():
             await expect(sec).to_contain_text("Meta 17", timeout=10000)
         await step("Valores padrão salvos", defaults, page)
 
+        # 1b. Custo de uma pessoa sem custo lançado no mês (nunca sobrescreve um custo real)
+        async def person_cost():
+            sec = page.locator("details", has_text="Custo das pessoas").first
+            await expect(sec).to_be_visible(timeout=15000)
+            await sec.get_by_role("combobox").first.click()
+            opts = [((await o.inner_text()).strip(), o) for o in await page.get_by_role("option").all()]
+            free = [(n, o) for n, o in opts if n not in COSTED_NAMES]
+            assert free, "todas as pessoas já têm custo neste mês; nada lançado para não sobrescrever"
+            S["person"] = free[0][0]; await free[0][1].click()
+            await sec.get_by_label("Custo mensal (R$)").fill("16000")
+            await sec.get_by_label("Horas produtivas").fill("160")
+            await sec.get_by_role("button", name="Salvar").click()
+            await expect(sec).to_contain_text(re.compile(re.escape(S["person"]) + r" · \d{4}-\d\d · R\$\s*16\.000,00"), timeout=10000)
+            # sem recarregar a página: a hora/homem precisa refletir o custo novo na hora
+            await expect(page.locator("details", has_text="Valores padrão").first).to_contain_text(
+                re.compile(rf"Hora/homem da equipe: R\$\s*[\d.]+,\d\d/h · média de {len(COSTED_NAMES) + 1} pessoa"), timeout=10000)
+        await step("Custo de pessoa lançado e hora/homem calculada", person_cost, page)
+
         # 2. Criar projeto
         async def create_project():
             await page.goto(f"{BASE}/app/projects", wait_until="domcontentloaded"); await page.wait_for_timeout(3000)
@@ -90,7 +108,10 @@ async def main():
         # 5. Preço mínimo
         async def min_price():
             await tab("Preço mínimo")
-            await expect(page.get_by_role("tabpanel")).to_contain_text("Preço mínimo a cobrar", timeout=10000)
+            panel = page.get_by_role("tabpanel")
+            await expect(panel).to_contain_text("Preço mínimo a cobrar", timeout=10000)
+            await expect(panel).not_to_contain_text("Sem custo de pessoal lançado")
+            await expect(panel).to_contain_text(re.compile(r"Base: R\$\s*[\d.]+,\d\d/h"))
         await step("Aba Preço mínimo", min_price, page)
 
         # 6. Lançamentos
@@ -158,19 +179,29 @@ def cleanup():
         requests.delete(f"{url}/rest/v1/project_boards?project_id=eq.{pr['id']}", headers=h)
         requests.delete(f"{url}/rest/v1/projects?id=eq.{pr['id']}", headers=h)
     out["projects"] = len(projs)
+    if COSTS_CREATED_BY_TEST:
+        out["employee_costs"] = len(requests.delete(f"{url}/rest/v1/finance_employee_costs?id=in.({','.join(COSTS_CREATED_BY_TEST)})", headers=h).json())
     if DEFAULTS_CREATED_BY_TEST:
         out["defaults"] = len(requests.delete(f"{url}/rest/v1/finance_team_defaults?id=in.({','.join(DEFAULTS_CREATED_BY_TEST)})", headers=h).json())
     left = requests.get(f"{url}/rest/v1/projects?name=like.E2E-FIN-*&select=id", headers=h).json()
     print("limpeza:", out, "| projetos restantes:", len(left))
 
 # Valores padrão: só apaga a linha do mês se ela não existia antes do teste.
+COSTS_CREATED_BY_TEST = []
+COSTED_NAMES = set()
 DEFAULTS_CREATED_BY_TEST = [a for a in sys.argv[1:] if re.fullmatch(r"[0-9a-f-]{36}", a)]
 if "--cleanup-only" in sys.argv:
     cleanup(); sys.exit(0)
 requests, url, h = api()
 month0 = time.strftime("%Y-%m-01")
 before = {r["id"] for r in requests.get(f"{url}/rest/v1/finance_team_defaults?valid_from=eq.{month0}&select=id", headers=h).json()}
+costed = requests.get(f"{url}/rest/v1/finance_employee_costs?competence=eq.{month0}&select=id,user_id", headers=h).json()
+cost_ids_before = {r["id"] for r in costed}
+if costed:
+    names = requests.get(f"{url}/rest/v1/profiles?id=in.({','.join({r['user_id'] for r in costed})})&select=full_name", headers=h).json()
+    COSTED_NAMES.update((n.get("full_name") or "").strip() for n in names)
 S = asyncio.run(main())
+COSTS_CREATED_BY_TEST += [r["id"] for r in requests.get(f"{url}/rest/v1/finance_employee_costs?competence=eq.{month0}&select=id", headers=h).json() if r["id"] not in cost_ids_before]
 if not before:
     DEFAULTS_CREATED_BY_TEST += [r["id"] for r in requests.get(f"{url}/rest/v1/finance_team_defaults?valid_from=eq.{month0}&select=id", headers=h).json()]
 cleanup()

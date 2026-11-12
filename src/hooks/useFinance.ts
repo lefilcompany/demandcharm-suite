@@ -97,6 +97,7 @@ export function useInvalidateFinance() {
     qc.invalidateQueries({ queryKey: ["finance-allocation"] });
     qc.invalidateQueries({ queryKey: ["finance-people"] });
     qc.invalidateQueries({ queryKey: ["finance-closing"] });
+    qc.invalidateQueries({ queryKey: ["finance-team-hourly-cost"] });
   };
 }
 
