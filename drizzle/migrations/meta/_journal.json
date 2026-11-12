@@ -302,6 +302,13 @@
       "when": 1794484379898,
       "tag": "0042_finance_close_checklist_details",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794485272740,
+      "tag": "0043_finance_sp_month_boundaries",
+      "breakpoints": true
     }
   ]
 }
