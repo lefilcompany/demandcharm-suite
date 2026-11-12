@@ -10,6 +10,7 @@ import { Landmark, Link2, Unlink, AlertTriangle } from "lucide-react";
 import { useCanManageFinance, useTeamBoards, useProjectBoards, usePendingDemands, useFinanceMutation } from "@/hooks/useProjectFinance";
 import { PENDING_REASON_LABEL } from "@/lib/finance/attribution";
 import { ProjectHoursCosts } from "./ProjectHoursCosts";
+import { ProjectMinimumPrice } from "./ProjectMinimumPrice";
 import { ProjectFinanceSummary, ProjectFinanceSettings } from "./ProjectFinanceSummary";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { FinanceTabsList, FinanceTab } from "@/components/ops/FinanceUI";
@@ -92,10 +93,12 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
           <FinanceTab value="result">Resultado</FinanceTab>
           <FinanceTab value="hours">Horas e custos</FinanceTab>
           <FinanceTab value="boards">Quadros e pendências</FinanceTab>
+          <FinanceTab value="price">Preço mínimo</FinanceTab>
           <FinanceTab value="config">Configuração</FinanceTab>
         </FinanceTabsList>
         <TabsContent value="result"><ProjectFinanceSummary projectId={projectId} month={month} onMonth={setMonth} /></TabsContent>
         <TabsContent value="hours"><ProjectHoursCosts projectId={projectId} canExport={!!canManage} /></TabsContent>
+        <TabsContent value="price"><ProjectMinimumPrice teamId={teamId} /></TabsContent>
         <TabsContent value="config"><ProjectFinanceSettings projectId={projectId} canManage={!!canManage} /></TabsContent>
         <TabsContent value="boards">
       <div className="grid gap-4 lg:grid-cols-2">
