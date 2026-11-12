@@ -59,7 +59,7 @@ export function TeamDefaultsPanel({ teamId }: { teamId: string }) {
       <div className="space-y-3 border-t px-4 py-4 sm:px-5 text-sm">
         <p className="text-muted-foreground">
           Hora/homem da equipe: <strong className="text-foreground tabular-nums">{hourly.data?.hourly_cost != null ? `${formatBRL(Number(hourly.data.hourly_cost))}/h` : "—"}</strong>
-          {hourly.data?.competence ? ` · média de ${hourly.data.people} pessoa(s) em ${hourly.data.competence.substring(0, 7).split("-").reverse().join("/")}, pelo custo e horas lançados para cada um` : " · lance o custo de cada pessoa em \"Custos de pessoal\" para calcular"}
+          {hourly.data?.competence ? ` · média de ${hourly.data.people} pessoa(s) em ${hourly.data.competence.substring(0, 7).split("-").reverse().join("/")}, pelo custo e horas lançados para cada um` : " · lance o custo de cada pessoa em \"Custo das pessoas\" para calcular"}
         </p>
         <form onSubmit={save} className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 items-end">
           <label className="space-y-1"><span className="text-xs text-muted-foreground">Vale a partir de</span>
