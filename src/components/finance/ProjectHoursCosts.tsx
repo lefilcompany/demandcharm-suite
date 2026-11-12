@@ -1,3 +1,4 @@
+import { downloadFinancePdf } from "@/lib/finance/pdfExport";
 import { MonthField } from "@/components/ops/MonthField";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -58,6 +59,7 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
         <h3 className="text-sm font-medium flex-1">Horas e custos</h3>
         <MonthField aria-label="Mês" value={month} onChange={setMonth} className="h-8 w-40" />
         {canExport && r && <Button variant="outline" size="sm" className="h-8" onClick={download}><Download className="h-4 w-4 mr-1" />CSV</Button>}
+        {canExport && r && <Button variant="outline" size="sm" className="h-8" onClick={() => downloadFinancePdf(hoursCostsCsv(r), `Horas e custos ${month}`, `horas-custos-${month}.pdf`)}><Download className="h-4 w-4 mr-1" />PDF</Button>}
       </div>
 
       {q.isError ? (
