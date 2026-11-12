@@ -1,6 +1,8 @@
 import { ChevronDown } from "lucide-react";
 import { MonthField } from "@/components/ops/MonthField";
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -37,7 +39,6 @@ const ERR: Record<string, string> = {
 const msg = (e: any) => Object.entries(ERR).find(([k]) => String(e?.message).includes(k))?.[1] ?? "Não foi possível salvar. Confira os campos e tente de novo.";
 import { MemberProfilesPanel } from "@/components/finance/MemberProfilesPanel";
 import { PeopleGapsAlert } from "@/components/finance/PeopleGapsAlert";
-import { FinanceApiKeyCard } from "@/components/finance/FinanceApiKeyCard";
 import { TeamDefaultsPanel } from "@/components/finance/TeamDefaultsPanel";
 
 function Section({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
@@ -129,17 +130,62 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
     overview.filter((r) => r.competence.substring(0, 7) === sh.month).map((r) => ({ boardId: r.board_id, hours: r.hours_realized, gross: r.gross })),
   );
   const previewOrder = boards.map((b) => b.id);
+  const [params, setParams] = useSearchParams();
+  const group = params.get("sec");
+  const costSection = (
+    <>{can("finance.view_employee_costs") && (
+        <Section title="Custo das pessoas" hint="Custo mensal completo (salário, encargos, benefícios, férias, 13º) e horas produtivas do mês. O custo/hora sai da divisão.">
+          {can("finance.manage_settings") && (
+            <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addCost.mutate(undefined, { onSuccess: () => { done("Custo salvo"); setCost({ ...cost, amount: "" }); }, onError: fail }); }}>
+              <Field label="Pessoa"><Select value={cost.user} onValueChange={(v) => setCost({ ...cost, user: v })}><SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger>
+                <SelectContent>{members.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.name}</SelectItem>)}</SelectContent></Select></Field>
+              <Field label="Mês"><MonthField value={cost.month} onChange={(v) => setCost({ ...cost, month: v })} aria-label="Mês" /></Field>
+              <Field label="Custo mensal (R$)"><Input id="finance-cost-amount" type="number" min="0" step="0.01" value={cost.amount} onChange={(e) => setCost({ ...cost, amount: e.target.value })} required /></Field>
+              <Field label="Horas produtivas"><Input type="number" min="1" step="1" value={cost.hours} onChange={(e) => setCost({ ...cost, hours: e.target.value })} required /></Field>
+              <Button type="submit" disabled={!cost.user || addCost.isPending}>Salvar</Button>
+            </form>
+          )}
+          <Rows items={costs.data} render={(r) => `${memberName(r.user_id)} · ${r.competence.substring(0, 7)} · ${formatBRL(Number(r.monthly_cost))} · ${formatBRL(Number(r.monthly_cost) / Number(r.productive_hours))}/h`}
+            onDelete={(r) => del.mutate({ table: "finance_employee_costs", id: r.id }, { onSuccess: () => done("Custo removido"), onError: fail })} canDelete={() => can("finance.manage_settings")} />
+        </Section>
+      )}</>
+  );
+
+  const groups = ([
+    { id: "entries", label: "Receitas e despesas", hint: "Faturamento e gastos do mês", show: revBoards.length > 0 || expBoards.length > 0 || canShared },
+    { id: "people", label: "Pessoas", hint: "Vínculo e custo de cada pessoa", show: can("finance.manage_settings") || can("finance.view_employee_costs") || isOwnerOrAdmin },
+    { id: "params", label: "Parâmetros", hint: "Valores padrão, metas e acesso", show: can("finance.manage_settings") || isOwnerOrAdmin },
+  ] as const).filter((g) => g.show);
+  const current = groups.find((g) => g.id === group) ?? groups[0];
+  const pick = (id: string) => { const n = new URLSearchParams(params); n.set("sec", id); setParams(n, { replace: true }); };
 
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="space-y-5">
+      <nav aria-label="Seções de lançamentos" className="grid gap-2 sm:grid-cols-3">
+        {groups.map((g) => {
+          const on = g.id === current?.id;
+          return (
+            <button key={g.id} type="button" aria-pressed={on} onClick={() => pick(g.id)}
+              className={cn("rounded-xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                on ? "border-primary bg-primary/5" : "bg-card hover:bg-muted/50")}>
+              <span className={cn("block text-sm", on ? "font-bold text-foreground" : "font-medium text-foreground")}>{g.label}</span>
+              <span className="block text-xs text-muted-foreground">{g.hint}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {current?.id === "people" && (<div className="space-y-4">
       {(can("finance.manage_settings") || can("finance.view_employee_costs") || isOwnerOrAdmin) && (
         <PeopleGapsAlert teamId={teamId}
           onFixCost={(uid, month) => { setCost({ ...cost, user: uid, month, amount: "" }); setTimeout(() => document.getElementById("finance-cost-amount")?.focus(), 50); }}
           onFixKind={(uid) => { setKindUser(uid); setTimeout(() => document.getElementById("finance-kind-select")?.focus(), 50); }} />
       )}
       {can("finance.manage_settings") && <MemberProfilesPanel teamId={teamId} members={members} canManage preselectUser={kindUser} />}
-      {isOwnerOrAdmin && <FinanceApiKeyCard teamId={teamId} />}
-      {(can("finance.manage_settings") || isOwnerOrAdmin) && <TeamDefaultsPanel teamId={teamId} />}
+      {costSection}
+      </div>)}
+
+      {current?.id === "entries" && (<div className="space-y-4">
       {revBoards.length > 0 && (
         <Section title="Faturamento" hint="Valor bruto faturado por quadro no mês. Deixe a alíquota vazia para usar a padrão.">
           <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addRev.mutate(undefined, { onSuccess: () => { done("Faturamento lançado"); setRev({ ...rev, amount: "", description: "" }); }, onError: fail }); }}>
@@ -212,23 +258,10 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
         </Section>
       )}
 
-      {can("finance.view_employee_costs") && (
-        <Section title="Custo das pessoas" hint="Custo mensal completo (salário, encargos, benefícios, férias, 13º) e horas produtivas do mês. O custo/hora sai da divisão.">
-          {can("finance.manage_settings") && (
-            <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addCost.mutate(undefined, { onSuccess: () => { done("Custo salvo"); setCost({ ...cost, amount: "" }); }, onError: fail }); }}>
-              <Field label="Pessoa"><Select value={cost.user} onValueChange={(v) => setCost({ ...cost, user: v })}><SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger>
-                <SelectContent>{members.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.name}</SelectItem>)}</SelectContent></Select></Field>
-              <Field label="Mês"><MonthField value={cost.month} onChange={(v) => setCost({ ...cost, month: v })} aria-label="Mês" /></Field>
-              <Field label="Custo mensal (R$)"><Input id="finance-cost-amount" type="number" min="0" step="0.01" value={cost.amount} onChange={(e) => setCost({ ...cost, amount: e.target.value })} required /></Field>
-              <Field label="Horas produtivas"><Input type="number" min="1" step="1" value={cost.hours} onChange={(e) => setCost({ ...cost, hours: e.target.value })} required /></Field>
-              <Button type="submit" disabled={!cost.user || addCost.isPending}>Salvar</Button>
-            </form>
-          )}
-          <Rows items={costs.data} render={(r) => `${memberName(r.user_id)} · ${r.competence.substring(0, 7)} · ${formatBRL(Number(r.monthly_cost))} · ${formatBRL(Number(r.monthly_cost) / Number(r.productive_hours))}/h`}
-            onDelete={(r) => del.mutate({ table: "finance_employee_costs", id: r.id }, { onSuccess: () => done("Custo removido"), onError: fail })} canDelete={() => can("finance.manage_settings")} />
-        </Section>
-      )}
+      </div>)}
 
+      {current?.id === "params" && (<div className="space-y-4">
+      {(can("finance.manage_settings") || isOwnerOrAdmin) && <TeamDefaultsPanel teamId={teamId} />}
       {can("finance.manage_settings") && (
         <Section title="Metas e alíquota" hint="Valem para a equipe toda. A meta é comparada com a margem realizada, não entra como custo.">
           <form className="grid grid-cols-3 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); saveCfg.mutate(undefined, { onSuccess: () => done("Configuração salva"), onError: fail }); }}>
@@ -254,6 +287,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
             onDelete={(r) => revoke.mutate(r.id, { onSuccess: () => done("Permissão revogada"), onError: fail })} canDelete={() => true} deleteLabel="Revogar" />
         </Section>
       )}
+      </div>)}
     </div>
   );
 }

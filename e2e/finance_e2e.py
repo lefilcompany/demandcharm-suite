@@ -28,7 +28,7 @@ async def main():
     key, sess = session()
     async with async_playwright() as p:
         b = await p.chromium.launch(headless=True)
-        ctx = await b.new_context(viewport={"width": 1280, "height": 1800})
+        ctx = await b.new_context(viewport={"width": 1090, "height": 1800})
         page = await ctx.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -43,7 +43,7 @@ async def main():
 
         # 1. Valores padrão
         async def defaults():
-            await goto_finance("manage")
+            await goto_finance("manage&sec=params")
             sec = page.locator("details", has_text="Valores padrão").first
             await expect(sec).to_be_visible(timeout=15000)
             await expect(sec).to_contain_text("Hora/homem da equipe")
@@ -55,6 +55,8 @@ async def main():
 
         # 1b. Custo de uma pessoa sem custo lançado no mês (nunca sobrescreve um custo real)
         async def person_cost():
+            await goto_finance("manage&sec=params")
+            await page.get_by_role("button", name=re.compile("^Pessoas")).click(); await page.wait_for_timeout(1000)
             sec = page.locator("details", has_text="Custo das pessoas").first
             await expect(sec).to_be_visible(timeout=15000)
             await sec.get_by_role("combobox").first.click()
@@ -67,6 +69,7 @@ async def main():
             await sec.get_by_role("button", name="Salvar").click()
             await expect(sec).to_contain_text(re.compile(re.escape(S["person"]) + r" · \d{4}-\d\d · R\$\s*16\.000,00"), timeout=10000)
             # sem recarregar a página: a hora/homem precisa refletir o custo novo na hora
+            await page.get_by_role("button", name=re.compile("^Parâmetros")).click()
             await expect(page.locator("details", has_text="Valores padrão").first).to_contain_text(
                 re.compile(rf"Hora/homem da equipe: R\$\s*[\d.]+,\d\d/h · média de {len(COSTED_NAMES) + 1} pessoa"), timeout=10000)
         await step("Custo de pessoa lançado e hora/homem calculada", person_cost, page)
@@ -116,7 +119,7 @@ async def main():
 
         # 6. Lançamentos
         async def launch(section, fills, button, board=True, extra=None):
-            await goto_finance("manage")
+            await goto_finance("manage&sec=entries")
             sec = page.locator("details", has_text=section).first
             await expect(sec).to_be_visible(timeout=15000)
             if board:
