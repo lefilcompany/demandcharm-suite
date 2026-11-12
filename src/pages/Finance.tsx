@@ -1,4 +1,5 @@
-import { downloadFinancePdf } from "@/lib/finance/pdfExport";
+import { generateProfitabilityPdf } from "@/lib/finance/profitabilityPdf";
+import { useAuth } from "@/lib/auth";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { FinanceTabsList, FinanceTab, FinanceNotice, FinanceSection } from "@/components/ops/FinanceUI";
@@ -56,6 +57,7 @@ const monthLabel = (iso: string) => new Date(`${iso.substring(0, 10)}T12:00:00`)
 
 export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: { teamId?: string | null; teamName?: string; boardScope?: string[] } = {}) {
   const ctx = useSelectedTeam();
+  const { user } = useAuth();
   const selectedTeamId = forcedTeamId !== undefined ? forcedTeamId : ctx.selectedTeamId;
   const currentTeam = forcedTeamId !== undefined ? { name: teamName } : ctx.currentTeam;
   const fin = useFinanceAccess(selectedTeamId);
@@ -116,7 +118,19 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
       .map((v) => typeof v === "number" ? v.toFixed(2).replace(".", ",") : `"${String(v).replace(/"/g, '""')}"`).join(";"));
     return [head.join(";"), ...lines].join("\n");
   };
-  const exportPdf = () => downloadFinancePdf(buildCsv(), `Rentabilidade ${from} a ${to}`, `rentabilidade-${from}-a-${to}.pdf`);
+  const exportPdf = () => {
+    const list = sorted.filter((b) => fin.can("finance.export", b.boardId));
+    const me = members.find((m: any) => m.user_id === user?.id) as any;
+    const ml = (k: string) => new Date(`${k}-15T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+    generateProfitabilityPdf({
+      teamName: currentTeam?.name ?? "Equipe", periodLabel: from === to ? ml(from) : `${ml(from)} a ${ml(to)}`,
+      scopeLabel: boardFilter === "all" ? "Todos os quadros autorizados" : (authorizedBoards.find((b) => b.id === boardFilter)?.name ?? "Quadro"),
+      authorName: me?.profile?.full_name ?? user?.email ?? "—",
+      total, months: months.map((m) => ({ month: m.month, gross: m.Faturamento, cost: m.Custos, result: m.Resultado })),
+      boards: list.map((b) => ({ ...b, statusLabel: STATUS_LABEL[b.status] })),
+      filename: `rentabilidade-${from}-a-${to}.pdf`,
+    });
+  };
   const exportCsv = () => {
     const blob = new Blob(["\ufeff" + buildCsv()], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
