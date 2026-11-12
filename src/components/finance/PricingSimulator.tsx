@@ -1,6 +1,7 @@
 import { MonthField } from "@/components/ops/MonthField";
-import { useMemo, useState } from "react";
-import { Calculator, Check, Download, FolderOpen, Plus, RefreshCw, Save, Trash2, Users } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Calculator, Check, Download, FolderOpen, Plus, RefreshCw, Save, Trash2, Users, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useFinancePeople, type FinancePermission } from "@/hooks/useFinance";
 import { useFinanceScenarios } from "@/hooks/useFinanceScenarios";
@@ -54,6 +55,42 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
     }
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [people.data]);
+  const boardMembers = useQuery({
+    queryKey: ["sim-board-members", boardId],
+    enabled: !!boardId && canCosts,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("board_members").select("user_id").eq("board_id", boardId);
+      if (error) throw error;
+      return (data ?? []).map((r) => r.user_id as string);
+    },
+  });
+  // Pessoas do quadro com custo e horas produtivas lançados na competência.
+  const autoPlans = useMemo(() => {
+    const ids = new Set(boardMembers.data ?? []);
+    const seen = new Set<string>();
+    const out: (PersonPlan & { name: string; monthly: number })[] = [];
+    for (const p of people.data ?? []) {
+      if (!p.user_id || !ids.has(p.user_id) || seen.has(p.user_id) || p.monthly_cost === null || !p.productive_hours) continue;
+      const rate = costPerHour(p.monthly_cost, p.productive_hours);
+      if (rate === null) continue;
+      seen.add(p.user_id);
+      out.push({ userId: p.user_id, hours: p.productive_hours, rate, name: p.full_name ?? "Colaborador", monthly: p.monthly_cost });
+    }
+    return out.sort((a, b) => a.name.localeCompare(b.name));
+  }, [boardMembers.data, people.data]);
+  const [autoFilled, setAutoFilled] = useState(false);
+  const manualRef = useRef(false);
+  const autoKey = `${boardId}|${draft.competence}`;
+  useEffect(() => { manualRef.current = false; }, [autoKey]);
+  useEffect(() => {
+    if (editing || manualRef.current || !boardMembers.isSuccess || !people.isSuccess) return;
+    if (!autoPlans.length) { if (autoFilled) { setAutoFilled(false); setPersonPlans([]); setDraft((d) => ({ ...d, team_cost: 0, planned_hours: 0 })); } return; }
+    setPersonPlans(autoPlans.map(({ userId, hours, rate }) => ({ userId, hours, rate })));
+    setDraft((d) => ({ ...d, team_cost: autoPlans.reduce((s, p) => s + p.hours * p.rate, 0), planned_hours: autoPlans.reduce((s, p) => s + p.hours, 0) }));
+    setAutoFilled(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoKey, autoPlans, editing, boardMembers.isSuccess, people.isSuccess]);
+  const markManual = () => { manualRef.current = true; setAutoFilled(false); };
   const result = simulatePricing(draft);
   const valid = validScenario(draft);
   const canSave = !!boardId && boards.some((b) => b.id === boardId) && can("finance.manage_revenue", boardId);
@@ -82,9 +119,9 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
     setDraft({ name: s.name, client_label: s.client_label, board_id: s.board_id, competence: s.competence.substring(0, 10), gross: s.gross,
       tax_rate: s.tax_rate, variable_rate: s.variable_rate, margin_target: s.margin_target, team_cost: s.team_cost,
       planned_hours: s.planned_hours, direct_expenses: s.direct_expenses, shared_costs: s.shared_costs });
-    setEditing(s.id); setPersonPlans([]); setCostMode(false);
+    setEditing(s.id); setPersonPlans([]); setCostMode(false); setAutoFilled(false);
   };
-  const reset = () => { setDraft(blank(boardId)); setEditing(null); setPersonPlans([]); setCostMode(false); };
+  const reset = () => { manualRef.current = false; setAutoFilled(false); setDraft(blank(boardId)); setEditing(null); setPersonPlans([]); setCostMode(false); };
   const remove = async () => {
     if (!deleting || busy) return;
     setBusy(true);
@@ -110,6 +147,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
     finally { setBusy(false); }
   };
   const applyPlans = (plans: PersonPlan[]) => {
+    markManual();
     setPersonPlans(plans);
     setDraft((d) => ({ ...d, team_cost: plans.reduce((sum, p) => sum + p.hours * p.rate, 0), planned_hours: plans.reduce((sum, p) => sum + p.hours, 0) }));
   };
@@ -135,8 +173,14 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
           <Numeric label="Meta de margem (%)" percent value={draft.margin_target} onChange={(v) => update("margin_target", v)} />
         </div></section>
         <section className="space-y-3 border-t pt-4"><div className="flex flex-wrap items-center justify-between gap-2"><OpsLabel>02 · Equipe</OpsLabel>
-          {canCosts && <Button type="button" size="sm" variant={costMode ? "secondary" : "ghost"} onClick={() => { setCostMode(!costMode); setPersonPlans([]); }}><Users className="mr-1.5 h-4 w-4" />Custos cadastrados</Button>}</div>
-          <div className="grid gap-3 sm:grid-cols-2"><Numeric label="Horas previstas" value={draft.planned_hours} onChange={(v) => { update("planned_hours", v); setPersonPlans([]); }} /><Numeric label="Custo estimado da equipe (R$)" value={draft.team_cost} onChange={(v) => { update("team_cost", v); setPersonPlans([]); }} /></div>
+          {canCosts && <Button type="button" size="sm" variant={costMode ? "secondary" : "ghost"} onClick={() => { setCostMode(!costMode); if (!autoFilled) setPersonPlans([]); }}><Users className="mr-1.5 h-4 w-4" />Custos cadastrados</Button>}</div>
+          <div className="grid gap-3 sm:grid-cols-2"><Numeric label="Horas previstas" value={draft.planned_hours} onChange={(v) => { markManual(); update("planned_hours", v); setPersonPlans([]); }} /><Numeric label="Custo estimado da equipe (R$)" value={draft.team_cost} onChange={(v) => { markManual(); update("team_cost", v); setPersonPlans([]); }} /></div>
+          {autoFilled && autoPlans.length > 0 && <div role="note" className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs space-y-2">
+            <p className="flex items-start gap-1.5 font-medium text-foreground"><Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />Preenchido automaticamente com os custos cadastrados</p>
+            <p className="text-muted-foreground">{autoPlans.length === 1 ? "1 participante" : `${autoPlans.length} participantes`} de “{boards.find((b) => b.id === boardId)?.name ?? "quadro"}” têm custo lançado em {draft.competence.substring(5, 7)}/{draft.competence.substring(0, 4)}. Horas previstas = soma das horas produtivas; custo da equipe = horas × hora/homem de cada pessoa (custo mensal ÷ horas produtivas).</p>
+            <ul className="divide-y divide-primary/15">{autoPlans.map((p) => <li key={p.userId} className="flex justify-between gap-2 py-1 tabular-nums"><span className="truncate">{p.name}</span><span className="shrink-0 text-muted-foreground">{p.hours.toLocaleString("pt-BR")} h × {formatBRL(p.rate)}/h = <span className="text-foreground font-medium">{formatBRL(p.hours * p.rate)}</span></span></li>)}</ul>
+            <p className="text-muted-foreground">Edite os campos acima para usar outros valores.</p>
+          </div>}
           {canCosts && costMode && <div className="border-l-2 border-primary pl-3 space-y-3">
             {people.isError ? <Button type="button" variant="outline" size="sm" onClick={() => people.refetch()}><RefreshCw className="mr-1 h-3 w-3" />Tentar carregar custos novamente</Button>
               : people.isLoading ? <Skeleton className="h-9 w-full" /> : availablePeople.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum custo individual cadastrado nesta competência.</p> : <>
