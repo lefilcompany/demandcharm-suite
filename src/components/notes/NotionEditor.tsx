@@ -350,7 +350,9 @@ export function NotionEditor({ content, onChange, placeholder = "Pressione '/' p
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `notes/${fileName}`;
+      const { data: { user: uploader } } = await supabase.auth.getUser();
+      if (!uploader) throw new Error("Sessão expirada");
+      const filePath = `${uploader.id}/notes/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("inline-images")
@@ -400,7 +402,9 @@ export function NotionEditor({ content, onChange, placeholder = "Pressione '/' p
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `notes/${fileName}`;
+      const { data: { user: uploader } } = await supabase.auth.getUser();
+      if (!uploader) throw new Error("Sessão expirada");
+      const filePath = `${uploader.id}/notes/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("inline-images")
@@ -436,7 +440,9 @@ export function NotionEditor({ content, onChange, placeholder = "Pressione '/' p
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `notes/${fileName}`;
+      const { data: { user: uploader } } = await supabase.auth.getUser();
+      if (!uploader) throw new Error("Sessão expirada");
+      const filePath = `${uploader.id}/notes/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("inline-images")

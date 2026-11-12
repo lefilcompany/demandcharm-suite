@@ -267,6 +267,13 @@
       "when": 1794308448268,
       "tag": "0037_get_my_module_access",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794478673660,
+      "tag": "0038_harden_catalog_and_inline_images",
+      "breakpoints": true
     }
   ]
 }
