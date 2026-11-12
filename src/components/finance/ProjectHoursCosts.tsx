@@ -7,7 +7,8 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OpsLabel } from "@/components/ops/OpsParts";
-import { AlertTriangle, Download, RotateCw } from "lucide-react";
+import { AlertTriangle, RotateCw } from "lucide-react";
+import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { cn } from "@/lib/utils";
 import { fmtHours, hoursCostsCsv, kindLabel, type HoursCostsReport } from "@/lib/finance/timeSlices";
 
@@ -58,8 +59,7 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-medium flex-1">Horas e custos</h3>
         <MonthField aria-label="Mês" value={month} onChange={setMonth} className="h-8 w-40" />
-        {canExport && r && <Button variant="outline" size="sm" className="h-8" onClick={download}><Download className="h-4 w-4 mr-1" />CSV</Button>}
-        {canExport && r && <Button variant="outline" size="sm" className="h-8" onClick={() => downloadFinancePdf(hoursCostsCsv(r), `Horas e custos ${month}`, `horas-custos-${month}.pdf`)}><Download className="h-4 w-4 mr-1" />PDF</Button>}
+        {canExport && r && <ExportReportButton className="h-8" onExport={(f) => (f === "pdf" ? downloadFinancePdf(hoursCostsCsv(r), `Horas e custos ${month}`, `horas-custos-${month}.pdf`) : download())} />}
       </div>
 
       {q.isError ? (

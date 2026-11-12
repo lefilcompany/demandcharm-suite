@@ -2,7 +2,8 @@ import { downloadFinancePdf } from "@/lib/finance/pdfExport";
 import { MonthField } from "@/components/ops/MonthField";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle2, Download, Lock, RefreshCw, TriangleAlert, XCircle } from "lucide-react";
+import { CheckCircle2, Lock, RefreshCw, TriangleAlert, XCircle } from "lucide-react";
+import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { supabase } from "@/integrations/supabase/client";
 import { FinancePermission, useClosingHistory, useClosingPreview, useInvalidateFinance } from "@/hooks/useFinance";
 import { computeFinance, formatBRL, formatPct } from "@/lib/finance/engine";
@@ -207,8 +208,7 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
 
       <section className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex items-center justify-between"><OpsLabel>Histórico de fechamentos e ajustes</OpsLabel>
-          {can("finance.export") && (history.data?.periods.length ?? 0) > 0 && <Button size="sm" variant="outline" className="gap-1.5" onClick={exportCsv}><Download className="h-4 w-4" />CSV</Button>}
-          {can("finance.export") && (history.data?.periods.length ?? 0) > 0 && <Button size="sm" variant="outline" className="gap-1.5" onClick={exportPdf}><Download className="h-4 w-4" />PDF</Button>}</div>
+          {can("finance.export") && (history.data?.periods.length ?? 0) > 0 && <ExportReportButton onExport={(f) => (f === "pdf" ? exportPdf() : exportCsv())} />}</div>
         {history.isError ? <div className="flex items-center gap-3 text-sm"><span>Não foi possível carregar o histórico.</span><Button size="sm" variant="outline" onClick={() => history.refetch()}>Tentar de novo</Button></div>
           : history.isLoading ? <Skeleton className="h-20 w-full" />
           : !history.data?.periods.length ? <p className="text-sm text-muted-foreground">Nenhum mês fechado ainda.</p> : (

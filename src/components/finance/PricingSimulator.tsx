@@ -2,7 +2,8 @@ import { downloadFinancePdf } from "@/lib/finance/pdfExport";
 import { MonthField } from "@/components/ops/MonthField";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calculator, Check, Download, FolderOpen, Plus, RefreshCw, Save, Trash2, Users, Sparkles } from "lucide-react";
+import { Calculator, Check, FolderOpen, Plus, RefreshCw, Save, Trash2, Users, Sparkles } from "lucide-react";
+import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useFinancePeople, type FinancePermission } from "@/hooks/useFinance";
 import { useFinanceScenarios } from "@/hooks/useFinanceScenarios";
@@ -210,7 +211,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
       </aside>
     </div>
 
-    <section className="border-t pt-5 space-y-3"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-medium">Cenários salvos</h2><div className="flex items-center gap-3"><span className="text-xs text-muted-foreground">{compared.length}/{MAX_COMPARISON} em comparação</span>{canExport && <Button variant="outline" size="sm" onClick={() => exportSelected("csv")} disabled={busy}><Download className="mr-1.5 h-4 w-4" />CSV dos cenários</Button>}{canExport && <Button variant="outline" size="sm" onClick={() => exportSelected("pdf")} disabled={busy}><Download className="mr-1.5 h-4 w-4" />PDF</Button>}</div></div>
+    <section className="border-t pt-5 space-y-3"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-medium">Cenários salvos</h2><div className="flex items-center gap-3"><span className="text-xs text-muted-foreground">{compared.length}/{MAX_COMPARISON} em comparação</span>{canExport && <ExportReportButton label="Exportar cenários" onExport={(f) => exportSelected(f)} disabled={busy} />}</div></div>
       {scenarios.isLoading ? <Skeleton className="h-28 w-full" /> : scenarios.isError ? <div className="space-y-2 py-4"><p className="text-sm">Não foi possível carregar os cenários salvos.</p><Button variant="outline" size="sm" onClick={() => scenarios.refetch()}><RefreshCw className="mr-1.5 h-4 w-4" />Tentar novamente</Button></div> : !scenarios.data?.length ? <p className="py-5 text-sm text-muted-foreground">Nenhum cenário salvo nesta equipe.</p> : <ul className="divide-y">{scenarios.data.map((s) => {
         const r = simulatePricing(s);
         return <li key={s.id} className={cn("flex flex-wrap items-center gap-3 py-3", editing === s.id && "bg-muted/40")}>

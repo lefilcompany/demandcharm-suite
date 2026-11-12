@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { FinanceTabsList, FinanceTab, FinanceNotice, FinanceSection } from "@/components/ops/FinanceUI";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
-import { ArrowDown, ArrowUp, Download, Info, Lock, RefreshCw } from "lucide-react";
+import { ArrowDown, ArrowUp, Info, Lock, RefreshCw } from "lucide-react";
 import { useSelectedTeam } from "@/contexts/TeamContext";
 import { useBoards } from "@/hooks/useBoards";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -13,6 +13,7 @@ import { ExpensesAllocation } from "@/components/finance/ExpensesAllocation";
 import { PricingSimulator } from "@/components/finance/PricingSimulator";
 import { MonthlyClosing } from "@/components/finance/MonthlyClosing";
 import { TeamProjectsFinance } from "@/components/finance/TeamProjectsFinance";
+import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { computeFinance, FinanceResult, formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { MonthRangeField } from "@/components/ops/MonthRangeField";
@@ -166,8 +167,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
           <div>
             <Select value={boardFilter} onValueChange={setBoardFilter}><SelectTrigger className="h-9 w-[180px] border-0 bg-muted/50" aria-label="Quadro"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="all">Todos autorizados</SelectItem>{authorizedBoards.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent></Select></div>
-          {canExport && <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={exportCsv} disabled={!sorted.length}><Download className="h-4 w-4" />CSV</Button>}
-          {canExport && <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={exportPdf} disabled={!sorted.length}><Download className="h-4 w-4" />PDF</Button>}
+          {canExport && <ExportReportButton className="h-9" onExport={(f) => (f === "pdf" ? exportPdf() : exportCsv())} disabled={!sorted.length} />}
         </div>
       </header>
 
