@@ -28,7 +28,8 @@ export function ExpensesAllocation({ rows, isLoading, isError, onRetry, boardOrd
     return [...m.entries()].map(([id, v]) => ({ id, ...v })).sort((a, b) => b.amount - a.amount);
   }, [rows]);
   const received = perBoard.reduce((s, b) => s + b.amount, 0);
-  const unallocated = expenses.reduce((s, e) => s + e.unallocated, 0);
+  const unallocated = expenses.reduce((s, e) => s + Math.max(0, e.unallocated), 0);
+  const surplus = expenses.reduce((s, e) => s + Math.max(0, -e.unallocated), 0);
 
   if (isError) return (
     <div className="rounded-xl border p-6 text-center space-y-2">
@@ -50,6 +51,7 @@ export function ExpensesAllocation({ rows, isLoading, isError, onRetry, boardOrd
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div><OpsLabel>Rateio recebido pelos quadros</OpsLabel><div className="font-ops-display text-3xl font-semibold tabular-nums">{formatBRL(received)}</div></div>
           {unallocated > 0 && <div className="text-right"><OpsLabel>Não rateado</OpsLabel><div className="font-ops-display text-2xl font-semibold tabular-nums text-primary">{formatBRL(unallocated)}</div></div>}
+          {surplus > 0 && <div className="text-right"><OpsLabel>Folga de rateio</OpsLabel><div className="font-ops-display text-2xl font-semibold tabular-nums">{formatBRL(surplus)}</div></div>}
         </div>
         <AllocationBar className="h-4 bg-ops-ink-foreground/10" total={received + unallocated} unallocated={unallocated} order={boardOrder}
           parts={perBoard.map((b) => ({ key: b.id, label: b.name, amount: b.amount }))} />
@@ -61,7 +63,8 @@ export function ExpensesAllocation({ rows, isLoading, isError, onRetry, boardOrd
       </section>
 
       <section className="rounded-xl border bg-card divide-y">
-        {expenses.map(({ head, parts, unallocated: u }) => {
+        {expenses.map(({ head, parts, unallocated: raw }) => {
+          const u = Math.max(0, raw), extra = Math.max(0, -raw);
           const shown = parts.reduce((s, p) => s + p.amount, 0) + u;
           return (
             <article key={head.expense_id} className="p-4 space-y-2">
@@ -74,7 +77,8 @@ export function ExpensesAllocation({ rows, isLoading, isError, onRetry, boardOrd
               </div>
               <AllocationBar total={Math.max(head.total, shown)} unallocated={u} order={boardOrder}
                 parts={parts.map((p) => ({ key: p.board_id!, label: p.board_name ?? "Quadro", amount: p.amount }))} />
-              {u > 0 && <p className="text-xs text-primary">{formatBRL(u)} sem quadro com base no mês: entra no resultado da equipe só quando houver horas ou faturamento.</p>}
+              {u > 0 && <p className="text-xs text-primary">{formatBRL(u)}{head.allocation_method === "revenue_pct" ? " não absorvido pelos contratos (o percentual fixo não cobriu a despesa)." : " sem quadro com base no mês: entra no resultado da equipe só quando houver horas ou faturamento."}</p>}
+              {extra > 0 && <p className="text-xs text-muted-foreground">Folga de {formatBRL(extra)}: os contratos pagaram mais que a despesa, sem diminuir a parte de ninguém.</p>}
             </article>
           );
         })}
