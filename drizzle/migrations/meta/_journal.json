@@ -281,6 +281,13 @@
       "when": 1794479022848,
       "tag": "0039_owner_default_finance_manager",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794480769406,
+      "tag": "0040_finance_fixed_pct_allocation_and_defaults",
+      "breakpoints": true
     }
   ]
 }

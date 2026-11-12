@@ -2210,6 +2210,7 @@ export type Database = {
         Row: {
           allocation_board_ids: string[] | null
           allocation_method: string | null
+          allocation_pct: number | null
           amount: number
           board_id: string | null
           category: string
@@ -2226,6 +2227,7 @@ export type Database = {
         Insert: {
           allocation_board_ids?: string[] | null
           allocation_method?: string | null
+          allocation_pct?: number | null
           amount: number
           board_id?: string | null
           category?: string
@@ -2242,6 +2244,7 @@ export type Database = {
         Update: {
           allocation_board_ids?: string[] | null
           allocation_method?: string | null
+          allocation_pct?: number | null
           amount?: number
           board_id?: string | null
           category?: string
@@ -2813,6 +2816,59 @@ export type Database = {
           },
           {
             foreignKeyName: "finance_settings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_team_defaults: {
+        Row: {
+          allocation_pct: number
+          created_at: string
+          created_by: string | null
+          hourly_cost: number
+          id: string
+          margin_target: number
+          max_discount: number
+          tax_rate: number
+          team_id: string
+          updated_at: string
+          valid_from: string
+          variable_rate: number
+        }
+        Insert: {
+          allocation_pct?: number
+          created_at?: string
+          created_by?: string | null
+          hourly_cost?: number
+          id?: string
+          margin_target?: number
+          max_discount?: number
+          tax_rate?: number
+          team_id: string
+          updated_at?: string
+          valid_from: string
+          variable_rate?: number
+        }
+        Update: {
+          allocation_pct?: number
+          created_at?: string
+          created_by?: string | null
+          hourly_cost?: number
+          id?: string
+          margin_target?: number
+          max_discount?: number
+          tax_rate?: number
+          team_id?: string
+          updated_at?: string
+          valid_from?: string
+          variable_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_team_defaults_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
