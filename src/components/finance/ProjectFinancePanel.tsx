@@ -148,7 +148,7 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
             <h3 className="text-sm font-medium">Demandas da equipe sem projeto financeiro neste mês ({pending.data?.length ?? 0})</h3>
             {pending.isError && <p className="text-sm text-destructive">Não foi possível carregar as pendências.</p>}
             {pending.data?.length === 0 && <p className="text-sm text-muted-foreground">Tudo classificado.</p>}
-            <ul className="divide-y text-sm max-h-72 overflow-y-auto">
+            <ul className="divide-y text-sm">
               {pending.data?.map((d: any) => (
                 <li key={d.demand_id} className="flex items-center gap-2 py-2">
                   <div className="flex-1 min-w-0">
