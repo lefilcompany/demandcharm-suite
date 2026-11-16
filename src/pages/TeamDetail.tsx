@@ -204,8 +204,8 @@ export default function TeamDetail() {
         </Card>
       )}
 
-      {/* Scope Configuration - Only for Admins */}
-      {isAdmin && id && <TeamScopeConfig teamId={id} currentScope={scope || null} />}
+      {/* Scope Configuration - hidden (kept for future reactivation)
+      {isAdmin && id && <TeamScopeConfig teamId={id} currentScope={scope || null} />} */}
 
       {/* Team Positions Manager */}
       {canManage && id && (
