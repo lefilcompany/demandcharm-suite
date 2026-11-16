@@ -216,8 +216,8 @@ export default function TeamDetail() {
         </div>
       )}
 
-      {/* Resumo rápido de disponibilidade da equipe */}
-      <TeamAvailabilitySummary teamId={id || null} />
+      {/* Resumo rápido de disponibilidade da equipe - oculto (mantido para reativação futura)
+      <TeamAvailabilitySummary teamId={id || null} /> */}
 
       {/* Members List */}
       <Card>
