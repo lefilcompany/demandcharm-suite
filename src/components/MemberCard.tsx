@@ -142,8 +142,8 @@ export function MemberCard({
   const [demoteDialogOpen, setDemoteDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [accessDialogOpen, setAccessDialogOpen] = useState(false);
-  // Dono pode alterar o próprio perfil financeiro; os demais só o dono altera.
-  const canEditAccess = !!teamId && (canManage || isCurrentUser);
+  // Só o dono da equipe altera perfis de acesso (inclusive o próprio).
+  const canEditAccess = !!teamId && canManage;
 
   const handleNameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -160,7 +160,7 @@ export function MemberCard({
     <div className="rounded-xl border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group">
       <div className={`h-14 bg-gradient-to-r ${config.bannerColor}`} />
       
-      {canModify && (
+      {(canModify || (isCurrentUser && canEditAccess)) && (
         <div className="absolute top-2 right-2 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
