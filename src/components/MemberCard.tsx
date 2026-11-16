@@ -179,6 +179,7 @@ export function MemberCard({
                   Perfil de acesso
                 </DropdownMenuItem>
               )}
+              {canEditAccess && (onRoleChange || member.role !== "owner") && <DropdownMenuSeparator />}
               {onRoleChange && member.role === "member" && (
                 <DropdownMenuItem onClick={() => setPromoteDialogOpen(true)}>
                   <Crown className="h-4 w-4 mr-2 text-amber-500" />
@@ -277,11 +278,20 @@ export function MemberCard({
       )}
       
       {isCurrentUser && (
-        <div className="absolute top-2 right-2 z-10">
+        <div className={`absolute top-2 z-10 ${canEditAccess ? "left-2" : "right-2"}`}>
           <Badge className="text-xs bg-emerald-500 text-white shadow-md px-2.5 py-0.5 font-medium">
             Você
           </Badge>
         </div>
+      )}
+
+      {canEditAccess && teamId && (
+        <MemberAccessProfileDialog
+          teamId={teamId}
+          member={member}
+          open={accessDialogOpen}
+          onOpenChange={setAccessDialogOpen}
+        />
       )}
       
       <div className="relative px-4 pb-4">
