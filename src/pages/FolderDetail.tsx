@@ -22,6 +22,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { FolderShareDialog } from "@/components/FolderShareDialog";
 import { FolderDemandManager } from "@/components/FolderDemandManager";
 import { ProjectFinancePanel } from "@/components/finance/ProjectFinancePanel";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Wallet } from "lucide-react";
 import {
   Search, LayoutGrid, List, CalendarDays, ChevronDown, ChevronRight,
   FolderOpen, ArrowLeft, Eye, EyeOff, User, Pencil, Check, X, Users, Plus, Layers, LayoutList, Briefcase
@@ -64,6 +66,7 @@ export default function FolderDetail() {
   const [groupByBoard, setGroupByBoard] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
   const [managerOpen, setManagerOpen] = useState(false);
+  const [financeOpen, setFinanceOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -276,7 +279,20 @@ export default function FolderDetail() {
             {groupedByBoard.length > 0 && ` em ${groupedByBoard.length} ${groupedByBoard.length === 1 ? "quadro" : "quadros"}`}
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setFinanceOpen(true)}
+                className="flex items-center gap-1.5 p-2 md:px-3 md:py-1.5 rounded-lg border border-border/60 hover:bg-muted/60 transition-colors"
+              >
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+                <span className="hidden md:inline text-xs font-medium text-muted-foreground">Gestão financeira</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="md:hidden">Gestão financeira</TooltipContent>
+          </Tooltip>
           <ProjectSnapshotDialog
             projectName={folder.name}
             authorName={(user?.user_metadata as any)?.full_name || user?.email || "—"}
@@ -289,20 +305,6 @@ export default function FolderDetail() {
               Object.values(filters).some(Boolean)
             }
           />
-          {canEdit && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setManagerOpen(true)}
-                  className="flex items-center gap-1.5 p-2 md:px-3 md:py-1.5 rounded-lg border border-border/60 hover:bg-primary/10 hover:border-primary/30 transition-colors"
-                >
-                  <Plus className="h-4 w-4 text-primary" />
-                  <span className="hidden md:inline text-xs font-medium text-primary">Adicionar demanda</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent className="md:hidden">Adicionar demanda</TooltipContent>
-            </Tooltip>
-          )}
           {folder.is_owner && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -317,7 +319,23 @@ export default function FolderDetail() {
               <TooltipContent className="md:hidden">Compartilhar projeto</TooltipContent>
             </Tooltip>
           )}
-        </div>
+</div>
+          <div className="hidden md:block h-6 w-px bg-border" />
+          {canEdit && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setManagerOpen(true)}
+                  className="flex items-center gap-1.5 p-2 md:px-3 md:py-1.5 rounded-lg border border-border/60 bg-primary border-primary hover:bg-primary/90 transition-colors"
+                >
+                  <Plus className="h-4 w-4 text-primary-foreground" />
+                  <span className="hidden md:inline text-xs font-semibold text-primary-foreground-foreground">Adicionar demanda</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="md:hidden">Adicionar demanda</TooltipContent>
+            </Tooltip>
+          )}
+          </div>
       </div>
 
       {/* Search + View Toggle + Quick Filters */}
@@ -565,7 +583,15 @@ export default function FolderDetail() {
         </div>
       )}
 
-      <ProjectFinancePanel projectId={folder.id} teamId={currentTeamId} />
+      <Dialog open={financeOpen} onOpenChange={setFinanceOpen}>
+        <DialogContent className="max-w-5xl max-h-[90dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gestão financeira · {folder.name}</DialogTitle>
+            <DialogDescription>Resultado, horas, quadros vinculados, preço mínimo e configuração do projeto.</DialogDescription>
+          </DialogHeader>
+          <ProjectFinancePanel projectId={folder.id} teamId={currentTeamId} />
+        </DialogContent>
+      </Dialog>
 
       {folder.is_owner && (
         <FolderShareDialog
