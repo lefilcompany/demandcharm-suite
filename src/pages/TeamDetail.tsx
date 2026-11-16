@@ -179,41 +179,41 @@ export default function TeamDetail() {
         )}
       </div>
 
-      {/* Team Access Code Card - For Admins/Moderators */}
+      {/* Access code + team positions, side by side */}
       {canManage && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Key className="h-5 w-5" />
-              Código de Acesso da Equipe
-            </CardTitle>
-            <CardDescription>
-              Compartilhe este código para convidar novos membros para a equipe
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 px-3 py-2 rounded-md bg-muted font-mono text-sm">
-                {team.access_code}
-              </code>
-              <Button variant="outline" size="icon" onClick={handleCopyCode}>
-                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-              </Button>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Key className="h-5 w-5" />
+                Código de Acesso da Equipe
+              </CardTitle>
+              <CardDescription>
+                Compartilhe este código para convidar novos membros para a equipe
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3 py-2 rounded-md bg-muted font-mono text-sm">
+                  {team.access_code}
+                </code>
+                <Button variant="outline" size="icon" onClick={handleCopyCode}>
+                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {id && (
+            <div className="min-w-0">
+              <TeamPositionsManager 
+                teamId={id} 
+                canManage={canManage} 
+                isAdmin={isAdmin} 
+              />
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Scope Configuration - hidden (kept for future reactivation)
-      {isAdmin && id && <TeamScopeConfig teamId={id} currentScope={scope || null} />} */}
-
-      {/* Team Positions Manager */}
-      {canManage && id && (
-        <TeamPositionsManager 
-          teamId={id} 
-          canManage={canManage} 
-          isAdmin={isAdmin} 
-        />
+          )}
+        </div>
       )}
 
       {/* Resumo rápido de disponibilidade da equipe */}
