@@ -140,12 +140,13 @@ export function AppSidebar() {
     icon: Landmark
   }] : [];
 
+  // Resumo IA temporarily hidden from sidebar (keep code for future re-activation)
   const aiMenuItems = [
-    {
-      title: "Resumo IA",
-      url: "/app/board-summary",
-      icon: Sparkles
-    },
+    // {
+    //   title: "Resumo IA",
+    //   url: "/app/board-summary",
+    //   icon: Sparkles
+    // },
     {
       title: "Assistente do Quadro",
       url: "/app/board-agent",
