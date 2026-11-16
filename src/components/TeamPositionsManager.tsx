@@ -73,18 +73,10 @@ export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManager
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between gap-6">
-            <CardTitle className="flex min-w-0 items-center gap-2">
-              <Briefcase className="h-5 w-5 shrink-0" />
-              Cargos da Equipe
-            </CardTitle>
-            {canManage && (
-              <Button onClick={handleOpenCreate} size="sm" className="shrink-0">
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Cargo
-              </Button>
-            )}
-          </div>
+          <CardTitle className="flex min-w-0 items-center gap-2">
+            <Briefcase className="h-5 w-5 shrink-0" />
+            Cargos da Equipe
+          </CardTitle>
           <CardDescription className="leading-relaxed">
             Crie cargos personalizados por área ou função
           </CardDescription>
@@ -105,7 +97,7 @@ export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManager
               )}
             </div>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {positions.map((position) => (
                 <PositionBadge
                   key={position.id}
@@ -114,6 +106,16 @@ export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManager
                   textColor={position.text_color}
                 />
               ))}
+              {canManage && (
+                <Button
+                  onClick={handleOpenCreate}
+                  variant="ghost"
+                  className="h-6 rounded-full border border-dashed border-input bg-transparent px-2.5 text-xs font-medium text-muted-foreground hover:border-primary hover:bg-transparent hover:text-primary"
+                >
+                  <Plus className="h-3 w-3" />
+                  Criar Cargo
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
