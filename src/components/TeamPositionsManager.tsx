@@ -73,18 +73,10 @@ export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManager
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between gap-6">
-            <CardTitle className="flex min-w-0 items-center gap-2">
-              <Briefcase className="h-5 w-5 shrink-0" />
-              Cargos da Equipe
-            </CardTitle>
-            {canManage && (
-              <Button onClick={handleOpenCreate} size="sm" className="shrink-0">
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Cargo
-              </Button>
-            )}
-          </div>
+          <CardTitle className="flex min-w-0 items-center gap-2">
+            <Briefcase className="h-5 w-5 shrink-0" />
+            Cargos da Equipe
+          </CardTitle>
           <CardDescription className="leading-relaxed">
             Crie cargos personalizados por área ou função
           </CardDescription>
