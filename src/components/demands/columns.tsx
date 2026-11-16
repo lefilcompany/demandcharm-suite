@@ -204,14 +204,6 @@ function DueDateCell({
         {isOverdue && <AlertTriangle className="h-3 w-3" />}
         {formattedDate}
       </span>
-      {isDeliveredLate && (
-        <Badge
-          variant="outline"
-          className="text-[10px] py-0 h-5 bg-muted/50 text-muted-foreground border-muted-foreground/20 font-normal"
-        >
-          Concluída com atraso
-        </Badge>
-      )}
     </div>
   );
 }
