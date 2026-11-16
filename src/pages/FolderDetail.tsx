@@ -329,7 +329,7 @@ export default function FolderDetail() {
                   className="flex items-center gap-1.5 p-2 md:px-3 md:py-1.5 rounded-lg border border-border/60 bg-primary border-primary hover:bg-primary/90 transition-colors"
                 >
                   <Plus className="h-4 w-4 text-primary-foreground" />
-                  <span className="hidden md:inline text-xs font-semibold text-primary-foreground-foreground">Adicionar demanda</span>
+                  <span className="hidden md:inline text-xs font-semibold text-primary-foreground">Adicionar demanda</span>
                 </button>
               </TooltipTrigger>
               <TooltipContent className="md:hidden">Adicionar demanda</TooltipContent>
