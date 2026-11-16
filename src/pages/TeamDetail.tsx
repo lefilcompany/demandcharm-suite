@@ -100,6 +100,8 @@ export default function TeamDetail() {
     );
   };
   // A tela de configurações usa a equipe selecionada no contexto; garante que seja esta.
+  // (botão oculto no topo — mantido para reativação futura)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const openTeamSettings = () => {
     if (!id) return;
     if (selectedTeamId !== id) setSelectedTeamId(id);
@@ -164,6 +166,7 @@ export default function TeamDetail() {
             { label: team.name, isCurrent: true },
           ]}
         />
+        {/* Botão "Configurações da equipe" - oculto (mantido para reativação futura)
         {canManage && (
           <Button
             variant="outline"
@@ -176,7 +179,7 @@ export default function TeamDetail() {
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Configurações da equipe</span>
           </Button>
-        )}
+        )} */}
       </div>
 
       {/* Access code + team positions, side by side */}
