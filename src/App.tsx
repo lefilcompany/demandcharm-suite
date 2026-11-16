@@ -70,6 +70,7 @@ const MyDemands = lazy(() => import("./pages/MyDemands"));
 const Notes = lazy(() => import("./pages/Notes"));
 const NoteDetail = lazy(() => import("./pages/NoteDetail"));
 const FolderDetail = lazy(() => import("./pages/FolderDetail"));
+const ProjectFinance = lazy(() => import("./pages/ProjectFinance"));
 const Projects = lazy(() => import("./pages/Projects"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -212,6 +213,7 @@ const App = () => {
                                 <Route path="/app/folders/:folderId" element={<FolderDetail />} />
                                 <Route path="/app/projects" element={<ModuleGate perm="projects.view"><Projects /></ModuleGate>} />
                                 <Route path="/app/projects/:folderId" element={<ModuleGate perm="projects.view"><FolderDetail /></ModuleGate>} />
+                                <Route path="/app/projects/:folderId/finance" element={<ModuleGate perm="projects.view"><ProjectFinance /></ModuleGate>} />
                                 <Route path="/app/demands/create" element={<CreateDemandRoute />} />
                                 <Route path="/app/demands/request" element={<CreateDemandRequest />} />
                                 <Route path="/app/demands/:id" element={<DemandDetail />} />
