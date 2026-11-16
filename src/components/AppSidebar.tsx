@@ -134,11 +134,13 @@ export function AppSidebar() {
   // Loja de Serviços temporarily hidden (keep code for future re-activation)
   const requesterMenuItems: any[] = [];
 
-  const financeMenuItems = financeAccess.hasModule && !isRequester ? [{
-    title: "Inteligência Financeira",
-    url: "/app/finance",
-    icon: Landmark
-  }] : [];
+  // Inteligência Financeira temporarily hidden from sidebar (keep code for future re-activation)
+  const financeMenuItems: typeof baseMenuItems = [];
+  // const financeMenuItems = financeAccess.hasModule && !isRequester ? [{
+  //   title: "Inteligência Financeira",
+  //   url: "/app/finance",
+  //   icon: Landmark
+  // }] : [];
 
   // Resumo IA temporarily hidden from sidebar (keep code for future re-activation)
   const aiMenuItems = [
