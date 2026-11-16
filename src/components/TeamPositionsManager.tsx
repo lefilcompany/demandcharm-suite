@@ -2,25 +2,12 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Briefcase, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Briefcase, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   useTeamPositions,
   useCreatePosition,
   useUpdatePosition,
-  useDeletePosition,
   TeamPosition,
 } from "@/hooks/useTeamPositions";
 import { CreatePositionDialog } from "@/components/CreatePositionDialog";
@@ -32,15 +19,13 @@ interface TeamPositionsManagerProps {
   isAdmin: boolean;
 }
 
-export function TeamPositionsManager({ teamId, canManage, isAdmin }: TeamPositionsManagerProps) {
+export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManagerProps) {
   const { data: positions, isLoading } = useTeamPositions(teamId);
   const createPosition = useCreatePosition();
   const updatePosition = useUpdatePosition();
-  const deletePosition = useDeletePosition();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<TeamPosition | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleCreateOrUpdate = async (data: { name: string; description?: string; color: string; textColor: string }) => {
     try {
@@ -63,23 +48,6 @@ export function TeamPositionsManager({ teamId, canManage, isAdmin }: TeamPositio
     } catch (error: any) {
       toast.error(error.message || "Erro ao salvar cargo");
     }
-  };
-
-  const handleDelete = async (positionId: string) => {
-    setDeletingId(positionId);
-    try {
-      await deletePosition.mutateAsync({ positionId, teamId });
-      toast.success("Cargo excluído com sucesso!");
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao excluir cargo");
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  const handleEdit = (position: TeamPosition) => {
-    setEditingPosition(position);
-    setDialogOpen(true);
   };
 
   const handleOpenCreate = () => {
@@ -138,80 +106,18 @@ export function TeamPositionsManager({ teamId, canManage, isAdmin }: TeamPositio
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {positions.map((position) => {
-                if (!canManage) {
-                  return (
-                    <div
-                      key={position.id}
-                      className="inline-flex items-center pl-1 pr-2 py-1 rounded-full border bg-card"
-                    >
-                      <PositionBadge name={position.name} color={position.color} textColor={position.text_color} />
-                    </div>
-                  );
-                }
-
-                return (
-                  <Popover key={position.id}>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="inline-flex items-center pl-1 pr-2 py-1 rounded-full border bg-card hover:bg-muted/30 active:bg-muted/50 transition-colors cursor-pointer"
-                      >
-                        <PositionBadge name={position.name} color={position.color} textColor={position.text_color} />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-1.5 flex items-center gap-1" side="top" align="center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(position)}
-                        className="h-8 px-3 gap-1.5 text-xs"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        Editar
-                      </Button>
-                      
-                      {isAdmin && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 px-3 gap-1.5 text-xs text-destructive hover:text-destructive"
-                              disabled={deletingId === position.id}
-                            >
-                              {deletingId === position.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-3.5 w-3.5" />
-                              )}
-                              Excluir
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir cargo</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja excluir o cargo <strong>"{position.name}"</strong>?
-                                Os membros que possuem este cargo ficarão sem cargo atribuído.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(position.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </PopoverContent>
-                  </Popover>
-                );
-              })}
+              {positions.map((position) => (
+                <div
+                  key={position.id}
+                  className="inline-flex items-center pl-1 pr-2 py-1 rounded-full border bg-card"
+                >
+                  <PositionBadge
+                    name={position.name}
+                    color={position.color}
+                    textColor={position.text_color}
+                  />
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
