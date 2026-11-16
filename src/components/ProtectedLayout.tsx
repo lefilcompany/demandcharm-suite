@@ -170,7 +170,20 @@ export function ProtectedLayout() {
               <SidebarTrigger className="text-foreground hover:bg-muted shrink-0 h-7 w-7" />
               {(() => {
                 const p = location.pathname;
-                const isTeamView = p === "/app/team-demands" || p === "/app/boards" || p.startsWith("/app/boards/") || p === "/app/teams" || p.startsWith("/app/teams/");
+                // Telas de equipe (administração ou visão geral) não mostram o seletor de quadro.
+                const isTeamView =
+                  p === "/app/team-demands" ||
+                  p === "/app/boards" || p.startsWith("/app/boards/") ||
+                  p === "/app/teams" || p.startsWith("/app/teams/") ||
+                  p === "/app/team-config" ||
+                  p === "/app/projects" || p.startsWith("/app/projects/") ||
+                  p === "/app/folders" || p.startsWith("/app/folders/") ||
+                  p === "/app/finance" ||
+                  p === "/app/reports" ||
+                  p === "/app/time-management" ||
+                  p === "/app/profile" ||
+                  p === "/app/settings" ||
+                  p.startsWith("/app/user/");
                 if (isTeamView) return null;
                 return (
                   <>
