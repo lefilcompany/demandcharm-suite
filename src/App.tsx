@@ -212,6 +212,7 @@ const App = () => {
                                 <Route path="/app/folders/:folderId" element={<FolderDetail />} />
                                 <Route path="/app/projects" element={<ModuleGate perm="projects.view"><Projects /></ModuleGate>} />
                                 <Route path="/app/projects/:folderId" element={<ModuleGate perm="projects.view"><FolderDetail /></ModuleGate>} />
+                                <Route path="/app/projects/:folderId/finance" element={<ModuleGate perm="projects.view"><ProjectFinance /></ModuleGate>} />
                                 <Route path="/app/demands/create" element={<CreateDemandRoute />} />
                                 <Route path="/app/demands/request" element={<CreateDemandRequest />} />
                                 <Route path="/app/demands/:id" element={<DemandDetail />} />
