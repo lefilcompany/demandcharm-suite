@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Users, Calendar, Key, Copy, Check, Settings, Trash2, Search, X } from "lucide-react";
+import { Users, Calendar, Settings, Trash2, Search, X } from "lucide-react";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
@@ -24,6 +24,7 @@ import { MemberCard } from "@/components/MemberCard";
 import { TeamAvailabilitySummary } from "@/components/TeamAvailabilitySummary";
 import { TeamScopeConfig } from "@/components/TeamScopeConfig";
 import { TeamPositionsManager } from "@/components/TeamPositionsManager";
+import { TeamJoinRequestsCard } from "@/components/team/TeamJoinRequestsCard";
 import { TeamRole } from "@/hooks/useTeamRole";
 import { SEOHead } from "@/components/SEOHead";
 export default function TeamDetail() {
@@ -36,7 +37,6 @@ export default function TeamDetail() {
   const {
     user
   } = useAuth();
-  const [copied, setCopied] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
   const [memberSearchOpen, setMemberSearchOpen] = useState(false);
   const memberSearchRef = useRef<HTMLInputElement>(null);
@@ -108,14 +108,6 @@ export default function TeamDetail() {
     navigate("/app/team-config");
   };
 
-  const handleCopyCode = () => {
-    if (team?.access_code) {
-      navigator.clipboard.writeText(team.access_code);
-      setCopied(true);
-      toast.success("Código copiado!");
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
   const handleRemoveMember = (memberId: string) => {
     removeMember.mutate(memberId, {
       onSuccess: () => {
@@ -182,40 +174,18 @@ export default function TeamDetail() {
         )} */}
       </div>
 
-      {/* Access code + team positions, side by side */}
-      {canManage && (
+      {/* Solicitações de entrada + cargos da equipe, lado a lado */}
+      {canManage && id && (
         <div className="grid items-stretch gap-6 lg:grid-cols-2">
-          <Card className="flex h-full flex-col">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Key className="h-5 w-5" />
-                Código de Acesso da Equipe
-              </CardTitle>
-              <CardDescription>
-                Compartilhe este código para convidar novos membros para a equipe
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <div className="flex items-center gap-2">
-                <code className="flex-1 px-3 py-2 rounded-md bg-muted font-mono text-sm">
-                  {team.access_code}
-                </code>
-                <Button variant="outline" size="icon" onClick={handleCopyCode}>
-                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <TeamJoinRequestsCard teamId={id} accessCode={team.access_code} />
 
-          {id && (
-            <div className="min-w-0 h-full">
-              <TeamPositionsManager 
-                teamId={id} 
-                canManage={canManage} 
-                isAdmin={isAdmin} 
-              />
-            </div>
-          )}
+          <div className="min-w-0 h-full">
+            <TeamPositionsManager 
+              teamId={id} 
+              canManage={canManage} 
+              isAdmin={isAdmin} 
+            />
+          </div>
         </div>
       )}
 
