@@ -70,6 +70,7 @@ const MyDemands = lazy(() => import("./pages/MyDemands"));
 const Notes = lazy(() => import("./pages/Notes"));
 const NoteDetail = lazy(() => import("./pages/NoteDetail"));
 const FolderDetail = lazy(() => import("./pages/FolderDetail"));
+const ProjectFinance = lazy(() => import("./pages/ProjectFinance"));
 const Projects = lazy(() => import("./pages/Projects"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Pricing = lazy(() => import("./pages/Pricing"));

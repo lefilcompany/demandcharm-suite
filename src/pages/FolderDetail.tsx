@@ -21,8 +21,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { FolderShareDialog } from "@/components/FolderShareDialog";
 import { FolderDemandManager } from "@/components/FolderDemandManager";
-import { ProjectFinancePanel } from "@/components/finance/ProjectFinancePanel";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Wallet } from "lucide-react";
 import {
   Search, LayoutGrid, List, CalendarDays, ChevronDown, ChevronRight,
@@ -66,7 +64,6 @@ export default function FolderDetail() {
   const [groupByBoard, setGroupByBoard] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
   const [managerOpen, setManagerOpen] = useState(false);
-  const [financeOpen, setFinanceOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -284,7 +281,7 @@ export default function FolderDetail() {
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                onClick={() => setFinanceOpen(true)}
+                onClick={() => navigate(`/app/projects/${folder.id}/finance`)}
                 className="flex items-center gap-1.5 p-2 md:px-3 md:py-1.5 rounded-lg border border-border/60 hover:bg-muted/60 transition-colors"
               >
                 <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -582,16 +579,6 @@ export default function FolderDetail() {
           )}
         </div>
       )}
-
-      <Dialog open={financeOpen} onOpenChange={setFinanceOpen}>
-        <DialogContent className="max-w-5xl max-h-[90dvh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Gestão financeira · {folder.name}</DialogTitle>
-            <DialogDescription>Resultado, horas, quadros vinculados, preço mínimo e configuração do projeto.</DialogDescription>
-          </DialogHeader>
-          <ProjectFinancePanel projectId={folder.id} teamId={currentTeamId} />
-        </DialogContent>
-      </Dialog>
 
       {folder.is_owner && (
         <FolderShareDialog
