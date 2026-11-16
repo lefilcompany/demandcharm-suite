@@ -30,12 +30,14 @@ import { buildAvailabilityDetail } from "@/lib/availabilityDisplay";
 import { PositionBadge } from "@/components/PositionBadge";
 import { PositionSelector } from "@/components/PositionSelector";
 import { TeamPosition } from "@/hooks/useTeamPositions";
+import { MemberAccessProfileDialog } from "@/components/team/MemberAccessProfileDialog";
 import { useState } from "react";
 
 interface MemberCardProps {
   member: TeamMember;
   isAdmin: boolean;
   currentUserId: string;
+  teamId?: string;
   onRemove: (memberId: string) => void;
   isRemoving: boolean;
   canManage?: boolean;
@@ -121,6 +123,7 @@ export function MemberCard({
   member,
   isAdmin,
   currentUserId,
+  teamId,
   onRemove,
   isRemoving,
   canManage = false,
@@ -138,6 +141,9 @@ export function MemberCard({
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   const [demoteDialogOpen, setDemoteDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [accessDialogOpen, setAccessDialogOpen] = useState(false);
+  // Só o dono da equipe altera perfis de acesso (inclusive o próprio).
+  const canEditAccess = !!teamId && canManage;
 
   const handleNameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -154,7 +160,7 @@ export function MemberCard({
     <div className="rounded-xl border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group">
       <div className={`h-14 bg-gradient-to-r ${config.bannerColor}`} />
       
-      {canModify && (
+      {(canModify || (isCurrentUser && canEditAccess)) && (
         <div className="absolute top-2 right-2 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -167,6 +173,13 @@ export function MemberCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {canEditAccess && (
+                <DropdownMenuItem onClick={() => setAccessDialogOpen(true)}>
+                  <ShieldCheck className="h-4 w-4 mr-2 text-primary" />
+                  Perfil de acesso
+                </DropdownMenuItem>
+              )}
+              {canEditAccess && (onRoleChange || member.role !== "owner") && <DropdownMenuSeparator />}
               {onRoleChange && member.role === "member" && (
                 <DropdownMenuItem onClick={() => setPromoteDialogOpen(true)}>
                   <Crown className="h-4 w-4 mr-2 text-amber-500" />
@@ -265,11 +278,20 @@ export function MemberCard({
       )}
       
       {isCurrentUser && (
-        <div className="absolute top-2 right-2 z-10">
+        <div className={`absolute top-2 z-10 ${canEditAccess ? "left-2" : "right-2"}`}>
           <Badge className="text-xs bg-emerald-500 text-white shadow-md px-2.5 py-0.5 font-medium">
             Você
           </Badge>
         </div>
+      )}
+
+      {canEditAccess && teamId && (
+        <MemberAccessProfileDialog
+          teamId={teamId}
+          member={member}
+          open={accessDialogOpen}
+          onOpenChange={setAccessDialogOpen}
+        />
       )}
       
       <div className="relative px-4 pb-4">

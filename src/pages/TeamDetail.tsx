@@ -297,6 +297,7 @@ export default function TeamDetail() {
                   member={member} 
                   isAdmin={isAdmin} 
                   currentUserId={user?.id || ""} 
+                  teamId={id}
                   onRemove={handleRemoveMember} 
                   isRemoving={removeMember.isPending}
                   canManage={canManage}
