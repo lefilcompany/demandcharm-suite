@@ -57,12 +57,12 @@ export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManager
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="flex h-full flex-col">
         <CardHeader>
           <Skeleton className="h-6 w-40" />
           <Skeleton className="h-4 w-64" />
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1">
           <Skeleton className="h-20 w-full" />
         </CardContent>
       </Card>
@@ -71,7 +71,7 @@ export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManager
 
   return (
     <>
-      <Card>
+      <Card className="flex h-full flex-col">
         <CardHeader>
           <CardTitle className="flex min-w-0 items-center gap-2">
             <Briefcase className="h-5 w-5 shrink-0" />
@@ -81,7 +81,7 @@ export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManager
             Crie cargos personalizados por área ou função
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1">
           {!positions || positions.length === 0 ? (
             <div className="text-center py-8 border-2 border-dashed rounded-lg bg-muted/30">
               <Briefcase className="h-10 w-10 mx-auto text-muted-foreground mb-3" />

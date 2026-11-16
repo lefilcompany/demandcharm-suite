@@ -181,8 +181,8 @@ export default function TeamDetail() {
 
       {/* Access code + team positions, side by side */}
       {canManage && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
+        <div className="grid items-stretch gap-6 lg:grid-cols-2">
+          <Card className="flex h-full flex-col">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Key className="h-5 w-5" />
@@ -192,7 +192,7 @@ export default function TeamDetail() {
                 Compartilhe este código para convidar novos membros para a equipe
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               <div className="flex items-center gap-2">
                 <code className="flex-1 px-3 py-2 rounded-md bg-muted font-mono text-sm">
                   {team.access_code}
@@ -205,7 +205,7 @@ export default function TeamDetail() {
           </Card>
 
           {id && (
-            <div className="min-w-0">
+            <div className="min-w-0 h-full">
               <TeamPositionsManager 
                 teamId={id} 
                 canManage={canManage} 
