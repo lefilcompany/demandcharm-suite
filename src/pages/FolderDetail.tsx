@@ -67,6 +67,7 @@ export default function FolderDetail() {
   const [shareOpen, setShareOpen] = useState(false);
   const [managerOpen, setManagerOpen] = useState(false);
   const [financeOpen, setFinanceOpen] = useState(false);
+  const [financeOpen, setFinanceOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
