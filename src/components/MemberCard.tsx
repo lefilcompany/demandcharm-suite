@@ -141,6 +141,9 @@ export function MemberCard({
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   const [demoteDialogOpen, setDemoteDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [accessDialogOpen, setAccessDialogOpen] = useState(false);
+  // Dono pode alterar o próprio perfil financeiro; os demais só o dono altera.
+  const canEditAccess = !!teamId && (canManage || isCurrentUser);
 
   const handleNameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -170,6 +173,12 @@ export function MemberCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {canEditAccess && (
+                <DropdownMenuItem onClick={() => setAccessDialogOpen(true)}>
+                  <ShieldCheck className="h-4 w-4 mr-2 text-primary" />
+                  Perfil de acesso
+                </DropdownMenuItem>
+              )}
               {onRoleChange && member.role === "member" && (
                 <DropdownMenuItem onClick={() => setPromoteDialogOpen(true)}>
                   <Crown className="h-4 w-4 mr-2 text-amber-500" />
