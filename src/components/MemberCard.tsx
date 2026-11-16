@@ -30,12 +30,14 @@ import { buildAvailabilityDetail } from "@/lib/availabilityDisplay";
 import { PositionBadge } from "@/components/PositionBadge";
 import { PositionSelector } from "@/components/PositionSelector";
 import { TeamPosition } from "@/hooks/useTeamPositions";
+import { MemberAccessProfileDialog } from "@/components/team/MemberAccessProfileDialog";
 import { useState } from "react";
 
 interface MemberCardProps {
   member: TeamMember;
   isAdmin: boolean;
   currentUserId: string;
+  teamId?: string;
   onRemove: (memberId: string) => void;
   isRemoving: boolean;
   canManage?: boolean;
@@ -121,6 +123,7 @@ export function MemberCard({
   member,
   isAdmin,
   currentUserId,
+  teamId,
   onRemove,
   isRemoving,
   canManage = false,
