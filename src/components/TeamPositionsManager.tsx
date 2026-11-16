@@ -107,16 +107,12 @@ export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManager
           ) : (
             <div className="flex flex-wrap gap-2">
               {positions.map((position) => (
-                <div
+                <PositionBadge
                   key={position.id}
-                  className="inline-flex items-center pl-1 pr-2 py-1 rounded-full border bg-card"
-                >
-                  <PositionBadge
-                    name={position.name}
-                    color={position.color}
-                    textColor={position.text_color}
-                  />
-                </div>
+                  name={position.name}
+                  color={position.color}
+                  textColor={position.text_color}
+                />
               ))}
             </div>
           )}
