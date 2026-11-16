@@ -97,7 +97,7 @@ export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManager
               )}
             </div>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {positions.map((position) => (
                 <PositionBadge
                   key={position.id}
@@ -106,6 +106,16 @@ export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManager
                   textColor={position.text_color}
                 />
               ))}
+              {canManage && (
+                <Button
+                  onClick={handleOpenCreate}
+                  variant="ghost"
+                  className="h-6 rounded-full border border-dashed border-input bg-transparent px-2.5 text-xs font-medium text-muted-foreground hover:border-primary hover:bg-transparent hover:text-primary"
+                >
+                  <Plus className="h-3 w-3" />
+                  Criar Cargo
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
