@@ -414,10 +414,10 @@ export default function TeamConfig() {
           </CardContent>
         </Card>
 
-        {/* Team Scope Config */}
+        {/* Team Scope Config - hidden (kept for future reactivation)
         {isAdmin && selectedTeamId && (
           <TeamScopeConfig teamId={selectedTeamId} currentScope={teamScope || null} />
-        )}
+        )} */}
 
         {/* Team Positions Manager */}
         {isAdminOrModerator && selectedTeamId && (
