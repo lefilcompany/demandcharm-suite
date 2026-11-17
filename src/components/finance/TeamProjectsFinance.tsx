@@ -127,25 +127,37 @@ function BoardList({ boards, onBoard }: { boards: BoardAgg[]; onBoard?: (id: str
                 <span className="flex-1 truncate text-sm font-medium">{b.name}</span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </div>
-              <div className="mt-2 flex items-end justify-between gap-2">
-                <div>
-                  <p className="text-[11px] text-muted-foreground">Resultado</p>
-                  <p className={cn("text-base font-semibold tabular-nums leading-tight", b.result < 0 && "text-destructive")}>{formatBRL(b.result)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[11px] text-muted-foreground">Margem</p>
-                  <p className={cn("text-base font-semibold tabular-nums leading-tight", b.margin === null ? "text-muted-foreground" : b.margin < 0 ? "text-destructive" : below ? "text-primary" : "")}>
-                    {formatPct(b.margin)}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-2"><MarginRuler margin={b.margin} target={b.target} compact /></div>
-              <p className="mt-1 text-right text-[11px] text-muted-foreground">meta {formatPct(b.target)}</p>
+              <p className="mt-2 text-[11px] text-muted-foreground">Resultado</p>
+              <p className={cn("text-base font-semibold tabular-nums leading-tight", b.result < 0 && "text-destructive")}>{formatBRL(b.result)}</p>
+              <MarginGoal margin={b.margin} target={b.target} />
             </button>
           </li>
         );
       })}
     </ul>
+  );
+}
+
+/** Margin as progress toward the target: full bar = target reached. */
+function MarginGoal({ margin, target }: { margin: number | null; target: number }) {
+  if (margin === null) return <p className="mt-3 text-xs text-muted-foreground">Sem faturamento para calcular a margem.</p>;
+  const pct = target > 0 ? Math.max(0, Math.min(1, margin / target)) : 1;
+  const diff = Math.round((margin - target) * 100);
+  const ok = margin >= target;
+  const tone = margin < 0 ? "text-destructive" : ok ? "text-foreground" : "text-primary";
+  return (
+    <div className="mt-3 space-y-1.5">
+      <div className="flex items-baseline justify-between text-xs">
+        <span>Margem <b className={cn("tabular-nums", tone)}>{formatPct(margin)}</b></span>
+        <span className="text-muted-foreground">meta {formatPct(target)}</span>
+      </div>
+      <div className="h-2 rounded-full bg-muted overflow-hidden">
+        <div className={cn("h-full rounded-full", margin < 0 ? "bg-destructive" : ok ? "bg-foreground" : "bg-primary")} style={{ width: `${margin < 0 ? 100 : pct * 100}%` }} />
+      </div>
+      <p className={cn("text-[11px]", tone)}>
+        {margin < 0 ? "Prejuízo neste quadro" : ok ? `Meta batida · ${diff} p.p. acima` : `Faltam ${-diff} p.p. para a meta`}
+      </p>
+    </div>
   );
 }
 
