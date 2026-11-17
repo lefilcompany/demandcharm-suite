@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Briefcase, Plus, Search, Users, Pencil, Trash2, MoreVertical, Share2, AlertTriangle, RefreshCw } from "lucide-react";
+import { Briefcase, Plus, Search, Users, Pencil, Trash2, MoreVertical, Share2, AlertTriangle, RefreshCw, LayoutGrid } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { useSelectedTeam } from "@/contexts/TeamContext";
@@ -17,6 +16,8 @@ import {
   type DemandFolder,
 } from "@/hooks/useDemandFolders";
 import { useBoards } from "@/hooks/useBoards";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { CreateFolderDialog } from "@/components/CreateFolderDialog";
 import { FolderShareDialog } from "@/components/FolderShareDialog";
 import {
@@ -43,6 +44,30 @@ export default function Projects() {
   } = useDemandFolders(selectedTeamId, user?.id);
   const { data: projectBoards = [] } = useBoards(selectedTeamId);
   const boardNameById = new Map(projectBoards.map((b) => [b.id, b.name]));
+  const { data: boardLinks = [] } = useQuery({
+    queryKey: ["project-board-links", selectedTeamId, user?.id],
+    enabled: !!selectedTeamId && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_boards" as any)
+        .select("project_id, board_id, valid_to")
+        .eq("team_id", selectedTeamId!);
+      if (error) throw error;
+      const today = new Date().toISOString().substring(0, 10);
+      return ((data as any[]) || []).filter((l) => !l.valid_to || String(l.valid_to).substring(0, 10) >= today);
+    },
+  });
+  const boardsByProject = useMemo(() => {
+    const m = new Map<string, string[]>();
+    (boardLinks as any[]).forEach((l) => {
+      const name = boardNameById.get(l.board_id);
+      if (!name) return;
+      const arr = m.get(l.project_id) || [];
+      if (!arr.includes(name)) arr.push(name);
+      m.set(l.project_id, arr);
+    });
+    return m;
+  }, [boardLinks, projectBoards]);
 
   const { data: teamMembers = [] } = useTeamMembers(selectedTeamId);
   const createMutation = useCreateFolder();
@@ -170,7 +195,12 @@ export default function Projects() {
               <ProjectCard
                 key={project.id}
                 project={project}
-                boardName={project.board_id ? boardNameById.get(project.board_id) : undefined}
+                boardNames={(() => {
+                  const names = [...(boardsByProject.get(project.id) || [])];
+                  const legacy = project.board_id ? boardNameById.get(project.board_id) : undefined;
+                  if (legacy && !names.includes(legacy)) names.unshift(legacy);
+                  return names;
+                })()}
                 memberMap={memberMap}
                 ownerProfile={memberMap.get(project.created_by)}
                 onOpen={() => navigate(`/app/projects/${project.id}`)}
@@ -245,7 +275,7 @@ export default function Projects() {
 
 interface ProjectCardProps {
   project: DemandFolder;
-  boardName?: string;
+  boardNames: string[];
 
   memberMap: Map<string, any>;
   ownerProfile: any;
@@ -258,7 +288,7 @@ interface ProjectCardProps {
   myAccess: "owner" | "edit" | "view";
 }
 
-function ProjectCard({ project, boardName, memberMap, ownerProfile, onOpen, onEdit, onShare, onDelete, canManage, canDelete, myAccess }: ProjectCardProps) {
+function ProjectCard({ project, boardNames, memberMap, ownerProfile, onOpen, onEdit, onShare, onDelete, canManage, canDelete, myAccess }: ProjectCardProps) {
   const sharedUsers = (project.shared_with || []).map((s) => memberMap.get(s.user_id)).filter(Boolean);
   const accessUsers = [ownerProfile, ...sharedUsers].filter(Boolean);
   const visibleAvatars = accessUsers.slice(0, 4);
@@ -306,27 +336,35 @@ function ProjectCard({ project, boardName, memberMap, ownerProfile, onOpen, onEd
         </DropdownMenu>
       </div>
 
-      <div className="mt-4 flex items-center gap-2 text-xs flex-wrap">
-        <Badge variant="secondary" className="font-medium">
-          {project.item_count ?? 0} demanda{(project.item_count ?? 0) === 1 ? "" : "s"}
-        </Badge>
-        <Badge variant="outline" className="font-medium text-muted-foreground">
-          {boardName || "Sem quadro"}
-        </Badge>
-
-        {myAccess === "owner" ? (
-          <Badge className="font-medium bg-[#F28705] hover:bg-[#F28705] text-white border-transparent">
-            Proprietário
-          </Badge>
-        ) : myAccess === "edit" ? (
-          <Badge variant="outline" className="font-medium border-[#F28705]/40 text-[#F28705]">
-            Edição
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="font-medium">
-            Visualização
-          </Badge>
-        )}
+      <div className="mt-4 space-y-2.5">
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span className="inline-flex items-center gap-1.5 text-foreground">
+            <span className="text-base font-semibold tabular-nums leading-none">{project.item_count ?? 0}</span>
+            <span className="text-muted-foreground">demanda{(project.item_count ?? 0) === 1 ? "" : "s"}</span>
+          </span>
+          <span
+            className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+              myAccess === "owner"
+                ? "bg-primary/10 text-primary"
+                : myAccess === "edit"
+                ? "bg-muted text-foreground"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {myAccess === "owner" ? "Proprietário" : myAccess === "edit" ? "Edição" : "Visualização"}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0" title={boardNames.join(", ")}>
+          <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
+          {boardNames.length === 0 ? (
+            <span className="italic">Sem quadro</span>
+          ) : (
+            <span className="truncate">
+              <span className="text-foreground">{boardNames[0]}</span>
+              {boardNames.length > 1 && <span> +{boardNames.length - 1}</span>}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="mt-4 pt-4 border-t flex items-center justify-between">
