@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowRight, Check, Copy, UserPlus } from "lucide-react";
+import { ArrowRight, Check, Copy, KeyRound } from "lucide-react";
 import { useTeamJoinRequests } from "@/hooks/useTeamJoinRequests";
 
 interface TeamJoinRequestsCardProps {
@@ -43,11 +43,11 @@ export function TeamJoinRequestsCard({ teamId, accessCode }: TeamJoinRequestsCar
 
   return (
     <Card className="flex h-full flex-col">
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex min-w-0 items-center gap-2">
-            <UserPlus className="h-5 w-5 shrink-0" />
-            Solicitações de Entrada
+            <KeyRound className="h-5 w-5 shrink-0" />
+            Acesso à equipe
           </CardTitle>
           {count > 0 && (
             <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
@@ -59,9 +59,6 @@ export function TeamJoinRequestsCard({ teamId, accessCode }: TeamJoinRequestsCar
             </span>
           )}
         </div>
-        <CardDescription className="leading-relaxed">
-          Quem pediu para entrar na equipe e aguarda a sua resposta
-        </CardDescription>
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col">
@@ -104,15 +101,7 @@ export function TeamJoinRequestsCard({ teamId, accessCode }: TeamJoinRequestsCar
               </li>
             ))}
           </ul>
-        ) : (
-          <div className="rounded-lg border border-dashed border-border/70 bg-muted/25 px-4 py-6 text-center">
-            <UserPlus className="mx-auto h-7 w-7 text-muted-foreground/45" />
-            <p className="mt-2 text-sm font-medium">Ninguém aguardando para entrar</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Quem tiver o código de acesso poderá solicitar entrada.
-            </p>
-          </div>
-        )}
+        ) : null}
 
         <div className="mt-auto pt-4">
           {hidden > 0 && (
@@ -120,17 +109,9 @@ export function TeamJoinRequestsCard({ teamId, accessCode }: TeamJoinRequestsCar
               +{hidden} {hidden === 1 ? "pessoa" : "pessoas"} na fila
             </p>
           )}
-          <Button
-            variant={count > 0 ? "default" : "outline"}
-            className="w-full gap-2"
-            onClick={openRequests}
-          >
-            {count > 0 ? "Ver e responder solicitações" : "Ver solicitações"}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
 
           {accessCode && (
-            <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-dashed border-border/70 px-3 py-2">
+            <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-dashed border-border/70 px-3 py-2">
               <div className="min-w-0">
                 <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   Código de acesso
@@ -153,6 +134,16 @@ export function TeamJoinRequestsCard({ teamId, accessCode }: TeamJoinRequestsCar
               </Button>
             </div>
           )}
+
+          <Button
+            variant={count > 0 ? "default" : "outline"}
+            size="sm"
+            className="w-full gap-1.5 px-3 py-1.5 text-sm"
+            onClick={openRequests}
+          >
+            Ver solicitações
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </CardContent>
     </Card>
