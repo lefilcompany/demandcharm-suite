@@ -32,6 +32,18 @@ import { PositionSelector } from "@/components/PositionSelector";
 import { TeamPosition } from "@/hooks/useTeamPositions";
 import { MemberAccessProfileDialog } from "@/components/team/MemberAccessProfileDialog";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { Building2, Briefcase } from "lucide-react";
+import { MemberKindBadge } from "@/components/team/MemberKindBadge";
+
+const KIND_OPTIONS = [
+  { value: "internal", label: "Interno", hint: "Papel livre nos quadros", icon: Building2 },
+  { value: "client_external", label: "Externo", hint: "Sempre solicitante em todos os quadros", icon: User },
+  { value: "contractor", label: "Prestador", hint: "Terceiro contratado", icon: Briefcase },
+] as const;
 
 interface MemberCardProps {
   member: TeamMember;
@@ -144,6 +156,23 @@ export function MemberCard({
   const [accessDialogOpen, setAccessDialogOpen] = useState(false);
   // Só o dono da equipe altera perfis de acesso (inclusive o próprio).
   const canEditAccess = !!teamId && canManage;
+  const queryClient = useQueryClient();
+  const [kindBusy, setKindBusy] = useState(false);
+  const changeKind = async (kind: string) => {
+    if (!teamId || kind === member.member_kind) return;
+    setKindBusy(true);
+    const { error } = await supabase.rpc("set_member_kind", { _team_id: teamId, _user_id: member.user_id, _kind: kind });
+    setKindBusy(false);
+    if (error) {
+      toast.error(error.message.includes("REMOVE_FINANCE_PROFILE_FIRST")
+        ? "Remova o perfil com acesso a finanças antes de marcar como externo"
+        : "Não foi possível alterar o tipo");
+      return;
+    }
+    toast.success(kind === "client_external" ? "Marcado como externo: agora é solicitante em todos os quadros" : "Tipo atualizado");
+    ["team-members", "board-members", "boards", "board-role", "available-team-members"].forEach((k) =>
+      queryClient.invalidateQueries({ queryKey: [k] }));
+  };
 
   const handleNameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -355,6 +384,21 @@ export function MemberCard({
                     <User className="h-4 w-4 mr-2" />
                     Membro
                   </DropdownMenuItem>
+                  {canEditAccess && member.role !== "owner" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">Tipo de membro</DropdownMenuLabel>
+                      {KIND_OPTIONS.map((o) => (
+                        <DropdownMenuItem key={o.value} disabled={kindBusy || member.member_kind === o.value} onClick={() => changeKind(o.value)}>
+                          <o.icon className="h-4 w-4 mr-2" />
+                          <div className="flex flex-col">
+                            <span>{o.label}</span>
+                            <span className="text-[10px] text-muted-foreground">{o.hint}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
@@ -364,6 +408,10 @@ export function MemberCard({
               </Badge>
             )}
             
+            {member.member_kind && member.member_kind !== "internal" && (
+              <div className="flex justify-center"><MemberKindBadge kind={member.member_kind} /></div>
+            )}
+
             {canManage && positions.length > 0 ? (
               <PositionSelector
                 positions={positions}
