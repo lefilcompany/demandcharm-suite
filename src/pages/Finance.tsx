@@ -341,7 +341,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
 
         {canView && (
           <TabsContent value="people">
-            <CostsProductivity rows={people.data ?? []} detailed={fin.can("finance.view_employee_costs")} isLoading={people.isLoading} isError={people.isError} onRetry={() => people.refetch()} boardOrder={boardOrder} />
+            <CostsProductivity rows={people.data ?? []} detailed={fin.can("finance.view_employee_costs")} isLoading={people.isLoading} isError={people.isError} onRetry={() => people.refetch()} boardOrder={boardOrder} teamId={selectedTeamId} canEdit={fin.can("finance.manage_settings")} />
           </TabsContent>
         )}
         {canView && (

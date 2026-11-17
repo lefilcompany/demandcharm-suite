@@ -1,5 +1,12 @@
-import { useMemo } from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, ChevronRight, RefreshCw, Save } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import { useFinanceMutation } from "@/hooks/useFinance";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { PeopleRow } from "@/hooks/useFinance";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { AllocationBar, OccupancyRuler } from "@/components/finance/AllocationBar";
@@ -10,9 +17,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 const hrs = (h: number) => `${h.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`;
 const monthLabel = (iso: string) => new Date(`${iso.substring(0, 10)}T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
 
-export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry, boardOrder }: {
+export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry, boardOrder, teamId, canEdit }: {
   rows: PeopleRow[]; detailed: boolean; isLoading: boolean; isError: boolean; onRetry: () => void; boardOrder: string[];
+  teamId: string | null; canEdit: boolean;
 }) {
+  const [openId, setOpenId] = useState<string | null>(null);
   const people = useMemo(() => {
     const m = new Map<string, { userId: string; name: string; month: string; cost: number | null; ref: number | null; hours: number; boards: PeopleRow[] }>();
     rows.filter((r) => r.user_id).forEach((r) => {
@@ -24,6 +33,14 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
     });
     return [...m.values()].sort((a, b) => b.month.localeCompare(a.month) || a.name.localeCompare(b.name));
   }, [rows]);
+  const persons = useMemo<Person[]>(() => {
+    const m = new Map<string, Person>();
+    people.forEach((pm) => {
+      const p = m.get(pm.userId) ?? { userId: pm.userId, name: pm.name, months: [] };
+      p.months.push(pm); m.set(pm.userId, p);
+    });
+    return [...m.values()].sort((a, b) => Number(hasGap(b)) - Number(hasGap(a)) || a.name.localeCompare(b.name));
+  }, [people]);
   const totals = useMemo(() => {
     const hours = rows.reduce((s, r) => s + r.hours, 0);
     const cost = rows.reduce((s, r) => s + (r.cost ?? 0), 0);
@@ -65,49 +82,22 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
 
       {detailed && (missing.length > 0 || over.length > 0 || under.length > 0) && (
         <ul className="grid gap-2 md:grid-cols-3 text-sm">
-          {missing.length > 0 && <Alert title={`${missing.length} sem custo no mês`} body={`As horas de ${missing.map((p) => p.name.split(" ")[0]).slice(0, 3).join(", ")} não entram no custo. Cadastre o custo em "Lançamentos e acesso".`} strong />}
+          {missing.length > 0 && <Alert title={`${missing.length} sem custo no mês`} body={`As horas de ${missing.map((p) => p.name.split(" ")[0]).slice(0, 3).join(", ")} não entram no custo. Clique no cartão da pessoa para cadastrar.`} strong />}
           {over.length > 0 && <Alert title={`${over.length} acima de 100%`} body="Apontaram mais horas que a referência do mês. Confira as horas produtivas ou a carga." strong />}
           {under.length > 0 && <Alert title={`${under.length} abaixo de 50%`} body="Pouco tempo apontado. Pode ser timer esquecido ou capacidade livre." />}
         </ul>
       )}
 
       {detailed && (
-        <div className="rounded-xl border bg-card overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40">
-              <tr className="font-ops-label text-[10px] uppercase tracking-wider text-muted-foreground">
-                <th className="px-3 py-2 text-left font-normal">Pessoa</th><th className="px-3 py-2 text-left font-normal">Mês</th>
-                <th className="px-3 py-2 text-right font-normal">Custo mensal</th><th className="px-3 py-2 text-right font-normal">Custo/hora</th>
-                <th className="px-3 py-2 text-right font-normal">Apontadas / ref.</th><th className="px-3 py-2 text-left font-normal w-40">Ocupação</th>
-                <th className="px-3 py-2 text-left font-normal min-w-[220px]">Para onde foi o custo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {people.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Ninguém apontou horas nem tem custo cadastrado no período.</td></tr>}
-              {people.map((p) => {
-                const occ = p.ref ? p.hours / p.ref : null;
-                const cph = p.cost != null && p.ref ? costPerHour(p.cost, p.ref) : null;
-                const spent = p.boards.reduce((s, b) => s + (b.cost ?? 0), 0);
-                return (
-                  <tr key={`${p.userId}${p.month}`}>
-                    <td className="px-3 py-2 font-medium whitespace-nowrap">{p.name}</td>
-                    <td className="px-3 py-2 font-ops-label text-xs uppercase">{monthLabel(p.month)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{p.cost == null ? <span className="text-primary inline-flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" />sem custo</span> : formatBRL(p.cost)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{cph == null ? "—" : formatBRL(cph)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{hrs(p.hours)} / {p.ref ? hrs(p.ref) : "—"}</td>
-                    <td className="px-3 py-2"><div className="flex items-center gap-2"><OccupancyRuler value={occ} /><span className="tabular-nums text-xs w-10 text-right">{occ === null ? "—" : `${Math.round(occ * 100)}%`}</span></div></td>
-                    <td className="px-3 py-2">
-                      {p.boards.length === 0 ? <span className="text-xs text-muted-foreground">sem horas no mês</span> : p.cost == null
-                        ? <span className="text-xs text-muted-foreground">{p.boards.map((b) => `${b.board_name} ${hrs(b.hours)}`).join(" · ")}</span>
-                        : <AllocationBar total={spent} order={boardOrder} parts={p.boards.map((b) => ({ key: b.board_id!, label: `${b.board_name} · ${hrs(b.hours)}`, amount: b.cost ?? 0 }))} />}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        people.length === 0
+          ? <p className="rounded-xl border p-6 text-center text-sm text-muted-foreground">Ninguém apontou horas nem tem custo cadastrado no período.</p>
+          : <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
+              {persons.map((p) => <PersonCard key={p.userId} p={p} onOpen={() => setOpenId(p.userId)} />)}
+            </div>
       )}
+
+      <PersonSheet person={persons.find((p) => p.userId === openId) ?? null} onClose={() => setOpenId(null)}
+        teamId={teamId} canEdit={canEdit} boardOrder={boardOrder} />
 
       {!detailed && (
         <div className="rounded-xl border bg-card divide-y text-sm">
@@ -128,5 +118,137 @@ function Alert({ title, body, strong }: { title: string; body: string; strong?: 
     <li className={`rounded-lg border px-3 py-2 ${strong ? "border-primary/50" : ""}`}>
       <p className="font-medium">{title}</p><p className="text-muted-foreground text-xs">{body}</p>
     </li>
+  );
+}
+
+type PersonMonth = { userId: string; name: string; month: string; cost: number | null; ref: number | null; hours: number; boards: PeopleRow[] };
+type Person = { userId: string; name: string; months: PersonMonth[] };
+const hasGap = (p: Person) => p.months.some((m) => m.cost == null && m.hours > 0);
+const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+
+function PersonCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
+  const last = p.months[0];
+  const priced = p.months.find((m) => m.cost != null && m.ref);
+  const cph = priced ? costPerHour(priced.cost!, priced.ref!) : null;
+  const hours = p.months.reduce((s, m) => s + m.hours, 0);
+  const occ = last.ref ? last.hours / last.ref : null;
+  const gap = hasGap(p);
+  return (
+    <button type="button" onClick={onOpen}
+      className={`group text-left rounded-xl border bg-card p-4 space-y-3 transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${gap ? "border-primary/50" : ""}`}>
+      <div className="flex items-center gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted font-semibold text-xs">{initials(p.name)}</span>
+        <div className="min-w-0 flex-1">
+          <p className="font-medium truncate">{p.name}</p>
+          <p className="text-xs text-muted-foreground">{hrs(hours)} no período</p>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+      </div>
+      <div>
+        <OpsLabel>Hora/homem</OpsLabel>
+        {cph == null
+          ? <p className="text-primary text-sm font-medium inline-flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" />Sem custo cadastrado</p>
+          : <p className="font-ops-display text-2xl font-semibold tabular-nums">{formatBRL(cph)}<span className="text-xs font-normal text-muted-foreground"> /h · {monthLabel(priced!.month)}</span></p>}
+      </div>
+      <div className="space-y-1">
+        <div className="flex justify-between text-xs text-muted-foreground"><span>Ocupação · {monthLabel(last.month)}</span><span className="tabular-nums">{occ == null ? "—" : `${Math.round(occ * 100)}%`}</span></div>
+        <OccupancyRuler value={occ} />
+      </div>
+      {gap && <p className="text-xs text-primary">Há horas sem custo — clique para cadastrar.</p>}
+    </button>
+  );
+}
+
+const thisMonth = () => new Date().toISOString().substring(0, 7);
+
+function PersonSheet({ person, onClose, teamId, canEdit, boardOrder }: {
+  person: Person | null; onClose: () => void; teamId: string | null; canEdit: boolean; boardOrder: string[];
+}) {
+  const { user } = useAuth();
+  const [form, setForm] = useState({ month: thisMonth(), amount: "", hours: "" });
+  const pick = (month: string) => {
+    const m = person?.months.find((x) => x.month.substring(0, 7) === month);
+    const prev = person?.months.find((x) => x.cost != null);
+    setForm({ month, amount: m?.cost != null ? String(m.cost) : "", hours: String(m?.ref ?? prev?.ref ?? 160) });
+  };
+  useEffect(() => {
+    if (!person) return;
+    const gap = person.months.find((m) => m.cost == null && m.hours > 0);
+    pick((gap ?? person.months[0]).month.substring(0, 7));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [person?.userId]);
+
+  const save = useFinanceMutation(async () => {
+    const { error } = await supabase.from("finance_employee_costs").upsert({ team_id: teamId!, user_id: person!.userId, competence: `${form.month}-01`,
+      monthly_cost: Number(form.amount), productive_hours: Number(form.hours), created_by: user!.id }, { onConflict: "team_id,user_id,competence" });
+    if (error) throw error;
+  });
+  const amount = Number(form.amount), hours = Number(form.hours);
+  const preview = amount > 0 && hours > 0 ? amount / hours : null;
+  const valid = !!form.month && amount > 0 && hours > 0 && hours <= 744;
+
+  return (
+    <Sheet open={!!person} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        {person && (<>
+          <SheetHeader className="text-left">
+            <div className="flex items-center gap-3">
+              <span className="grid h-11 w-11 place-items-center rounded-full bg-muted font-semibold">{initials(person.name)}</span>
+              <div><SheetTitle>{person.name}</SheetTitle><SheetDescription>Hora/homem, horas e destino do custo</SheetDescription></div>
+            </div>
+          </SheetHeader>
+
+          {canEdit ? (
+            <form className="mt-5 rounded-xl border p-4 space-y-3" onSubmit={(e) => { e.preventDefault(); if (valid) save.mutate(undefined, {
+              onSuccess: () => toast.success("Custo salvo"), onError: (err: any) => toast.error(err?.message ?? "Não foi possível salvar o custo") }); }}>
+              <p className="font-semibold text-sm">Configurar hora/homem</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 space-y-1"><Label htmlFor="pc-month">Mês</Label>
+                  <Input id="pc-month" type="month" value={form.month} onChange={(e) => pick(e.target.value)} /></div>
+                <div className="space-y-1"><Label htmlFor="pc-amount">Custo mensal (R$)</Label>
+                  <Input id="pc-amount" type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
+                <div className="space-y-1"><Label htmlFor="pc-hours">Horas produtivas</Label>
+                  <Input id="pc-hours" type="number" min="1" max="744" value={form.hours} onChange={(e) => setForm({ ...form, hours: e.target.value })} /></div>
+              </div>
+              <div className="flex items-end justify-between gap-3 rounded-lg bg-muted px-3 py-2">
+                <div><OpsLabel>Hora/homem</OpsLabel><p className="font-ops-display text-xl font-semibold tabular-nums">{preview == null ? "—" : formatBRL(preview)}</p></div>
+                <Button type="submit" size="sm" disabled={!valid || save.isPending} className="gap-1.5"><Save className="h-4 w-4" />Salvar custo</Button>
+              </div>
+            </form>
+          ) : <p className="mt-5 text-xs text-muted-foreground rounded-lg border px-3 py-2">Para alterar a hora/homem é preciso a permissão "Gerenciar configurações".</p>}
+
+          <div className="mt-5 space-y-3">
+            <OpsLabel>Mês a mês</OpsLabel>
+            {person.months.map((m) => {
+              const cph = m.cost != null && m.ref ? costPerHour(m.cost, m.ref) : null;
+              const occ = m.ref ? m.hours / m.ref : null;
+              const spent = m.boards.reduce((s, b) => s + (b.cost ?? 0), 0);
+              return (
+                <div key={m.month} className="rounded-xl border p-3 space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-ops-label text-xs uppercase">{monthLabel(m.month)}</span>
+                    {canEdit && <button type="button" className="text-xs text-primary hover:underline" onClick={() => pick(m.month.substring(0, 7))}>Editar</button>}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div><p className="text-[11px] text-muted-foreground">Custo mensal</p><p className="tabular-nums font-medium">{m.cost == null ? <span className="text-primary">sem custo</span> : formatBRL(m.cost)}</p></div>
+                    <div><p className="text-[11px] text-muted-foreground">Hora/homem</p><p className="tabular-nums font-medium">{cph == null ? "—" : formatBRL(cph)}</p></div>
+                    <div><p className="text-[11px] text-muted-foreground">Apontadas / ref.</p><p className="tabular-nums font-medium">{hrs(m.hours)} / {m.ref ? hrs(m.ref) : "—"}</p></div>
+                  </div>
+                  <div className="flex items-center gap-2"><OccupancyRuler value={occ} /><span className="tabular-nums text-xs w-10 text-right">{occ == null ? "—" : `${Math.round(occ * 100)}%`}</span></div>
+                  {m.boards.length === 0 ? <p className="text-xs text-muted-foreground">Sem horas no mês</p> : (
+                    <div className="space-y-1.5">
+                      {m.cost != null && <AllocationBar total={spent} order={boardOrder} parts={m.boards.map((b) => ({ key: b.board_id!, label: `${b.board_name} · ${hrs(b.hours)}`, amount: b.cost ?? 0 }))} />}
+                      <ul className="text-xs space-y-0.5">{m.boards.map((b) => (
+                        <li key={b.board_id} className="flex justify-between gap-2"><span className="truncate">{b.board_name}</span><span className="tabular-nums text-muted-foreground">{hrs(b.hours)}{b.cost != null ? ` · ${formatBRL(b.cost)}` : ""}</span></li>
+                      ))}</ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>)}
+      </SheetContent>
+    </Sheet>
   );
 }
