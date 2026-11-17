@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, AlertCircle, Info, ChevronRight, RefreshCw, Save } from "lucide-react";
+import { AlertTriangle, AlertCircle, Info, ChevronRight, ChevronLeft, CalendarDays, RefreshCw, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useFinanceMutation, useMemberRates, type MemberRate, type PeopleRow } from "@/hooks/useFinance";
@@ -225,37 +225,95 @@ function PersonSheet({ person, rate, onClose, teamId, canEdit, boardOrder }: {
             </form>
           ) : <p className="mt-5 text-xs text-muted-foreground rounded-lg border px-3 py-2">Para alterar a hora/homem é preciso a permissão "Gerenciar configurações".</p>}
 
-          <div className="mt-5 space-y-3">
-            <OpsLabel>Histórico mês a mês</OpsLabel>
-            {person.months.map((m) => {
-              const cph = m.cost != null && m.ref ? costPerHour(m.cost, m.ref) : null;
-              const occ = m.ref ? m.hours / m.ref : null;
-              const spent = m.boards.reduce((s, b) => s + (b.cost ?? 0), 0);
-              return (
-                <div key={m.month} className="rounded-xl border p-3 space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-ops-label text-xs uppercase">{monthLabel(m.month)}</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div><p className="text-[11px] text-muted-foreground">Custo mensal</p><p className="tabular-nums font-medium">{m.cost == null ? <span className="text-primary">sem custo</span> : formatBRL(m.cost)}</p></div>
-                    <div><p className="text-[11px] text-muted-foreground">Hora/homem</p><p className="tabular-nums font-medium">{cph == null ? "—" : formatBRL(cph)}</p></div>
-                    <div><p className="text-[11px] text-muted-foreground">Apontadas / ref.</p><p className="tabular-nums font-medium">{hrs(m.hours)} / {m.ref ? hrs(m.ref) : "—"}</p></div>
-                  </div>
-                  <div className="flex items-center gap-2"><OccupancyRuler value={occ} /><span className="tabular-nums text-xs w-10 text-right">{occ == null ? "—" : `${Math.round(occ * 100)}%`}</span></div>
-                  {m.boards.length === 0 ? <p className="text-xs text-muted-foreground">Sem horas no mês</p> : (
-                    <div className="space-y-1.5">
-                      {m.cost != null && <AllocationBar total={spent} order={boardOrder} parts={m.boards.map((b) => ({ key: b.board_id!, label: `${b.board_name} · ${hrs(b.hours)}`, amount: b.cost ?? 0 }))} />}
-                      <ul className="text-xs space-y-0.5">{m.boards.map((b) => (
-                        <li key={b.board_id} className="flex justify-between gap-2"><span className="truncate">{b.board_name}</span><span className="tabular-nums text-muted-foreground">{hrs(b.hours)}{b.cost != null ? ` · ${formatBRL(b.cost)}` : ""}</span></li>
-                      ))}</ul>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <MonthHistory person={person} boardOrder={boardOrder} />
         </>)}
       </SheetContent>
     </Sheet>
+  );
+}
+
+const curMonthIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`; };
+
+function MonthHistory({ person, boardOrder }: { person: Person; boardOrder: string[] }) {
+  const [selected, setSelected] = useState(curMonthIso());
+  const [picking, setPicking] = useState(false);
+  const [year, setYear] = useState(Number(selected.substring(0, 4)));
+  useEffect(() => { setSelected(curMonthIso()); setPicking(false); }, [person.userId]);
+  const byMonth = useMemo(() => new Map(person.months.map((m) => [m.month.substring(0, 7), m])), [person.months]);
+  const years = useMemo(() => {
+    const ys = new Set<number>([new Date().getFullYear(), ...person.months.map((m) => Number(m.month.substring(0, 4)))]);
+    return [...ys].sort((a, b) => b - a);
+  }, [person.months]);
+  const m = byMonth.get(selected.substring(0, 7));
+  const isCurrent = selected === curMonthIso();
+
+  if (picking) return (
+    <div className="mt-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <button type="button" onClick={() => setPicking(false)} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ChevronLeft className="h-4 w-4" />Voltar</button>
+        <OpsLabel>Escolher mês</OpsLabel>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {years.map((y) => (
+          <button key={y} type="button" onClick={() => setYear(y)}
+            className={`h-8 rounded-full border px-3 text-xs font-medium tabular-nums ${y === year ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary"}`}>{y}</button>
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {Array.from({ length: 12 }, (_, i) => {
+          const key = `${year}-${String(i + 1).padStart(2, "0")}`;
+          const d = byMonth.get(key);
+          const active = selected.substring(0, 7) === key;
+          const name = new Date(year, i, 15).toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+          return (
+            <button key={key} type="button" onClick={() => { setSelected(`${key}-01`); setPicking(false); }}
+              className={`rounded-xl border p-2.5 text-left transition-colors ${active ? "border-primary bg-primary/5" : "hover:border-primary"}`}>
+              <p className="font-ops-label text-xs uppercase">{name}</p>
+              <p className="text-[11px] text-muted-foreground tabular-nums">{d ? hrs(d.hours) : "sem registros"}</p>
+              {d && d.cost == null && d.hours > 0 && <p className="text-[11px] text-primary">sem custo</p>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="mt-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <OpsLabel>{isCurrent ? "Mês atual" : "Mês selecionado"} · {monthLabel(selected)}</OpsLabel>
+        <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5 rounded-full" onClick={() => { setYear(Number(selected.substring(0, 4))); setPicking(true); }}>
+          <CalendarDays className="h-4 w-4" />Ver outros meses
+        </Button>
+      </div>
+      {m ? <MonthCard m={m} boardOrder={boardOrder} /> : (
+        <div className="rounded-xl border border-dashed p-4 text-center text-xs text-muted-foreground">Sem horas ou custos registrados em {monthLabel(selected)}.</div>
+      )}
+      {!isCurrent && <button type="button" onClick={() => setSelected(curMonthIso())} className="text-xs text-primary hover:underline">Voltar ao mês atual</button>}
+    </div>
+  );
+}
+
+function MonthCard({ m, boardOrder }: { m: Person["months"][number]; boardOrder: string[] }) {
+  const cph = m.cost != null && m.ref ? costPerHour(m.cost, m.ref) : null;
+  const occ = m.ref ? m.hours / m.ref : null;
+  const spent = m.boards.reduce((s, b) => s + (b.cost ?? 0), 0);
+  return (
+    <div className="rounded-xl border p-3 space-y-2 text-sm">
+      <div className="grid grid-cols-3 gap-2">
+        <div><p className="text-[11px] text-muted-foreground">Custo mensal</p><p className="tabular-nums font-medium">{m.cost == null ? <span className="text-primary">sem custo</span> : formatBRL(m.cost)}</p></div>
+        <div><p className="text-[11px] text-muted-foreground">Hora/homem</p><p className="tabular-nums font-medium">{cph == null ? "—" : formatBRL(cph)}</p></div>
+        <div><p className="text-[11px] text-muted-foreground">Apontadas / ref.</p><p className="tabular-nums font-medium">{hrs(m.hours)} / {m.ref ? hrs(m.ref) : "—"}</p></div>
+      </div>
+      <div className="flex items-center gap-2"><OccupancyRuler value={occ} /><span className="tabular-nums text-xs w-10 text-right">{occ == null ? "—" : `${Math.round(occ * 100)}%`}</span></div>
+      {m.boards.length === 0 ? <p className="text-xs text-muted-foreground">Sem horas no mês</p> : (
+        <div className="space-y-1.5">
+          {m.cost != null && <AllocationBar total={spent} order={boardOrder} parts={m.boards.map((b) => ({ key: b.board_id!, label: `${b.board_name} · ${hrs(b.hours)}`, amount: b.cost ?? 0 }))} />}
+          <ul className="text-xs space-y-0.5">{m.boards.map((b) => (
+            <li key={b.board_id} className="flex justify-between gap-2"><span className="truncate">{b.board_name}</span><span className="tabular-nums text-muted-foreground">{hrs(b.hours)}{b.cost != null ? ` · ${formatBRL(b.cost)}` : ""}</span></li>
+          ))}</ul>
+        </div>
+      )}
+    </div>
   );
 }
