@@ -71,7 +71,9 @@ export function AppSidebar() {
     location.pathname === "/app/teams" ||
     location.pathname === "/app/projects" ||
     location.pathname.startsWith("/app/projects/") ||
-    location.pathname.startsWith("/app/folders/");
+    location.pathname.startsWith("/app/folders/") ||
+    location.pathname === "/app/finance" ||
+    location.pathname.startsWith("/app/finance/");
 
   const lastBoardRoute = "/app";
 
@@ -81,6 +83,9 @@ export function AppSidebar() {
         { title: "Visão Geral", url: "/app/team-demands", icon: Layers },
         { title: "Meus Quadros", url: "/app/boards", icon: LayoutGrid },
         ...(canProjects ? [{ title: "Projetos", url: "/app/projects", icon: Briefcase }] : []),
+        ...(financeAccess.hasModule && selectedTeamId
+          ? [{ title: "Gestão Financeira", url: "/app/finance", icon: Landmark }]
+          : []),
         ...(selectedTeamId
           ? [{ title: "Participantes", url: `/app/teams/${selectedTeamId}`, icon: UsersRound, end: true }]
           : []),
