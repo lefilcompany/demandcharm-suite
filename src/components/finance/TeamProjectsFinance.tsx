@@ -7,7 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
 import { projectResult, type ProjectMonth } from "@/lib/finance/projectRollup";
-import { DeviationTag } from "./MarginRuler";
+import { DeviationTag, MarginRuler } from "./MarginRuler";
+import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 
 interface TeamProject { project_id: string; name: string; months: ProjectMonth[] }
 
@@ -41,38 +42,113 @@ export function TeamProjectsFinance({ teamId, from, to }: { teamId: string | nul
     return { ...p, r, closed, incomplete };
   });
 
+  if (q.isLoading) return <div className="grid gap-4 lg:grid-cols-2"><Skeleton className="h-64" /><Skeleton className="h-64" /></div>;
+  if (rows.length === 0)
+    return <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">Nenhum projeto com controle financeiro ligado nesta equipe.</p>;
+
+  const ranked = [...rows].sort((a, b) => b.r.result - a.r.result);
+  const compare = ranked.map((p) => ({ name: p.name.length > 18 ? p.name.slice(0, 17) + "…" : p.name, Receita: p.r.netRevenue, Custo: p.r.totalCost }));
+
   return (
-    <div className="rounded-xl border bg-card overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
-          <tr>
-            {["Projeto", "Bruto", "Líquida", "Equipe", "Diretas + variáveis", "Rateio", "Custo total", "Resultado", "Margem", "Desvio", "Status"].map((h, i) => (
-              <th key={h} className={cn("px-3 py-2 font-medium whitespace-nowrap", i === 0 ? "text-left" : "text-right")}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {q.isLoading && <tr><td colSpan={11} className="p-4"><Skeleton className="h-24 w-full" /></td></tr>}
-          {!q.isLoading && rows.length === 0 && (
-            <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Nenhum projeto com controle financeiro ligado nesta equipe.</td></tr>
-          )}
-          {rows.map(({ project_id, name, r, closed, incomplete }) => (
-            <tr key={project_id}>
-              <td className="px-3 py-2 font-medium whitespace-nowrap">
-                <span className="inline-flex items-center gap-1.5">{name}{closed && <Lock className="h-3 w-3 text-muted-foreground" aria-label="Período fechado" />}</span>
-                {incomplete && <span className="block text-xs text-primary">Custo incompleto: horas sem custo/hora</span>}
-              </td>
-              {[r.totals.gross, r.netRevenue, r.totals.teamCost, r.totals.direct + r.totals.variable, r.totals.fixed + r.totals.operational + r.totals.admin, r.totalCost].map((v, i) => (
-                <td key={i} className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{formatBRL(v)}</td>
-              ))}
-              <td className={cn("px-3 py-2 text-right tabular-nums whitespace-nowrap font-medium", r.result < 0 && "text-destructive")}>{formatBRL(r.result)}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{formatPct(r.margin)}</td>
-              <td className="px-3 py-2 text-right"><DeviationTag margin={r.margin} target={r.totals.marginTarget} /></td>
-              <td className="px-3 py-2 text-right whitespace-nowrap text-xs">{STATUS_LABEL[r.status]}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-5">
+      {rows.length > 1 && (
+        <section className="rounded-xl border bg-card p-4">
+          <h3 className="text-sm font-semibold">Receita líquida × custo por projeto</h3>
+          <p className="text-xs text-muted-foreground mb-3">Ordenados do melhor para o pior resultado no período.</p>
+          <div style={{ height: Math.max(160, compare.length * 44) }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={compare} layout="vertical" margin={{ left: 8, right: 16 }} barGap={2}>
+                <CartesianGrid horizontal={false} strokeDasharray="3 3" className="stroke-border" />
+                <XAxis type="number" tickFormatter={(v) => compact(v)} tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+                <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 12 }} />
+                <RTooltip formatter={(v: number) => formatBRL(v)} />
+                <Bar dataKey="Receita" fill="hsl(var(--foreground))" radius={[0, 3, 3, 0]} barSize={12} />
+                <Bar dataKey="Custo" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} barSize={12} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {ranked.map((p) => <ProjectCard key={p.project_id} {...p} />)}
+      </div>
     </div>
+  );
+}
+
+const compact = (v: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(v);
+
+function ProjectCard({ name, months, r, closed, incomplete }: TeamProject & { r: ReturnType<typeof projectResult>; closed: boolean; incomplete: boolean }) {
+  const t = r.totals;
+  const taxes = Math.max(0, t.gross - r.netRevenue);
+  const parts = [
+    { k: "Impostos", v: taxes, cls: "bg-muted-foreground/40" },
+    { k: "Equipe", v: t.teamCost, cls: "bg-primary" },
+    { k: "Diretas + variáveis", v: t.direct + t.variable, cls: "bg-primary/55" },
+    { k: "Rateio", v: t.fixed + t.operational + t.admin, cls: "bg-primary/25" },
+    { k: "Resultado", v: Math.max(0, r.result), cls: "bg-foreground" },
+  ];
+  const scale = Math.max(t.gross, taxes + r.totalCost, 1);
+  const empty = t.gross === 0 && r.totalCost === 0;
+  const monthly = months.map((m) => {
+    const x = projectResult([m]);
+    return { mes: m.competence.substring(5, 7) + "/" + m.competence.substring(2, 4), Resultado: x.result };
+  });
+
+  return (
+    <article className="rounded-xl border bg-card p-4 space-y-4">
+      <header className="flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold truncate flex items-center gap-1.5">{name}{closed && <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-label="Período fechado" />}</h3>
+          <p className="text-xs text-muted-foreground">{STATUS_LABEL[r.status]}</p>
+        </div>
+        <div className="text-right">
+          <p className={cn("text-2xl font-semibold tabular-nums leading-none", r.result < 0 && "text-destructive")}>{formatBRL(r.result)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">resultado · margem {formatPct(r.margin)} <DeviationTag margin={r.margin} target={t.marginTarget} /></p>
+        </div>
+      </header>
+
+      <div className="space-y-2">
+        <div className="flex justify-between text-xs text-muted-foreground"><span>Para onde vai o faturamento</span><span className="tabular-nums">Bruto {formatBRL(t.gross)}</span></div>
+        {empty ? (
+          <div className="h-3 rounded-full bg-muted" aria-label="Sem lançamentos no período" />
+        ) : (
+          <div className="flex h-3 overflow-hidden rounded-full bg-muted" role="img" aria-label="Composição do faturamento">
+            {parts.filter((x) => x.v > 0).map((x) => <div key={x.k} className={x.cls} style={{ width: `${(x.v / scale) * 100}%` }} title={`${x.k}: ${formatBRL(x.v)}`} />)}
+          </div>
+        )}
+        {r.result < 0 && <p className="text-xs text-destructive">Os custos passaram o faturamento em {formatBRL(-r.result)}.</p>}
+        <ul className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+          {parts.slice(0, 4).map((x) => (
+            <li key={x.k} className="flex items-center gap-1.5 min-w-0">
+              <span className={cn("h-2 w-2 shrink-0 rounded-full", x.cls)} />
+              <span className="truncate text-muted-foreground">{x.k}</span>
+              <span className="ml-auto tabular-nums">{compact(x.v)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <MarginRuler margin={r.margin} target={t.marginTarget} />
+
+      {monthly.length > 1 && monthly.some((m) => m.Resultado !== 0) && (
+        <div className="h-24">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={monthly} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+              <XAxis dataKey="mes" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+              <RTooltip formatter={(v: number) => formatBRL(v)} />
+              <ReferenceLine y={0} className="stroke-border" />
+              <Bar dataKey="Resultado" radius={[3, 3, 0, 0]}>
+                {monthly.map((m, i) => <Cell key={i} fill={m.Resultado < 0 ? "hsl(var(--destructive))" : "hsl(var(--foreground))"} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {empty && <p className="text-xs text-muted-foreground">Ainda não há faturamento nem custos neste período.</p>}
+      {incomplete && <p className="text-xs text-primary">Custo incompleto: {t.hoursWithoutCost.toLocaleString("pt-BR")} h sem custo/hora cadastrado.</p>}
+    </article>
   );
 }
