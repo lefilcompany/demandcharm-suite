@@ -57,9 +57,22 @@ export default function Projects() {
       return ((data as any[]) || []).filter((l) => !l.valid_to || String(l.valid_to).substring(0, 10) >= today);
     },
   });
+  const { data: demandBoardLinks = [] } = useQuery({
+    queryKey: ["project-demand-board-links", selectedTeamId, user?.id],
+    enabled: !!selectedTeamId && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_demands" as any)
+        .select("project_id, demands!inner(board_id, team_id)")
+        .eq("demands.team_id", selectedTeamId!);
+      if (error) throw error;
+      return ((data as any[]) || []).map((r) => ({ project_id: r.project_id, board_id: r.demands?.board_id }));
+    },
+  });
+
   const boardsByProject = useMemo(() => {
     const m = new Map<string, string[]>();
-    (boardLinks as any[]).forEach((l) => {
+    [...(boardLinks as any[]), ...(demandBoardLinks as any[])].forEach((l) => {
       const name = boardNameById.get(l.board_id);
       if (!name) return;
       const arr = m.get(l.project_id) || [];
@@ -67,7 +80,7 @@ export default function Projects() {
       m.set(l.project_id, arr);
     });
     return m;
-  }, [boardLinks, projectBoards]);
+  }, [boardLinks, demandBoardLinks, projectBoards]);
 
   const { data: teamMembers = [] } = useTeamMembers(selectedTeamId);
   const createMutation = useCreateFolder();
