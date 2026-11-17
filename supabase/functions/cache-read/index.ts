@@ -76,7 +76,9 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (boardError) throw boardError;
-      if (!board) return json({ error: "Sem acesso a este quadro" }, 403);
+      // Quadro inexistente ou sem acesso (ex.: quadro antigo salvo no navegador):
+      // responde vazio em vez de 403, igual ao que a leitura direta (RLS) daria.
+      if (!board) return json({ data: [], forbidden: true });
 
       const key = cacheKey([resource, boardId]);
       const cached = await cacheGet<unknown[]>(key);
