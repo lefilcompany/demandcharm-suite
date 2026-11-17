@@ -5517,6 +5517,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      finance_reattribute_demand_all_months: {
+        Args: { _demand_id: string }
+        Returns: undefined
+      }
       finance_team_hourly_cost: {
         Args: { _month: string; _team_id: string }
         Returns: Json

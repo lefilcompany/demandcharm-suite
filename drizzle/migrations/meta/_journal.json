@@ -330,6 +330,13 @@
       "when": 1794917909443,
       "tag": "0046_external_members_only_existing_boards",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1794923021998,
+      "tag": "0047_finance_attribution_from_project_demands",
+      "breakpoints": true
     }
   ]
 }
