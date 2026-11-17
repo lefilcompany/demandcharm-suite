@@ -41,7 +41,7 @@ import { MemberKindBadge } from "@/components/team/MemberKindBadge";
 
 const KIND_OPTIONS = [
   { value: "internal", label: "Interno", hint: "Papel livre nos quadros", icon: Building2 },
-  { value: "client_external", label: "Externo", hint: "Sempre solicitante em todos os quadros", icon: User },
+  { value: "client_external", label: "Externo", hint: "Solicitante nos quadros em que está", icon: User },
   { value: "contractor", label: "Prestador", hint: "Terceiro contratado", icon: Briefcase },
 ] as const;
 
@@ -169,7 +169,7 @@ export function MemberCard({
         : "Não foi possível alterar o tipo");
       return;
     }
-    toast.success(kind === "client_external" ? "Marcado como externo: agora é solicitante em todos os quadros" : "Tipo atualizado");
+    toast.success(kind === "client_external" ? "Marcado como externo: agora é solicitante nos quadros em que está" : "Tipo atualizado");
     ["team-members", "board-members", "boards", "board-role", "available-team-members"].forEach((k) =>
       queryClient.invalidateQueries({ queryKey: [k] }));
   };
