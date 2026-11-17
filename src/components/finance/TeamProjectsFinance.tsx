@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Lock, RotateCw } from "lucide-react";
+import { ChevronRight, LayoutGrid, Lock, RotateCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -115,17 +115,36 @@ export function TeamProjectsFinance({ teamId, from, to, boards = [], boardsLoadi
 
 function BoardList({ boards, onBoard }: { boards: BoardAgg[]; onBoard?: (id: string) => void }) {
   return (
-    <ul className="divide-y">
-      {[...boards].sort((a, b) => b.result - a.result).map((b) => (
-        <li key={b.boardId}>
-          <button type="button" onClick={() => onBoard?.(b.boardId)}
-            className="grid w-full grid-cols-[minmax(0,1fr)_6rem_7.5rem] items-center gap-3 py-2 text-left text-sm rounded-md hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-1">
-            <span className="truncate">{b.name}</span>
-            <MarginRuler margin={b.margin} target={b.target} compact />
-            <span className={cn("tabular-nums text-right whitespace-nowrap", b.result < 0 && "text-destructive")}>{formatBRL(b.result)}</span>
-          </button>
-        </li>
-      ))}
+    <ul className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
+      {[...boards].sort((a, b) => b.result - a.result).map((b) => {
+        const below = b.margin !== null && b.margin < b.target;
+        return (
+          <li key={b.boardId}>
+            <button type="button" onClick={() => onBoard?.(b.boardId)}
+              className="group w-full rounded-lg border bg-background p-3 text-left transition-colors hover:border-primary/50 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <div className="flex items-center gap-2">
+                <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="flex-1 truncate text-sm font-medium">{b.name}</span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </div>
+              <div className="mt-2 flex items-end justify-between gap-2">
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Resultado</p>
+                  <p className={cn("text-base font-semibold tabular-nums leading-tight", b.result < 0 && "text-destructive")}>{formatBRL(b.result)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-muted-foreground">Margem</p>
+                  <p className={cn("text-base font-semibold tabular-nums leading-tight", b.margin === null ? "text-muted-foreground" : b.margin < 0 ? "text-destructive" : below ? "text-primary" : "")}>
+                    {formatPct(b.margin)}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-2"><MarginRuler margin={b.margin} target={b.target} compact /></div>
+              <p className="mt-1 text-right text-[11px] text-muted-foreground">meta {formatPct(b.target)}</p>
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -201,7 +220,7 @@ function ProjectCard({ name, months, r, closed, incomplete, boards, onBoard }: T
       )}
 
       <div className="border-t pt-3">
-        <p className="mb-1 text-xs text-muted-foreground">Quadros deste projeto ({boards.length}) · clique para ver o detalhe</p>
+        <p className="mb-1 text-xs text-muted-foreground">Quadros deste projeto · {boards.length}</p>
         {boards.length ? <BoardList boards={boards} onBoard={onBoard} /> : <p className="text-xs text-muted-foreground">Nenhum quadro com números no período.</p>}
       </div>
 
