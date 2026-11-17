@@ -5489,6 +5489,10 @@ export type Database = {
         Args: { _competence: string; _demand_id: string }
         Returns: undefined
       }
+      finance_autolink_project_board: {
+        Args: { _board: string; _project: string }
+        Returns: undefined
+      }
       finance_close_period: {
         Args: { _month: string; _team_id: string }
         Returns: string

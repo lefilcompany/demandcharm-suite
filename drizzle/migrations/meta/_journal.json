@@ -337,6 +337,13 @@
       "when": 1794923021998,
       "tag": "0047_finance_attribution_from_project_demands",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1794924384239,
+      "tag": "0048_project_demands_autolink_boards",
+      "breakpoints": true
     }
   ]
 }
