@@ -227,7 +227,7 @@ export default function Projects() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                variant="destructive"
                 onClick={() => {
                   deleteMutation.mutate(deleting.id);
                   setDeleting(null);

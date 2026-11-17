@@ -53,7 +53,7 @@ export function LogoutDialog({ isCollapsed, isMobile }: LogoutDialogProps) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-          <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogAction onClick={handleLogout} variant="destructive">
             {t("auth.logout")}
           </AlertDialogAction>
         </AlertDialogFooter>

@@ -235,7 +235,7 @@ export function TrashDemandsModal({ open, onOpenChange, isReadOnly = false }: Tr
             <AlertDialogAction
               onClick={handleConfirmDelete}
               disabled={deleteDemand.isPending}
-              className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive" className="w-full sm:w-auto"
             >
               Excluir para sempre
             </AlertDialogAction>

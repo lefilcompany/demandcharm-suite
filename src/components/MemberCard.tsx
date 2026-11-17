@@ -273,7 +273,7 @@ export function MemberCard({
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => onRoleChange?.(member.id, "member")}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  variant="destructive"
                   disabled={isChangingRole}
                 >
                   Rebaixar
@@ -295,7 +295,7 @@ export function MemberCard({
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => onRemove(member.id)}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  variant="destructive"
                   disabled={isRemoving}
                 >
                   Remover

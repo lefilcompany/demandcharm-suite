@@ -329,7 +329,7 @@ export default function Sprints() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmRemoveStage} disabled={hideStage.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              variant="destructive">
               Remover etapa
             </AlertDialogAction>
           </AlertDialogFooter>

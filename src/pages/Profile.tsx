@@ -523,7 +523,7 @@ export default function Profile() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmRemoveBanner} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleConfirmRemoveBanner} variant="destructive">
               Remover
             </AlertDialogAction>
           </AlertDialogFooter>

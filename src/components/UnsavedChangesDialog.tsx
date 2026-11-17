@@ -73,7 +73,7 @@ export function UnsavedChangesDialog({
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            variant="destructive"
           >
             Sair mesmo assim
           </AlertDialogAction>
