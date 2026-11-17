@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ChevronRight, RefreshCw, Save } from "lucide-react";
+import { AlertTriangle, AlertCircle, Info, ChevronRight, RefreshCw, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useFinanceMutation } from "@/hooks/useFinance";
@@ -82,9 +82,9 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
 
       {detailed && (missing.length > 0 || over.length > 0 || under.length > 0) && (
         <ul className="grid gap-2 md:grid-cols-3 text-sm">
-          {missing.length > 0 && <Alert title={`${missing.length} sem custo no mês`} body={`As horas de ${missing.map((p) => p.name.split(" ")[0]).slice(0, 3).join(", ")} não entram no custo. Clique no cartão da pessoa para cadastrar.`} strong />}
-          {over.length > 0 && <Alert title={`${over.length} acima de 100%`} body="Apontaram mais horas que a referência do mês. Confira as horas produtivas ou a carga." strong />}
-          {under.length > 0 && <Alert title={`${under.length} abaixo de 50%`} body="Pouco tempo apontado. Pode ser timer esquecido ou capacidade livre." />}
+          {missing.length > 0 && <Alert title={`${missing.length} sem custo no mês`} body={`As horas de ${missing.map((p) => p.name.split(" ")[0]).slice(0, 3).join(", ")} não entram no custo. Clique no cartão da pessoa para cadastrar.`} tone="danger" />}
+          {over.length > 0 && <Alert title={`${over.length} acima de 100%`} body="Apontaram mais horas que a referência do mês. Confira as horas produtivas ou a carga." tone="warn" />}
+          {under.length > 0 && <Alert title={`${under.length} abaixo de 50%`} body="Pouco tempo apontado. Pode ser timer esquecido ou capacidade livre." tone="info" />}
         </ul>
       )}
 
@@ -113,10 +113,19 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
   );
 }
 
-function Alert({ title, body, strong }: { title: string; body: string; strong?: boolean }) {
+function Alert({ title, body, tone }: { title: string; body: string; tone: "danger" | "warn" | "info" }) {
+  const t = {
+    danger: { box: "border-destructive/40 bg-destructive/10", icon: "bg-destructive text-destructive-foreground", title: "text-destructive", Icon: AlertTriangle },
+    warn: { box: "border-primary/40 bg-primary/10", icon: "bg-primary text-primary-foreground", title: "text-primary", Icon: AlertCircle },
+    info: { box: "border-border bg-muted/60", icon: "bg-muted-foreground/20 text-foreground", title: "text-foreground", Icon: Info },
+  }[tone];
   return (
-    <li className={`rounded-lg border px-3 py-2 ${strong ? "border-primary/50" : ""}`}>
-      <p className="font-medium">{title}</p><p className="text-muted-foreground text-xs">{body}</p>
+    <li role="alert" className={`flex gap-3 rounded-xl border border-l-4 p-3 ${t.box}`}>
+      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${t.icon}`}><t.Icon className="h-4 w-4" /></span>
+      <div className="min-w-0">
+        <p className={`font-semibold leading-tight ${t.title}`}>{title}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{body}</p>
+      </div>
     </li>
   );
 }
