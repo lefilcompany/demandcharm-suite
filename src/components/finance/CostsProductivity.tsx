@@ -2,12 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, AlertCircle, Info, ChevronRight, RefreshCw, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { useFinanceMutation } from "@/hooks/useFinance";
+import { useFinanceMutation, useMemberRates, type MemberRate, type PeopleRow } from "@/hooks/useFinance";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { PeopleRow } from "@/hooks/useFinance";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { AllocationBar, OccupancyRuler } from "@/components/finance/AllocationBar";
 import { costPerHour, formatBRL, formatPct } from "@/lib/finance/engine";
@@ -22,6 +21,8 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
   teamId: string | null; canEdit: boolean;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const rates = useMemberRates(teamId, detailed);
+  const rateBy = useMemo(() => new Map((rates.data ?? []).map((r) => [r.user_id, r])), [rates.data]);
   const people = useMemo(() => {
     const m = new Map<string, { userId: string; name: string; month: string; cost: number | null; ref: number | null; hours: number; boards: PeopleRow[] }>();
     rows.filter((r) => r.user_id).forEach((r) => {
@@ -82,8 +83,8 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
 
       {detailed && (missing.length > 0 || over.length > 0 || under.length > 0) && (
         <ul className="grid gap-2 md:grid-cols-3 text-sm">
-          {missing.length > 0 && <Alert title={`${missing.length} sem custo no mês`} body={`As horas de ${missing.map((p) => p.name.split(" ")[0]).slice(0, 3).join(", ")} não entram no custo. Clique no cartão da pessoa para cadastrar.`} tone="danger" />}
-          {over.length > 0 && <Alert title={`${over.length} acima de 100%`} body="Apontaram mais horas que a referência do mês. Confira as horas produtivas ou a carga." tone="warn" />}
+          {missing.length > 0 && <Alert title={`${missing.length} sem custo/hora`} body={`As horas de ${missing.map((p) => p.name.split(" ")[0]).slice(0, 3).join(", ")} não entram no custo. Clique no cartão da pessoa e configure o custo mensal.`} tone="danger" />}
+          {over.length > 0 && <Alert title={`${over.length} acima de 100%`} body="Apontaram mais horas que a referência configurada. Confira as horas produtivas ou a carga." tone="warn" />}
           {under.length > 0 && <Alert title={`${under.length} abaixo de 50%`} body="Pouco tempo apontado. Pode ser timer esquecido ou capacidade livre." tone="info" />}
         </ul>
       )}
@@ -92,12 +93,12 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
         people.length === 0
           ? <p className="rounded-xl border p-6 text-center text-sm text-muted-foreground">Ninguém apontou horas nem tem custo cadastrado no período.</p>
           : <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
-              {persons.map((p) => <PersonCard key={p.userId} p={p} onOpen={() => setOpenId(p.userId)} />)}
+              {persons.map((p) => <PersonCard key={p.userId} p={p} rate={rateBy.get(p.userId)} onOpen={() => setOpenId(p.userId)} />)}
             </div>
       )}
 
-      <PersonSheet person={persons.find((p) => p.userId === openId) ?? null} onClose={() => setOpenId(null)}
-        teamId={teamId} canEdit={canEdit} boardOrder={boardOrder} />
+      <PersonSheet person={persons.find((p) => p.userId === openId) ?? null} rate={openId ? rateBy.get(openId) : undefined}
+        onClose={() => setOpenId(null)} teamId={teamId} canEdit={canEdit} boardOrder={boardOrder} />
 
       {!detailed && (
         <div className="rounded-xl border bg-card divide-y text-sm">
@@ -135,10 +136,10 @@ type Person = { userId: string; name: string; months: PersonMonth[] };
 const hasGap = (p: Person) => p.months.some((m) => m.cost == null && m.hours > 0);
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
-function PersonCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
+function PersonCard({ p, rate, onOpen }: { p: Person; rate?: MemberRate; onOpen: () => void }) {
   const last = p.months[0];
   const priced = p.months.find((m) => m.cost != null && m.ref);
-  const cph = priced ? costPerHour(priced.cost!, priced.ref!) : null;
+  const cph = rate ? costPerHour(rate.monthly_cost, rate.productive_hours) : priced ? costPerHour(priced.cost!, priced.ref!) : null;
   const hours = p.months.reduce((s, m) => s + m.hours, 0);
   const occ = last.ref ? last.hours / last.ref : null;
   const gap = hasGap(p);
@@ -157,44 +158,43 @@ function PersonCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
         <OpsLabel>Hora/homem</OpsLabel>
         {cph == null
           ? <p className="text-primary text-sm font-medium inline-flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" />Sem custo cadastrado</p>
-          : <p className="font-ops-display text-2xl font-semibold tabular-nums">{formatBRL(cph)}<span className="text-xs font-normal text-muted-foreground"> /h · {monthLabel(priced!.month)}</span></p>}
+          : <p className="font-ops-display text-2xl font-semibold tabular-nums">{formatBRL(cph)}<span className="text-xs font-normal text-muted-foreground"> /h · configuração atual</span></p>}
       </div>
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground"><span>Ocupação · {monthLabel(last.month)}</span><span className="tabular-nums">{occ == null ? "—" : `${Math.round(occ * 100)}%`}</span></div>
         <OccupancyRuler value={occ} />
       </div>
-      {gap && <p className="text-xs text-primary">Há horas sem custo — clique para cadastrar.</p>}
+      {gap && <p className="text-xs text-primary">Há horas sem custo — clique para configurar.</p>}
     </button>
   );
 }
 
-const thisMonth = () => new Date().toISOString().substring(0, 7);
-
-function PersonSheet({ person, onClose, teamId, canEdit, boardOrder }: {
-  person: Person | null; onClose: () => void; teamId: string | null; canEdit: boolean; boardOrder: string[];
+function PersonSheet({ person, rate, onClose, teamId, canEdit, boardOrder }: {
+  person: Person | null; rate?: MemberRate; onClose: () => void; teamId: string | null; canEdit: boolean; boardOrder: string[];
 }) {
   const { user } = useAuth();
-  const [form, setForm] = useState({ month: thisMonth(), amount: "", hours: "" });
-  const pick = (month: string) => {
-    const m = person?.months.find((x) => x.month.substring(0, 7) === month);
-    const prev = person?.months.find((x) => x.cost != null);
-    setForm({ month, amount: m?.cost != null ? String(m.cost) : "", hours: String(m?.ref ?? prev?.ref ?? 160) });
-  };
+  const [form, setForm] = useState({ amount: "", hours: "" });
   useEffect(() => {
     if (!person) return;
-    const gap = person.months.find((m) => m.cost == null && m.hours > 0);
-    pick((gap ?? person.months[0]).month.substring(0, 7));
+    const lastCost = person.months.find((m) => m.cost != null && m.ref);
+    setForm({
+      amount: rate ? String(rate.monthly_cost) : lastCost?.cost != null ? String(lastCost.cost) : "",
+      hours: String(rate?.productive_hours ?? lastCost?.ref ?? 160),
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [person?.userId]);
+  }, [person?.userId, rate?.monthly_cost, rate?.productive_hours]);
 
   const save = useFinanceMutation(async () => {
-    const { error } = await supabase.from("finance_employee_costs").upsert({ team_id: teamId!, user_id: person!.userId, competence: `${form.month}-01`,
-      monthly_cost: Number(form.amount), productive_hours: Number(form.hours), created_by: user!.id }, { onConflict: "team_id,user_id,competence" });
+    const payload = { monthly_cost: Number(form.amount), productive_hours: Number(form.hours), updated_by: user!.id, updated_at: new Date().toISOString() };
+    const q = rate
+      ? supabase.from("finance_member_rates").update(payload).eq("team_id", teamId!).eq("user_id", person!.userId)
+      : supabase.from("finance_member_rates").insert({ team_id: teamId!, user_id: person!.userId, ...payload, created_by: user!.id });
+    const { error } = await q;
     if (error) throw error;
   });
   const amount = Number(form.amount), hours = Number(form.hours);
   const preview = amount > 0 && hours > 0 ? amount / hours : null;
-  const valid = !!form.month && amount > 0 && hours > 0 && hours <= 744;
+  const valid = amount > 0 && hours > 0 && hours <= 744;
 
   return (
     <Sheet open={!!person} onOpenChange={(o) => !o && onClose()}>
@@ -209,11 +209,10 @@ function PersonSheet({ person, onClose, teamId, canEdit, boardOrder }: {
 
           {canEdit ? (
             <form className="mt-5 rounded-xl border p-4 space-y-3" onSubmit={(e) => { e.preventDefault(); if (valid) save.mutate(undefined, {
-              onSuccess: () => toast.success("Custo salvo"), onError: (err: any) => toast.error(err?.message ?? "Não foi possível salvar o custo") }); }}>
+              onSuccess: () => toast.success("Configuração salva"), onError: (err: any) => toast.error(err?.message ?? "Não foi possível salvar a configuração") }); }}>
               <p className="font-semibold text-sm">Configurar hora/homem</p>
+              <p className="text-xs text-muted-foreground">Vale para todos os meses até ser trocada. Meses já fechados continuam com o valor que tinham.</p>
               <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2 space-y-1"><Label htmlFor="pc-month">Mês</Label>
-                  <Input id="pc-month" type="month" value={form.month} onChange={(e) => pick(e.target.value)} /></div>
                 <div className="space-y-1"><Label htmlFor="pc-amount">Custo mensal (R$)</Label>
                   <Input id="pc-amount" type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
                 <div className="space-y-1"><Label htmlFor="pc-hours">Horas produtivas</Label>
@@ -221,13 +220,13 @@ function PersonSheet({ person, onClose, teamId, canEdit, boardOrder }: {
               </div>
               <div className="flex items-end justify-between gap-3 rounded-lg bg-muted px-3 py-2">
                 <div><OpsLabel>Hora/homem</OpsLabel><p className="font-ops-display text-xl font-semibold tabular-nums">{preview == null ? "—" : formatBRL(preview)}</p></div>
-                <Button type="submit" size="sm" disabled={!valid || save.isPending} className="gap-1.5"><Save className="h-4 w-4" />Salvar custo</Button>
+                <Button type="submit" size="sm" disabled={!valid || save.isPending} className="gap-1.5"><Save className="h-4 w-4" />Salvar configuração</Button>
               </div>
             </form>
           ) : <p className="mt-5 text-xs text-muted-foreground rounded-lg border px-3 py-2">Para alterar a hora/homem é preciso a permissão "Gerenciar configurações".</p>}
 
           <div className="mt-5 space-y-3">
-            <OpsLabel>Mês a mês</OpsLabel>
+            <OpsLabel>Histórico mês a mês</OpsLabel>
             {person.months.map((m) => {
               const cph = m.cost != null && m.ref ? costPerHour(m.cost, m.ref) : null;
               const occ = m.ref ? m.hours / m.ref : null;
@@ -236,7 +235,6 @@ function PersonSheet({ person, onClose, teamId, canEdit, boardOrder }: {
                 <div key={m.month} className="rounded-xl border p-3 space-y-2 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="font-ops-label text-xs uppercase">{monthLabel(m.month)}</span>
-                    {canEdit && <button type="button" className="text-xs text-primary hover:underline" onClick={() => pick(m.month.substring(0, 7))}>Editar</button>}
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div><p className="text-[11px] text-muted-foreground">Custo mensal</p><p className="tabular-nums font-medium">{m.cost == null ? <span className="text-primary">sem custo</span> : formatBRL(m.cost)}</p></div>

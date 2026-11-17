@@ -2322,6 +2322,50 @@ export type Database = {
           },
         ]
       }
+      finance_member_rates: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          monthly_cost: number
+          productive_hours: number
+          team_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          monthly_cost: number
+          productive_hours: number
+          team_id: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          monthly_cost?: number
+          productive_hours?: number
+          team_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_member_rates_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_period_adjustments: {
         Row: {
           amount: number
@@ -5196,6 +5240,13 @@ export type Database = {
       _finance_close_checklist: {
         Args: { _month: string; _team_id: string }
         Returns: Json
+      }
+      _finance_member_cost: {
+        Args: { _month: string; _team_id: string; _user_id: string }
+        Returns: {
+          monthly_cost: number
+          productive_hours: number
+        }[]
       }
       _finance_overview_all: {
         Args: { _from: string; _team_id: string; _to: string }

@@ -1,6 +1,7 @@
 # Finance rules
 - Shared expenses with method `revenue_pct` charge each board `allocation_pct`% of its own gross in `_finance_allocations` (mirror `allocation.ts`), never re-dividing the amount — a new contract never lowers the others; shortfall stays "unallocated", excess is "surplus" (negative null-board row in `get_finance_allocation`, netted in the closing checklist).
 - Team standard values (tax, variable, allocation %, margin, max discount) live in versioned `finance_team_defaults`; trigger on `project_boards` copies them into `finance_project_settings` only when the project has none; man-hour cost is the weighted average from RPC `finance_team_hourly_cost` (per-person costs, never exposed individually), and project minimum price uses pure `src/lib/finance/pricing.ts`.
+- Per-person man-hour cost is one global config per team+person (`finance_member_rates`, valid until changed), read only through `_finance_member_cost`, which still returns the stored monthly row for months already closed — so an open month never needs a new launch and closed numbers never move.
 - Finance E2E lives in `e2e/finance_e2e.py` (Playwright, preview session); it tags data `E2E-FIN-*` and deletes it at the end because preview and production share one database.
 - Finance month cuts on timestamps use `_sp_month`/`_sp_month_start` (São Paulo), like `_finance_time_slices` — so screens agree at month ends.
 - Project hours come only from `_finance_time_slices` (mirror `timeSlices.ts`): SP month cut, overlaps counted once, missing cost reported, never zero.

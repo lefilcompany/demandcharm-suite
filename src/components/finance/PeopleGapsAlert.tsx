@@ -10,7 +10,7 @@ import { fmtHours } from "@/lib/finance/timeSlices";
 type Gap = { user_id: string; name: string; hours: number; missing_kind: boolean; missing_cost: boolean };
 
 /** Lists people with hours in the month but without link or hourly cost, so cost is never silently zero. */
-export function PeopleGapsAlert({ teamId, onFixCost, onFixKind, month: ctrlMonth, onMonthChange }: { teamId: string; onFixCost: (userId: string, month: string) => void; onFixKind: (userId: string) => void; month?: string; onMonthChange?: (m: string) => void }) {
+export function PeopleGapsAlert({ teamId, onFixCost, onFixKind, month: ctrlMonth, onMonthChange }: { teamId: string; onFixCost: (userId: string) => void; onFixKind: (userId: string) => void; month?: string; onMonthChange?: (m: string) => void }) {
   const { user } = useAuth();
   const [ownMonth, setOwnMonth] = useState(new Date().toISOString().substring(0, 7));
   const month = ctrlMonth ?? ownMonth;
@@ -42,7 +42,7 @@ export function PeopleGapsAlert({ teamId, onFixCost, onFixKind, month: ctrlMonth
               <span className="flex-1 min-w-0 truncate font-medium">{g.name}</span>
               <span className="tabular-nums text-muted-foreground">{fmtHours(Number(g.hours))}</span>
               {g.missing_kind && <Button variant="outline" size="sm" className="h-7" onClick={() => onFixKind(g.user_id)}>Sem vínculo · cadastrar</Button>}
-              {g.missing_cost && <Button variant="outline" size="sm" className="h-7" onClick={() => onFixCost(g.user_id, month)}>Sem custo · cadastrar</Button>}
+              {g.missing_cost && <Button variant="outline" size="sm" className="h-7" onClick={() => onFixCost(g.user_id)}>Sem custo/hora · configurar</Button>}
             </li>
           ))}
         </ul>

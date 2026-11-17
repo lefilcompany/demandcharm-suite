@@ -147,7 +147,7 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
                               <span className="min-w-0"><span className="text-ops-ink-foreground">{d.label}</span>{d.detail && <span className="text-ops-ink-foreground/60"> · {d.detail}</span>}</span>
                               {d.value != null && <span className="shrink-0 font-ops-mono tabular-nums">{d.kind === "money" ? formatBRL(Number(d.value)) : d.kind === "hours" ? `${Number(d.value).toLocaleString("pt-BR")} h` : d.value}</span>}
                               {i.code === "hours_without_cost" && d.userId && can("finance.manage_settings") && (
-                                <button type="button" onClick={() => goFixCost(d.userId!, d.month ?? month, d.label)} className="shrink-0 font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">Lançar custo de {monthName(d.month ?? month)}</button>
+                                <button type="button" onClick={() => goFixCost(d.userId!, d.month ?? month, d.label)} className="shrink-0 font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">Configurar custo/hora</button>
                               )}
                             </li>
                           ))}

@@ -129,6 +129,24 @@ export function useFinanceAllocation(teamId: string | null, from: string, to: st
   });
 }
 
+/** Global per-person cost config: one value per person, valid until it is changed. */
+export interface MemberRate {
+  user_id: string; monthly_cost: number; productive_hours: number; updated_at: string;
+}
+
+export function useMemberRates(teamId: string | null, enabled = true) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["finance-table", "finance_member_rates", teamId, user?.id],
+    enabled: enabled && !!teamId && !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("finance_member_rates").select("*").eq("team_id", teamId!).order("updated_at", { ascending: false });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({ ...r, monthly_cost: Number(r.monthly_cost), productive_hours: Number(r.productive_hours) })) as MemberRate[];
+    },
+  });
+}
+
 export interface PeopleRow {
   user_id: string | null; full_name: string | null; competence: string; monthly_cost: number | null; productive_hours: number | null;
   board_id: string | null; board_name: string | null; hours: number; cost: number | null;

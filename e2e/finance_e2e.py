@@ -53,7 +53,7 @@ async def main():
             await expect(sec).to_contain_text("Meta 17", timeout=10000)
         await step("Valores padrão salvos", defaults, page)
 
-        # 1b. Custo de uma pessoa sem custo lançado no mês (nunca sobrescreve um custo real)
+        # 1b. Custo de uma pessoa sem custo configurado (nunca sobrescreve um custo real)
         async def person_cost():
             await goto_finance("manage&sec=params")
             await page.get_by_role("button", name=re.compile("^Pessoas")).click(); await page.wait_for_timeout(1000)
@@ -67,12 +67,12 @@ async def main():
             await sec.get_by_label("Custo mensal (R$)").fill("16000")
             await sec.get_by_label("Horas produtivas").fill("160")
             await sec.get_by_role("button", name="Salvar").click()
-            await expect(sec).to_contain_text(re.compile(re.escape(S["person"]) + r" · \d{4}-\d\d · R\$\s*16\.000,00"), timeout=10000)
+            await expect(sec).to_contain_text(re.compile(re.escape(S["person"]) + r" · R\$\s*16\.000,00 por mês · R\$\s*100,00/h"), timeout=10000)
             # sem recarregar a página: a hora/homem precisa refletir o custo novo na hora
             await page.get_by_role("button", name=re.compile("^Parâmetros")).click()
             await expect(page.locator("details", has_text="Valores padrão").first).to_contain_text(
                 re.compile(rf"Hora/homem da equipe: R\$\s*[\d.]+,\d\d/h · média de {len(COSTED_NAMES) + 1} pessoa"), timeout=10000)
-        await step("Custo de pessoa lançado e hora/homem calculada", person_cost, page)
+        await step("Custo de pessoa configurado e hora/homem calculada", person_cost, page)
 
         # 2. Criar projeto
         async def create_project():
@@ -183,7 +183,7 @@ def cleanup():
         requests.delete(f"{url}/rest/v1/projects?id=eq.{pr['id']}", headers=h)
     out["projects"] = len(projs)
     if COSTS_CREATED_BY_TEST:
-        out["employee_costs"] = len(requests.delete(f"{url}/rest/v1/finance_employee_costs?id=in.({','.join(COSTS_CREATED_BY_TEST)})", headers=h).json())
+        out["member_rates"] = len(requests.delete(f"{url}/rest/v1/finance_member_rates?id=in.({','.join(COSTS_CREATED_BY_TEST)})", headers=h).json())
     if DEFAULTS_CREATED_BY_TEST:
         out["defaults"] = len(requests.delete(f"{url}/rest/v1/finance_team_defaults?id=in.({','.join(DEFAULTS_CREATED_BY_TEST)})", headers=h).json())
     left = requests.get(f"{url}/rest/v1/projects?name=like.E2E-FIN-*&select=id", headers=h).json()
@@ -198,13 +198,13 @@ if "--cleanup-only" in sys.argv:
 requests, url, h = api()
 month0 = time.strftime("%Y-%m-01")
 before = {r["id"] for r in requests.get(f"{url}/rest/v1/finance_team_defaults?valid_from=eq.{month0}&select=id", headers=h).json()}
-costed = requests.get(f"{url}/rest/v1/finance_employee_costs?competence=eq.{month0}&select=id,user_id", headers=h).json()
+costed = requests.get(f"{url}/rest/v1/finance_member_rates?select=id,user_id", headers=h).json()
 cost_ids_before = {r["id"] for r in costed}
 if costed:
     names = requests.get(f"{url}/rest/v1/profiles?id=in.({','.join({r['user_id'] for r in costed})})&select=full_name", headers=h).json()
     COSTED_NAMES.update((n.get("full_name") or "").strip() for n in names)
 S = asyncio.run(main())
-COSTS_CREATED_BY_TEST += [r["id"] for r in requests.get(f"{url}/rest/v1/finance_employee_costs?competence=eq.{month0}&select=id", headers=h).json() if r["id"] not in cost_ids_before]
+COSTS_CREATED_BY_TEST += [r["id"] for r in requests.get(f"{url}/rest/v1/finance_member_rates?select=id", headers=h).json() if r["id"] not in cost_ids_before]
 if not before:
     DEFAULTS_CREATED_BY_TEST += [r["id"] for r in requests.get(f"{url}/rest/v1/finance_team_defaults?valid_from=eq.{month0}&select=id", headers=h).json()]
 cleanup()
