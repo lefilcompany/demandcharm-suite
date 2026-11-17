@@ -212,7 +212,7 @@ export function SummaryHistoryDrawer({ boardId, onSelectSummary }: SummaryHistor
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
               Excluir
             </AlertDialogAction>

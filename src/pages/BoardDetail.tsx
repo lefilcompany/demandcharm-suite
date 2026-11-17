@@ -584,7 +584,7 @@ export default function BoardDetail() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteBoard} className="bg-destructive text-destructive-foreground border-transparent hover:bg-destructive/90 hover:text-destructive-foreground hover:border-transparent">
+                <AlertDialogAction onClick={handleDeleteBoard} variant="destructive">
                   Excluir
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -884,7 +884,7 @@ export default function BoardDetail() {
                                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => handleRemoveMember(member.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    variant="destructive"
                                   >
                                     Remover
                                   </AlertDialogAction>

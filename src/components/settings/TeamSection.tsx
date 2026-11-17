@@ -173,7 +173,7 @@ export function TeamSection() {
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => leave.mutate(currentTeam.id)}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    variant="destructive">
                     Sair da equipe
                   </AlertDialogAction>
                 </AlertDialogFooter>

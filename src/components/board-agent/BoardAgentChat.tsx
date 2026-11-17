@@ -289,7 +289,7 @@ export function BoardAgentChat({ boardId, boardName }: Props) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
               onClick={clearConversation}
             >
               Limpar

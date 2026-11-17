@@ -448,7 +448,7 @@ export default function Notes() {
             <AlertDialogAction 
               onClick={handleConfirmLeave}
               disabled={isLeaving}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
               {isLeaving ? (
                 <>

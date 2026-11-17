@@ -252,7 +252,7 @@ export default function BoardMembers() {
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleRemoveMember(member.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              variant="destructive"
                             >
                               Remover
                             </AlertDialogAction>

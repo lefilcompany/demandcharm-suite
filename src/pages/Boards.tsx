@@ -152,7 +152,7 @@ function BoardCard({ board }: { board: { id: string; name: string; description: 
             <AlertDialogAction
               onClick={handleDelete}
               disabled={!isConfirmed || deleteBoard.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
               {deleteBoard.isPending ? "Excluindo..." : "Excluir Quadro"}
             </AlertDialogAction>
