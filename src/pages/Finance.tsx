@@ -29,7 +29,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-type Agg = FinanceResult & { boardId: string; name: string; teamCost: number; directExpenses: number; allocated: number; hoursRealized: number; hoursPlanned: number; hoursWithoutCost: number; target: number };
+export type Agg = FinanceResult & { boardId: string; name: string; teamCost: number; directExpenses: number; allocated: number; hoursRealized: number; hoursPlanned: number; hoursWithoutCost: number; target: number };
 
 function aggregate(rows: OverviewRow[]): Agg {
   const s = rows.reduce((a, r) => ({
@@ -185,12 +185,11 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
         </div>
       </header>
 
-      <Tabs value={params.get("aba") ?? (canView ? "overview" : fin.can("finance.close_period") ? "closing" : "manage")}
+      <Tabs value={(params.get("aba") === "projects" ? "byProject" : params.get("aba")) ?? (canView ? "overview" : fin.can("finance.close_period") ? "closing" : "manage")}
         onValueChange={(v) => { const n = new URLSearchParams(params); n.set("aba", v); setParams(n, { replace: true }); }} className="space-y-4">
         <FinanceTabsList>
           {canView && <FinanceTab value="overview">Visão geral</FinanceTab>}
           {canView && <FinanceTab value="byProject">Por projeto</FinanceTab>}
-          {canView && <FinanceTab value="projects" full="Rentabilidade por quadro">Por quadro</FinanceTab>}
           {canView && <FinanceTab value="people" full="Custos e produtividade">Pessoas</FinanceTab>}
           {canView && <FinanceTab value="allocation" full="Despesas e rateios">Rateios</FinanceTab>}
           {canView && <FinanceTab value="simulator" full="Simulador de precificação">Simulador</FinanceTab>}
@@ -336,7 +335,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
 
         {canView && (
           <TabsContent value="byProject">
-            <TeamProjectsFinance teamId={selectedTeamId} from={from} to={to} />
+            <TeamProjectsFinance teamId={selectedTeamId} from={from} to={to} boards={perBoard} boardsLoading={ov.isLoading} onBoard={setDetail} />
           </TabsContent>
         )}
 

@@ -12,8 +12,27 @@ import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer,
 
 interface TeamProject { project_id: string; name: string; months: ProjectMonth[] }
 
-export function TeamProjectsFinance({ teamId, from, to }: { teamId: string | null; from: string; to: string }) {
+export interface BoardAgg { boardId: string; name: string; gross: number; result: number; margin: number | null; target: number; hoursRealized: number }
+
+export function TeamProjectsFinance({ teamId, from, to, boards = [], boardsLoading, onBoard }: { teamId: string | null; from: string; to: string; boards?: BoardAgg[]; boardsLoading?: boolean; onBoard?: (id: string) => void }) {
   const { user } = useAuth();
+  const links = useQuery({
+    queryKey: ["team-project-board-map", teamId, user?.id],
+    enabled: !!user && !!teamId,
+    queryFn: async () => {
+      const [pb, pd] = await Promise.all([
+        supabase.from("project_boards").select("project_id, board_id").eq("team_id", teamId!).is("valid_to", null),
+        supabase.from("project_demands").select("project_id, demands(board_id)"),
+      ]);
+      if (pb.error) throw pb.error;
+      if (pd.error) throw pd.error;
+      const m = new Map<string, Set<string>>();
+      const add = (p: string, b?: string | null) => { if (!b) return; if (!m.has(p)) m.set(p, new Set()); m.get(p)!.add(b); };
+      pb.data?.forEach((r: any) => add(r.project_id, r.board_id));
+      pd.data?.forEach((r: any) => add(r.project_id, r.demands?.board_id));
+      return m;
+    },
+  });
   const q = useQuery({
     queryKey: ["team-projects-finance", teamId, from, to, user?.id],
     enabled: !!user && !!teamId && from <= to,
@@ -71,15 +90,49 @@ export function TeamProjectsFinance({ teamId, from, to }: { teamId: string | nul
       )}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        {ranked.map((p) => <ProjectCard key={p.project_id} {...p} />)}
+        {ranked.map((p) => {
+          const ids = links.data?.get(p.project_id);
+          const own = boards.filter((b) => ids?.has(b.boardId));
+          return <ProjectCard key={p.project_id} {...p} boards={own} onBoard={onBoard} />;
+        })}
       </div>
+
+      {!boardsLoading && links.data && (() => {
+        const used = new Set([...links.data.values()].flatMap((x) => [...x]));
+        const loose = boards.filter((b) => !used.has(b.boardId) && (b.gross !== 0 || b.result !== 0 || b.hoursRealized > 0));
+        if (!loose.length) return null;
+        return (
+          <section className="rounded-xl border border-dashed p-4 space-y-2">
+            <h3 className="text-sm font-semibold">Quadros fora de projetos</h3>
+            <p className="text-xs text-muted-foreground">Têm números no período, mas não fazem parte de nenhum projeto.</p>
+            <BoardList boards={loose} onBoard={onBoard} />
+          </section>
+        );
+      })()}
     </div>
+  );
+}
+
+function BoardList({ boards, onBoard }: { boards: BoardAgg[]; onBoard?: (id: string) => void }) {
+  return (
+    <ul className="divide-y">
+      {[...boards].sort((a, b) => b.result - a.result).map((b) => (
+        <li key={b.boardId}>
+          <button type="button" onClick={() => onBoard?.(b.boardId)}
+            className="grid w-full grid-cols-[minmax(0,1fr)_6rem_7.5rem] items-center gap-3 py-2 text-left text-sm rounded-md hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-1">
+            <span className="truncate">{b.name}</span>
+            <MarginRuler margin={b.margin} target={b.target} compact />
+            <span className={cn("tabular-nums text-right whitespace-nowrap", b.result < 0 && "text-destructive")}>{formatBRL(b.result)}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
 
 const compact = (v: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(v);
 
-function ProjectCard({ name, months, r, closed, incomplete }: TeamProject & { r: ReturnType<typeof projectResult>; closed: boolean; incomplete: boolean }) {
+function ProjectCard({ name, months, r, closed, incomplete, boards, onBoard }: TeamProject & { r: ReturnType<typeof projectResult>; closed: boolean; incomplete: boolean; boards: BoardAgg[]; onBoard?: (id: string) => void }) {
   const t = r.totals;
   const taxes = Math.max(0, t.gross - r.netRevenue);
   const parts = [
@@ -146,6 +199,11 @@ function ProjectCard({ name, months, r, closed, incomplete }: TeamProject & { r:
           </ResponsiveContainer>
         </div>
       )}
+
+      <div className="border-t pt-3">
+        <p className="mb-1 text-xs text-muted-foreground">Quadros deste projeto ({boards.length}) · clique para ver o detalhe</p>
+        {boards.length ? <BoardList boards={boards} onBoard={onBoard} /> : <p className="text-xs text-muted-foreground">Nenhum quadro com números no período.</p>}
+      </div>
 
       {empty && <p className="text-xs text-muted-foreground">Ainda não há faturamento nem custos neste período.</p>}
       {incomplete && <p className="text-xs text-primary">Custo incompleto: {t.hoursWithoutCost.toLocaleString("pt-BR")} h sem custo/hora cadastrado.</p>}
