@@ -22,6 +22,7 @@ import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { FloatingCreateButton } from "@/components/FloatingCreateButton";
 import { SideCreateDemandButton } from "@/components/SideCreateDemandButton";
+import { BoardFrozenBanner } from "@/components/BoardFrozenBanner";
 import { TopbarCreateButton } from "@/components/TopbarCreateButton";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -275,6 +276,7 @@ export function ProtectedLayout() {
             </div>
           </header>
           <div className="flex-1 overflow-y-auto min-h-0 p-3 md:p-6">
+            <BoardFrozenBanner />
             <Suspense fallback={<PageSkeleton />}>
               <Outlet />
             </Suspense>

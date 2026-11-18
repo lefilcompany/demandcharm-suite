@@ -19,6 +19,7 @@ import {
 import { useDemands } from "@/hooks/useDemands";
 import { useServices } from "@/hooks/useServices";
 import { useSelectedBoard } from "@/contexts/BoardContext";
+import { useBoardFrozen } from "@/hooks/useBoardFrozen";
 import { useBoardRole } from "@/hooks/useBoardMembers";
 import { useBoard } from "@/hooks/useBoards";
 import { useAuth } from "@/lib/auth";
@@ -193,7 +194,8 @@ export default function Kanban() {
   );
   const openCount = useMemo(() => (allBoardDemands || []).filter((d: any) => !d.delivered_at).length, [allBoardDemands]);
 
-  const isReadOnly = role === "requester" || (!role && teamMembershipRole === "requester");
+  const boardFrozen = useBoardFrozen(selectedBoardId);
+  const isReadOnly = boardFrozen || role === "requester" || (!role && teamMembershipRole === "requester");
 
   // Filter demands based on all filters
   const filteredDemands = useMemo(() => {
