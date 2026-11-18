@@ -33,7 +33,7 @@ export function ProjectRevenue({ projectId, teamId, canManage }: { projectId: st
     queryKey: ["finance-table", "project-revenues", projectId, user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.from("finance_revenues").select("*").eq("project_id" as any, projectId).order("competence", { ascending: false });
+      const { data, error } = await (supabase.from("finance_revenues") as any).select("*").eq("project_id", projectId).order("competence", { ascending: false });
       if (error) throw error;
       return data as any[];
     },
