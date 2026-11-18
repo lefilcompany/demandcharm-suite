@@ -358,6 +358,13 @@
       "when": 1795010050307,
       "tag": "0050_team_costs_active_projects_and_freeze",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1795010386263,
+      "tag": "0051_team_costs_audit_columns",
+      "breakpoints": true
     }
   ]
 }

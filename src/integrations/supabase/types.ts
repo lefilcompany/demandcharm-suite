@@ -2885,6 +2885,8 @@ export type Database = {
           id: string
           monthly_amount: number
           team_id: string
+          updated_at: string
+          updated_by: string | null
           valid_from: string
         }
         Insert: {
@@ -2894,6 +2896,8 @@ export type Database = {
           id?: string
           monthly_amount: number
           team_id: string
+          updated_at?: string
+          updated_by?: string | null
           valid_from: string
         }
         Update: {
@@ -2903,6 +2907,8 @@ export type Database = {
           id?: string
           monthly_amount?: number
           team_id?: string
+          updated_at?: string
+          updated_by?: string | null
           valid_from?: string
         }
         Relationships: [

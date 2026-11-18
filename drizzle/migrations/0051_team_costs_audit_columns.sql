@@ -1,0 +1,1 @@
+ALTER TABLE public.finance_team_costs ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now(), ADD COLUMN updated_by uuid;
