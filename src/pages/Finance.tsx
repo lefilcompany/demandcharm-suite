@@ -346,7 +346,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
         )}
         {canView && (
           <TabsContent value="allocation">
-            <ExpensesAllocation rows={(alloc.data ?? []).filter((r) => boardFilter === "all" || !r.board_id || r.board_id === boardFilter)} isLoading={alloc.isLoading} isError={alloc.isError} onRetry={() => alloc.refetch()} boardOrder={boardOrder} />
+            <ExpensesAllocation rows={(alloc.data ?? []).filter((r) => boardFilter === "all" || !r.board_id || r.board_id === boardFilter)} isLoading={alloc.isLoading} isError={alloc.isError} onRetry={() => alloc.refetch()} boardOrder={boardOrder} canEdit={fin.can("finance.manage_expenses")} teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} overview={scopedOv} />
           </TabsContent>
         )}
 
