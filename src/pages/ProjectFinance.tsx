@@ -6,6 +6,7 @@ import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { Button } from "@/components/ui/button";
 import { ProjectFinancePanel } from "@/components/finance/ProjectFinancePanel";
 import { SEOHead } from "@/components/SEOHead";
+import { ProjectStatusBadge, ProjectStatusButton } from "@/components/projects/ProjectStatusControl";
 import { Briefcase, FolderOpen, Wallet, ArrowLeft } from "lucide-react";
 
 export default function ProjectFinance() {
@@ -41,11 +42,12 @@ export default function ProjectFinance() {
       <div className="flex items-center gap-3">
         <Wallet className="h-6 w-6 shrink-0 text-primary" />
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold text-foreground truncate">Gestão financeira · {folder.name}</h1>
+          <h1 className="flex items-center gap-2 text-xl font-bold text-foreground truncate">Gestão financeira · {folder.name} <ProjectStatusBadge status={folder.status} /></h1>
           <p className="text-xs text-muted-foreground">
             Resultado, horas e custos, quadros vinculados, preço mínimo e configuração do projeto.
           </p>
         </div>
+        <ProjectStatusButton project={folder} />
         <Button variant="outline" size="sm" onClick={() => navigate(`/app/projects/${folder.id}`)}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao projeto
         </Button>

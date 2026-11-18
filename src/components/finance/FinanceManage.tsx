@@ -40,6 +40,7 @@ const msg = (e: any) => Object.entries(ERR).find(([k]) => String(e?.message).inc
 import { MemberProfilesPanel } from "@/components/finance/MemberProfilesPanel";
 import { PeopleGapsAlert } from "@/components/finance/PeopleGapsAlert";
 import { TeamDefaultsPanel } from "@/components/finance/TeamDefaultsPanel";
+import { TeamCostsPanel } from "@/components/finance/TeamCostsPanel";
 
 function Section({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
   return (
@@ -181,7 +182,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
   );
 
   const groups = ([
-    { id: "entries", label: "Receitas e despesas", hint: "Faturamento e gastos do mês", show: revBoards.length > 0 || expBoards.length > 0 || canShared },
+    { id: "costs", label: "Custos da equipe", hint: "Fixo, operacional e administrativo", show: true },
     { id: "people", label: "Pessoas", hint: "Vínculo e custo de cada pessoa", show: can("finance.manage_settings") || can("finance.view_employee_costs") || isOwnerOrAdmin },
     { id: "params", label: "Parâmetros", hint: "Valores padrão, metas e acesso", show: can("finance.manage_settings") || isOwnerOrAdmin },
   ] as const).filter((g) => g.show);
@@ -190,7 +191,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
 
   return (
     <div className="space-y-5">
-      <nav aria-label="Seções de lançamentos" className="grid gap-2 sm:grid-cols-3">
+      <nav aria-label="Seções de custos" className="grid gap-2 sm:grid-cols-3">
         {groups.map((g) => {
           const on = g.id === current?.id;
           return (
@@ -214,80 +215,7 @@ export function FinanceManage({ teamId, boards, members, can, canAny, isOwnerOrA
       {costSection}
       </div>)}
 
-      {current?.id === "entries" && (<div className="space-y-4">
-      {revBoards.length > 0 && (
-        <Section title="Faturamento" hint="Valor bruto faturado por quadro no mês. Deixe a alíquota vazia para usar a padrão.">
-          <form className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addRev.mutate(undefined, { onSuccess: () => { done("Faturamento lançado"); setRev({ ...rev, amount: "", description: "" }); }, onError: fail }); }}>
-            <BoardPick boards={revBoards} value={rev.board} onChange={(v) => setRev({ ...rev, board: v })} />
-            <Field label="Mês"><MonthField value={rev.month} onChange={(v) => setRev({ ...rev, month: v })} aria-label="Mês" /></Field>
-            <Field label="Valor (R$)"><Input type="number" min="0" step="0.01" value={rev.amount} onChange={(e) => setRev({ ...rev, amount: e.target.value })} required /></Field>
-            <Field label="Alíquota %"><Input type="number" min="0" max="99" step="0.01" placeholder="padrão" value={rev.tax} onChange={(e) => setRev({ ...rev, tax: e.target.value })} /></Field>
-            <Button type="submit" disabled={!rev.board || addRev.isPending}>Lançar</Button>
-          </form>
-          <Rows items={revenues.data} render={(r) => `${boardName(r.board_id)} · ${r.competence.substring(0, 7)} · ${formatBRL(Number(r.gross_amount))}${r.tax_rate != null ? ` · ${formatPct(Number(r.tax_rate))}` : ""}`}
-            onDelete={(r) => del.mutate({ table: "finance_revenues", id: r.id }, { onSuccess: () => done("Lançamento removido"), onError: fail })} canDelete={(r) => can("finance.manage_revenue", r.board_id)} />
-        </Section>
-      )}
-
-      {expBoards.length > 0 && (
-        <Section title="Despesas diretas" hint="Gastos que pertencem a um só quadro, como uma licença usada só nesse projeto.">
-          <form className="grid grid-cols-2 sm:grid-cols-6 gap-2 items-end" onSubmit={(e) => { e.preventDefault(); addExp.mutate(undefined, { onSuccess: () => { done("Despesa lançada"); setExp({ ...exp, amount: "", description: "" }); }, onError: fail }); }}>
-            <BoardPick boards={expBoards} value={exp.board} onChange={(v) => setExp({ ...exp, board: v })} />
-            <Field label="Mês"><MonthField value={exp.month} onChange={(v) => setExp({ ...exp, month: v })} aria-label="Mês" /></Field>
-            <Field label="Descrição"><Input value={exp.description} onChange={(e) => setExp({ ...exp, description: e.target.value })} required /></Field>
-            <TypePick value={exp.type} onChange={(v) => setExp({ ...exp, type: v })} />
-            <Field label="Valor (R$)"><Input type="number" min="0" step="0.01" value={exp.amount} onChange={(e) => setExp({ ...exp, amount: e.target.value })} required /></Field>
-            <Button type="submit" disabled={!exp.board || addExp.isPending}>Lançar</Button>
-          </form>
-          <Rows items={expenses.data?.filter((r) => r.board_id)} render={(r) => `${boardName(r.board_id)} · ${r.competence.substring(0, 7)} · ${r.description} · ${EXPENSE_TYPE_LABEL[r.expense_type] ?? ""} · ${formatBRL(Number(r.amount))}`}
-            onDelete={(r) => del.mutate({ table: "finance_expenses", id: r.id }, { onSuccess: () => done("Despesa removida"), onError: fail })} canDelete={(r) => can("finance.manage_expenses", r.board_id)} />
-        </Section>
-      )}
-
-      {canShared && (
-        <Section title="Despesas compartilhadas" hint="Gastos da equipe toda (aluguel, ferramentas, administrativo). Cada uma é dividida entre os quadros e nunca conta duas vezes.">
-          <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); addShared.mutate(undefined, { onSuccess: () => { done("Despesa compartilhada lançada"); setSh({ ...sh, amount: "", description: "" }); }, onError: fail }); }}>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
-              <Field label="Mês"><MonthField value={sh.month} onChange={(v) => setSh({ ...sh, month: v })} aria-label="Mês" /></Field>
-              <Field label="Descrição"><Input value={sh.description} onChange={(e) => setSh({ ...sh, description: e.target.value })} required /></Field>
-              <Field label="Valor (R$)"><Input type="number" min="0" step="0.01" value={sh.amount} onChange={(e) => setSh({ ...sh, amount: e.target.value })} required /></Field>
-              <TypePick value={sh.type} onChange={(v) => setSh({ ...sh, type: v })} />
-              <Field label="Dividir"><Select value={sh.method} onValueChange={(v) => setSh({ ...sh, method: v as AllocationMethod })}><SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{Object.entries(METHOD_LABEL).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent></Select></Field>
-              {sh.method === "revenue_pct" && <Field label="% da receita de cada quadro"><Input type="number" min="0.01" max="100" step="0.01" value={sh.pct} onChange={(e) => setSh({ ...sh, pct: e.target.value })} required /></Field>}
-              {sh.method === "mixed" && <Field label="% por horas"><Input type="number" min="0" max="100" step="5" value={sh.weight} onChange={(e) => setSh({ ...sh, weight: e.target.value })} /></Field>}
-            </div>
-            <fieldset className="space-y-1">
-              <legend className="text-xs font-medium">Só entre estes quadros <span className="text-muted-foreground font-normal">(vazio = todos)</span></legend>
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                {boards.map((b) => (
-                  <label key={b.id} className="flex items-center gap-1.5 text-sm">
-                    <Checkbox checked={sh.only.includes(b.id)} onCheckedChange={(c) => setSh({ ...sh, only: c ? [...sh.only, b.id] : sh.only.filter((x) => x !== b.id) })} />{b.name}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            {sh.method === "revenue_pct" && <p className="text-xs text-muted-foreground">Cada contrato paga sempre o mesmo percentual do próprio faturamento. Entrar um contrato novo não diminui o valor dos outros: o que passar da despesa vira folga, o que faltar aparece como custo não absorvido.</p>}
-            {Number(sh.amount) > 0 && (
-              <div className="rounded-lg border p-3 space-y-2">
-                <OpsLabel>Prévia com os números atuais do mês</OpsLabel>
-                <AllocationBar total={Number(sh.amount)} unallocated={preview.unallocated} order={previewOrder}
-                  parts={preview.parts.map((p) => ({ key: p.boardId, label: boardName(p.boardId), amount: p.amount }))} />
-                <ul className="text-xs flex flex-wrap gap-x-4 tabular-nums">
-                  {preview.parts.map((p) => <li key={p.boardId}>{boardName(p.boardId)} {formatBRL(p.amount)}</li>)}
-                  {preview.unallocated > 0 && <li className="text-primary">{sh.method === "revenue_pct" ? "Custo não absorvido" : "Não rateado"} {formatBRL(preview.unallocated)}</li>}
-                  {preview.surplus > 0 && <li className="text-muted-foreground">Folga de rateio {formatBRL(preview.surplus)}</li>}
-                </ul>
-              </div>
-            )}
-            <Button type="submit" disabled={addShared.isPending}>Lançar despesa compartilhada</Button>
-          </form>
-          <Rows items={expenses.data?.filter((r) => !r.board_id)} render={(r) => `${r.competence.substring(0, 7)} · ${r.description} · ${EXPENSE_TYPE_LABEL[r.expense_type] ?? ""} · ${METHOD_LABEL[r.allocation_method as AllocationMethod] ?? ""}${r.allocation_pct != null ? ` ${Number(r.allocation_pct)}%` : ""} · ${formatBRL(Number(r.amount))}`}
-            onDelete={(r) => del.mutate({ table: "finance_expenses", id: r.id }, { onSuccess: () => done("Despesa removida"), onError: fail })} canDelete={() => canShared} />
-        </Section>
-      )}
-
-      </div>)}
+      {current?.id === "costs" && <TeamCostsPanel teamId={teamId} canEdit={can("finance.manage_settings")} />}
 
       {current?.id === "params" && (<div className="space-y-4">
       {(can("finance.manage_settings") || isOwnerOrAdmin) && <TeamDefaultsPanel teamId={teamId} />}

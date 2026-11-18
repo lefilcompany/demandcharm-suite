@@ -194,7 +194,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
           {canView && <FinanceTab value="allocation" full="Despesas e rateios">Rateios</FinanceTab>}
           {canView && <FinanceTab value="simulator" full="Simulador de precificação">Simulador</FinanceTab>}
           {(canView || fin.can("finance.close_period")) && <FinanceTab value="closing">Fechamento</FinanceTab>}
-          {canManage && <FinanceTab value="manage" full="Lançamentos e acesso">Lançamentos</FinanceTab>}
+          {(canManage || canView) && <FinanceTab value="manage" full="Custos da equipe, pessoas e parâmetros">Custos</FinanceTab>}
         </FinanceTabsList>
 
         {canView && ov.isError && (
@@ -363,7 +363,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
           </TabsContent>
         )}
 
-        {canManage && selectedTeamId && (
+        {(canManage || canView) && selectedTeamId && (
           <TabsContent value="manage">
             <FinanceManage teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} canAny={fin.canAny} isOwnerOrAdmin={isOwnerOrAdmin} overview={scopedOv} />
           </TabsContent>

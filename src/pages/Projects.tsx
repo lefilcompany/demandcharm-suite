@@ -17,6 +17,8 @@ import {
 } from "@/hooks/useDemandFolders";
 import { useBoards } from "@/hooks/useBoards";
 import { useQuery } from "@tanstack/react-query";
+import { Power } from "lucide-react";
+import { ProjectStatusBadge, useProjectStatusToggle } from "@/components/projects/ProjectStatusControl";
 import { supabase } from "@/integrations/supabase/client";
 import { CreateFolderDialog } from "@/components/CreateFolderDialog";
 import { FolderShareDialog } from "@/components/FolderShareDialog";
@@ -308,11 +310,12 @@ function ProjectCard({ project, boardNames, memberMap, ownerProfile, onOpen, onE
   const extraCount = Math.max(0, accessUsers.length - visibleAvatars.length);
 
   const createdDate = new Date(project.created_at).toLocaleDateString("pt-BR");
+  const statusToggle = useProjectStatusToggle();
 
   return (
     <div
       onClick={onOpen}
-      className="group cursor-pointer rounded-xl border bg-card p-5 shadow-sm hover:shadow-md hover:border-[#F28705]/40 transition-all"
+      className={`group cursor-pointer rounded-xl border bg-card p-5 shadow-sm hover:shadow-md hover:border-[#F28705]/40 transition-all ${(project.status ?? "active") === "inactive" ? "opacity-70" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -324,7 +327,7 @@ function ProjectCard({ project, boardNames, memberMap, ownerProfile, onOpen, onE
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="font-semibold text-foreground truncate">{project.name}</h3>
-            <p className="text-xs text-muted-foreground">Criado em {createdDate}</p>
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><ProjectStatusBadge status={project.status} />Criado em {createdDate}</p>
           </div>
         </div>
 
@@ -341,12 +344,16 @@ function ProjectCard({ project, boardNames, memberMap, ownerProfile, onOpen, onE
             <DropdownMenuItem onClick={onEdit} disabled={!canManage}>
               <Pencil className="h-4 w-4 mr-2" /> Editar
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => statusToggle.open({ id: project.id, name: project.name, status: project.status ?? "active" })} disabled={!canManage}>
+              <Power className="h-4 w-4 mr-2" /> {(project.status ?? "active") === "active" ? "Inativar projeto" : "Ativar projeto"}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onDelete} disabled={!(canDelete ?? canManage)} className="text-destructive focus:text-destructive">
               <Trash2 className="h-4 w-4 mr-2" /> Excluir
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <span onClick={(e) => e.stopPropagation()}>{statusToggle.dialog}</span>
       </div>
 
       <div className="mt-4 space-y-2.5">

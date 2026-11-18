@@ -18,7 +18,7 @@ export function ProjectMinimumPrice({ teamId }: { teamId: string | null }) {
   if (!d) return (
     <div className="rounded-xl border bg-card p-6 text-center text-sm space-y-1">
       <p className="font-medium">Sem valores padrão cadastrados.</p>
-      <p className="text-muted-foreground">Cadastre alíquotas e meta em Finanças → Lançamentos e acesso → Valores padrão.</p>
+      <p className="text-muted-foreground">Cadastre alíquotas e meta em Gestão Financeira → Custos → Parâmetros.</p>
     </div>
   );
   const vals = { hourlyCost: Number(hourly.data?.hourly_cost ?? 0), taxRate: Number(d.tax_rate), variableRate: Number(d.variable_rate),

@@ -351,6 +351,13 @@
       "when": 1794927203993,
       "tag": "0049_finance_member_global_rate",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795010050307,
+      "tag": "0050_team_costs_active_projects_and_freeze",
+      "breakpoints": true
     }
   ]
 }
