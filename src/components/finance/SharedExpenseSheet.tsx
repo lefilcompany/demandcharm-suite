@@ -12,7 +12,8 @@ import { OpsLabel } from "@/components/ops/OpsParts";
 import { AllocationBar } from "@/components/finance/AllocationBar";
 import { allocate, AllocationMethod, EXPENSE_TYPE_LABEL, METHOD_LABEL } from "@/lib/finance/allocation";
 import { formatBRL } from "@/lib/finance/engine";
-import { useFinanceMutation, type OverviewRow } from "@/hooks/useFinance";
+import { useFinanceMutation, useFinanceTable, type OverviewRow } from "@/hooks/useFinance";
+import { Pencil } from "lucide-react";
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) =>
   <label className="block space-y-1 min-w-0"><span className="text-xs font-medium leading-none">{label}</span>{children}</label>;
@@ -26,12 +27,34 @@ export function SharedExpenseSheet({ open, onOpenChange, teamId, boards, overvie
   const thisMonth = new Date().toISOString().substring(0, 7);
   const blank = { month: thisMonth, amount: "", description: "", type: "fixa", method: "hours" as AllocationMethod, weight: "50", pct: "", only: [] as string[] };
   const [sh, setSh] = useState(blank);
+  const [editId, setEditId] = useState<string | null>(null);
+  const all = useFinanceTable<any>("finance_expenses", teamId, open);
+  const configured = (all.data ?? []).filter((e) => !e.board_id && e.allocation_method)
+    .sort((a, b) => String(b.competence).localeCompare(String(a.competence)));
+  const startEdit = (e: any) => {
+    setEditId(e.id);
+    setSh({ month: String(e.competence).substring(0, 7), amount: String(Number(e.amount)), description: e.description ?? "", type: e.expense_type ?? "fixa",
+      method: e.allocation_method, weight: e.hours_weight != null ? String(Math.round(Number(e.hours_weight) * 100)) : "50",
+      pct: e.allocation_pct != null ? String(Number(e.allocation_pct)) : "", only: e.allocation_board_ids ?? [] });
+  };
+  const reset = () => { setEditId(null); setSh(blank); };
+  const ruleText = (e: any) => {
+    const m = METHOD_LABEL[e.allocation_method as AllocationMethod] ?? e.allocation_method;
+    const extra = e.allocation_method === "revenue_pct" && e.allocation_pct != null ? ` ${Number(e.allocation_pct)}%`
+      : e.allocation_method === "mixed" && e.hours_weight != null ? ` (${Math.round(Number(e.hours_weight) * 100)}% horas)` : "";
+    const ids: string[] = e.allocation_board_ids ?? [];
+    const where = ids.length ? ids.map(boardName).join(", ") : "todos os quadros";
+    return `${m}${extra} · ${where}`;
+  };
   const boardName = (id: string) => boards.find((b) => b.id === id)?.name ?? "Quadro";
   const save = useFinanceMutation(async () => {
-    const { error } = await supabase.from("finance_expenses").insert({ team_id: teamId, board_id: null, competence: `${sh.month}-01`,
+    const row = { competence: `${sh.month}-01`,
       amount: Number(sh.amount), description: sh.description, expense_type: sh.type, allocation_method: sh.method,
       hours_weight: sh.method === "mixed" ? Number(sh.weight) / 100 : null,
-      allocation_pct: sh.method === "revenue_pct" ? Number(sh.pct) : null, allocation_board_ids: sh.only.length ? sh.only : null, created_by: user!.id });
+      allocation_pct: sh.method === "revenue_pct" ? Number(sh.pct) : null, allocation_board_ids: sh.only.length ? sh.only : null };
+    const { error } = editId
+      ? await supabase.from("finance_expenses").update(row).eq("id", editId)
+      : await supabase.from("finance_expenses").insert({ ...row, team_id: teamId, board_id: null, created_by: user!.id });
     if (error) throw error;
   });
   const preview = allocate(
@@ -40,16 +63,39 @@ export function SharedExpenseSheet({ open, onOpenChange, teamId, boards, overvie
   );
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Configurar rateio</SheetTitle>
           <SheetDescription>Lance um gasto da equipe toda e escolha como ele é dividido entre os quadros.</SheetDescription>
         </SheetHeader>
-        <form className="mt-4 space-y-4" onSubmit={(e) => {
+        <section className="mt-4 space-y-2">
+          <OpsLabel>Rateios configurados</OpsLabel>
+          {all.isLoading ? <p className="text-xs text-muted-foreground">Carregando…</p>
+            : !configured.length ? <p className="text-xs text-muted-foreground">Nenhum rateio configurado ainda.</p>
+            : <ul className="divide-y rounded-lg border">
+              {configured.map((e) => (
+                <li key={e.id} className={`flex items-start justify-between gap-2 p-2.5 ${editId === e.id ? "bg-muted" : ""}`}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{e.description}</p>
+                    <p className="text-xs text-muted-foreground">{String(e.competence).substring(5, 7)}/{String(e.competence).substring(0, 4)} · {ruleText(e)}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-sm tabular-nums font-semibold">{formatBRL(Number(e.amount))}</span>
+                    <Button type="button" size="icon" variant="ghost" className="h-7 w-7" aria-label="Editar rateio" onClick={() => startEdit(e)}><Pencil className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </li>
+              ))}
+            </ul>}
+        </section>
+        <div className="mt-5 flex items-center justify-between">
+          <OpsLabel>{editId ? "Editando rateio" : "Novo rateio"}</OpsLabel>
+          {editId && <Button type="button" size="sm" variant="ghost" onClick={reset}>Cancelar edição</Button>}
+        </div>
+        <form className="mt-2 space-y-4" onSubmit={(e) => {
           e.preventDefault();
           save.mutate(undefined, {
-            onSuccess: () => { toast({ title: "Rateio configurado" }); setSh(blank); onOpenChange(false); },
+            onSuccess: () => { toast({ title: editId ? "Rateio atualizado" : "Rateio configurado" }); reset(); },
             onError: (err: any) => toast({ title: String(err?.message).includes("PERIOD_CLOSED") ? "Este mês já foi fechado." : "Não foi possível salvar. Confira os campos.", variant: "destructive" }),
           });
         }}>
@@ -86,7 +132,7 @@ export function SharedExpenseSheet({ open, onOpenChange, teamId, boards, overvie
               </ul>
             </div>
           )}
-          <Button type="submit" className="w-full" disabled={save.isPending}>Salvar rateio</Button>
+          <Button type="submit" className="w-full" disabled={save.isPending}>{editId ? "Salvar alterações" : "Salvar rateio"}</Button>
         </form>
       </SheetContent>
     </Sheet>
