@@ -32,7 +32,7 @@ export function TeamCostsPanel({ teamId, canEdit }: { teamId: string; canEdit: b
   const [value, setValue] = useState("");
   const save = useFinanceMutation(async ({ type, amount }: { type: TeamCostType; amount: number }) => {
     const { error } = await supabase.from("finance_team_costs" as any).upsert(
-      { team_id: teamId, cost_type: type, monthly_amount: amount, valid_from: `${month}-01`, created_by: user!.id },
+      { team_id: teamId, cost_type: type, monthly_amount: amount, valid_from: `${month}-01`, created_by: user!.id, updated_by: user!.id, updated_at: new Date().toISOString() },
       { onConflict: "team_id,cost_type,valid_from" });
     if (error) throw error;
   });

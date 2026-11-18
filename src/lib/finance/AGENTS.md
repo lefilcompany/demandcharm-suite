@@ -7,3 +7,5 @@
 - Project hours come only from `_finance_time_slices` (mirror `timeSlices.ts`): SP month cut, overlaps counted once, missing cost reported, never zero.
 - Project×month numbers come only from `_finance_project_month`, shared by RPC `get_project_finance_overview` and Edge `finance-api-v1` (sha256 `sk_fin_` keys) — UI and external panel never diverge.
 - Closing snapshots each finance-enabled project (`finance_project_snapshots`); `_finance_project_month` serves it plus its boards' adjustments — closed numbers match everywhere.
+- Team fixed/operational/admin costs live in versioned `finance_team_costs` (valid until changed) and are split equally across finance-enabled projects active in the month (`_finance_team_cost_share`, mirror `projectShare.ts`); `_finance_project_month_live` uses it whenever the team has any team cost, falling back to legacy shared-expense allocations otherwise — so old months keep their numbers.
+- Project revenue is stored in `finance_revenues` with `project_id` (board_id kept as reference for RLS); project months count rows with that project_id or, when null, rows of its boards — never both.
