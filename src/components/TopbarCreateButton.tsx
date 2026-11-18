@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CreateRequestQuickDialog } from "@/components/CreateRequestQuickDialog";
 import { usePlanLimitGuard } from "@/hooks/usePlanLimitCheck";
+import { useBoardFrozen } from "@/hooks/useBoardFrozen";
 
 export function TopbarCreateButton() {
   const { openCreateDemand } = useCreateDemandModal();
@@ -16,12 +17,13 @@ export function TopbarCreateButton() {
   const { data: bRole } = useBoardRole(selectedBoardId);
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const guardDemands = usePlanLimitGuard("demands");
+  const frozen = useBoardFrozen(selectedBoardId);
 
   if (!selectedTeamId) return null;
 
   const isRequester = bRole === "requester";
   const label = isRequester ? "Nova Solicitação" : "Nova Demanda";
-  const tooltip = isRequester ? "Criar nova solicitação" : "Criar nova demanda (Ctrl+Shift+D)";
+  const tooltip = frozen ? "Projeto inativo: quadro em modo leitura" : isRequester ? "Criar nova solicitação" : "Criar nova demanda (Ctrl+Shift+D)";
 
   const handleClick = isRequester
     ? async () => { const ok = await guardDemands(); if (ok) setRequestDialogOpen(true); }
@@ -38,6 +40,7 @@ export function TopbarCreateButton() {
             size="sm"
             className="group relative overflow-hidden h-7 gap-1.5 px-2.5 text-xs font-medium hidden sm:inline-flex !bg-[#F28705] !text-white !border-transparent hover:!bg-[#F28705]/90 hover:!text-white hover:!border-transparent transition-colors"
             onClick={handleClick}
+            disabled={frozen}
             aria-label={label}
           >
             <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:translate-x-full transition-transform duration-700 ease-out" />
@@ -58,6 +61,7 @@ export function TopbarCreateButton() {
             size="icon"
             className="h-7 w-7 shrink-0 sm:hidden"
             onClick={handleClick}
+            disabled={frozen}
             aria-label={label}
           >
             <Plus className="h-4 w-4" />

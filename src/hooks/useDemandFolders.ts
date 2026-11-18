@@ -13,6 +13,7 @@ export interface DemandFolder {
   created_at: string;
   updated_at: string;
   board_id?: string | null;
+  status?: "active" | "inactive" | string;
   item_count?: number;
   is_owner?: boolean;
   shared_with?: { user_id: string; shared_at: string; permission: FolderPermission }[];

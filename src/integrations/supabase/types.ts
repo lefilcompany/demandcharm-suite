@@ -2702,6 +2702,7 @@ export type Database = {
           description: string | null
           gross_amount: number
           id: string
+          project_id: string | null
           tax_rate: number | null
           team_id: string
           updated_at: string
@@ -2714,6 +2715,7 @@ export type Database = {
           description?: string | null
           gross_amount: number
           id?: string
+          project_id?: string | null
           tax_rate?: number | null
           team_id: string
           updated_at?: string
@@ -2726,6 +2728,7 @@ export type Database = {
           description?: string | null
           gross_amount?: number
           id?: string
+          project_id?: string | null
           tax_rate?: number | null
           team_id?: string
           updated_at?: string
@@ -2736,6 +2739,13 @@ export type Database = {
             columns: ["board_id"]
             isOneToOne: false
             referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_revenues_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
           {
@@ -2860,6 +2870,50 @@ export type Database = {
           },
           {
             foreignKeyName: "finance_settings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_team_costs: {
+        Row: {
+          cost_type: string
+          created_at: string
+          created_by: string | null
+          id: string
+          monthly_amount: number
+          team_id: string
+          updated_at: string
+          updated_by: string | null
+          valid_from: string
+        }
+        Insert: {
+          cost_type: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          monthly_amount: number
+          team_id: string
+          updated_at?: string
+          updated_by?: string | null
+          valid_from: string
+        }
+        Update: {
+          cost_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          monthly_amount?: number
+          team_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          valid_from?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_team_costs_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
@@ -3831,6 +3885,38 @@ export type Database = {
           },
         ]
       }
+      project_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          project_id: string
+          status: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          project_id: string
+          status: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          project_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_status_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           board_id: string | null
@@ -3841,6 +3927,7 @@ export type Database = {
           id: string
           integration_key: string
           name: string
+          status: string
           team_id: string
           unit_external_id: string | null
           updated_at: string
@@ -3854,6 +3941,7 @@ export type Database = {
           id?: string
           integration_key?: string
           name: string
+          status?: string
           team_id: string
           unit_external_id?: string | null
           updated_at?: string
@@ -3867,6 +3955,7 @@ export type Database = {
           id?: string
           integration_key?: string
           name?: string
+          status?: string
           team_id?: string
           unit_external_id?: string | null
           updated_at?: string
@@ -5273,6 +5362,10 @@ export type Database = {
         Args: { _competence: string; _project_id: string }
         Returns: Json
       }
+      _finance_team_cost_share: {
+        Args: { _comp: string; _team_id: string }
+        Returns: Json
+      }
       _finance_time_slices: {
         Args: { _competence: string; _team_id: string }
         Returns: {
@@ -5285,6 +5378,10 @@ export type Database = {
           raw_hours: number
           user_id: string
         }[]
+      }
+      _project_active_in_month: {
+        Args: { _comp: string; _project_id: string }
+        Returns: boolean
       }
       _sp_month: { Args: { _ts: string }; Returns: string }
       _sp_month_start: { Args: { _d: string }; Returns: string }
@@ -5745,6 +5842,10 @@ export type Database = {
           name: string
         }[]
       }
+      get_team_cost_share: {
+        Args: { _competence: string; _team_id: string }
+        Returns: Json
+      }
       get_team_plan: {
         Args: { _team_id: string }
         Returns: {
@@ -5863,6 +5964,7 @@ export type Database = {
         Args: { _board_id: string; _user_id: string }
         Returns: boolean
       }
+      is_board_frozen: { Args: { _board_id: string }; Returns: boolean }
       is_board_member: {
         Args: { _board_id: string; _user_id: string }
         Returns: boolean
@@ -6000,6 +6102,10 @@ export type Database = {
       }
       set_member_kind: {
         Args: { _kind: string; _team_id: string; _user_id: string }
+        Returns: undefined
+      }
+      set_project_status: {
+        Args: { _project_id: string; _status: string }
         Returns: undefined
       }
       update_trial_coupon: {

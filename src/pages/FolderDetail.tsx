@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { ProjectStatusBadge, ProjectStatusButton } from "@/components/projects/ProjectStatusControl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParams, useNavigate } from "react-router-dom";
 import { openDemandOnAuxClick } from "@/lib/demandAuxClick";
@@ -271,13 +272,15 @@ export default function FolderDetail() {
               )}
             </div>
           )}
-          <p className="text-xs text-muted-foreground">
+          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            <ProjectStatusBadge status={folder.status} />
             {filteredDemands.length} {filteredDemands.length === 1 ? "demanda" : "demandas"}
             {groupedByBoard.length > 0 && ` em ${groupedByBoard.length} ${groupedByBoard.length === 1 ? "quadro" : "quadros"}`}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
           <div className="flex items-center gap-2">
+          <ProjectStatusButton project={folder} />
           <Tooltip>
             <TooltipTrigger asChild>
               <button

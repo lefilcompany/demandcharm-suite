@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Landmark } from "lucide-react";
 import { useCanManageFinance, useProjectBoards, useFinanceMutation } from "@/hooks/useProjectFinance";
 import { ProjectHoursCosts } from "./ProjectHoursCosts";
+import { ProjectRevenue } from "./ProjectRevenue";
 import { ProjectMinimumPrice } from "./ProjectMinimumPrice";
 import { ProjectFinanceSummary, ProjectFinanceSettings } from "./ProjectFinanceSummary";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -62,11 +63,13 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
       <Tabs defaultValue="result">
         <FinanceTabsList>
           <FinanceTab value="result">Resultado</FinanceTab>
+          <FinanceTab value="revenue">Faturamento</FinanceTab>
           <FinanceTab value="hours">Horas e custos</FinanceTab>
           <FinanceTab value="price">Preço mínimo</FinanceTab>
           <FinanceTab value="config">Configuração</FinanceTab>
         </FinanceTabsList>
         <TabsContent value="result"><ProjectFinanceSummary projectId={projectId} month={month} onMonth={setMonth} /></TabsContent>
+        <TabsContent value="revenue"><ProjectRevenue projectId={projectId} teamId={teamId} canManage={!!canManage} /></TabsContent>
         <TabsContent value="hours"><ProjectHoursCosts projectId={projectId} canExport={!!canManage} /></TabsContent>
         <TabsContent value="price"><ProjectMinimumPrice teamId={teamId} /></TabsContent>
         <TabsContent value="config"><ProjectFinanceSettings projectId={projectId} canManage={!!canManage} /></TabsContent>
