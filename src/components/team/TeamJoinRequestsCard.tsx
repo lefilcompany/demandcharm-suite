@@ -101,7 +101,15 @@ export function TeamJoinRequestsCard({ teamId, accessCode }: TeamJoinRequestsCar
               </li>
             ))}
           </ul>
-        ) : null}
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border/60 bg-muted/30 px-4 py-6 text-center">
+            <Check className="h-5 w-5 text-muted-foreground/70" aria-hidden="true" />
+            <p className="text-sm font-medium">Nenhuma solicitação pendente</p>
+            <p className="text-xs text-muted-foreground">
+              Compartilhe o código abaixo para novas pessoas pedirem acesso.
+            </p>
+          </div>
+        )}
 
         <div className="mt-auto pt-4">
           {hidden > 0 && (
