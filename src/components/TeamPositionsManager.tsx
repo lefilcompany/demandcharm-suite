@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Briefcase, Plus } from "lucide-react";
@@ -71,28 +71,26 @@ export function TeamPositionsManager({ teamId, canManage }: TeamPositionsManager
 
   return (
     <>
-      <Card className="flex h-full flex-col">
+      <Card>
         <CardHeader>
           <CardTitle className="flex min-w-0 items-center gap-2">
             <Briefcase className="h-5 w-5 shrink-0" />
             Cargos da Equipe
           </CardTitle>
-          <CardDescription className="leading-relaxed">
-            Crie cargos personalizados por área ou função
-          </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1">
+        <CardContent>
           {!positions || positions.length === 0 ? (
-            <div className="text-center py-8 border-2 border-dashed rounded-lg bg-muted/30">
-              <Briefcase className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-              <h3 className="font-medium mb-1">Nenhum cargo cadastrado</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Crie cargos para organizar sua equipe por área ou função (ex: Desenvolvedor, Designer, Analista)
-              </p>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-border/70 px-3 py-2.5">
+              <p className="text-sm text-muted-foreground">Nenhum cargo cadastrado</p>
               {canManage && (
-                <Button onClick={handleOpenCreate} variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar primeiro cargo
+                <Button
+                  onClick={handleOpenCreate}
+                  variant="outline"
+                  size="sm"
+                  className="h-7 shrink-0 gap-1.5 px-2.5 text-xs"
+                >
+                  <Plus className="h-3 w-3" />
+                  Criar cargo
                 </Button>
               )}
             </div>
