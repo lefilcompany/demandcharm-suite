@@ -176,7 +176,7 @@ export default function TeamDetail() {
 
       {/* Solicitações de entrada + cargos da equipe, lado a lado */}
       {canManage && id && (
-        <div className="grid items-stretch gap-6 lg:grid-cols-2">
+        <div className="grid items-start gap-6 lg:grid-cols-2">
           <TeamJoinRequestsCard teamId={id} accessCode={team.access_code} />
 
           <div className="min-w-0 h-full">

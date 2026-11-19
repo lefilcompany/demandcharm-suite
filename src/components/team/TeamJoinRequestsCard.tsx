@@ -42,7 +42,7 @@ export function TeamJoinRequestsCard({ teamId, accessCode }: TeamJoinRequestsCar
   const openRequests = () => navigate(`/app/teams/${teamId}/requests`);
 
   return (
-    <Card className="flex h-full flex-col">
+    <Card className="flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex min-w-0 items-center gap-2">
@@ -101,17 +101,9 @@ export function TeamJoinRequestsCard({ teamId, accessCode }: TeamJoinRequestsCar
               </li>
             ))}
           </ul>
-        ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border/60 bg-muted/30 px-4 py-6 text-center">
-            <Check className="h-5 w-5 text-muted-foreground/70" aria-hidden="true" />
-            <p className="text-sm font-medium">Nenhuma solicitação pendente</p>
-            <p className="text-xs text-muted-foreground">
-              Compartilhe o código abaixo para novas pessoas pedirem acesso.
-            </p>
-          </div>
-        )}
+        ) : null}
 
-        <div className="mt-auto pt-4">
+        <div className="pt-4">
           {hidden > 0 && (
             <p className="mb-2 text-xs text-muted-foreground tabular-nums">
               +{hidden} {hidden === 1 ? "pessoa" : "pessoas"} na fila
