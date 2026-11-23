@@ -81,7 +81,7 @@ export function ProjectRevenue({ projectId, teamId, canManage }: { projectId: st
             </div>
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <span className="text-muted-foreground">Durante</span>
-              <Input type="number" min={1} step={1} value={f.duration} required aria-label="Duração" onChange={(e) => setF({ ...f, duration: e.target.value })} className="h-9 w-20 text-center font-semibold tabular-nums" />
+              <Input type="number" min={1} step={1} value={f.duration === "" ? "0" : f.duration} required aria-label="Duração" onChange={(e) => setF({ ...f, duration: e.target.value === "" ? "" : String(Number(e.target.value) || 0) })} className="h-9 w-20 text-center font-semibold tabular-nums" />
               <div role="radiogroup" aria-label="Contar em" className="inline-flex h-9 rounded-md border bg-muted/40 p-0.5">
                 {UNITS.map((u) => (
                   <button key={u.v} type="button" role="radio" aria-checked={f.unit === u.v} onClick={() => setF({ ...f, unit: u.v })}

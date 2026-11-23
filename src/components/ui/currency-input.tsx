@@ -20,9 +20,10 @@ type Props = Omit<React.ComponentProps<"input">, "value" | "onChange" | "type"> 
  */
 export const CurrencyInput = React.forwardRef<HTMLInputElement, Props>(
   ({ value, onValueChange, className, disabled, id, ...rest }, ref) => {
-    const n = value === "" || value == null ? null : Number(value);
-    const hasValue = n != null && Number.isFinite(n);
-    const shown = hasValue ? fmt.format(n).replace(/^R\$\s?/, "") : "";
+    // Campo limpo vale 0: o valor default aparece em vez de um espaço vazio.
+    const raw = value === "" || value == null ? 0 : Number(value);
+    const n = Number.isFinite(raw) ? raw : 0;
+    const shown = fmt.format(n).replace(/^R\$\s?/, "");
 
     return (
       <div
@@ -33,7 +34,7 @@ export const CurrencyInput = React.forwardRef<HTMLInputElement, Props>(
         <span
           aria-hidden
           className={`shrink-0 select-none text-xs font-semibold tracking-wide ${
-            hasValue ? "text-primary" : "text-muted-foreground"
+            n > 0 ? "text-primary" : "text-muted-foreground"
           }`}
         >
           R$
