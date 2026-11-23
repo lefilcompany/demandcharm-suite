@@ -61,12 +61,14 @@ export function TeamCostsPanel({ teamId, canEdit }: { teamId: string; canEdit: b
                 {canEdit && !on && <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={`Editar ${TEAM_COST_LABEL[t]}`} onClick={() => { setEditing(t); setValue(String(costs[t] || "")); }}><Pencil className="h-3.5 w-3.5" /></Button>}
               </div>
               {on ? (
-                <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); save.mutate({ type: t, amount: Number(value) || 0 }, {
+                <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); save.mutate({ type: t, amount: Number(value) || 0 }, {
                   onSuccess: () => { toast({ title: `${TEAM_COST_LABEL[t]} atualizado` }); setEditing(null); share.refetch(); },
                   onError: () => toast({ title: "Não foi possível salvar.", variant: "destructive" }) }); }}>
                   <CurrencyInput autoFocus value={value} onValueChange={setValue} aria-label={`Valor mensal de ${TEAM_COST_LABEL[t]}`} />
-                  <Button type="submit" size="sm" disabled={save.isPending}>Salvar</Button>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
+                    <Button type="submit" size="sm" disabled={save.isPending}>Salvar</Button>
+                  </div>
                 </form>
               ) : (
                 <div><OpsLabel>Por mês</OpsLabel><div className="font-ops-display text-2xl font-semibold tabular-nums">{formatBRL(costs[t])}</div></div>
