@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { notifyProjectCreatedEmail } from "@/lib/projectCreatedNotifications";
 
 export type FolderPermission = "view" | "edit";
 
@@ -232,7 +233,11 @@ export function useCreateFolder() {
     },
     onSuccess: (data: any) => {
       qc.invalidateQueries({ queryKey: ["demand-folders"] });
-      if (data?.id) qc.invalidateQueries({ queryKey: ["folder-demand-ids", data.id] });
+      if (data?.id) {
+        qc.invalidateQueries({ queryKey: ["folder-demand-ids", data.id] });
+        // E-mail para o dono e os gestores financeiros: o faturamento do projeto precisa ser configurado.
+        void notifyProjectCreatedEmail({ projectId: data.id, projectName: String(data.name ?? "") });
+      }
       if (data?.__linkFailed) {
         toast.warning("Projeto criado, mas não foi possível incluir as demandas do quadro");
       } else if (data?.__linked) {

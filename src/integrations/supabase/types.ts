@@ -2695,7 +2695,7 @@ export type Database = {
       }
       finance_revenues: {
         Row: {
-          board_id: string
+          board_id: string | null
           competence: string
           created_at: string
           created_by: string
@@ -2708,7 +2708,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          board_id: string
+          board_id?: string | null
           competence: string
           created_at?: string
           created_by: string
@@ -2721,7 +2721,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          board_id?: string
+          board_id?: string | null
           competence?: string
           created_at?: string
           created_by?: string
@@ -5366,6 +5366,14 @@ export type Database = {
         Args: { _comp: string; _team_id: string }
         Returns: Json
       }
+      _finance_team_rates: {
+        Args: { _comp: string; _team_id: string }
+        Returns: {
+          margin_target: number
+          tax_rate: number
+          variable_rate: number
+        }[]
+      }
       _finance_time_slices: {
         Args: { _competence: string; _team_id: string }
         Returns: {
@@ -5382,6 +5390,12 @@ export type Database = {
       _project_active_in_month: {
         Args: { _comp: string; _project_id: string }
         Returns: boolean
+      }
+      _project_billing_recipients: {
+        Args: { _project_id: string }
+        Returns: {
+          user_id: string
+        }[]
       }
       _sp_month: { Args: { _ts: string }; Returns: string }
       _sp_month_start: { Args: { _d: string }; Returns: string }
@@ -5770,6 +5784,10 @@ export type Database = {
       }
       get_my_finance_access: { Args: { _team_id: string }; Returns: Json }
       get_my_module_access: { Args: { _team_id: string }; Returns: Json }
+      get_project_billing_recipients: {
+        Args: { _project_id: string }
+        Returns: string[]
+      }
       get_project_finance_overview: {
         Args: { _from: string; _project_id: string; _to: string }
         Returns: Json
@@ -5880,6 +5898,10 @@ export type Database = {
       }
       get_team_projects_finance: {
         Args: { _from: string; _team_id: string; _to: string }
+        Returns: Json
+      }
+      get_team_revenue_summary: {
+        Args: { _month: string; _team_id: string }
         Returns: Json
       }
       get_user_board_ids: { Args: { _user_id: string }; Returns: string[] }

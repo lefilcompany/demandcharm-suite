@@ -14,6 +14,7 @@ import { ExpensesAllocation } from "@/components/finance/ExpensesAllocation";
 import { PricingSimulator } from "@/components/finance/PricingSimulator";
 import { MonthlyClosing } from "@/components/finance/MonthlyClosing";
 import { TeamProjectsFinance } from "@/components/finance/TeamProjectsFinance";
+import { TeamRevenueTotal } from "@/components/finance/TeamRevenueTotal";
 import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { computeFinance, FinanceResult, formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
 import { OpsLabel } from "@/components/ops/OpsParts";
@@ -335,7 +336,10 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
 
         {canView && (
           <TabsContent value="byProject">
-            <TeamProjectsFinance teamId={selectedTeamId} from={from} to={to} boards={perBoard} boardsLoading={ov.isLoading} onBoard={setDetail} />
+            <div className="space-y-4">
+              <TeamRevenueTotal teamId={selectedTeamId} />
+              <TeamProjectsFinance teamId={selectedTeamId} from={from} to={to} boards={perBoard} boardsLoading={ov.isLoading} onBoard={setDetail} />
+            </div>
           </TabsContent>
         )}
 

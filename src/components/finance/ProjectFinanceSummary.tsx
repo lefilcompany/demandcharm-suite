@@ -1,6 +1,5 @@
 import { MonthField } from "@/components/ops/MonthField";
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { MarginRuler } from "./MarginRuler";
 import { AlertTriangle, RotateCw, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
-import { projectResult, settingsFor, type ProjectMonth } from "@/lib/finance/projectRollup";
+import { projectResult, type ProjectMonth } from "@/lib/finance/projectRollup";
 import { fmtHours } from "@/lib/finance/timeSlices";
 
 export function useProjectFinanceOverview(projectId: string, month: string) {
@@ -100,80 +99,54 @@ const ADJ_LABEL: Record<string, string> = {
   gross: "Faturamento", tax: "Impostos", direct_expenses: "Despesas diretas", allocated_expenses: "Rateios", team_cost: "Custo de pessoal",
 };
 
-type SettingRow = { id: string; valid_from: string; tax_rate: number; variable_rate: number; margin_target: number };
-
-export function ProjectFinanceSettings({ projectId, canManage }: { projectId: string; canManage: boolean }) {
-  const { toast } = useToast();
-  const qc = useQueryClient();
-  const rows = useQuery({
-    queryKey: ["finance-project-settings", projectId],
+/** Team-wide financial values. Every project uses them — the project tab is read-only. */
+export function ProjectFinanceSettings({ projectId }: { projectId: string; canManage?: boolean }) {
+  const thisMonth = new Date().toISOString().substring(0, 7);
+  const team = useQuery({
+    queryKey: ["project-finance-team", projectId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("finance_project_settings").select("id, valid_from, tax_rate, variable_rate, margin_target")
-        .eq("project_id", projectId).order("valid_from", { ascending: false });
+      const { data, error } = await supabase.from("projects").select("team_id").eq("id", projectId).single();
       if (error) throw error;
-      return data as SettingRow[];
+      return (data?.team_id ?? null) as string | null;
     },
   });
-  const thisMonth = new Date().toISOString().substring(0, 7);
-  const cur = settingsFor(rows.data ?? [], thisMonth);
-  const [f, setF] = useState({ from: thisMonth, tax: "", variable: "", target: "" });
-  const [busy, setBusy] = useState(false);
-  const refresh = () => {
-    qc.invalidateQueries({ queryKey: ["finance-project-settings", projectId] });
-    qc.invalidateQueries({ queryKey: ["project-finance-overview", projectId] });
-  };
-
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    const { error } = await supabase.from("finance_project_settings").insert({
-      project_id: projectId, team_id: "00000000-0000-0000-0000-000000000000", valid_from: `${f.from}-01`,
-      tax_rate: Number(f.tax) / 100, variable_rate: Number(f.variable || 0) / 100, margin_target: Number(f.target) / 100,
-    });
-    setBusy(false);
-    if (error) return toast({ title: error.code === "23505" ? "Já existe configuração para esse mês." : "Não foi possível salvar.", variant: "destructive" });
-    toast({ title: "Configuração salva" });
-    setF({ ...f, tax: "", variable: "", target: "" });
-    refresh();
-  };
-  const remove = async (id: string) => {
-    const { error } = await supabase.from("finance_project_settings").delete().eq("id", id);
-    if (error) return toast({ title: "Não foi possível remover.", variant: "destructive" });
-    refresh();
-  };
+  const def = useQuery({
+    queryKey: ["finance-team-defaults", team.data],
+    enabled: !!team.data,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("finance_team_defaults")
+        .select("valid_from, tax_rate, variable_rate, margin_target, allocation_pct")
+        .eq("team_id", team.data!).order("valid_from", { ascending: false }).limit(1);
+      if (error) throw error;
+      return (data?.[0] ?? null) as { valid_from: string; tax_rate: number; variable_rate: number; margin_target: number; allocation_pct: number } | null;
+    },
+  });
 
   return (
     <div className="space-y-3 text-sm">
       <p className="text-muted-foreground">
-        {cur ? `Em vigor: impostos ${formatPct(Number(cur.tax_rate))}, custos variáveis ${formatPct(Number(cur.variable_rate))}, meta ${formatPct(Number(cur.margin_target))}.`
-          : "Sem configuração própria: valem os parâmetros da equipe."}
+        Estes valores são gerais da equipe e valem para todos os projetos. Não é preciso configurar nada aqui.
       </p>
-      {canManage && (
-        <form onSubmit={save} className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end">
-          <label className="space-y-1"><span className="text-xs text-muted-foreground">A partir de</span>
-            <MonthField value={f.from} onChange={(v) => setF({ ...f, from: v })} aria-label="A partir de" /></label>
-          <label className="space-y-1"><span className="text-xs text-muted-foreground">Impostos %</span>
-            <Input type="number" min={0} max={99} step="0.01" value={f.tax} onChange={(e) => setF({ ...f, tax: e.target.value })} required className="h-9" /></label>
-          <label className="space-y-1"><span className="text-xs text-muted-foreground">Custos variáveis %</span>
-            <Input type="number" min={0} max={99} step="0.01" value={f.variable} onChange={(e) => setF({ ...f, variable: e.target.value })} className="h-9" /></label>
-          <label className="space-y-1"><span className="text-xs text-muted-foreground">Meta de margem %</span>
-            <Input type="number" min={0} max={99} step="0.01" value={f.target} onChange={(e) => setF({ ...f, target: e.target.value })} required className="h-9" /></label>
-          <Button type="submit" size="sm" className="h-9" disabled={busy}>Salvar</Button>
-        </form>
-      )}
-      {(rows.data ?? []).length > 0 && (
-        <ul className="divide-y rounded-lg border">
-          {rows.data!.map((r) => (
-            <li key={r.id} className="flex items-center gap-3 px-3 py-2">
-              <span className="w-20 tabular-nums">{r.valid_from.substring(0, 7).split("-").reverse().join("/")}</span>
-              <span className="flex-1 text-muted-foreground tabular-nums">
-                Impostos {formatPct(Number(r.tax_rate))} · Variáveis {formatPct(Number(r.variable_rate))} · Meta {formatPct(Number(r.margin_target))}
-              </span>
-              {canManage && <Button variant="ghost" size="sm" className="h-7" onClick={() => remove(r.id)}>Remover</Button>}
+      {def.isError ? (
+        <p className="text-sm text-muted-foreground">Não foi possível carregar os valores da equipe.</p>
+      ) : !def.data ? (
+        <p className="text-sm text-muted-foreground">A equipe ainda não definiu esses valores.</p>
+      ) : (
+        <ul className="divide-y rounded-xl border">
+          {[
+            { k: "Impostos (NF)", v: formatPct(Number(def.data.tax_rate)) },
+            { k: "Custos variáveis", v: formatPct(Number(def.data.variable_rate)) },
+            { k: "Meta de margem", v: formatPct(Number(def.data.margin_target)) },
+            { k: "Rateio", v: formatPct(Number(def.data.allocation_pct)) },
+          ].map((x) => (
+            <li key={x.k} className="flex items-center justify-between px-3 py-2">
+              <span className="text-muted-foreground">{x.k}</span>
+              <span className="tabular-nums font-medium">{x.v}</span>
             </li>
           ))}
         </ul>
       )}
+      <p className="text-xs text-muted-foreground">Em vigor desde {thisMonth.split("-").reverse().join("/")}. Para mudar, use Custos da equipe na Gestão Financeira.</p>
     </div>
   );
 }
