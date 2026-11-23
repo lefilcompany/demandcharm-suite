@@ -65,7 +65,7 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
 
   return (
     <div className="grid gap-4 lg:grid-cols-[13rem_minmax(0,1fr)]">
-      <nav aria-label="Seções financeiras" className="flex w-full gap-1 overflow-x-auto lg:flex-col lg:self-start lg:border-r lg:pr-3">
+      <nav aria-label="Seções financeiras" className="flex w-full gap-1 overflow-x-auto lg:flex-col lg:self-start">
         {SECTIONS.map(({ v, label, hint, icon: Icon }) => {
           const on = active === v;
           return (
