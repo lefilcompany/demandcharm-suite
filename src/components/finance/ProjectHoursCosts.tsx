@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OpsLabel } from "@/components/ops/OpsParts";
-import { AlertTriangle, RotateCw } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleDot, RotateCw, Scissors, Timer, Copy } from "lucide-react";
 import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { cn } from "@/lib/utils";
 import { fmtHours, hoursCostsCsv, kindLabel, type HoursCostsReport } from "@/lib/finance/timeSlices";
@@ -81,21 +81,82 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
           </section>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-lg border p-3 space-y-1.5 text-sm">
-              <OpsLabel className="text-muted-foreground">Auditoria de apontamentos</OpsLabel>
-              <p>{r.audit.overlap_entries} sobreposto(s) · {fmtHours(r.audit.overlap_hours_removed)} contadas uma vez só</p>
-              <p>{r.audit.split_entries} dividido(s) na virada do mês</p>
-              <p className={cn(r.audit.running_entries > 0 && "text-primary")}>{r.audit.running_entries} timer(s) em andamento</p>
+            <div className="rounded-lg border p-3 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <OpsLabel className="text-muted-foreground">Auditoria de apontamentos</OpsLabel>
+                {r.audit.overlap_entries === 0 && r.audit.running_entries === 0 ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    <CheckCircle2 className="h-3 w-3" />Tudo certo
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                    <AlertTriangle className="h-3 w-3" />Verifique
+                  </span>
+                )}
+              </div>
+              <ul className="mt-2 divide-y">
+                <li className="flex items-start gap-2.5 py-2">
+                  <Copy className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="font-medium leading-tight">Apontamentos sobrepostos</p>
+                    <p className="text-xs text-muted-foreground">Horas lançadas duas vezes no mesmo período</p>
+                  </div>
+                  <span className={cn("text-right tabular-nums", r.audit.overlap_entries > 0 ? "font-semibold text-primary" : "text-muted-foreground")}>
+                    {r.audit.overlap_entries === 0 ? "Nenhum" : `${r.audit.overlap_entries} · ${fmtHours(r.audit.overlap_hours_removed)} descontadas`}
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5 py-2">
+                  <Scissors className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="font-medium leading-tight">Divididos na virada do mês</p>
+                    <p className="text-xs text-muted-foreground">Apontamentos que começam num mês e terminam no outro</p>
+                  </div>
+                  <span className="text-right tabular-nums text-muted-foreground">{r.audit.split_entries === 0 ? "Nenhum" : r.audit.split_entries}</span>
+                </li>
+                <li className="flex items-start gap-2.5 py-2">
+                  <Timer className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="font-medium leading-tight">Timers em andamento</p>
+                    <p className="text-xs text-muted-foreground">Ainda rodando; entram no custo quando forem parados</p>
+                  </div>
+                  <span className={cn("text-right tabular-nums", r.audit.running_entries > 0 ? "font-semibold text-primary" : "text-muted-foreground")}>
+                    {r.audit.running_entries === 0 ? "Nenhum" : r.audit.running_entries}
+                  </span>
+                </li>
+              </ul>
             </div>
-            <div className="rounded-lg border p-3 space-y-1.5 text-sm">
+            <div className="rounded-lg border p-3 text-sm">
               <OpsLabel className="text-muted-foreground">Despesas do mês</OpsLabel>
-              <p className="flex justify-between"><span>Diretas</span><span className="tabular-nums">{brl(Number(r.expenses.direct))}</span></p>
-              <p className="flex justify-between"><span>Rateio fixa</span><span className="tabular-nums">{brl(Number(r.expenses.fixa))}</span></p>
-              <p className="flex justify-between"><span>Rateio operacional</span><span className="tabular-nums">{brl(Number(r.expenses.operacional))}</span></p>
-              <p className="flex justify-between"><span>Rateio administrativa</span><span className="tabular-nums">{brl(Number(r.expenses.administrativa))}</span></p>
+              <ul className="mt-2 space-y-1.5">
+                <li className="flex items-baseline justify-between gap-2">
+                  <span className="flex items-center gap-1.5"><CircleDot className="h-3 w-3 text-muted-foreground" />Despesas diretas do projeto</span>
+                  <span className="tabular-nums font-medium">{brl(Number(r.expenses.direct))}</span>
+                </li>
+                <li className="flex items-baseline justify-between gap-2">
+                  <span className="flex items-center gap-1.5"><CircleDot className="h-3 w-3 text-muted-foreground" />Rateio de custos fixos</span>
+                  <span className="tabular-nums font-medium">{brl(Number(r.expenses.fixa))}</span>
+                </li>
+                <li className="flex items-baseline justify-between gap-2">
+                  <span className="flex items-center gap-1.5"><CircleDot className="h-3 w-3 text-muted-foreground" />Rateio de custos operacionais</span>
+                  <span className="tabular-nums font-medium">{brl(Number(r.expenses.operacional))}</span>
+                </li>
+                <li className="flex items-baseline justify-between gap-2">
+                  <span className="flex items-center gap-1.5"><CircleDot className="h-3 w-3 text-muted-foreground" />Rateio de custos administrativos</span>
+                  <span className="tabular-nums font-medium">{brl(Number(r.expenses.administrativa))}</span>
+                </li>
+              </ul>
               {Number(r.expenses.team_unallocated) > 0 && (
-                <p className="flex justify-between text-primary"><span>Não alocado na equipe</span><span className="tabular-nums">{brl(Number(r.expenses.team_unallocated))}</span></p>
+                <p className="mt-2 flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1.5 text-xs text-primary">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  {brl(Number(r.expenses.team_unallocated))} de custos da equipe sem projeto para receber rateio
+                </p>
               )}
+              <p className="mt-2 flex items-baseline justify-between gap-2 border-t pt-2">
+                <span className="font-semibold">Total de despesas do projeto</span>
+                <span className="tabular-nums font-semibold">
+                  {brl(Number(r.expenses.direct) + Number(r.expenses.fixa) + Number(r.expenses.operacional) + Number(r.expenses.administrativa))}
+                </span>
+              </p>
             </div>
           </div>
 
