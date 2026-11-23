@@ -82,8 +82,15 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
         })}
       </nav>
       <div ref={scrollRef} className="min-w-0 space-y-10 overflow-y-auto pr-1 h-[calc(100dvh-16rem)] min-h-[20rem]">
-        {SECTIONS.map(({ v, label }) => (
+        {SECTIONS.map(({ v, label, hint, icon: Icon }) => (
           <section key={v} ref={(el) => { sectionRefs.current[v] = el; }} aria-label={label} className="scroll-mt-2">
+            <header className="mb-3 border-b pb-2">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border bg-muted/50 text-primary"><Icon className="h-3.5 w-3.5" /></span>
+                {label}
+              </h2>
+              <p className="mt-1 pl-8 text-[11px] leading-tight text-muted-foreground">{hint}</p>
+            </header>
             {v === "result" && <ProjectFinanceSummary projectId={projectId} month={month} onMonth={setMonth} />}
             {v === "revenue" && <ProjectRevenue projectId={projectId} teamId={teamId} canManage={!!canManage} />}
             {v === "hours" && <ProjectHoursCosts projectId={projectId} canExport={!!canManage} />}
