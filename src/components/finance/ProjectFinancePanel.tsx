@@ -100,7 +100,7 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
           );
         })}
       </nav>
-      <div ref={scrollRef} className="min-w-0 space-y-10 overflow-y-auto pr-1 h-[calc(100dvh-16rem)] min-h-[20rem]">
+      <div ref={scrollRef} className="scroll-on-hover min-w-0 space-y-10 overflow-y-auto pr-1 h-[calc(100dvh-16rem)] min-h-[20rem]">
         {sections.map(({ v, label, hint, icon: Icon }) => (
           <section key={v} ref={(el) => { sectionRefs.current[v] = el; }} aria-label={label} className="scroll-mt-2">
             <header className="mb-3 border-b pb-2">
