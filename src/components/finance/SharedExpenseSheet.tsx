@@ -1,3 +1,4 @@
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -101,7 +102,7 @@ export function SharedExpenseSheet({ open, onOpenChange, teamId, boards, overvie
         }}>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Mês"><MonthField value={sh.month} onChange={(v) => setSh({ ...sh, month: v })} aria-label="Mês" /></Field>
-            <Field label="Valor (R$)"><Input type="number" min="0" step="0.01" value={sh.amount} onChange={(e) => setSh({ ...sh, amount: e.target.value })} required /></Field>
+            <Field label="Valor (R$)"><CurrencyInput value={sh.amount} onValueChange={(v) => setSh({ ...sh, amount: v })} required /></Field>
             <div className="col-span-2"><Field label="Descrição"><Input value={sh.description} onChange={(e) => setSh({ ...sh, description: e.target.value })} placeholder="Ex.: aluguel, ferramentas" required /></Field></div>
             <Field label="Tipo"><Select value={sh.type} onValueChange={(v) => setSh({ ...sh, type: v })}><SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{Object.entries(EXPENSE_TYPE_LABEL).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent></Select></Field>

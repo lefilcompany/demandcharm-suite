@@ -1,3 +1,4 @@
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, AlertCircle, Info, ChevronRight, ChevronLeft, CalendarDays, RefreshCw, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -214,7 +215,7 @@ function PersonSheet({ person, rate, onClose, teamId, canEdit, boardOrder }: {
               <p className="text-xs text-muted-foreground">Vale para todos os meses até ser trocada. Meses já fechados continuam com o valor que tinham.</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1"><Label htmlFor="pc-amount">Custo mensal (R$)</Label>
-                  <Input id="pc-amount" type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
+                  <CurrencyInput id="pc-amount" value={form.amount} onValueChange={(v) => setForm({ ...form, amount: v })} /></div>
                 <div className="space-y-1"><Label htmlFor="pc-hours">Horas produtivas</Label>
                   <Input id="pc-hours" type="number" min="1" max="744" value={form.hours} onChange={(e) => setForm({ ...form, hours: e.target.value })} /></div>
               </div>

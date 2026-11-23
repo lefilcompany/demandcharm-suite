@@ -1,3 +1,4 @@
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, Info, Pencil, Wrench, Briefcase, Eye } from "lucide-react";
@@ -63,7 +64,7 @@ export function TeamCostsPanel({ teamId, canEdit }: { teamId: string; canEdit: b
                 <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); save.mutate({ type: t, amount: Number(value) || 0 }, {
                   onSuccess: () => { toast({ title: `${TEAM_COST_LABEL[t]} atualizado` }); setEditing(null); share.refetch(); },
                   onError: () => toast({ title: "Não foi possível salvar.", variant: "destructive" }) }); }}>
-                  <Input autoFocus type="number" min="0" step="0.01" value={value} onChange={(e) => setValue(e.target.value)} aria-label={`Valor mensal de ${TEAM_COST_LABEL[t]}`} />
+                  <CurrencyInput autoFocus value={value} onValueChange={setValue} aria-label={`Valor mensal de ${TEAM_COST_LABEL[t]}`} />
                   <Button type="submit" size="sm" disabled={save.isPending}>Salvar</Button>
                   <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
                 </form>

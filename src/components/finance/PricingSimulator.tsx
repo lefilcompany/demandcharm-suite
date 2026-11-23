@@ -1,3 +1,4 @@
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { downloadFinancePdf } from "@/lib/finance/pdfExport";
 import { MonthField } from "@/components/ops/MonthField";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -28,6 +29,8 @@ type Props = { teamId: string; boards: { id: string; name: string }[]; can: (p: 
 const blank = (boardId: string): Draft => ({ name: "", client_label: "", board_id: boardId, competence: new Date().toISOString().substring(0, 7) + "-01", gross: 0, tax_rate: DEFAULT_TAX_RATE, variable_rate: 0, margin_target: DEFAULT_MARGIN_TARGET, team_cost: 0, planned_hours: 0, direct_expenses: 0, shared_costs: 0 });
 
 function Numeric({ label, value, onChange, percent = false, max }: { label: string; value: number; onChange: (v: number) => void; percent?: boolean; max?: number }) {
+  if (!percent && label.includes("R$")) return <label className="block min-w-0 space-y-1.5"><span className="text-xs text-muted-foreground">{label}</span>
+    <CurrencyInput aria-label={label} value={value} onValueChange={(v) => onChange(v === "" ? 0 : Number(v))} className="h-9" /></label>;
   return <label className="block min-w-0 space-y-1.5"><span className="text-xs text-muted-foreground">{label}</span>
     <Input aria-label={label} type="number" inputMode="decimal" min={0} max={max ?? (percent ? 100 : undefined)} step={percent ? "0.1" : "0.01"} value={Number.isFinite(value) ? Number((value * (percent ? 100 : 1)).toFixed(6)) : ""} onChange={(e) => onChange(e.target.value === "" ? 0 : Number(e.target.value) / (percent ? 100 : 1))} className="h-9 tabular-nums" />
   </label>;

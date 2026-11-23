@@ -1,3 +1,4 @@
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
@@ -51,7 +52,7 @@ export function ProjectRevenue({ projectId, teamId, canManage }: { projectId: st
         <form className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end rounded-xl border p-3" onSubmit={(e) => { e.preventDefault();
           add.mutate(undefined, { onSuccess: () => { toast({ title: "Faturamento lançado" }); setF({ ...f, amount: "", description: "" }); list.refetch(); }, onError: fail }); }}>
           <Field label="Mês"><MonthField value={f.month} onChange={(v) => setF({ ...f, month: v })} aria-label="Mês" /></Field>
-          <Field label="Valor bruto (R$)"><Input type="number" min="0" step="0.01" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} required /></Field>
+          <Field label="Valor bruto (R$)"><CurrencyInput value={f.amount} onValueChange={(v) => setF({ ...f, amount: v })} required /></Field>
           <Field label="Descrição"><Input value={f.description} placeholder="Ex.: fee mensal" onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
           <Button type="submit" disabled={add.isPending}>Lançar faturamento</Button>
         </form>
