@@ -19,18 +19,19 @@ interface Summary {
 }
 
 /**
- * Faturamento geral da equipe no mês: a soma do faturamento de todos os projetos.
+ * Faturamento geral da equipe no período: a soma do faturamento de todos os projetos.
  * Faturamento antigo lançado sem projeto aparece numa linha separada ("Sem projeto"),
  * para que o total nunca conte nada duas vezes.
  */
-export function TeamRevenueTotal({ teamId }: { teamId: string | null }) {
+export function TeamRevenueTotal({ teamId, from, to }: { teamId: string | null; from: string; to: string }) {
   const { user } = useAuth();
-  const month = `${new Date().toISOString().substring(0, 7)}-01`;
+  const ml = (m: string) => `${m.substring(5, 7)}/${m.substring(0, 4)}`;
+  const label = from === to ? ml(from) : `${ml(from)} a ${ml(to)}`;
   const q = useQuery({
-    queryKey: ["team-revenue-summary", teamId, month, user?.id],
-    enabled: !!user && !!teamId,
+    queryKey: ["team-revenue-summary", teamId, from, to, user?.id],
+    enabled: !!user && !!teamId && from <= to,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_team_revenue_summary", { _team_id: teamId!, _month: month });
+      const { data, error } = await supabase.rpc("get_team_revenue_summary_range", { _team_id: teamId!, _from: `${from}-01`, _to: `${to}-01` });
       if (error) throw error;
       return (data ?? null) as unknown as Summary | null;
     },
@@ -48,7 +49,7 @@ export function TeamRevenueTotal({ teamId }: { teamId: string | null }) {
     <section className="rounded-xl border bg-card p-4 space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <OpsLabel>Faturamento geral da equipe · {month.substring(5, 7)}/{month.substring(0, 4)}</OpsLabel>
+          <OpsLabel>Faturamento geral da equipe · {label}</OpsLabel>
           <p className="text-2xl font-semibold tabular-nums leading-tight">{formatBRL(s.gross)}</p>
         </div>
         <div className="text-right text-xs text-muted-foreground tabular-nums">
@@ -57,7 +58,7 @@ export function TeamRevenueTotal({ teamId }: { teamId: string | null }) {
         </div>
       </div>
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nenhum faturamento lançado neste mês.</p>
+        <p className="text-sm text-muted-foreground">Nenhum faturamento lançado neste período.</p>
       ) : (
         <ul className="divide-y rounded-lg border">
           {rows.map((r) => (

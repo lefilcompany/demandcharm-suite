@@ -337,7 +337,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
         {canView && (
           <TabsContent value="byProject">
             <div className="space-y-4">
-              <TeamRevenueTotal teamId={selectedTeamId} />
+              <TeamRevenueTotal teamId={selectedTeamId} from={from} to={to} />
               <TeamProjectsFinance teamId={selectedTeamId} from={from} to={to} boards={perBoard} boardsLoading={ov.isLoading} onBoard={setDetail} />
             </div>
           </TabsContent>

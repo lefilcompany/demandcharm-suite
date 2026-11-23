@@ -386,6 +386,13 @@
       "when": 1795439570379,
       "tag": "0054_project_hours_costs_team_costs",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795439991036,
+      "tag": "0055_team_revenue_summary_range",
+      "breakpoints": true
     }
   ]
 }
