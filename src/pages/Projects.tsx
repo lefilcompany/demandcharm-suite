@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Briefcase, Plus, Search, Users, Pencil, Trash2, MoreVertical, Share2, AlertTriangle, RefreshCw, LayoutGrid } from "lucide-react";
+import { Briefcase, Plus, Search, Users, Pencil, Trash2, MoreVertical, Share2, AlertTriangle, RefreshCw, LayoutGrid, Landmark } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +16,7 @@ import {
   type DemandFolder,
 } from "@/hooks/useDemandFolders";
 import { useBoards } from "@/hooks/useBoards";
+import { useFinanceAccess } from "@/hooks/useFinance";
 import { useQuery } from "@tanstack/react-query";
 import { Power } from "lucide-react";
 import { ProjectStatusBadge, useProjectStatusToggle } from "@/components/projects/ProjectStatusControl";
@@ -44,6 +45,8 @@ export default function Projects() {
     isFetching,
     refetch,
   } = useDemandFolders(selectedTeamId, user?.id);
+  // "Gestão financeira" no menu do projeto: só com permissão no perfil de acesso ou sendo dono da equipe.
+  const financeAccess = useFinanceAccess(selectedTeamId);
   const { data: projectBoards = [] } = useBoards(selectedTeamId);
   const boardNameById = new Map(projectBoards.map((b) => [b.id, b.name]));
   const { data: boardLinks = [] } = useQuery({
@@ -225,6 +228,8 @@ export default function Projects() {
                 canManage={canEdit}
                 canDelete={canDelete}
                 myAccess={myAccess}
+                canSeeFinance={financeAccess.hasModule}
+                onOpenFinance={() => navigate(`/app/projects/${project.id}/finance`)}
               />
 
             );
@@ -301,9 +306,11 @@ interface ProjectCardProps {
   canManage: boolean;
   canDelete?: boolean;
   myAccess: "owner" | "edit" | "view";
+  canSeeFinance: boolean;
+  onOpenFinance: () => void;
 }
 
-function ProjectCard({ project, boardNames, memberMap, ownerProfile, onOpen, onEdit, onShare, onDelete, canManage, canDelete, myAccess }: ProjectCardProps) {
+function ProjectCard({ project, boardNames, memberMap, ownerProfile, onOpen, onEdit, onShare, onDelete, canManage, canDelete, myAccess, canSeeFinance, onOpenFinance }: ProjectCardProps) {
   const sharedUsers = (project.shared_with || []).map((s) => memberMap.get(s.user_id)).filter(Boolean);
   const accessUsers = [ownerProfile, ...sharedUsers].filter(Boolean);
   const visibleAvatars = accessUsers.slice(0, 4);
@@ -338,6 +345,11 @@ function ProjectCard({ project, boardNames, memberMap, ownerProfile, onOpen, onE
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            {canSeeFinance && (
+              <DropdownMenuItem onClick={onOpenFinance}>
+                <Landmark className="h-4 w-4 mr-2" /> Gestão financeira
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={onShare} disabled={!canManage}>
               <Share2 className="h-4 w-4 mr-2" /> Gerenciar acesso
             </DropdownMenuItem>

@@ -5,9 +5,10 @@ import { useDemandFolders } from "@/hooks/useDemandFolders";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { Button } from "@/components/ui/button";
 import { ProjectFinancePanel } from "@/components/finance/ProjectFinancePanel";
+import { useFinanceAccess } from "@/hooks/useFinance";
 import { SEOHead } from "@/components/SEOHead";
 import { ProjectStatusBadge, ProjectStatusButton } from "@/components/projects/ProjectStatusControl";
-import { Briefcase, FolderOpen, Wallet, ArrowLeft } from "lucide-react";
+import { Briefcase, FolderOpen, Wallet, ArrowLeft, Landmark } from "lucide-react";
 
 export default function ProjectFinance() {
   const { folderId } = useParams<{ folderId: string }>();
@@ -16,6 +17,7 @@ export default function ProjectFinance() {
   const { currentTeamId } = useSelectedBoard();
   const { data: folders } = useDemandFolders(currentTeamId, user?.id);
   const folder = folders?.find((f) => f.id === folderId);
+  const financeAccess = useFinanceAccess(currentTeamId);
 
   if (!folder) {
     return (
@@ -23,6 +25,18 @@ export default function ProjectFinance() {
         <p className="text-muted-foreground">Projeto não encontrado</p>
         <Button variant="outline" onClick={() => navigate("/app/projects")}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Voltar para projetos
+        </Button>
+      </div>
+    );
+  }
+
+  if (!financeAccess.isLoading && !financeAccess.hasModule) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
+        <Landmark className="h-8 w-8 text-muted-foreground" />
+        <p className="text-muted-foreground">Você não tem permissão para ver a gestão financeira deste projeto.</p>
+        <Button variant="outline" onClick={() => navigate(`/app/projects/${folder.id}`)}>
+          <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao projeto
         </Button>
       </div>
     );
