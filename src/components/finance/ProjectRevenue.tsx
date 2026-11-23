@@ -79,18 +79,25 @@ export function ProjectRevenue({ projectId, teamId, canManage }: { projectId: st
               <Field label=""><CurrencyInput value={f.total} onValueChange={(v) => setF({ ...f, total: v })} required aria-label="Valor total do contrato" className="h-12 [&_input]:text-2xl" /></Field>
               <p className="mt-1 text-[11px] text-muted-foreground">Valor total do contrato, antes do imposto da equipe.</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Durante</span>
-              <Input type="number" min={1} step={1} value={f.duration === "" ? "0" : f.duration} required aria-label="Duração" onChange={(e) => setF({ ...f, duration: e.target.value === "" ? "" : String(Number(e.target.value) || 0) })} className="h-9 w-20 text-center font-semibold tabular-nums" />
-              <div role="radiogroup" aria-label="Contar em" className="inline-flex h-9 rounded-md border bg-muted/40 p-0.5">
-                {UNITS.map((u) => (
-                  <button key={u.v} type="button" role="radio" aria-checked={f.unit === u.v} onClick={() => setF({ ...f, unit: u.v })}
-                    className={cn("rounded-[5px] px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      f.unit === u.v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{u.label}</button>
-                ))}
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem]">
+              <div className="space-y-1 min-w-0">
+                <span className="text-xs font-medium leading-none">Duração do contrato</span>
+                <div className="flex h-10 items-stretch overflow-hidden rounded-md border bg-background transition-shadow focus-within:ring-2 focus-within:ring-ring">
+                  <input type="number" min={1} step={1} required aria-label="Duração"
+                    value={f.duration === "" ? "0" : f.duration}
+                    onChange={(e) => setF({ ...f, duration: e.target.value === "" ? "" : String(Number(e.target.value) || 0) })}
+                    className="w-14 shrink-0 border-r bg-transparent text-center text-sm font-semibold tabular-nums focus:outline-none" />
+                  <div role="radiogroup" aria-label="Contar em" className="flex flex-1">
+                    {UNITS.map((u) => (
+                      <button key={u.v} type="button" role="radio" aria-checked={f.unit === u.v} onClick={() => setF({ ...f, unit: u.v })}
+                        className={cn("flex-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                          f.unit === u.v ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}>{u.label}</button>
+                    ))}
+                  </div>
+                </div>
+                {plan.length > 0 && <p className="text-[11px] text-muted-foreground">Termina em {br(contractEnd(f.start, dur, f.unit))}.</p>}
               </div>
-              <span className="text-muted-foreground">a partir de</span>
-              <Input type="date" value={f.start} required aria-label="Início" onChange={(e) => setF({ ...f, start: e.target.value })} className="h-9 w-40" />
+              <Field label="Início"><Input type="date" value={f.start} required aria-label="Início" onChange={(e) => setF({ ...f, start: e.target.value })} className="h-10" /></Field>
             </div>
             <Field label="Descrição"><Input value={f.description} placeholder="Ex.: contrato de manutenção" onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
           </div>
