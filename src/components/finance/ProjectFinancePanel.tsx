@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LineChart, Receipt, Clock, Tag, Settings2 } from "lucide-react";
+import { LineChart, Receipt, Clock, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCanManageFinance, useProjectBoards } from "@/hooks/useProjectFinance";
 import { ProjectHoursCosts } from "./ProjectHoursCosts";
 import { ProjectRevenue } from "./ProjectRevenue";
 import { ProjectMinimumPrice } from "./ProjectMinimumPrice";
-import { ProjectFinanceSummary, ProjectFinanceSettings } from "./ProjectFinanceSummary";
+import { ProjectFinanceSummary } from "./ProjectFinanceSummary";
 
 const SECTIONS = [
   { v: "result", label: "Resultado", hint: "Lucro e margem do mês", icon: LineChart },
   { v: "revenue", label: "Faturamento", hint: "Contratos do projeto", icon: Receipt },
   { v: "hours", label: "Horas e custos", hint: "Tempo apontado × custo", icon: Clock },
   { v: "price", label: "Preço mínimo", hint: "Quanto cobrar", icon: Tag },
-  { v: "config", label: "Configuração", hint: "Valores da equipe", icon: Settings2 },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["v"];
 
@@ -95,7 +94,6 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
             {v === "revenue" && <ProjectRevenue projectId={projectId} teamId={teamId} canManage={!!canManage} />}
             {v === "hours" && <ProjectHoursCosts projectId={projectId} canExport={!!canManage} />}
             {v === "price" && <ProjectMinimumPrice teamId={teamId} />}
-            {v === "config" && <ProjectFinanceSettings projectId={projectId} canManage={!!canManage} />}
           </section>
         ))}
       </div>
