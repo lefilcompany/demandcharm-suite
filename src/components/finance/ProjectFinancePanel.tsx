@@ -1,10 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
-import { Landmark, LineChart, Receipt, Clock, Tag, Settings2 } from "lucide-react";
-import { useCanManageFinance, useProjectBoards, useFinanceMutation } from "@/hooks/useProjectFinance";
+import { LineChart, Receipt, Clock, Tag, Settings2 } from "lucide-react";
+import { useCanManageFinance, useProjectBoards } from "@/hooks/useProjectFinance";
 import { ProjectHoursCosts } from "./ProjectHoursCosts";
 import { ProjectRevenue } from "./ProjectRevenue";
 import { ProjectMinimumPrice } from "./ProjectMinimumPrice";
@@ -19,54 +15,15 @@ const SECTIONS = [
   { v: "config", label: "Configuração", hint: "Valores da equipe", icon: Settings2 },
 ] as const;
 
-const ERR: Record<string, string> = {
-  PROJECT_BOARD_OVERLAP: "Esse quadro já está vinculado a este projeto nesse período.",
-  PROJECT_BOARD_TEAM_MISMATCH: "O quadro precisa ser da mesma equipe do projeto.",
-  PERIOD_CLOSED: "Este mês já foi fechado.",
-  INVALID_PROJECT: "Ative o controle financeiro do projeto antes de atribuir demandas.",
-};
-const msg = (e: any) => Object.entries(ERR).find(([k]) => String(e?.message).includes(k))?.[1] ?? "Não foi possível salvar.";
-
 export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; teamId: string | null }) {
-  const { toast } = useToast();
   const competence = `${new Date().toISOString().substring(0, 7)}-01`;
   const { data: canManage } = useCanManageFinance(teamId);
   const { isError } = useProjectBoards(teamId);
-  const project = useQuery({
-    queryKey: ["project-finance-config", projectId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("projects").select("id, finance_enabled").eq("id", projectId).single();
-      if (error) throw error;
-      return data;
-    },
-  });
   const [month, setMonth] = useState(competence.substring(0, 7));
-  const fail = (e: any) => toast({ title: msg(e), variant: "destructive" });
-
-  const saveCfg = useFinanceMutation(async (v: { finance_enabled?: boolean; unit_external_id?: string | null }) => {
-    const { error } = await supabase.from("projects").update(v).eq("id", projectId);
-    if (error) throw error;
-    await project.refetch();
-  });
   if (isError) return null;
-  const enabled = !!project.data?.finance_enabled;
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Landmark className="h-5 w-5 text-primary" />
-        <div className="flex-1 min-w-0">
-          <h2 className="font-semibold">Base financeira do projeto</h2>
-          <p className="text-sm text-muted-foreground">As demandas e quadros do projeto entram automaticamente nos números financeiros.</p>
-        </div>
-        {canManage && (
-          <label className="flex items-center gap-2 text-sm">
-            <Switch checked={enabled} onCheckedChange={(v) => saveCfg.mutate({ finance_enabled: v }, { onError: fail })} />
-            Controle financeiro {enabled ? "ativo" : "desligado"}
-          </label>
-        )}
-      </div>
-
       <Tabs defaultValue="result" orientation="vertical" className="grid gap-4 lg:grid-cols-[13rem_minmax(0,1fr)]">
         <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto bg-transparent p-0 lg:flex-col lg:items-stretch lg:border-r lg:pr-3">
           {SECTIONS.map(({ v, label, hint, icon: Icon }) => (

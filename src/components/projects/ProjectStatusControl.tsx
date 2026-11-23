@@ -33,6 +33,8 @@ export function useProjectStatusToggle(onDone?: () => void) {
       toast({ title: String(error.message).includes("FORBIDDEN") ? "Só o dono da equipe ou o gestor de projetos pode fazer isso." : "Não foi possível mudar a situação do projeto.", variant: "destructive" });
       return;
     }
+    // O controle financeiro acompanha a situação do projeto.
+    await supabase.from("projects").update({ finance_enabled: next === "active" }).eq("id", target.id);
     toast({ title: next === "active" ? "Projeto ativado" : "Projeto inativado" });
     setTarget(null);
     for (const k of ["demand-folders", "project-status", "board-frozen", "finance-table", "project-finance", "project-finance-config"]) qc.invalidateQueries({ queryKey: [k] });
