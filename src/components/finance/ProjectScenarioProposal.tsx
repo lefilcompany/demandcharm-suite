@@ -1,4 +1,5 @@
-import { formatBRL, formatPct } from "@/lib/finance/engine";
+import { formatBRL, formatPct, resultTone } from "@/lib/finance/engine";
+import { cn } from "@/lib/utils";
 import { simulatePricing, type Scenario } from "@/lib/finance/simulator";
 
 /** Valores da simulação que deu origem ao projeto (só existe em projetos criados a partir de um cenário). */
@@ -25,7 +26,7 @@ export function ProjectScenarioProposal({ scenario }: { scenario: Scenario }) {
         <p className="text-xs text-muted-foreground text-right">Simulação “{scenario.name}”{scenario.client_label ? ` · ${scenario.client_label}` : ""}<br />Competência {scenario.competence.substring(5, 7)}/{scenario.competence.substring(0, 4)}</p>
       </div>
       <dl className="divide-y rounded-xl border">
-        {rows.map(([k, v]) => <div key={k} className="flex items-center justify-between gap-3 px-4 py-2.5"><dt className="text-muted-foreground">{k}</dt><dd className="font-medium tabular-nums">{v}</dd></div>)}
+        {rows.map(([k, v]) => <div key={k} className="flex items-center justify-between gap-3 px-4 py-2.5"><dt className="text-muted-foreground">{k}</dt><dd className={cn("font-medium tabular-nums", k === "Resultado previsto" && resultTone(r.result))}>{v}</dd></div>)}
       </dl>
       <p className="text-[11px] text-muted-foreground">Valores congelados da simulação — servem de referência e não alteram os lançamentos reais do projeto.</p>
     </div>

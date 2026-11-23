@@ -10,7 +10,7 @@ import { OpsLabel } from "@/components/ops/OpsParts";
 import { MarginRuler } from "./MarginRuler";
 import { AlertTriangle, RotateCw, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
+import { formatBRL, formatPct, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
 import { projectResult, type ProjectMonth } from "@/lib/finance/projectRollup";
 import { fmtHours } from "@/lib/finance/timeSlices";
 
@@ -29,11 +29,11 @@ export function useProjectFinanceOverview(projectId: string, month: string) {
   });
 }
 
-function Cell({ label, value, note, warn }: { label: string; value: string; note?: string; warn?: boolean }) {
+function Cell({ label, value, note, warn, tone }: { label: string; value: string; note?: string; warn?: boolean; tone?: string }) {
   return (
     <div className="flex flex-col gap-1 px-4 py-3 border-ops-ink-foreground/10 [&:not(:first-child)]:border-l">
       <OpsLabel>{label}</OpsLabel>
-      <span className={cn("font-ops-display text-2xl font-semibold leading-none tabular-nums", warn ? "text-primary" : "text-ops-ink-foreground")}>{value}</span>
+      <span className={cn("font-ops-display text-2xl font-semibold leading-none tabular-nums", tone || (warn ? "text-primary" : "text-ops-ink-foreground"))}>{value}</span>
       {note && <span className="text-xs text-ops-ink-foreground/70">{note}</span>}
     </div>
   );
@@ -64,7 +64,7 @@ export function ProjectFinanceSummary({ projectId, month, onMonth }: { projectId
             <Cell label="Faturamento" value={formatBRL(r.gross)} note={`Impostos ${formatBRL(r.tax)} · ${formatPct(Number(m0.tax_rate))}`} />
             <Cell label="Custo total" value={formatBRL(r.totalCost + r.totals.variable)} note={`Pessoal ${formatBRL(r.totals.teamCost)} · ${fmtHours(r.totals.hours)}`}
               warn={r.totals.hoursWithoutCost > 0} />
-            <Cell label="Resultado" value={formatBRL(r.result)} note={STATUS_LABEL[r.status]} warn={r.result < 0} />
+            <Cell label="Resultado" value={formatBRL(r.result)} note={STATUS_LABEL[r.status]} tone={resultTone(r.result)} />
             <Cell label="Margem" value={r.margin == null ? "—" : formatPct(r.margin)} note={`Meta ${formatPct(r.totals.marginTarget)}`} />
           </div>
           <div className="px-4 pb-4 pt-1"><MarginRuler margin={r.margin} target={r.totals.marginTarget} compact /></div>

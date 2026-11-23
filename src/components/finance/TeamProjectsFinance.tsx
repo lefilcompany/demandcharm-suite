@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
+import { formatBRL, formatPct, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
 import { projectResult, type ProjectMonth } from "@/lib/finance/projectRollup";
 import { DeviationTag, MarginRuler } from "./MarginRuler";
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
@@ -128,7 +128,7 @@ function BoardList({ boards, onBoard }: { boards: BoardAgg[]; onBoard?: (id: str
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </div>
               <p className="mt-2 text-[11px] text-muted-foreground">Resultado</p>
-              <p className={cn("text-base font-semibold tabular-nums leading-tight", b.result < 0 && "text-destructive")}>{formatBRL(b.result)}</p>
+              <p className={cn("text-base font-semibold tabular-nums leading-tight", resultTone(b.result))}>{formatBRL(b.result)}</p>
               <MarginGoal margin={b.margin} target={b.target} />
             </button>
           </li>
@@ -188,7 +188,7 @@ function ProjectCard({ name, months, r, closed, incomplete, boards, onBoard }: T
           <p className="text-xs text-muted-foreground">{STATUS_LABEL[r.status]}</p>
         </div>
         <div className="text-right">
-          <p className={cn("text-2xl font-semibold tabular-nums leading-none", r.result < 0 && "text-destructive")}>{formatBRL(r.result)}</p>
+          <p className={cn("text-2xl font-semibold tabular-nums leading-none", resultTone(r.result))}>{formatBRL(r.result)}</p>
           <p className="mt-1 text-xs text-muted-foreground">resultado · margem {formatPct(r.margin)} <DeviationTag margin={r.margin} target={t.marginTarget} /></p>
         </div>
       </header>
@@ -224,7 +224,7 @@ function ProjectCard({ name, months, r, closed, incomplete, boards, onBoard }: T
               <RTooltip formatter={(v: number) => formatBRL(v)} />
               <ReferenceLine y={0} className="stroke-border" />
               <Bar dataKey="Resultado" radius={[3, 3, 0, 0]}>
-                {monthly.map((m, i) => <Cell key={i} fill={m.Resultado < 0 ? "hsl(var(--destructive))" : "hsl(var(--foreground))"} />)}
+                {monthly.map((m, i) => <Cell key={i} fill={m.Resultado < 0 ? "hsl(var(--destructive))" : m.Resultado > 0 ? "hsl(var(--success))" : "hsl(var(--foreground))"} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>

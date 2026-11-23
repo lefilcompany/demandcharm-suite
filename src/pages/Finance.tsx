@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { FinanceTabsList, FinanceTab, FinanceNotice, FinanceSection } from "@/components/ops/FinanceUI";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 import { ArrowDown, ArrowUp, Info, Lock, RefreshCw } from "lucide-react";
 import { useSelectedTeam } from "@/contexts/TeamContext";
 import { useBoards } from "@/hooks/useBoards";
@@ -16,7 +16,7 @@ import { MonthlyClosing } from "@/components/finance/MonthlyClosing";
 import { TeamProjectsFinance } from "@/components/finance/TeamProjectsFinance";
 import { TeamRevenueTotal } from "@/components/finance/TeamRevenueTotal";
 import { ExportReportButton } from "@/components/finance/ExportReportButton";
-import { computeFinance, FinanceResult, formatBRL, formatPct, STATUS_LABEL } from "@/lib/finance/engine";
+import { computeFinance, FinanceResult, formatBRL, formatPct, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { MonthRangeField } from "@/components/ops/MonthRangeField";
 
@@ -214,7 +214,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                   { l: "− Impostos", v: formatBRL(total.tax), h: "Faturamento × alíquota (padrão 21%, ou a do lançamento/quadro)." },
                   { l: "= Receita líquida", v: formatBRL(total.netRevenue), h: "Faturamento bruto menos impostos." },
                   { l: "− Custo total", v: formatBRL(total.totalCost), h: "Custo das horas apontadas + despesas diretas + rateio das despesas compartilhadas." },
-                  { l: "= Resultado", v: formatBRL(total.result), h: "Receita líquida menos custo total.", tone: total.result < 0 ? "text-destructive" : "" },
+                  { l: "= Resultado", v: formatBRL(total.result), h: "Receita líquida menos custo total.", tone: resultTone(total.result) },
                   { l: "Margem", v: formatPct(total.margin), h: "Resultado ÷ faturamento bruto. Indisponível quando não há faturamento." },
                 ].map((m) => (
                   <div key={m.l} className="px-4 py-4 sm:px-5 border-ops-ink-foreground/10 border-b xl:border-b-0 [&:not(:first-child)]:xl:border-l">
@@ -249,7 +249,9 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                         <Legend wrapperStyle={{ fontSize: 12 }} />
                         <Bar dataKey="Faturamento" fill="hsl(var(--plan-5))" radius={[2, 2, 0, 0]} />
                         <Bar dataKey="Custos" fill="hsl(var(--plan-3))" radius={[2, 2, 0, 0]} />
-                        <Bar dataKey="Resultado" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="Resultado" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]}>
+                          {months.map((m, i) => <Cell key={i} fill={m.Resultado < 0 ? "hsl(var(--destructive))" : m.Resultado > 0 ? "hsl(var(--success))" : "hsl(var(--primary))"} />)}
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   )}
@@ -322,7 +324,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                       <td className="px-3 py-1.5 text-right tabular-nums">{hrs(b.hoursPlanned)}</td>
                       <td className="px-3 py-1.5 text-right tabular-nums">{hrs(b.hoursRealized)}</td>
                       {[b.teamCost, b.directExpenses, b.allocated, b.totalCost].map((v, i) => <td key={i} className="px-3 py-1.5 text-right tabular-nums whitespace-nowrap">{formatBRL(v)}</td>)}
-                      <td className={cn("px-3 py-1.5 text-right tabular-nums whitespace-nowrap font-medium", b.result < 0 && "text-destructive")}>{formatBRL(b.result)}</td>
+                      <td className={cn("px-3 py-1.5 text-right tabular-nums whitespace-nowrap font-medium", resultTone(b.result))}>{formatBRL(b.result)}</td>
                       <td className="px-3 py-1.5 text-right tabular-nums">{formatPct(b.margin)}</td>
                       <td className="px-3 py-1.5 text-right"><DeviationTag margin={b.margin} target={b.target} /></td>
                       <td className="px-3 py-1.5 text-right"><span className={cn("inline-block rounded-md border px-2 py-0.5 text-xs whitespace-nowrap", STATUS_TONE[b.status])}>{STATUS_LABEL[b.status]}</span></td>
@@ -391,7 +393,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                     ["Custo da equipe (agregado)", formatBRL(detailRow.teamCost)], ["Despesas diretas", formatBRL(detailRow.directExpenses)], ["Rateio recebido", formatBRL(detailRow.allocated)],
                     ["Margem de contribuição", formatBRL(detailRow.contributionMargin)], ["Resultado gerencial", formatBRL(detailRow.result)],
                     ["Horas previstas / realizadas", `${hrs(detailRow.hoursPlanned)} / ${hrs(detailRow.hoursRealized)}`],
-                  ].map(([k, v]) => <div key={k} className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">{k}</dt><dd className="tabular-nums font-medium">{v}</dd></div>)}
+                  ].map(([k, v]) => <div key={k} className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">{k}</dt><dd className={cn("tabular-nums font-medium", k === "Resultado gerencial" && resultTone(detailRow.result))}>{v}</dd></div>)}
                 </dl>
                 {detailAlloc.length > 0 && (
                   <div>
@@ -415,7 +417,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                         <li key={r.competence} className="grid grid-cols-[60px_1fr_auto] items-center gap-3 py-2">
                           <span className="font-ops-label text-xs uppercase">{monthLabel(r.competence)}</span>
                           <MarginRuler margin={c.margin} target={r.margin_target} compact />
-                          <span className={cn("tabular-nums text-right", c.result < 0 && "text-destructive")}>{formatBRL(c.result)}</span>
+                          <span className={cn("tabular-nums text-right", resultTone(c.result))}>{formatBRL(c.result)}</span>
                         </li>
                       );
                     })}

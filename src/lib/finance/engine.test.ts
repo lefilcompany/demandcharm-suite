@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeFinance, costPerHour, minimumPrice, taxFor } from "./engine";
+import { computeFinance, costPerHour, minimumPrice, resultTone, taxFor } from "./engine";
 
 describe("finance engine", () => {
   it("applies 21% tax on gross", () => {
@@ -43,5 +43,11 @@ describe("finance engine", () => {
     expect(costPerHour(7000, 0)).toBeNull();
     expect(minimumPrice(3900, 0.21, 0, 0.4)).toBeCloseTo(10000);
     expect(minimumPrice(1000, 0.5, 0.2, 0.4)).toBeNull();
+  });
+
+  it("result colour: red when negative, green when positive, neutral at zero", () => {
+    expect(resultTone(-23416.67)).toBe("text-destructive");
+    expect(resultTone(0.01)).toBe("text-success");
+    expect(resultTone(0)).toBe("");
   });
 });

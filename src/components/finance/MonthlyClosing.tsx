@@ -6,7 +6,7 @@ import { CheckCircle2, Lock, RefreshCw, TriangleAlert, XCircle } from "lucide-re
 import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { supabase } from "@/integrations/supabase/client";
 import { FinancePermission, useClosingHistory, useClosingPreview, useInvalidateFinance } from "@/hooks/useFinance";
-import { computeFinance, formatBRL, formatPct } from "@/lib/finance/engine";
+import { computeFinance, formatBRL, formatPct, resultTone } from "@/lib/finance/engine";
 import { ADJUSTMENT_LABEL, AdjustmentTarget, CHECKLIST_TEXT, blockingItems, canClose, monthEnded, normalizeChecklist } from "@/lib/finance/closing";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { Button } from "@/components/ui/button";
@@ -175,7 +175,7 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
       {canCloseMonth && !period && !preview.isLoading && !preview.isError && (
         <section className="rounded-xl border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between"><OpsLabel>Simulação do fechamento · nada é gravado</OpsLabel>
-            <span className="text-sm tabular-nums">Resultado {formatBRL(simTotal.result)} · margem {formatPct(simTotal.gross ? simTotal.result / simTotal.gross : null)}</span></div>
+            <span className={cn("text-sm tabular-nums", resultTone(simTotal.result))}>Resultado {formatBRL(simTotal.result)} · margem {formatPct(simTotal.gross ? simTotal.result / simTotal.gross : null)}</span></div>
           {sim.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum lançamento nem custo neste mês.</p> : (
             <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead className="border-b"><tr className="text-left">{["Quadro", "Bruto", "Líquida", "Custo total", "Resultado", "Margem"].map((h, i) => <th key={h} className={cn("py-2 px-2 font-ops-label text-[10px] uppercase tracking-[0.12em] text-muted-foreground", i && "text-right")}>{h}</th>)}</tr></thead>
@@ -183,7 +183,7 @@ export function MonthlyClosing({ teamId, boards, members, can }: Props) {
                 <tr key={r.board_id}><td className="py-2 px-2">{r.board_name}</td>
                   <td className="py-2 px-2 text-right tabular-nums">{formatBRL(r.gross)}</td><td className="py-2 px-2 text-right tabular-nums">{formatBRL(r.netRevenue)}</td>
                   <td className="py-2 px-2 text-right tabular-nums">{formatBRL(r.totalCost)}</td>
-                  <td className={cn("py-2 px-2 text-right tabular-nums", r.result < 0 && "text-destructive")}>{formatBRL(r.result)}</td>
+                  <td className={cn("py-2 px-2 text-right tabular-nums", resultTone(r.result))}>{formatBRL(r.result)}</td>
                   <td className="py-2 px-2 text-right tabular-nums">{formatPct(r.margin)}</td></tr>))}</tbody>
             </table></div>
           )}

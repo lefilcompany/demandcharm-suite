@@ -67,6 +67,9 @@ export const STATUS_LABEL: Record<FinanceStatus, string> = {
   sem_dados: "Sem dados suficientes",
 };
 
+/** Cor do resultado: vermelho no prejuízo, verde no lucro, neutro quando zero. */
+export const resultTone = (v: number) => (v < 0 ? "text-destructive" : v > 0 ? "text-success" : "");
+
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 export const formatBRL = (v: number) => brl.format(v);
 export const formatPct = (v: number | null) =>
