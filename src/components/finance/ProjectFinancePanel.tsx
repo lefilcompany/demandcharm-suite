@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LineChart, Receipt, Clock, Tag, Settings2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useCanManageFinance, useProjectBoards } from "@/hooks/useProjectFinance";
 import { ProjectHoursCosts } from "./ProjectHoursCosts";
 import { ProjectRevenue } from "./ProjectRevenue";
 import { ProjectMinimumPrice } from "./ProjectMinimumPrice";
 import { ProjectFinanceSummary, ProjectFinanceSettings } from "./ProjectFinanceSummary";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SECTIONS = [
   { v: "result", label: "Resultado", hint: "Lucro e margem do mês", icon: LineChart },
@@ -14,37 +14,84 @@ const SECTIONS = [
   { v: "price", label: "Preço mínimo", hint: "Quanto cobrar", icon: Tag },
   { v: "config", label: "Configuração", hint: "Valores da equipe", icon: Settings2 },
 ] as const;
+type SectionId = (typeof SECTIONS)[number]["v"];
 
 export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; teamId: string | null }) {
   const competence = `${new Date().toISOString().substring(0, 7)}-01`;
   const { data: canManage } = useCanManageFinance(teamId);
   const { isError } = useProjectBoards(teamId);
   const [month, setMonth] = useState(competence.substring(0, 7));
+  const [active, setActive] = useState<SectionId>("result");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Partial<Record<SectionId, HTMLElement | null>>>({});
+  const jumping = useRef<number | null>(null);
+
+  const computeActive = useCallback(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+    if (root.scrollTop + root.clientHeight >= root.scrollHeight - 4) {
+      setActive(SECTIONS[SECTIONS.length - 1].v);
+      return;
+    }
+    const top = root.getBoundingClientRect().top + 24;
+    let current: SectionId = SECTIONS[0].v;
+    for (const s of SECTIONS) {
+      const el = sectionRefs.current[s.v];
+      if (el && el.getBoundingClientRect().top <= top) current = s.v;
+    }
+    setActive(current);
+  }, []);
+
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+    const onScroll = () => { if (jumping.current === null) computeActive(); };
+    root.addEventListener("scroll", onScroll, { passive: true });
+    return () => root.removeEventListener("scroll", onScroll);
+  }, [computeActive, isError]);
+
+  const jumpTo = (id: SectionId) => {
+    const root = scrollRef.current;
+    const el = sectionRefs.current[id];
+    if (!root || !el) return;
+    setActive(id);
+    const target = el.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop - 8;
+    if (jumping.current) window.clearTimeout(jumping.current);
+    jumping.current = window.setTimeout(() => { jumping.current = null; }, 700);
+    root.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+  };
+
   if (isError) return null;
 
   return (
-    <div className="space-y-4">
-      <Tabs defaultValue="result" orientation="vertical" className="grid gap-4 lg:grid-cols-[13rem_minmax(0,1fr)]">
-        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto bg-transparent p-0 lg:flex-col lg:items-stretch lg:border-r lg:pr-3">
-          {SECTIONS.map(({ v, label, hint, icon: Icon }) => (
-            <TabsTrigger key={v} value={v}
-              className="group shrink-0 justify-start gap-2.5 rounded-lg px-2.5 py-2 text-left font-normal text-muted-foreground hover:bg-muted/60 hover:text-foreground data-[state=active]:bg-primary/10 data-[state=active]:text-foreground data-[state=active]:shadow-none">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border bg-background group-data-[state=active]:border-primary/40 group-data-[state=active]:text-primary"><Icon className="h-3.5 w-3.5" /></span>
+    <div className="grid gap-4 lg:grid-cols-[13rem_minmax(0,1fr)]">
+      <nav aria-label="Seções financeiras" className="flex w-full gap-1 overflow-x-auto lg:flex-col lg:self-start lg:border-r lg:pr-3">
+        {SECTIONS.map(({ v, label, hint, icon: Icon }) => {
+          const on = active === v;
+          return (
+            <button key={v} type="button" onClick={() => jumpTo(v)} aria-current={on ? "true" : undefined}
+              className={cn("group flex shrink-0 items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
+                on ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}>
+              <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-md border bg-background", on && "border-primary/40 text-primary")}><Icon className="h-3.5 w-3.5" /></span>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold leading-tight">{label}</span>
                 <span className="hidden text-[11px] leading-tight text-muted-foreground lg:block">{hint}</span>
               </span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        <div className="min-w-0">
-          <TabsContent value="result" className="mt-0"><ProjectFinanceSummary projectId={projectId} month={month} onMonth={setMonth} /></TabsContent>
-          <TabsContent value="revenue" className="mt-0"><ProjectRevenue projectId={projectId} teamId={teamId} canManage={!!canManage} /></TabsContent>
-          <TabsContent value="hours" className="mt-0"><ProjectHoursCosts projectId={projectId} canExport={!!canManage} /></TabsContent>
-          <TabsContent value="price" className="mt-0"><ProjectMinimumPrice teamId={teamId} /></TabsContent>
-          <TabsContent value="config" className="mt-0"><ProjectFinanceSettings projectId={projectId} canManage={!!canManage} /></TabsContent>
-        </div>
-      </Tabs>
+            </button>
+          );
+        })}
+      </nav>
+      <div ref={scrollRef} className="min-w-0 space-y-10 overflow-y-auto pr-1 h-[calc(100dvh-16rem)] min-h-[20rem]">
+        {SECTIONS.map(({ v, label }) => (
+          <section key={v} ref={(el) => { sectionRefs.current[v] = el; }} aria-label={label} className="scroll-mt-2">
+            {v === "result" && <ProjectFinanceSummary projectId={projectId} month={month} onMonth={setMonth} />}
+            {v === "revenue" && <ProjectRevenue projectId={projectId} teamId={teamId} canManage={!!canManage} />}
+            {v === "hours" && <ProjectHoursCosts projectId={projectId} canExport={!!canManage} />}
+            {v === "price" && <ProjectMinimumPrice teamId={teamId} />}
+            {v === "config" && <ProjectFinanceSettings projectId={projectId} canManage={!!canManage} />}
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
