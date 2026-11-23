@@ -52,7 +52,7 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
   const enabled = !!project.data?.finance_enabled;
 
   return (
-    <section className="rounded-xl border bg-card p-4 space-y-4">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <Landmark className="h-5 w-5 text-primary" />
         <div className="flex-1 min-w-0">
@@ -88,6 +88,6 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
           <TabsContent value="config" className="mt-0"><ProjectFinanceSettings projectId={projectId} canManage={!!canManage} /></TabsContent>
         </div>
       </Tabs>
-    </section>
+    </div>
   );
 }
