@@ -71,46 +71,46 @@ export function ProjectRevenue({ projectId, teamId, canManage }: { projectId: st
   return (
     <div className="space-y-4 pt-2">
       {canManage && (
-        <form className="rounded-xl border p-3 space-y-3" onSubmit={(e) => { e.preventDefault();
+        <form className="grid overflow-hidden rounded-xl border lg:grid-cols-[minmax(0,1fr)_17rem]" onSubmit={(e) => { e.preventDefault();
           add.mutate(undefined, { onSuccess: () => { toast({ title: "Contrato lançado" }); setF({ ...f, total: "", description: "" }); list.refetch(); }, onError: fail }); }}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Field label="Valor total do contrato"><CurrencyInput value={f.total} onValueChange={(v) => setF({ ...f, total: v })} required /></Field>
-            <Field label="Início"><Input type="date" value={f.start} required onChange={(e) => setF({ ...f, start: e.target.value })} /></Field>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-[auto_8rem_1fr] gap-2 items-end">
-            <Field label="Contar em">
-              <div role="radiogroup" aria-label="Contar em" className="inline-flex h-9 rounded-md border p-0.5 bg-muted/40">
+          <div className="space-y-4 p-4">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Novo contrato</p>
+              <Field label=""><CurrencyInput value={f.total} onValueChange={(v) => setF({ ...f, total: v })} required aria-label="Valor total do contrato" className="h-12 [&_input]:text-2xl" /></Field>
+              <p className="mt-1 text-[11px] text-muted-foreground">Valor total do contrato, antes do imposto da equipe.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Durante</span>
+              <Input type="number" min={1} step={1} value={f.duration} required aria-label="Duração" onChange={(e) => setF({ ...f, duration: e.target.value })} className="h-9 w-20 text-center font-semibold tabular-nums" />
+              <div role="radiogroup" aria-label="Contar em" className="inline-flex h-9 rounded-md border bg-muted/40 p-0.5">
                 {UNITS.map((u) => (
                   <button key={u.v} type="button" role="radio" aria-checked={f.unit === u.v} onClick={() => setF({ ...f, unit: u.v })}
-                    className={cn("px-3 text-xs font-semibold rounded-[5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    className={cn("rounded-[5px] px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       f.unit === u.v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{u.label}</button>
                 ))}
               </div>
-            </Field>
-            <Field label="Duração"><Input type="number" min={1} step={1} value={f.duration} required onChange={(e) => setF({ ...f, duration: e.target.value })} /></Field>
+              <span className="text-muted-foreground">a partir de</span>
+              <Input type="date" value={f.start} required aria-label="Início" onChange={(e) => setF({ ...f, start: e.target.value })} className="h-9 w-40" />
+            </div>
             <Field label="Descrição"><Input value={f.description} placeholder="Ex.: contrato de manutenção" onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
           </div>
 
-          {plan.length > 0 && (
-            <div className="rounded-lg bg-muted/40 p-3 space-y-2">
-              <p className="text-sm">
-                <span className="font-semibold tabular-nums">{formatBRL(periodValue(total, dur))}</span>
-                <span className="text-muted-foreground"> por {unitLabel(f.unit, 1)} · {dur} {unitLabel(f.unit, dur)} · {br(f.start)} até {br(contractEnd(f.start, dur, f.unit))}</span>
-              </p>
-              <div className="flex gap-1 overflow-x-auto pb-1" aria-label="Como entra em cada mês">
-                {plan.map((p) => (
-                  <div key={p.competence} className="shrink-0 rounded-md border bg-background px-2 py-1 text-center">
-                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{mm(p.competence)}</div>
-                    <div className="text-xs font-semibold tabular-nums">{formatBRL(p.amount)}</div>
-                  </div>
-                ))}
+          <aside className="flex flex-col gap-3 border-t bg-muted/30 p-4 lg:border-l lg:border-t-0">
+            <p className="text-xs font-medium text-muted-foreground">Como vai entrar no financeiro</p>
+            {plan.length ? (<>
+              <div>
+                <p className="text-2xl font-semibold tabular-nums leading-none">{formatBRL(periodValue(total, dur))}</p>
+                <p className="mt-1 text-xs text-muted-foreground">por {unitLabel(f.unit, 1)} · até {br(contractEnd(f.start, dur, f.unit))}</p>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                {f.unit === "days" ? "O valor é dividido pelos dias e cada mês recebe os dias que caem nele." : "O valor é dividido igualmente entre os períodos e lançado mês a mês."}
-              </p>
-            </div>
-          )}
-          <div className="flex justify-end"><Button type="submit" disabled={add.isPending || !plan.length}>Lançar contrato</Button></div>
+              <div className="flex h-16 items-end gap-px" aria-label="Valor de cada mês">
+                {(() => { const max = Math.max(...plan.map((p) => p.amount)); return plan.slice(0, 36).map((p) => (
+                  <div key={p.competence} title={`${mm(p.competence)} · ${formatBRL(p.amount)}`} className="min-w-[3px] flex-1 rounded-t-sm bg-primary/70" style={{ height: `${Math.max(8, (p.amount / max) * 100)}%` }} />)); })()}
+              </div>
+              <div className="flex justify-between text-[10px] uppercase tracking-wide text-muted-foreground"><span>{mm(plan[0].competence)}</span><span>{plan.length} {plan.length === 1 ? "mês" : "meses"}</span><span>{mm(plan[plan.length - 1].competence)}</span></div>
+              <p className="text-[11px] text-muted-foreground">{f.unit === "days" ? "Dividido pelos dias; cada mês recebe os dias que caem nele." : "Dividido igualmente e lançado mês a mês."}</p>
+            </>) : <p className="text-sm text-muted-foreground">Informe o valor e a duração para ver a divisão por mês.</p>}
+            <Button type="submit" className="mt-auto w-full" disabled={add.isPending || !plan.length}>Lançar contrato</Button>
+          </aside>
         </form>
       )}
       <section className="space-y-1">
@@ -128,6 +128,8 @@ export function ProjectRevenue({ projectId, teamId, canManage }: { projectId: st
                       ? `${head.contract_duration} ${unitLabel(head.contract_unit, head.contract_duration)} · ${br(head.contract_start)} até ${br(contractEnd(head.contract_start, head.contract_duration, head.contract_unit))} · ${rows.length} ${rows.length === 1 ? "mês" : "meses"}`
                       : `${mm(String(head.competence))} · lançamento mensal`}
                   </span>
+                  {isContract && rows.length > 1 && (() => { const now = new Date().toISOString().substring(0, 7); const done = rows.filter((r) => String(r.competence).substring(0, 7) <= now).length; return (
+                    <span className="mt-1.5 flex h-1 w-40 max-w-full overflow-hidden rounded-full bg-muted" title={`${done} de ${rows.length} meses`}><span className="bg-primary" style={{ width: `${(done / rows.length) * 100}%` }} /></span>); })()}
                 </span>
                 <span className="flex items-center gap-1 shrink-0"><span className="tabular-nums font-semibold">{formatBRL(isContract ? Number(head.contract_total) : sum)}</span>
                   {canManage && <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Remover faturamento" onClick={() => del.mutate(key, { onSuccess: () => list.refetch(), onError: fail })}><Trash2 className="h-3.5 w-3.5" /></Button>}</span>
