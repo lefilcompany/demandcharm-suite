@@ -139,3 +139,9 @@ Causa provável no navegador: o worker guardava TODAS as respostas do backend po
 - [x] Projetos e Relatórios bloqueados por perfil (telas, menu e dados de projetos no servidor)
 - [x] Rateio por percentual fixo da receita
 - [x] Valores padrão + preço mínimo
+
+## Faturamento por projeto + aviso de novo projeto (2026-11-23)
+- [x] Só o faturamento é do projeto (mês, valor bruto, descrição); alíquota, rateio, margem e custos são gerais da equipe e a aba Configuração do projeto é só leitura.
+- [x] Faturamento geral da equipe no topo de "Por projeto": total do mês (bruto, NF, líquido) + lista por projeto, com linha "Sem projeto" para lançamentos antigos.
+- [x] Ao criar um projeto, dono e gestores financeiros recebem aviso in-app e e-mail para configurar o faturamento; quem criou não recebe.
+- [x] Conferido na tela: cartão do total, abas Faturamento e Configuração do projeto, aviso no sino e e-mail enviado (log do envio) — dados de teste apagados.
