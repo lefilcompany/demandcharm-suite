@@ -45,7 +45,9 @@ export function useFinanceAccess(teamId: string | null) {
     !!a && (a.is_global_admin || a.team_permissions.includes(p) ||
       (!!boardId && a.board_permissions.some((b) => b.board_id === boardId && b.permission === p)));
   const canAny = (p: FinancePermission) => can(p) || !!a?.board_permissions.some((b) => b.permission === p);
-  const hasModule = !!a && (a.is_global_admin || a.team_permissions.length > 0 || a.board_permissions.length > 0);
+  // O menu "Gestão Financeira" aparece para quem tem permissão no perfil de acesso
+  // ou para o dono da equipe (que por padrão recebe o perfil "Gestor financeiro").
+  const hasModule = !!a && (a.is_global_admin || a.is_team_owner || a.team_permissions.length > 0 || a.board_permissions.length > 0);
   return { ...q, access: a, can, canAny, hasModule };
 }
 

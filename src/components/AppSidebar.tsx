@@ -457,7 +457,21 @@ export function AppSidebar() {
                         <span className="text-sm text-gray-700 dark:text-gray-200">Projetos</span>
                       </NavLink>
                     </DropdownMenuItem>}
-                    
+
+                    {financeAccess.hasModule && selectedTeamId && (
+                      <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+                        <NavLink
+                          to="/app/finance"
+                          onClick={() => { setPopoverOpen(false); closeMobileSidebar(); }}
+                          className="flex items-center gap-3 cursor-pointer py-2.5 px-3 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-zinc-800 w-full"
+                          activeClassName="bg-gray-100 dark:bg-zinc-800 text-primary font-medium"
+                        >
+                          <Landmark className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                          <span className="text-sm text-gray-700 dark:text-gray-200">Gestão Financeira</span>
+                        </NavLink>
+                      </DropdownMenuItem>
+                    )}
+
                     {selectedTeamId && (
                       <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
                         <NavLink 
