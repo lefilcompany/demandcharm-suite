@@ -393,6 +393,13 @@
       "when": 1795439991036,
       "tag": "0055_team_revenue_summary_range",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795441934585,
+      "tag": "0056_revenue_contracts",
+      "breakpoints": true
     }
   ]
 }

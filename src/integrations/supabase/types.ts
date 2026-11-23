@@ -2697,6 +2697,11 @@ export type Database = {
         Row: {
           board_id: string | null
           competence: string
+          contract_duration: number | null
+          contract_id: string | null
+          contract_start: string | null
+          contract_total: number | null
+          contract_unit: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -2710,6 +2715,11 @@ export type Database = {
         Insert: {
           board_id?: string | null
           competence: string
+          contract_duration?: number | null
+          contract_id?: string | null
+          contract_start?: string | null
+          contract_total?: number | null
+          contract_unit?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -2723,6 +2733,11 @@ export type Database = {
         Update: {
           board_id?: string | null
           competence?: string
+          contract_duration?: number | null
+          contract_id?: string | null
+          contract_start?: string | null
+          contract_total?: number | null
+          contract_unit?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
