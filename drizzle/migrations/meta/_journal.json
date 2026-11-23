@@ -372,6 +372,13 @@
       "when": 1795433705442,
       "tag": "0052_project_revenue_and_created_notice",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1795439449333,
+      "tag": "0053_overview_includes_team_costs",
+      "breakpoints": true
     }
   ]
 }
