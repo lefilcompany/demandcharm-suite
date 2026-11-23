@@ -3942,6 +3942,7 @@ export type Database = {
           id: string
           integration_key: string
           name: string
+          source_scenario_id: string | null
           status: string
           team_id: string
           unit_external_id: string | null
@@ -3956,6 +3957,7 @@ export type Database = {
           id?: string
           integration_key?: string
           name: string
+          source_scenario_id?: string | null
           status?: string
           team_id: string
           unit_external_id?: string | null
@@ -3970,6 +3972,7 @@ export type Database = {
           id?: string
           integration_key?: string
           name?: string
+          source_scenario_id?: string | null
           status?: string
           team_id?: string
           unit_external_id?: string | null
@@ -3988,6 +3991,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_source_scenario_id_fkey"
+            columns: ["source_scenario_id"]
+            isOneToOne: false
+            referencedRelation: "finance_scenarios"
             referencedColumns: ["id"]
           },
           {

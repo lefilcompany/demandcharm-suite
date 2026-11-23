@@ -3,7 +3,9 @@ import { downloadFinancePdf } from "@/lib/finance/pdfExport";
 import { MonthField } from "@/components/ops/MonthField";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calculator, Check, FolderOpen, Plus, RefreshCw, Save, Trash2, Users, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/auth";
+import { Calculator, Check, FolderOpen, FolderPlus, Plus, RefreshCw, Save, Trash2, Users, Sparkles } from "lucide-react";
 import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useFinancePeople, type FinancePermission } from "@/hooks/useFinance";
@@ -38,6 +40,19 @@ function Numeric({ label, value, onChange, percent = false, max }: { label: stri
 
 export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const createProject = async (s: Scenario) => {
+    if (!user || busy) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.from("projects").insert({ name: s.client_label?.trim() || s.name, team_id: teamId, created_by: user.id, source_scenario_id: s.id } as never).select("id").single();
+      if (error) throw error;
+      toast({ title: "Projeto criado a partir da simulação", description: "O projeto começa vazio; a proposta simulada fica no financeiro dele." });
+      navigate(`/app/projects/${(data as { id: string }).id}/finance`);
+    } catch { fail("Não foi possível criar o projeto"); }
+    finally { setBusy(false); }
+  };
   const scenarios = useFinanceScenarios(teamId, true);
   const [draft, setDraft] = useState<Draft>(() => blank(boards[0]?.id ?? ""));
   const [editing, setEditing] = useState<string | null>(null);
@@ -222,6 +237,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
           <div className="flex-1 min-w-0"><div className="font-medium text-sm truncate">{s.name}</div><p className="text-xs text-muted-foreground truncate">{boards.find((b) => b.id === s.board_id)?.name ?? "Quadro"} · {s.competence.substring(5, 7)}/{s.competence.substring(0, 4)}{s.client_label ? ` · ${s.client_label}` : ""}</p></div>
           <span className="font-ops-label text-xs tabular-nums">{formatPct(r.margin)}</span>
           <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" aria-label={`Abrir ${s.name}`} onClick={() => open(s)}><FolderOpen className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Abrir e renomear cenário</TooltipContent></Tooltip>
+          {can("finance.manage_revenue", s.board_id) && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" aria-label={`Criar projeto de ${s.name}`} disabled={busy} onClick={() => void createProject(s)}><FolderPlus className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Criar projeto a partir desta simulação</TooltipContent></Tooltip>}
           {can("finance.manage_revenue", s.board_id) && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" aria-label={`Excluir ${s.name}`} onClick={() => setDeleting(s)}><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Excluir cenário</TooltipContent></Tooltip>}
         </li>;
       })}</ul>}

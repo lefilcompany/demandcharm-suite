@@ -4,14 +4,18 @@ import { cn } from "@/lib/utils";
 import { useCanManageFinance, useProjectBoards } from "@/hooks/useProjectFinance";
 import { ProjectHoursCosts } from "./ProjectHoursCosts";
 import { ProjectRevenue } from "./ProjectRevenue";
-import { ProjectMinimumPrice } from "./ProjectMinimumPrice";
+import { ProjectScenarioProposal } from "./ProjectScenarioProposal";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import type { Scenario } from "@/lib/finance/simulator";
 import { ProjectFinanceSummary } from "./ProjectFinanceSummary";
 
 const SECTIONS = [
   { v: "result", label: "Resultado", hint: "Lucro e margem do mês", icon: LineChart },
   { v: "revenue", label: "Faturamento", hint: "Contratos do projeto", icon: Receipt },
   { v: "hours", label: "Horas e custos", hint: "Tempo apontado × custo", icon: Clock },
-  { v: "price", label: "Preço mínimo", hint: "Quanto cobrar", icon: Tag },
+  { v: "price", label: "Proposta simulada", hint: "Valores da simulação de origem", icon: Tag },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["v"];
 
@@ -19,6 +23,22 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
   const competence = `${new Date().toISOString().substring(0, 7)}-01`;
   const { data: canManage } = useCanManageFinance(teamId);
   const { isError } = useProjectBoards(teamId);
+  const { user } = useAuth();
+  const proposal = useQuery({
+    queryKey: ["project-source-scenario", projectId, user?.id],
+    enabled: !!user,
+    queryFn: async (): Promise<Scenario | null> => {
+      const { data: p, error } = await supabase.from("projects").select("source_scenario_id").eq("id", projectId).maybeSingle();
+      if (error) throw error;
+      if (!p?.source_scenario_id) return null;
+      const { data: s, error: e2 } = await supabase.from("finance_scenarios").select("*").eq("id", p.source_scenario_id).maybeSingle();
+      if (e2) throw e2;
+      if (!s) return null;
+      const n = (k: keyof typeof s) => Number(s[k]);
+      return { ...s, gross: n("gross"), tax_rate: n("tax_rate"), variable_rate: n("variable_rate"), margin_target: n("margin_target"), team_cost: n("team_cost"), planned_hours: n("planned_hours"), direct_expenses: n("direct_expenses"), shared_costs: n("shared_costs") } as Scenario;
+    },
+  });
+  const sections = SECTIONS.filter((s) => s.v !== "price" || !!proposal.data);
   const [month, setMonth] = useState(competence.substring(0, 7));
   const [active, setActive] = useState<SectionId>("result");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -29,17 +49,17 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
     const root = scrollRef.current;
     if (!root) return;
     if (root.scrollTop + root.clientHeight >= root.scrollHeight - 4) {
-      setActive(SECTIONS[SECTIONS.length - 1].v);
+      setActive(sections[sections.length - 1].v);
       return;
     }
     const top = root.getBoundingClientRect().top + 24;
-    let current: SectionId = SECTIONS[0].v;
-    for (const s of SECTIONS) {
+    let current: SectionId = sections[0].v;
+    for (const s of sections) {
       const el = sectionRefs.current[s.v];
       if (el && el.getBoundingClientRect().top <= top) current = s.v;
     }
     setActive(current);
-  }, []);
+  }, [sections]);
 
   useEffect(() => {
     const root = scrollRef.current;
@@ -65,7 +85,7 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
   return (
     <div className="grid gap-4 lg:grid-cols-[13rem_minmax(0,1fr)]">
       <nav aria-label="Seções financeiras" className="flex w-full gap-1 overflow-x-auto lg:flex-col lg:self-start">
-        {SECTIONS.map(({ v, label, hint, icon: Icon }) => {
+        {sections.map(({ v, label, hint, icon: Icon }) => {
           const on = active === v;
           return (
             <button key={v} type="button" onClick={() => jumpTo(v)} aria-current={on ? "true" : undefined}
@@ -81,7 +101,7 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
         })}
       </nav>
       <div ref={scrollRef} className="min-w-0 space-y-10 overflow-y-auto pr-1 h-[calc(100dvh-16rem)] min-h-[20rem]">
-        {SECTIONS.map(({ v, label, hint, icon: Icon }) => (
+        {sections.map(({ v, label, hint, icon: Icon }) => (
           <section key={v} ref={(el) => { sectionRefs.current[v] = el; }} aria-label={label} className="scroll-mt-2">
             <header className="mb-3 border-b pb-2">
               <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
@@ -93,7 +113,7 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
             {v === "result" && <ProjectFinanceSummary projectId={projectId} month={month} onMonth={setMonth} />}
             {v === "revenue" && <ProjectRevenue projectId={projectId} teamId={teamId} canManage={!!canManage} />}
             {v === "hours" && <ProjectHoursCosts projectId={projectId} canExport={!!canManage} />}
-            {v === "price" && <ProjectMinimumPrice teamId={teamId} />}
+            {v === "price" && proposal.data && <ProjectScenarioProposal scenario={proposal.data} />}
           </section>
         ))}
       </div>
