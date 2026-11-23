@@ -7,12 +7,27 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
+/** Estado do projeto como uma lâmpada de painel: aro cheio e halo quando os quadros estão rodando, aro oco quando estão parados. */
 export function ProjectStatusBadge({ status, className }: { status?: string | null; className?: string }) {
   const active = (status ?? "active") === "active";
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-      active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground", className)}>
-      <span className={cn("h-1.5 w-1.5 rounded-full", active ? "bg-primary" : "bg-muted-foreground")} />{active ? "Ativo" : "Inativo"}
+    <span
+      role="status"
+      aria-label={active ? "Projeto ativo" : "Projeto inativo"}
+      title={active
+        ? "Quadros funcionando e o projeto participa da divisão dos custos da equipe"
+        : "Quadros somente leitura para todos e fora da divisão dos custos da equipe"}
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] tabular-nums",
+        active ? "border-primary/25 bg-primary/10 text-primary" : "border-border bg-muted/70 text-muted-foreground",
+        className)}>
+      <span
+        aria-hidden
+        className={cn("h-2 w-2 rounded-full", active
+          ? "bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.18)]"
+          : "border-[1.5px] border-muted-foreground/55"
+        )} />
+      {active ? "Ativo" : "Inativo"}
     </span>
   );
 }
