@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { formatPct, formatPp } from "@/lib/finance/engine";
+import { formatPct, formatPp, marginGoalState, type MarginGoalTone } from "@/lib/finance/engine";
 
 /** Signature element: realized margin on a -20%..80% ruler with the target notch. */
 export function MarginRuler({ margin, target, compact = false }: { margin: number | null; target: number; compact?: boolean }) {
@@ -28,6 +28,48 @@ export function MarginRuler({ margin, target, compact = false }: { margin: numbe
           <span className="absolute -translate-x-1/2 text-primary" style={{ left: pos(target) }}>meta {formatPct(target)}</span>
         </div>
       )}
+    </div>
+  );
+}
+
+const GOAL_TEXT: Record<MarginGoalTone, { ink: string; card: string }> = {
+  muted: { ink: "text-ops-ink-foreground/60", card: "text-muted-foreground" },
+  destructive: { ink: "text-destructive", card: "text-destructive" },
+  primary: { ink: "text-primary", card: "text-primary" },
+  success: { ink: "text-success", card: "text-success" },
+};
+const GOAL_FILL: Record<MarginGoalTone, string> = {
+  muted: "bg-transparent",
+  destructive: "bg-destructive",
+  primary: "bg-primary",
+  success: "bg-success",
+};
+
+/** Profit margin as progress toward the team's goal, with the goal spelled out. */
+export function MarginGoalBar({ margin, target, variant = "card" }: { margin: number | null; target: number; variant?: "ink" | "card" }) {
+  const s = marginGoalState(margin, target);
+  const ink = variant === "ink";
+  return (
+    <div className={cn("space-y-1.5", ink ? "text-ops-ink-foreground" : "text-foreground")}>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className={cn("font-ops-label text-[10px] uppercase tracking-[0.18em]", ink ? "text-ops-muted" : "text-muted-foreground")}>
+          Meta de lucro da equipe
+        </span>
+        <span className={cn("text-xs tabular-nums", ink ? "text-ops-ink-foreground/80" : "text-muted-foreground")}>
+          {formatPct(target)}
+        </span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full" role="img"
+        aria-label={`Margem de lucro ${formatPct(margin)}, meta da equipe ${formatPct(target)}. ${s.text}`}>
+        <div className={cn("h-full w-full", ink ? "bg-ops-ink-foreground/15" : "bg-muted")}>
+          <div className={cn("h-full rounded-full transition-[width] duration-700 motion-reduce:transition-none", GOAL_FILL[s.tone])}
+            style={{ width: `${s.progress * 100}%` }} />
+        </div>
+      </div>
+      <p className={cn("text-xs", GOAL_TEXT[s.tone][variant])}>{s.text}</p>
+      <p className={cn("text-[11px]", ink ? "text-ops-ink-foreground/55" : "text-muted-foreground")}>
+        Margem de lucro = resultado ÷ faturamento. A barra cresce até a meta; cheia significa meta alcançada.
+      </p>
     </div>
   );
 }

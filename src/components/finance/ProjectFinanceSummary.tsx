@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { OpsLabel } from "@/components/ops/OpsParts";
-import { MarginRuler } from "./MarginRuler";
+import { MarginGoalBar } from "./MarginRuler";
 import { AlertTriangle, RotateCw, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatPct, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
@@ -65,9 +65,10 @@ export function ProjectFinanceSummary({ projectId, month, onMonth }: { projectId
             <Cell label="Custo total" value={formatBRL(r.totalCost + r.totals.variable)} note={`Pessoal ${formatBRL(r.totals.teamCost)} · ${fmtHours(r.totals.hours)}`}
               warn={r.totals.hoursWithoutCost > 0} />
             <Cell label="Resultado" value={formatBRL(r.result)} note={STATUS_LABEL[r.status]} tone={resultTone(r.result)} />
-            <Cell label="Margem" value={r.margin == null ? "—" : formatPct(r.margin)} note={`Meta ${formatPct(r.totals.marginTarget)}`} />
+            <Cell label="Margem de lucro" value={r.margin == null ? "—" : formatPct(r.margin)} note={`Meta da equipe: ${formatPct(r.totals.marginTarget)}`}
+              tone={r.margin == null ? "" : r.margin < 0 ? "text-destructive" : r.margin >= r.totals.marginTarget ? "text-success" : "text-primary"} />
           </div>
-          <div className="px-4 pb-4 pt-1"><MarginRuler margin={r.margin} target={r.totals.marginTarget} compact /></div>
+          <div className="px-4 pb-4 pt-1"><MarginGoalBar margin={r.margin} target={r.totals.marginTarget} variant="ink" /></div>
           {r.totals.hoursWithoutCost > 0 && (
             <p className="px-4 pb-3 text-xs text-primary">Custo incompleto: {fmtHours(r.totals.hoursWithoutCost)} de pessoas sem custo cadastrado no mês.</p>
           )}

@@ -70,6 +70,21 @@ export const STATUS_LABEL: Record<FinanceStatus, string> = {
 /** Cor do resultado: vermelho no prejuízo, verde no lucro, neutro quando zero. */
 export const resultTone = (v: number) => (v < 0 ? "text-destructive" : v > 0 ? "text-success" : "");
 
+export type MarginGoalTone = "muted" | "destructive" | "primary" | "success";
+
+/** Margem de lucro frente à meta da equipe: preenchimento da barra, cor e frase em português. */
+export function marginGoalState(margin: number | null, target: number): { tone: MarginGoalTone; progress: number; text: string } {
+  if (margin === null)
+    return { tone: "muted", progress: 0, text: "Sem faturamento no período, então a margem de lucro não pode ser calculada." };
+  const pp = Math.round((margin - target) * 100);
+  const progress = target > 0 ? Math.max(0, Math.min(1, margin / target)) : 1;
+  if (margin < 0)
+    return { tone: "destructive", progress: 0, text: `Prejuízo: os custos passaram o faturamento. Faltam ${-pp} p.p. para a meta de lucro.` };
+  if (margin >= target)
+    return { tone: "success", progress: 1, text: `Meta de lucro batida: ${pp} p.p. acima dos ${formatPct(target)} pedidos.` };
+  return { tone: "primary", progress, text: `Faltam ${-pp} p.p. para a meta de lucro de ${formatPct(target)}.` };
+}
+
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 export const formatBRL = (v: number) => brl.format(v);
 export const formatPct = (v: number | null) =>

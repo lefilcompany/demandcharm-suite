@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatPct, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
 import { projectResult, type ProjectMonth } from "@/lib/finance/projectRollup";
-import { DeviationTag, MarginRuler } from "./MarginRuler";
+import { DeviationTag, MarginRuler, MarginGoalBar } from "./MarginRuler";
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 
 interface TeamProject { project_id: string; name: string; months: ProjectMonth[] }
@@ -129,35 +129,12 @@ function BoardList({ boards, onBoard }: { boards: BoardAgg[]; onBoard?: (id: str
               </div>
               <p className="mt-2 text-[11px] text-muted-foreground">Resultado</p>
               <p className={cn("text-base font-semibold tabular-nums leading-tight", resultTone(b.result))}>{formatBRL(b.result)}</p>
-              <MarginGoal margin={b.margin} target={b.target} />
+              <div className="mt-3"><MarginGoalBar margin={b.margin} target={b.target} /></div>
             </button>
           </li>
         );
       })}
     </ul>
-  );
-}
-
-/** Margin as progress toward the target: full bar = target reached. */
-function MarginGoal({ margin, target }: { margin: number | null; target: number }) {
-  if (margin === null) return <p className="mt-3 text-xs text-muted-foreground">Sem faturamento para calcular a margem.</p>;
-  const pct = target > 0 ? Math.max(0, Math.min(1, margin / target)) : 1;
-  const diff = Math.round((margin - target) * 100);
-  const ok = margin >= target;
-  const tone = margin < 0 ? "text-destructive" : ok ? "text-foreground" : "text-primary";
-  return (
-    <div className="mt-3 space-y-1.5">
-      <div className="flex items-baseline justify-between text-xs">
-        <span>Margem <b className={cn("tabular-nums", tone)}>{formatPct(margin)}</b></span>
-        <span className="text-muted-foreground">meta {formatPct(target)}</span>
-      </div>
-      <div className="h-2 rounded-full bg-muted overflow-hidden">
-        <div className={cn("h-full rounded-full", margin < 0 ? "bg-destructive" : ok ? "bg-foreground" : "bg-primary")} style={{ width: `${margin < 0 ? 100 : pct * 100}%` }} />
-      </div>
-      <p className={cn("text-[11px]", tone)}>
-        {margin < 0 ? "Prejuízo neste quadro" : ok ? `Meta batida · ${diff} p.p. acima` : `Faltam ${-diff} p.p. para a meta`}
-      </p>
-    </div>
   );
 }
 

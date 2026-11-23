@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeFinance, costPerHour, minimumPrice, resultTone, taxFor } from "./engine";
+import { computeFinance, costPerHour, marginGoalState, minimumPrice, resultTone, taxFor } from "./engine";
 
 describe("finance engine", () => {
   it("applies 21% tax on gross", () => {
@@ -49,5 +49,32 @@ describe("finance engine", () => {
     expect(resultTone(-23416.67)).toBe("text-destructive");
     expect(resultTone(0.01)).toBe("text-success");
     expect(resultTone(0)).toBe("");
+  });
+
+  it("margin goal: empty bar and prejudice copy below zero", () => {
+    const s = marginGoalState(-2.81, 0.4);
+    expect(s.tone).toBe("destructive");
+    expect(s.progress).toBe(0);
+    expect(s.text).toContain("Prejuízo");
+    expect(s.text).toContain("Faltam 321 p.p.");
+  });
+
+  it("margin goal: partial bar below target, full bar when reached", () => {
+    const below = marginGoalState(0.29, 0.4);
+    expect(below.tone).toBe("primary");
+    expect(below.progress).toBeCloseTo(0.725);
+    expect(below.text).toContain("Faltam 11 p.p.");
+    const ok = marginGoalState(0.52, 0.4);
+    expect(ok.tone).toBe("success");
+    expect(ok.progress).toBe(1);
+    expect(ok.text).toContain("Meta de lucro batida");
+    expect(ok.text).toContain("12 p.p. acima");
+  });
+
+  it("margin goal: no revenue explains why there is no margin", () => {
+    const s = marginGoalState(null, 0.4);
+    expect(s.tone).toBe("muted");
+    expect(s.progress).toBe(0);
+    expect(s.text).toContain("Sem faturamento");
   });
 });
