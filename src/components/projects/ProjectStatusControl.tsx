@@ -18,13 +18,13 @@ export function ProjectStatusBadge({ status, className }: { status?: string | nu
         ? "Quadros funcionando e o projeto participa da divisão dos custos da equipe"
         : "Quadros somente leitura para todos e fora da divisão dos custos da equipe"}
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] tabular-nums",
+        "inline-flex h-5 shrink-0 items-center gap-1.5 rounded-full border px-2 text-[11px] font-semibold uppercase leading-none tracking-[0.08em] tabular-nums",
         active ? "border-primary/25 bg-primary/10 text-primary" : "border-border bg-muted/70 text-muted-foreground",
         className)}>
       <span
         aria-hidden
         className={cn("h-2 w-2 rounded-full", active
-          ? "bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.18)]"
+          ? "bg-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.18)]"
           : "border-[1.5px] border-muted-foreground/55"
         )} />
       {active ? "Ativo" : "Inativo"}
