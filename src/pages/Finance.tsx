@@ -244,18 +244,18 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
           <div className="space-y-4">
             {/* Ledger strip: the P&L read top to bottom */}
             <section className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl overflow-hidden">
-              <div className="grid lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)]">
+              <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
                 {/* Resultado em destaque */}
-                <div className="px-4 py-3 sm:px-5 border-b lg:border-b-0 lg:border-r border-ops-ink-foreground/10 flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5"><OpsLabel>Resultado do período</OpsLabel>{hint("Receita líquida menos custo total.")}</div>
-                  {ov.isLoading ? <Skeleton className="mt-1.5 h-7 w-36 bg-ops-ink-foreground/10" /> : (
-                    <div className={cn("mt-0.5 font-ops-display text-xl sm:text-2xl font-semibold tabular-nums leading-tight break-all", resultTone(total.result))} title={formatBRL(total.result)}>
+                <div className="px-5 py-5 sm:px-6 border-b lg:border-b-0 lg:border-r border-ops-ink-foreground/10 flex flex-col justify-center">
+                  <div className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-ops-ink-foreground/80"><span>Resultado do período</span>{hint("Receita líquida menos custo total.")}</div>
+                  {ov.isLoading ? <Skeleton className="mt-2 h-11 w-52 bg-ops-ink-foreground/10" /> : (
+                    <div className={cn("mt-1 font-ops-display text-2xl sm:text-3xl xl:text-4xl 2xl:text-5xl font-semibold tabular-nums leading-tight whitespace-nowrap", resultTone(total.result))} title={formatBRL(total.result)}>
                       {formatBRL(total.result)}
                     </div>
                   )}
-                  <div className="mt-1 flex items-center gap-1.5 text-xs text-ops-ink-foreground/70">
+                  <div className="mt-2 flex items-center gap-2 text-base text-ops-ink-foreground/80">
                     <span>Margem</span>
-                    <span className={cn("font-semibold tabular-nums", resultTone(total.result))}>{formatPct(total.margin)}</span>
+                    <span className={cn("font-ops-display text-xl font-semibold tabular-nums", resultTone(total.result))}>{formatPct(total.margin)}</span>
                     {hint("Resultado ÷ faturamento bruto. Indisponível quando não há faturamento.")}
                   </div>
                 </div>
