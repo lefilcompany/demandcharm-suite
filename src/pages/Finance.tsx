@@ -260,14 +260,14 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
             <section className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl overflow-hidden">
               <div className="grid lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)]">
                 {/* Resultado em destaque */}
-                <div className="px-5 py-5 sm:px-6 border-b lg:border-b-0 lg:border-r border-ops-ink-foreground/10 flex flex-col justify-center">
+                <div className="px-4 py-3 sm:px-5 border-b lg:border-b-0 lg:border-r border-ops-ink-foreground/10 flex flex-col justify-center">
                   <div className="flex items-center gap-1.5"><OpsLabel>Resultado do período</OpsLabel>{hint("Receita líquida menos custo total.")}</div>
-                  {ov.isLoading ? <Skeleton className="mt-2 h-10 w-40 bg-ops-ink-foreground/10" /> : (
-                    <div className={cn("mt-1 font-ops-display text-2xl sm:text-3xl xl:text-4xl font-semibold tabular-nums leading-tight break-all", resultTone(total.result))} title={formatBRL(total.result)}>
+                  {ov.isLoading ? <Skeleton className="mt-1.5 h-7 w-36 bg-ops-ink-foreground/10" /> : (
+                    <div className={cn("mt-0.5 font-ops-display text-xl sm:text-2xl font-semibold tabular-nums leading-tight break-all", resultTone(total.result))} title={formatBRL(total.result)}>
                       {formatBRL(total.result)}
                     </div>
                   )}
-                  <div className="mt-2 flex items-center gap-1.5 text-sm text-ops-ink-foreground/70">
+                  <div className="mt-1 flex items-center gap-1.5 text-xs text-ops-ink-foreground/70">
                     <span>Margem</span>
                     <span className={cn("font-semibold tabular-nums", resultTone(total.result))}>{formatPct(total.margin)}</span>
                     {hint("Resultado ÷ faturamento bruto. Indisponível quando não há faturamento.")}
@@ -278,28 +278,28 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                   {[
                     { title: "Entradas", rows: [
                       { l: "Faturamento bruto", v: total.gross, h: "Soma do faturado nos projetos no período." },
-                      { l: "Impostos", v: total.tax, h: "Faturamento × alíquota da equipe.", minus: true },
                     ], foot: { l: "Receita líquida", v: total.netRevenue, h: "Faturamento bruto menos impostos." } },
                     { title: "Saídas", rows: [
+                      { l: "Impostos", v: total.tax, h: "Faturamento × alíquota da equipe.", minus: true },
                       { l: "Custo total", v: total.totalCost, h: "Horas apontadas × custo/hora + despesas diretas + rateio dos custos da equipe.", minus: true },
                     ], foot: null as null | { l: string; v: number; h: string } },
                   ].map((g, gi) => (
-                    <div key={g.title} className={cn("px-5 py-4 sm:px-6", gi === 1 && "border-t sm:border-t-0 sm:border-l border-ops-ink-foreground/10")}>
+                    <div key={g.title} className={cn("px-4 py-3 sm:px-5", gi === 1 && "border-t sm:border-t-0 sm:border-l border-ops-ink-foreground/10")}>
                       <OpsLabel>{g.title}</OpsLabel>
-                      <dl className="mt-2 space-y-3">
+                      <dl className="mt-1.5 space-y-2">
                         {g.rows.map((r) => (
                           <div key={r.l} className="min-w-0">
-                            <dt className="flex items-center gap-1.5 text-sm text-ops-ink-foreground/70">{r.l}{hint(r.h)}</dt>
-                            <dd className={cn("mt-0.5 tabular-nums text-lg font-semibold whitespace-nowrap", r.minus && r.v > 0 && "text-ops-ink-foreground/80")}>
-                              {ov.isLoading ? <Skeleton className="h-5 w-20 bg-ops-ink-foreground/10" /> : formatBRL(r.v)}
+                            <dt className="flex items-center gap-1.5 text-xs text-ops-ink-foreground/70">{r.l}{hint(r.h)}</dt>
+                            <dd className={cn("mt-0.5 tabular-nums text-base font-semibold whitespace-nowrap", r.minus && r.v > 0 && "text-ops-ink-foreground/80")}>
+                              {ov.isLoading ? <Skeleton className="h-4 w-20 bg-ops-ink-foreground/10" /> : formatBRL(r.v)}
                             </dd>
                           </div>
                         ))}
                         {g.foot && (
-                          <div className="min-w-0 border-t border-ops-ink-foreground/10 pt-2">
-                            <dt className="flex items-center gap-1.5 text-sm font-semibold">{g.foot.l}{hint(g.foot.h)}</dt>
-                            <dd className="mt-0.5 tabular-nums font-ops-display text-xl font-semibold whitespace-nowrap">
-                              {ov.isLoading ? <Skeleton className="h-6 w-24 bg-ops-ink-foreground/10" /> : formatBRL(g.foot.v)}
+                          <div className="min-w-0 border-t border-ops-ink-foreground/10 pt-1.5">
+                            <dt className="flex items-center gap-1.5 text-xs font-semibold">{g.foot.l}{hint(g.foot.h)}</dt>
+                            <dd className="mt-0.5 tabular-nums font-ops-display text-lg font-semibold whitespace-nowrap">
+                              {ov.isLoading ? <Skeleton className="h-5 w-24 bg-ops-ink-foreground/10" /> : formatBRL(g.foot.v)}
                             </dd>
                           </div>
                         )}
