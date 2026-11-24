@@ -107,7 +107,7 @@ export function generateProfitabilityPdf(input: {
   });
   y = lastY(doc, y) + 6;
   doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...MUTED);
-  doc.text("Custo total = custo das horas apontadas + despesas diretas + rateio. Margem = resultado ÷ faturamento bruto. Custo de equipe sempre agregado por quadro.", 14, Math.min(y, h - 14));
+  doc.text("Custo total = custo mensal dos integrantes (horas contratadas) + despesas diretas + rateio. Margem = resultado ÷ faturamento bruto. Custo de equipe sempre agregado por quadro.", 14, Math.min(y, h - 14));
 
   drawFooter(doc);
   doc.save(input.filename);

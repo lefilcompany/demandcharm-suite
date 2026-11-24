@@ -5387,6 +5387,16 @@ export type Database = {
         Args: { _competence: string; _project_id: string }
         Returns: Json
       }
+      _finance_project_staffing: {
+        Args: { _comp: string; _team_id: string }
+        Returns: {
+          monthly_cost: number
+          productive_hours: number
+          project_id: string
+          share: number
+          user_id: string
+        }[]
+      }
       _finance_team_cost_share: {
         Args: { _comp: string; _team_id: string }
         Returns: Json

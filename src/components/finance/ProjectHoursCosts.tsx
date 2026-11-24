@@ -175,7 +175,7 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
                   </li>
                 ))}
               </ul>
-            ) : <p className="text-sm text-muted-foreground">Nenhuma hora apontada neste projeto no mês.</p>
+            ) : <p className="text-sm text-muted-foreground">Nenhum integrante interno com custo neste projeto no mês.</p>
           ) : <p className="text-xs text-muted-foreground">Valores por pessoa ficam visíveis só para quem tem acesso a custos individuais.</p>}
         </>
       )}

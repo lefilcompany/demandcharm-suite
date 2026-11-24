@@ -274,7 +274,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                     ], foot: { l: "Receita líquida", v: total.netRevenue, h: "Faturamento bruto menos impostos." } },
                     { title: "Saídas", rows: [
                       { l: "Impostos", v: total.tax, h: "Faturamento × alíquota da equipe.", minus: true },
-                    ], foot: { l: "Custo total", v: total.totalCost, h: "Horas apontadas × custo/hora + despesas diretas + rateio dos custos da equipe.", minus: true } },
+                    ], foot: { l: "Custo total", v: total.totalCost, h: "Custo mensal dos integrantes do projeto (horas contratadas) + despesas diretas + rateio dos custos da equipe.", minus: true } },
                   ] as LedgerGroup[]).map((g, gi) => (
                     <div key={g.title} className={cn("px-4 py-3 sm:px-5", gi === 1 && "border-t sm:border-t-0 sm:border-l border-ops-ink-foreground/10")}>
                       <OpsLabel>{g.title}</OpsLabel>

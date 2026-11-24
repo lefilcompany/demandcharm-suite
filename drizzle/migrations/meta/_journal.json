@@ -407,6 +407,13 @@
       "when": 1795444683266,
       "tag": "0057_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1795533490562,
+      "tag": "0058_finance_cost_by_contracted_hours",
+      "breakpoints": true
     }
   ]
 }

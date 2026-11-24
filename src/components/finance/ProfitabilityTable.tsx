@@ -39,11 +39,11 @@ export function ProfitabilityTable({ items }: { items: ProfitInput[] }) {
               <Head right={false}>Projeto</Head>
               <Head hint="Faturamento menos impostos.">Receita líquida</Head>
               <Head hint="Horas × custo/hora + despesas + parte dos custos da equipe.">Custo total</Head>
-              <Head hint="Horas apontadas no timer.">Horas</Head>
+              <Head hint="Horas contratadas dos integrantes do projeto.">Horas</Head>
               <Head>Resultado</Head>
               <Head hint="Resultado ÷ faturamento bruto.">Margem</Head>
               <Head hint="Resultado ÷ custo total.">Rentabilidade</Head>
-              <Head hint="Resultado ÷ horas apontadas.">Resultado/hora</Head>
+              <Head hint="Resultado ÷ horas contratadas.">Resultado/hora</Head>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -51,7 +51,7 @@ export function ProfitabilityTable({ items }: { items: ProfitInput[] }) {
               <tr key={r.id}>
                 <td className="px-3 py-2 min-w-[180px]">
                   <div className="font-medium">{r.name}</div>
-                  {!r.complete && <div className="text-[11px] text-muted-foreground">{r.gross <= 0 ? "Sem faturamento no período" : r.hours <= 0 ? "Sem horas apontadas" : r.hoursWithoutCost > 0 ? "Há horas sem custo cadastrado" : "Sem custos no período"}</div>}
+                  {!r.complete && <div className="text-[11px] text-muted-foreground">{r.gross <= 0 ? "Sem faturamento no período" : r.hours <= 0 ? "Sem integrantes com horas contratadas" : r.hoursWithoutCost > 0 ? "Há horas sem custo cadastrado" : "Sem custos no período"}</div>}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{formatBRL(r.netRevenue)}</td>
                 <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{formatBRL(r.totalCost)}</td>
