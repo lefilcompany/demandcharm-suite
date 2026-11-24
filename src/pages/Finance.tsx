@@ -80,7 +80,6 @@ const SECTIONS = [
   { v: "people", label: "Pessoas", hint: "Custos e produtividade por pessoa", icon: Users },
   { v: "manage", label: "Custos", hint: "Custos gerais da equipe", icon: Wallet },
   { v: "simulator", label: "Simulador", hint: "Simulação de precificação", icon: Calculator },
-  { v: "closing", label: "Fechamento", hint: "Fechamento mensal dos números", icon: CalendarCheck },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["v"];
 
@@ -106,7 +105,6 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
   const canExport = fin.canAny("finance.export");
 
   const sections = useMemo(() => SECTIONS.filter((s) => {
-    if (s.v === "closing") return canView || fin.can("finance.close_period");
     if (s.v === "manage") return canManage || canView;
     return canView;
   }), [canView, canManage, fin]);
@@ -430,8 +428,6 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
       case "simulator":
         return ov.isError ? <p className="py-6 text-sm text-muted-foreground">Os quadros autorizados não puderam ser carregados. Tente novamente acima.</p> :
           <PricingSimulator key={selectedTeamId} teamId={selectedTeamId!} boards={authorizedBoards} can={fin.can} isLoading={ov.isLoading} />;
-      case "closing":
-        return <MonthlyClosing teamId={selectedTeamId!} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} />;
       case "manage":
         return <FinanceManage teamId={selectedTeamId!} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} canAny={fin.canAny} isOwnerOrAdmin={isOwnerOrAdmin} overview={scopedOv} />;
     }
