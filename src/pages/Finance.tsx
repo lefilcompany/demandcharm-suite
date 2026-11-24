@@ -386,8 +386,8 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
   };
 
   return (
-    <div className="space-y-4 max-w-[1600px] mx-auto w-full">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 lg:h-full lg:min-h-0">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <OpsLabel>{currentTeam?.name ?? "Equipe"}</OpsLabel>
           <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Inteligência Financeira</h1>
@@ -407,7 +407,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
         </FinanceNotice>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[13rem_minmax(0,1fr)]">
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[13rem_minmax(0,1fr)] lg:grid-rows-1">
         <nav aria-label="Seções financeiras" className="flex w-full gap-1 overflow-x-auto lg:flex-col lg:self-start">
           {sections.map(({ v, label, hint: h, icon: Icon }) => {
             const on = active === v;
@@ -424,7 +424,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
             );
           })}
         </nav>
-        <div ref={scrollRef} className="scroll-on-hover min-w-0 space-y-10 overflow-y-auto pr-1 pb-6 h-[calc(100dvh-11rem)] min-h-[24rem]">
+        <div ref={scrollRef} className="scroll-on-hover min-w-0 space-y-10 overflow-y-auto pr-1 pb-6 min-h-[24rem] lg:min-h-0">
           {sections.map(({ v, label, hint: h, icon: Icon }) => (
             <section key={v} ref={(el) => { sectionRefs.current[v] = el; }} aria-label={label} className="scroll-mt-2">
               <header className="mb-3 border-b pb-2">
