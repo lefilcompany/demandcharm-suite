@@ -407,7 +407,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
         </FinanceNotice>
       )}
 
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[13rem_minmax(0,1fr)] lg:grid-rows-1">
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[13rem_minmax(0,1fr)] lg:grid-rows-1 lg:gap-10">
         <nav aria-label="Seções financeiras" className="flex w-full gap-1 overflow-x-auto lg:flex-col lg:self-start">
           {sections.map(({ v, label, hint: h, icon: Icon }) => {
             const on = active === v;
