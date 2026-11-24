@@ -78,7 +78,6 @@ const SECTIONS = [
   { v: "overview", label: "Visão geral", hint: "Resultado consolidado da equipe", icon: LayoutDashboard },
   { v: "byProject", label: "Por projeto", hint: "Faturamento e resultado de cada projeto", icon: PieChart },
   { v: "people", label: "Pessoas", hint: "Custos e produtividade por pessoa", icon: Users },
-  { v: "allocation", label: "Rateios", hint: "Despesas compartilhadas e rateio", icon: Receipt },
   { v: "manage", label: "Custos", hint: "Custos gerais da equipe", icon: Wallet },
   { v: "simulator", label: "Simulador", hint: "Simulação de precificação", icon: Calculator },
   { v: "closing", label: "Fechamento", hint: "Fechamento mensal dos números", icon: CalendarCheck },
@@ -428,8 +427,6 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
         );
       case "people":
         return <CostsProductivity rows={people.data ?? []} detailed={fin.can("finance.view_employee_costs")} isLoading={people.isLoading} isError={people.isError} onRetry={() => people.refetch()} boardOrder={boardOrder} teamId={selectedTeamId} canEdit={fin.can("finance.manage_settings")} />;
-      case "allocation":
-        return <ExpensesAllocation rows={(alloc.data ?? []).filter((r) => boardFilter === "all" || !r.board_id || r.board_id === boardFilter)} isLoading={alloc.isLoading} isError={alloc.isError} onRetry={() => alloc.refetch()} boardOrder={boardOrder} canEdit={fin.can("finance.manage_expenses")} teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} overview={scopedOv} />;
       case "simulator":
         return ov.isError ? <p className="py-6 text-sm text-muted-foreground">Os quadros autorizados não puderam ser carregados. Tente novamente acima.</p> :
           <PricingSimulator key={selectedTeamId} teamId={selectedTeamId!} boards={authorizedBoards} can={fin.can} isLoading={ov.isLoading} />;
