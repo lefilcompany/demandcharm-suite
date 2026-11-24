@@ -144,6 +144,10 @@ All colors MUST be HSL.
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
+    /* Chart series colors */
+    --chart-receita: 202 72% 40%;
+    --chart-custo: 33 95% 49%;
+
     /* Border and input */
     --border: 30 15% 90%;
     --input: 30 15% 90%;
@@ -217,6 +221,9 @@ All colors MUST be HSL.
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
+
+    --chart-receita: 202 78% 58%;
+    --chart-custo: 33 95% 55%;
 
     --border: 0 0% 20%;
     --input: 0 0% 20%;

@@ -278,12 +278,13 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                         <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="hsl(var(--border))" />
                         <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                         <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} width={40} />
-                        <RTooltip formatter={(v: number) => formatBRL(v)} />
-                        <Legend wrapperStyle={{ fontSize: 12 }} />
-                        <Bar dataKey="Faturamento" fill="hsl(var(--plan-5))" radius={[2, 2, 0, 0]} />
-                        <Bar dataKey="Custos" fill="hsl(var(--plan-3))" radius={[2, 2, 0, 0]} />
-                        <Bar dataKey="Resultado" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]}>
-                          {months.map((m, i) => <Cell key={i} fill={m.Resultado < 0 ? "hsl(var(--destructive))" : m.Resultado > 0 ? "hsl(var(--success))" : "hsl(var(--primary))"} />)}
+                        <RTooltip formatter={(v: number) => formatBRL(v)} cursor={{ fill: "hsl(var(--muted-foreground) / 0.08)" }}
+                          contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 10, fontSize: 12, padding: "8px 10px" }} />
+                        <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" iconSize={8} />
+                        <Bar dataKey="Faturamento" fill="hsl(var(--chart-receita))" radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="Custos" fill="hsl(var(--chart-custo))" radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="Resultado" fill="hsl(var(--muted-foreground))" radius={[2, 2, 0, 0]}>
+                          {months.map((m, i) => <Cell key={i} fill={m.Resultado < 0 ? "hsl(var(--destructive))" : m.Resultado > 0 ? "hsl(var(--success))" : "hsl(var(--muted-foreground))"} />)}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>

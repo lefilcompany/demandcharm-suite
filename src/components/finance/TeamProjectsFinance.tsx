@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { formatBRL, formatPct, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
 import { projectResult, type ProjectMonth } from "@/lib/finance/projectRollup";
 import { DeviationTag, MarginRuler, MarginGoalBar } from "./MarginRuler";
-import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, Legend, ReferenceLine, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 
 interface TeamProject { project_id: string; name: string; months: ProjectMonth[] }
 
@@ -66,7 +66,7 @@ export function TeamProjectsFinance({ teamId, from, to, boards = [], boardsLoadi
     return <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">Nenhum projeto com controle financeiro ligado nesta equipe.</p>;
 
   const ranked = [...rows].sort((a, b) => b.r.result - a.r.result);
-  const compare = ranked.map((p) => ({ name: p.name.length > 18 ? p.name.slice(0, 17) + "…" : p.name, Receita: p.r.netRevenue, Custo: p.r.totalCost }));
+  const compare = ranked.map((p) => ({ name: p.name.length > 18 ? p.name.slice(0, 17) + "…" : p.name, "Receita líquida": p.r.netRevenue, "Custo total": p.r.totalCost }));
 
   return (
     <div className="space-y-5">
@@ -74,15 +74,18 @@ export function TeamProjectsFinance({ teamId, from, to, boards = [], boardsLoadi
         <section className="rounded-xl border bg-card p-4">
           <h3 className="text-sm font-semibold">Receita líquida × custo por projeto</h3>
           <p className="text-xs text-muted-foreground mb-3">Ordenados do melhor para o pior resultado no período.</p>
-          <div style={{ height: Math.max(160, compare.length * 44) }}>
+          <div style={{ height: Math.max(180, compare.length * 46 + 30) }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={compare} layout="vertical" margin={{ left: 8, right: 16 }} barGap={2}>
+              <BarChart data={compare} layout="vertical" margin={{ left: 8, right: 16, top: 4 }} barGap={4}>
                 <CartesianGrid horizontal={false} strokeDasharray="3 3" className="stroke-border" />
-                <XAxis type="number" tickFormatter={(v) => compact(v)} tick={{ fontSize: 11 }} className="fill-muted-foreground" />
-                <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 12 }} />
-                <RTooltip formatter={(v: number) => formatBRL(v)} />
-                <Bar dataKey="Receita" fill="hsl(var(--foreground))" radius={[0, 3, 3, 0]} barSize={12} />
-                <Bar dataKey="Custo" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} barSize={12} />
+                <XAxis type="number" tickFormatter={(v) => compact(v)} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} className="fill-muted-foreground" />
+                <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 12, fill: "hsl(var(--foreground))" }} />
+                <RTooltip formatter={(v: number) => formatBRL(v)} cursor={{ fill: "hsl(var(--muted-foreground) / 0.08)" }}
+                  contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 10, fontSize: 12, padding: "8px 10px" }}
+                  labelStyle={{ fontSize: 11, color: "hsl(var(--muted-foreground))", marginBottom: 4 }} />
+                <Legend verticalAlign="bottom" height={26} content={<SeriesLegend />} />
+                <Bar dataKey="Receita líquida" fill="hsl(var(--chart-receita))" radius={[0, 3, 3, 0]} barSize={13} />
+                <Bar dataKey="Custo total" fill="hsl(var(--chart-custo))" radius={[0, 3, 3, 0]} barSize={13} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -139,6 +142,20 @@ function BoardList({ boards, onBoard }: { boards: BoardAgg[]; onBoard?: (id: str
 }
 
 const compact = (v: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(v);
+
+/** Legenda do gráfico de comparação: quadradinho na cor da série + nome. */
+function SeriesLegend({ payload }: { payload?: { value?: string; color?: string }[] }) {
+  return (
+    <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 pt-1 text-[11px] text-muted-foreground">
+      {(payload ?? []).map((e) => (
+        <li key={e.value} className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: e.color }} aria-hidden />
+          <span>{e.value}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function ProjectCard({ name, months, r, closed, incomplete, boards, onBoard }: TeamProject & { r: ReturnType<typeof projectResult>; closed: boolean; incomplete: boolean; boards: BoardAgg[]; onBoard?: (id: string) => void }) {
   const t = r.totals;
