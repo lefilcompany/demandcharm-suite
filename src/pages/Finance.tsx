@@ -241,7 +241,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
           <div className="space-y-4">
             {/* Ledger strip: the P&L read top to bottom */}
             <section className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl overflow-hidden">
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-6">
                 {[
                   { l: "Faturamento bruto", v: formatBRL(total.gross), h: "Soma do faturado nos quadros autorizados no período." },
                   { l: "− Impostos", v: formatBRL(total.tax), h: "Faturamento × alíquota (padrão 21%, ou a do lançamento/quadro)." },
@@ -250,7 +250,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                   { l: "= Resultado", v: formatBRL(total.result), h: "Receita líquida menos custo total.", tone: resultTone(total.result) },
                   { l: "Margem", v: formatPct(total.margin), h: "Resultado ÷ faturamento bruto. Indisponível quando não há faturamento." },
                 ].map((m) => (
-                  <div key={m.l} className="px-4 py-4 sm:px-5 border-ops-ink-foreground/10 border-b xl:border-b-0 [&:not(:first-child)]:xl:border-l">
+                  <div key={m.l} className="px-4 py-4 sm:px-5 border-ops-ink-foreground/10 border-b 2xl:border-b-0 [&:not(:first-child)]:2xl:border-l">
                     <div className="flex items-center gap-1.5"><OpsLabel>{m.l}</OpsLabel>{hint(m.h)}</div>
                     {ov.isLoading ? <Skeleton className="mt-1 h-8 w-24 bg-ops-ink-foreground/10" /> :
                       <div className={cn("font-ops-display text-xl sm:text-2xl font-semibold tabular-nums leading-tight truncate", m.tone)} title={m.v}>{m.v}</div>}
