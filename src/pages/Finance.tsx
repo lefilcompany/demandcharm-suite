@@ -60,9 +60,9 @@ const SECTIONS = [
   { v: "byProject", label: "Por projeto", hint: "Faturamento e resultado de cada projeto", icon: PieChart },
   { v: "people", label: "Pessoas", hint: "Custos e produtividade por pessoa", icon: Users },
   { v: "allocation", label: "Rateios", hint: "Despesas compartilhadas e rateio", icon: Receipt },
+  { v: "manage", label: "Custos", hint: "Custos gerais da equipe", icon: Wallet },
   { v: "simulator", label: "Simulador", hint: "Simulação de precificação", icon: Calculator },
   { v: "closing", label: "Fechamento", hint: "Fechamento mensal dos números", icon: CalendarCheck },
-  { v: "manage", label: "Custos", hint: "Custos gerais da equipe", icon: Wallet },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["v"];
 
