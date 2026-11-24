@@ -247,7 +247,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
               <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
                 {/* Resultado em destaque */}
                 <div className="px-5 py-5 sm:px-6 border-b lg:border-b-0 lg:border-r border-ops-ink-foreground/10 flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-ops-ink-foreground/80"><span>Resultado do período</span>{hint("O que sobra após pagar os custos. Negativo é prejuízo.")}</div>
+                  <div className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-ops-ink-foreground/80"><span>Resultado do período</span>{hint("Resultado = Receita líquida − Custo total. A receita líquida é o faturamento bruto menos os impostos; o custo total soma as horas apontadas × custo/hora, as despesas diretas e o rateio dos custos da equipe. Positivo é lucro; negativo é prejuízo.")}</div>
                   {ov.isLoading ? <Skeleton className="mt-2 h-11 w-52 bg-ops-ink-foreground/10" /> : (
                     <div className={cn("mt-1 font-ops-display text-2xl sm:text-3xl xl:text-4xl 2xl:text-5xl font-semibold tabular-nums leading-tight whitespace-nowrap", resultTone(total.result))} title={formatBRL(total.result)}>
                       {formatBRL(total.result)}
