@@ -171,7 +171,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
   );
 
   return (
-    <div className="space-y-4 p-3 sm:p-4 md:p-6 max-w-[1600px] mx-auto w-full">
+    <div className="space-y-4 max-w-[1600px] mx-auto w-full">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <OpsLabel>{currentTeam?.name ?? "Equipe"}</OpsLabel>
