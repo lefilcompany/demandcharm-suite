@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeFinance, costPerHour, marginGoalState, minimumPrice, resultTone, taxFor } from "./engine";
+import { computeFinance, costPerHour, marginGoalState, minimumPrice, resultLegendTones, resultTone, taxFor } from "./engine";
 
 describe("finance engine", () => {
   it("applies 21% tax on gross", () => {
@@ -49,6 +49,14 @@ describe("finance engine", () => {
     expect(resultTone(-23416.67)).toBe("text-destructive");
     expect(resultTone(0.01)).toBe("text-success");
     expect(resultTone(0)).toBe("");
+  });
+
+  it("result legend shows only the colours the bars actually have", () => {
+    expect(resultLegendTones([-100, -50])).toEqual([{ label: "Resultado (prejuízo)", color: "hsl(var(--destructive))" }]);
+    expect(resultLegendTones([10, 0])).toEqual([{ label: "Resultado (lucro)", color: "hsl(var(--success))" }]);
+    expect(resultLegendTones([-1, 2]).map((t) => t.label)).toEqual(["Resultado (prejuízo)", "Resultado (lucro)"]);
+    expect(resultLegendTones([0])).toEqual([{ label: "Resultado", color: "hsl(var(--muted-foreground))" }]);
+    expect(resultLegendTones([])).toEqual([{ label: "Resultado", color: "hsl(var(--muted-foreground))" }]);
   });
 
   it("margin goal: empty bar and prejudice copy below zero", () => {

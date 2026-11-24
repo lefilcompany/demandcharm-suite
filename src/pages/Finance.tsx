@@ -16,7 +16,7 @@ import { MonthlyClosing } from "@/components/finance/MonthlyClosing";
 import { TeamProjectsFinance } from "@/components/finance/TeamProjectsFinance";
 import { TeamRevenueTotal } from "@/components/finance/TeamRevenueTotal";
 import { ExportReportButton } from "@/components/finance/ExportReportButton";
-import { computeFinance, FinanceResult, formatBRL, formatPct, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
+import { computeFinance, FinanceResult, formatBRL, formatPct, resultLegendTones, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { MonthRangeField } from "@/components/ops/MonthRangeField";
 
@@ -54,6 +54,25 @@ const hint = (t: string) => (
 
 const hrs = (h: number) => `${h.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`;
 const monthLabel = (iso: string) => new Date(`${iso.substring(0, 10)}T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+
+/**
+ * Legenda do gráfico de evolução mensal. O resultado muda de cor mês a mês
+ * (vermelho = prejuízo, verde = lucro), então a legenda lista só as cores que
+ * realmente aparecem nas barras — nunca um cinza que não existe no gráfico.
+ */
+function MonthlyLegend({ payload, resultTones }: { payload?: { value?: string; color?: string }[]; resultTones?: { label: string; color: string }[] }) {
+  const base = (payload ?? []).filter((e) => e.value && e.value !== "Resultado").map((e) => ({ label: e.value as string, color: e.color ?? "hsl(var(--muted-foreground))" }));
+  return (
+    <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 pt-1 text-[11px] text-muted-foreground">
+      {[...base, ...(resultTones ?? [])].map((e) => (
+        <li key={e.label} className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: e.color }} aria-hidden />
+          <span>{e.label}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 const SECTIONS = [
   { v: "overview", label: "Visão geral", hint: "Resultado consolidado da equipe", icon: LayoutDashboard },
@@ -169,6 +188,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
       return { month: monthLabel(k), Faturamento: a.gross, Custos: a.totalCost + a.tax, Resultado: a.result };
     });
   }, [rows]);
+  const resultLegend = useMemo(() => resultLegendTones(months.map((m) => m.Resultado)), [months]);
   const sorted = useMemo(() => [...perBoard].sort((a, b) => {
     const av = a[sort.key] as any, bv = b[sort.key] as any;
     return ((av ?? -Infinity) > (bv ?? -Infinity) ? 1 : (av ?? -Infinity) < (bv ?? -Infinity) ? -1 : 0) * sort.dir;
@@ -280,7 +300,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                         <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} width={40} />
                         <RTooltip formatter={(v: number) => formatBRL(v)} cursor={{ fill: "hsl(var(--muted-foreground) / 0.08)" }}
                           contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 10, fontSize: 12, padding: "8px 10px" }} />
-                        <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" iconSize={8} />
+                        <Legend wrapperStyle={{ fontSize: 12 }} content={<MonthlyLegend resultTones={resultLegend} />} />
                         <Bar dataKey="Faturamento" fill="hsl(var(--chart-receita))" radius={[2, 2, 0, 0]} />
                         <Bar dataKey="Custos" fill="hsl(var(--chart-custo))" radius={[2, 2, 0, 0]} />
                         <Bar dataKey="Resultado" fill="hsl(var(--muted-foreground))" radius={[2, 2, 0, 0]}>

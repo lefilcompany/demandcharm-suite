@@ -70,6 +70,18 @@ export const STATUS_LABEL: Record<FinanceStatus, string> = {
 /** Cor do resultado: vermelho no prejuízo, verde no lucro, neutro quando zero. */
 export const resultTone = (v: number) => (v < 0 ? "text-destructive" : v > 0 ? "text-success" : "");
 
+/**
+ * Cores que a legenda de um gráfico de resultado deve mostrar: exatamente as que
+ * aparecem nas barras, para a legenda nunca prometer uma cor que o gráfico não tem.
+ */
+export function resultLegendTones(values: number[]): { label: string; color: string }[] {
+  const tones: { label: string; color: string }[] = [];
+  if (values.some((v) => v < 0)) tones.push({ label: "Resultado (prejuízo)", color: "hsl(var(--destructive))" });
+  if (values.some((v) => v > 0)) tones.push({ label: "Resultado (lucro)", color: "hsl(var(--success))" });
+  if (!tones.length) tones.push({ label: "Resultado", color: "hsl(var(--muted-foreground))" });
+  return tones;
+}
+
 export type MarginGoalTone = "muted" | "destructive" | "primary" | "success";
 
 /** Margem de lucro frente à meta da equipe: preenchimento da barra, cor e frase em português. */
