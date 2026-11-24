@@ -121,45 +121,13 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
     return (SECTIONS.some((s) => s.v === mapped) ? mapped : "overview") as SectionId;
   });
   const scrollRef = useRef<HTMLDivElement>(null);
-  const sectionRefs = useRef<Partial<Record<SectionId, HTMLElement | null>>>({});
-  const jumping = useRef<number | null>(null);
-
-  const computeActive = useCallback(() => {
-    const root = scrollRef.current;
-    if (!root || sections.length === 0) return;
-    if (root.scrollTop + root.clientHeight >= root.scrollHeight - 4) {
-      setActive(sections[sections.length - 1].v);
-      return;
-    }
-    const top = root.getBoundingClientRect().top + 24;
-    let current: SectionId = sections[0].v;
-    for (const s of sections) {
-      const el = sectionRefs.current[s.v];
-      if (el && el.getBoundingClientRect().top <= top) current = s.v;
-    }
-    setActive(current);
-  }, [sections]);
-
-  useEffect(() => {
-    const root = scrollRef.current;
-    if (!root) return;
-    const onScroll = () => { if (jumping.current === null) computeActive(); };
-    root.addEventListener("scroll", onScroll, { passive: true });
-    return () => root.removeEventListener("scroll", onScroll);
-  }, [computeActive]);
-
+  const shown: SectionId = sections.some((s) => s.v === active) ? active : (sections[0]?.v ?? "overview");
   const jumpTo = (id: SectionId) => {
-    const root = scrollRef.current;
-    const el = sectionRefs.current[id];
     setActive(id);
     const n = new URLSearchParams(params);
     n.set("aba", id);
     setParams(n, { replace: true });
-    if (!root || !el) return;
-    const target = el.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop - 8;
-    if (jumping.current) window.clearTimeout(jumping.current);
-    jumping.current = window.setTimeout(() => { jumping.current = null; }, 700);
-    root.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+    scrollRef.current?.scrollTo({ top: 0 });
   };
 
   const lastDay = new Date(Number(to.substring(0, 4)), Number(to.substring(5, 7)), 0).getDate();
@@ -393,36 +361,21 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
         </FinanceNotice>
       )}
 
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[13rem_minmax(0,1fr)] lg:grid-rows-1 lg:gap-10">
-        <nav aria-label="Seções financeiras" className="flex w-full gap-1 overflow-x-auto lg:flex-col lg:self-start">
-          {sections.map(({ v, label, hint: h, icon: Icon }) => {
-            const on = active === v;
+      <div className="flex min-h-0 flex-1 flex-col gap-4">
+        <nav role="tablist" aria-label="Seções financeiras" className="flex shrink-0 gap-1 overflow-x-auto border-b">
+          {sections.map(({ v, label, icon: Icon }) => {
+            const on = shown === v;
             return (
-              <button key={v} type="button" onClick={() => jumpTo(v)} aria-current={on ? "true" : undefined}
-                className={cn("group flex shrink-0 items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
-                  on ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}>
-                <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-md border bg-background", on && "border-primary/40 text-primary")}><Icon className="h-3.5 w-3.5" /></span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold leading-tight">{label}</span>
-                  <span className="hidden text-[11px] leading-tight text-muted-foreground lg:block">{h}</span>
-                </span>
+              <button key={v} type="button" role="tab" aria-selected={on} onClick={() => jumpTo(v)}
+                className={cn("-mb-px inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-sm font-semibold transition-colors",
+                  on ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
+                <Icon className={cn("h-4 w-4", on && "text-primary")} />{label}
               </button>
             );
           })}
         </nav>
-        <div ref={scrollRef} className="scroll-on-hover min-w-0 space-y-10 overflow-y-auto pr-1 pb-6 min-h-[24rem] lg:min-h-0">
-          {sections.map(({ v, label, hint: h, icon: Icon }) => (
-            <section key={v} ref={(el) => { sectionRefs.current[v] = el; }} aria-label={label} className="scroll-mt-2">
-              <header className="mb-3 border-b pb-2">
-                <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
-                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border bg-muted/50 text-primary"><Icon className="h-3.5 w-3.5" /></span>
-                  {label}
-                </h2>
-                <p className="mt-1 pl-8 text-[11px] leading-tight text-muted-foreground">{h}</p>
-              </header>
-              {renderSection(v)}
-            </section>
-          ))}
+        <div ref={scrollRef} role="tabpanel" className="scroll-on-hover min-w-0 flex-1 overflow-y-auto pr-1 pb-6 min-h-[24rem] lg:min-h-0">
+          {sections.some((x) => x.v === shown) && renderSection(shown)}
         </div>
       </div>
 
