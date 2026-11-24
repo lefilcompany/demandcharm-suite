@@ -263,7 +263,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                 <div className="px-5 py-5 sm:px-6 border-b lg:border-b-0 lg:border-r border-ops-ink-foreground/10 flex flex-col justify-center">
                   <div className="flex items-center gap-1.5"><OpsLabel>Resultado do período</OpsLabel>{hint("Receita líquida menos custo total.")}</div>
                   {ov.isLoading ? <Skeleton className="mt-2 h-10 w-40 bg-ops-ink-foreground/10" /> : (
-                    <div className={cn("mt-1 font-ops-display text-3xl sm:text-4xl font-semibold tabular-nums leading-tight truncate", resultTone(total.result))} title={formatBRL(total.result)}>
+                    <div className={cn("mt-1 font-ops-display text-2xl sm:text-3xl xl:text-4xl font-semibold tabular-nums leading-tight break-all", resultTone(total.result))} title={formatBRL(total.result)}>
                       {formatBRL(total.result)}
                     </div>
                   )}
