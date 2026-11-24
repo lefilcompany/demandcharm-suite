@@ -49,7 +49,7 @@ const STATUS_TONE: Record<string, string> = {
 
 const hint = (t: string) => (
   <Tooltip><TooltipTrigger asChild><button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Explicação"><Info className="h-3 w-3" /></button></TooltipTrigger>
-    <TooltipContent className="max-w-xs">{t}</TooltipContent></Tooltip>
+    <TooltipContent className="max-w-[15rem] text-xs leading-snug normal-case">{t}</TooltipContent></Tooltip>
 );
 
 const hrs = (h: number) => `${h.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`;
@@ -247,7 +247,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
               <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
                 {/* Resultado em destaque */}
                 <div className="px-5 py-5 sm:px-6 border-b lg:border-b-0 lg:border-r border-ops-ink-foreground/10 flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-ops-ink-foreground/80"><span>Resultado do período</span>{hint("Receita líquida menos custo total.")}</div>
+                  <div className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-ops-ink-foreground/80"><span>Resultado do período</span>{hint("O que sobra após pagar os custos. Negativo é prejuízo.")}</div>
                   {ov.isLoading ? <Skeleton className="mt-2 h-11 w-52 bg-ops-ink-foreground/10" /> : (
                     <div className={cn("mt-1 font-ops-display text-2xl sm:text-3xl xl:text-4xl 2xl:text-5xl font-semibold tabular-nums leading-tight whitespace-nowrap", resultTone(total.result))} title={formatBRL(total.result)}>
                       {formatBRL(total.result)}
