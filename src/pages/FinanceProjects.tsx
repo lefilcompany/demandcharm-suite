@@ -15,9 +15,10 @@ export default function FinanceProjects() {
   const fin = useFinanceAccess(selectedTeamId);
   const [params, setParams] = useSearchParams();
   const now = new Date();
-  const defFrom = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().substring(0, 7);
+  const defFrom = `${now.getFullYear()}-01`;
+  const defTo = `${now.getFullYear()}-12`;
   const [from, setFrom] = useState(MONTH.test(params.get("de") ?? "") ? params.get("de")! : defFrom);
-  const [to, setTo] = useState(MONTH.test(params.get("ate") ?? "") ? params.get("ate")! : now.toISOString().substring(0, 7));
+  const [to, setTo] = useState(MONTH.test(params.get("ate") ?? "") ? params.get("ate")! : defTo);
 
   if (!fin.isLoading && !fin.hasModule)
     return <p className="p-6 text-sm text-muted-foreground">Você não tem acesso à gestão financeira desta equipe.</p>;
