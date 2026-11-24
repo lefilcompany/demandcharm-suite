@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatPct, resultLegendTones, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
 import { projectResult, type ProjectMonth } from "@/lib/finance/projectRollup";
+import { ProfitabilityTable } from "./ProfitabilityTable";
 import { DeviationTag, MarginRuler, MarginGoalBar } from "./MarginRuler";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ReferenceLine, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 
@@ -70,6 +71,7 @@ export function TeamProjectsFinance({ teamId, from, to, boards = [], boardsLoadi
 
   return (
     <div className="space-y-5">
+      <ProfitabilityTable items={rows.map((p) => ({ id: p.project_id, name: p.name, gross: p.r.gross, netRevenue: p.r.netRevenue, totalCost: p.r.totalCost, hours: p.r.totals.hours, result: p.r.result, hoursWithoutCost: p.r.totals.hoursWithoutCost }))} />
       {rows.length > 1 && (
         <section className="rounded-xl border bg-card p-4">
           <h3 className="text-sm font-semibold">Receita líquida × custo por projeto</h3>
