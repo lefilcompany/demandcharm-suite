@@ -1,6 +1,6 @@
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Info, Pencil, Wrench, Briefcase, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OpsLabel } from "@/components/ops/OpsParts";
 import { formatBRL } from "@/lib/finance/engine";
+import { TeamCostsHistory } from "./TeamCostsHistory";
 import { useFinanceMutation } from "@/hooks/useFinance";
 import { shareAll, TEAM_COST_HINT, TEAM_COST_LABEL, TEAM_COST_TYPES, TeamCostType } from "@/lib/finance/projectShare";
 
@@ -19,6 +20,7 @@ const ICON: Record<TeamCostType, typeof Building2> = { fixa: Building2, operacio
 export function TeamCostsPanel({ teamId, canEdit }: { teamId: string; canEdit: boolean }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const qc = useQueryClient();
   const month = new Date().toISOString().substring(0, 7);
   const share = useQuery({
     queryKey: ["finance-table", "team-cost-share", teamId, month, user?.id],
@@ -62,7 +64,7 @@ export function TeamCostsPanel({ teamId, canEdit }: { teamId: string; canEdit: b
               </div>
               {on ? (
                 <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); save.mutate({ type: t, amount: Number(value) || 0 }, {
-                  onSuccess: () => { toast({ title: `${TEAM_COST_LABEL[t]} atualizado` }); setEditing(null); share.refetch(); },
+                  onSuccess: () => { toast({ title: `${TEAM_COST_LABEL[t]} atualizado` }); setEditing(null); share.refetch(); qc.invalidateQueries({ queryKey: ["finance-table", "team-costs-history"] }); },
                   onError: () => toast({ title: "Não foi possível salvar.", variant: "destructive" }) }); }}>
                   <CurrencyInput autoFocus value={value} onValueChange={setValue} aria-label={`Valor mensal de ${TEAM_COST_LABEL[t]}`} />
                   <div className="flex justify-end gap-2">
@@ -97,6 +99,8 @@ export function TeamCostsPanel({ teamId, canEdit }: { teamId: string; canEdit: b
             <ul className="mt-1 flex flex-wrap gap-1.5">{d.projects.map((p) => <li key={p.id} className="rounded-full bg-ops-ink-foreground/10 px-2.5 py-0.5 text-xs">{p.name}</li>)}</ul></div>
         )}
       </section>
+
+      <TeamCostsHistory teamId={teamId} />
 
       <p className="flex items-start gap-2 rounded-xl border bg-muted/40 p-3 text-xs text-muted-foreground"><Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         O custo das pessoas (RH) entra pelas horas gastas em cada projeto, usando a hora/homem. Marketing e comercial não entram nos custos dos projetos. Inativar um projeto aumenta a parte dos que continuam ativos a partir daquele mês.</p>
