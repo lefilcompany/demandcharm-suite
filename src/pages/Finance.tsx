@@ -1,10 +1,10 @@
 import { generateProfitabilityPdf } from "@/lib/finance/profitabilityPdf";
 import { useAuth } from "@/lib/auth";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { FinanceTabsList, FinanceTab, FinanceNotice, FinanceSection } from "@/components/ops/FinanceUI";
+import { FinanceNotice, FinanceSection } from "@/components/ops/FinanceUI";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
-import { ArrowDown, ArrowUp, Info, Lock, RefreshCw } from "lucide-react";
+import { ArrowDown, ArrowUp, Calculator, CalendarCheck, Info, LayoutDashboard, Lock, PieChart, RefreshCw, Receipt, Users, Wallet } from "lucide-react";
 import { useSelectedTeam } from "@/contexts/TeamContext";
 import { useBoards } from "@/hooks/useBoards";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -22,7 +22,6 @@ import { MonthRangeField } from "@/components/ops/MonthRangeField";
 
 import { MarginRuler, DeviationTag } from "@/components/finance/MarginRuler";
 import { FinanceManage } from "@/components/finance/FinanceManage";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -56,6 +55,17 @@ const hint = (t: string) => (
 const hrs = (h: number) => `${h.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`;
 const monthLabel = (iso: string) => new Date(`${iso.substring(0, 10)}T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
 
+const SECTIONS = [
+  { v: "overview", label: "Visão geral", hint: "Resultado consolidado da equipe", icon: LayoutDashboard },
+  { v: "byProject", label: "Por projeto", hint: "Faturamento e resultado de cada projeto", icon: PieChart },
+  { v: "people", label: "Pessoas", hint: "Custos e produtividade por pessoa", icon: Users },
+  { v: "allocation", label: "Rateios", hint: "Despesas compartilhadas e rateio", icon: Receipt },
+  { v: "simulator", label: "Simulador", hint: "Simulação de precificação", icon: Calculator },
+  { v: "closing", label: "Fechamento", hint: "Fechamento mensal dos números", icon: CalendarCheck },
+  { v: "manage", label: "Custos", hint: "Custos gerais da equipe", icon: Wallet },
+] as const;
+type SectionId = (typeof SECTIONS)[number]["v"];
+
 export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: { teamId?: string | null; teamName?: string; boardScope?: string[] } = {}) {
   const ctx = useSelectedTeam();
   const { user } = useAuth();
@@ -74,6 +84,62 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
   const [sort, setSort] = useState<{ key: keyof Agg; dir: 1 | -1 }>({ key: "result", dir: -1 });
 
   const canView = fin.canAny("finance.view_board") || fin.canAny("finance.view_team");
+  const canManage = fin.canAny("finance.manage_revenue") || fin.canAny("finance.manage_expenses") || fin.can("finance.view_employee_costs") || fin.can("finance.manage_settings");
+  const canExport = fin.canAny("finance.export");
+
+  const sections = useMemo(() => SECTIONS.filter((s) => {
+    if (s.v === "closing") return canView || fin.can("finance.close_period");
+    if (s.v === "manage") return canManage || canView;
+    return canView;
+  }), [canView, canManage, fin]);
+
+  const [active, setActive] = useState<SectionId>(() => {
+    const p = params.get("aba");
+    const mapped = p === "projects" ? "byProject" : p;
+    return (SECTIONS.some((s) => s.v === mapped) ? mapped : "overview") as SectionId;
+  });
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Partial<Record<SectionId, HTMLElement | null>>>({});
+  const jumping = useRef<number | null>(null);
+
+  const computeActive = useCallback(() => {
+    const root = scrollRef.current;
+    if (!root || sections.length === 0) return;
+    if (root.scrollTop + root.clientHeight >= root.scrollHeight - 4) {
+      setActive(sections[sections.length - 1].v);
+      return;
+    }
+    const top = root.getBoundingClientRect().top + 24;
+    let current: SectionId = sections[0].v;
+    for (const s of sections) {
+      const el = sectionRefs.current[s.v];
+      if (el && el.getBoundingClientRect().top <= top) current = s.v;
+    }
+    setActive(current);
+  }, [sections]);
+
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+    const onScroll = () => { if (jumping.current === null) computeActive(); };
+    root.addEventListener("scroll", onScroll, { passive: true });
+    return () => root.removeEventListener("scroll", onScroll);
+  }, [computeActive]);
+
+  const jumpTo = (id: SectionId) => {
+    const root = scrollRef.current;
+    const el = sectionRefs.current[id];
+    setActive(id);
+    const n = new URLSearchParams(params);
+    n.set("aba", id);
+    setParams(n, { replace: true });
+    if (!root || !el) return;
+    const target = el.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop - 8;
+    if (jumping.current) window.clearTimeout(jumping.current);
+    jumping.current = window.setTimeout(() => { jumping.current = null; }, 700);
+    root.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+  };
+
   const lastDay = new Date(Number(to.substring(0, 4)), Number(to.substring(5, 7)), 0).getDate();
   const ov = useFinanceOverview(selectedTeamId, `${from}-01`, `${to}-${String(lastDay).padStart(2, "0")}`, canView && from <= to);
   const scopedOv = useMemo(() => (ov.data ?? []).filter((r) => !boardScope || boardScope.includes(r.board_id)), [ov.data, boardScope]);
@@ -109,8 +175,6 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
   }), [perBoard, sort]);
   const belowTarget = perBoard.filter((b) => b.status === "atencao" || b.status === "prejuizo");
   const authorizedBoards = boards.filter((b) => scopedOv.some((r) => r.board_id === b.id));
-  const canManage = fin.canAny("finance.manage_revenue") || fin.canAny("finance.manage_expenses") || fin.can("finance.view_employee_costs") || fin.can("finance.manage_settings");
-  const canExport = fin.canAny("finance.export");
 
   const buildCsv = () => {
     const head = ["Quadro", "Faturamento bruto", "Impostos", "Receita líquida", "Horas previstas", "Horas realizadas", "Custo da equipe", "Despesas diretas", "Rateio", "Custo total", "Resultado", "Margem", "Meta", "Desvio p.p.", "Status"];
@@ -170,42 +234,11 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
     </th>
   );
 
-  return (
-    <div className="space-y-4 max-w-[1600px] mx-auto w-full">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <OpsLabel>{currentTeam?.name ?? "Equipe"}</OpsLabel>
-          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Inteligência Financeira</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-1.5">
-          <MonthRangeField from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
-          <div>
-            <Select value={boardFilter} onValueChange={setBoardFilter}><SelectTrigger className="h-9 w-[180px] border-0 bg-muted/50" aria-label="Quadro"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Todos autorizados</SelectItem>{authorizedBoards.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent></Select></div>
-          {canExport && <ExportReportButton className="h-9" onExport={(f) => (f === "pdf" ? exportPdf() : exportCsv())} disabled={!sorted.length} />}
-        </div>
-      </header>
-
-      <Tabs value={(params.get("aba") === "projects" ? "byProject" : params.get("aba")) ?? (canView ? "overview" : fin.can("finance.close_period") ? "closing" : "manage")}
-        onValueChange={(v) => { const n = new URLSearchParams(params); n.set("aba", v); setParams(n, { replace: true }); }} className="space-y-4">
-        <FinanceTabsList>
-          {canView && <FinanceTab value="overview">Visão geral</FinanceTab>}
-          {canView && <FinanceTab value="byProject">Por projeto</FinanceTab>}
-          {canView && <FinanceTab value="people" full="Custos e produtividade">Pessoas</FinanceTab>}
-          {canView && <FinanceTab value="allocation" full="Despesas e rateios">Rateios</FinanceTab>}
-          {canView && <FinanceTab value="simulator" full="Simulador de precificação">Simulador</FinanceTab>}
-          {(canView || fin.can("finance.close_period")) && <FinanceTab value="closing">Fechamento</FinanceTab>}
-          {(canManage || canView) && <FinanceTab value="manage" full="Custos da equipe, pessoas e parâmetros">Custos</FinanceTab>}
-        </FinanceTabsList>
-
-        {canView && ov.isError && (
-          <FinanceNotice tone="error" action={<Button size="sm" variant="outline" className="gap-1.5" onClick={() => ov.refetch()}><RefreshCw className="h-4 w-4" />Tentar de novo</Button>}>
-            Não foi possível carregar os números financeiros.
-          </FinanceNotice>
-        )}
-
-        {canView && !ov.isError && (
-          <TabsContent value="overview" className="space-y-4">
+  const renderSection = (v: SectionId) => {
+    switch (v) {
+      case "overview":
+        return (
+          <div className="space-y-4">
             {/* Ledger strip: the P&L read top to bottom */}
             <section className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl overflow-hidden">
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
@@ -220,7 +253,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                   <div key={m.l} className="px-4 py-4 sm:px-5 border-ops-ink-foreground/10 border-b xl:border-b-0 [&:not(:first-child)]:xl:border-l">
                     <div className="flex items-center gap-1.5"><OpsLabel>{m.l}</OpsLabel>{hint(m.h)}</div>
                     {ov.isLoading ? <Skeleton className="mt-1 h-8 w-24 bg-ops-ink-foreground/10" /> :
-                      <div className={cn("font-ops-display text-2xl sm:text-3xl font-semibold tabular-nums leading-tight", m.tone)}>{m.v}</div>}
+                      <div className={cn("font-ops-display text-xl sm:text-2xl font-semibold tabular-nums leading-tight truncate", m.tone)} title={m.v}>{m.v}</div>}
                   </div>
                 ))}
               </div>
@@ -300,16 +333,12 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                 })}
               </div>
             </FinanceSection>
-          </TabsContent>
-        )}
 
-        {canView && !ov.isError && (
-          <TabsContent value="projects">
             <div className="rounded-xl border bg-card overflow-auto max-h-[70dvh]">
               <table className="w-full text-sm [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-card [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-muted">
                 <thead className="sticky top-0 z-10 border-b bg-muted">
                   <tr>
-                    <Th k="name" right={false}>Projeto</Th><Th k="gross">Bruto</Th><Th k="tax">Impostos</Th><Th k="netRevenue">Líquida</Th>
+                    <Th k="name" right={false}>Quadro</Th><Th k="gross">Bruto</Th><Th k="tax">Impostos</Th><Th k="netRevenue">Líquida</Th>
                     <Th k="hoursPlanned">H. prev.</Th><Th k="hoursRealized">H. real.</Th><Th k="teamCost">Equipe</Th><Th k="directExpenses">Diretas</Th><Th k="allocated">Rateio</Th>
                     <Th k="totalCost">Custo total</Th><Th k="result">Resultado</Th><Th k="margin">Margem</Th><Th k="deviationPp">Desvio</Th><Th k="status">Status</Th>
                   </tr>
@@ -333,48 +362,83 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                 </tbody>
               </table>
             </div>
-          </TabsContent>
-        )}
+          </div>
+        );
+      case "byProject":
+        return (
+          <div className="space-y-4">
+            <TeamRevenueTotal teamId={selectedTeamId} from={from} to={to} />
+            <TeamProjectsFinance teamId={selectedTeamId} from={from} to={to} boards={perBoard} boardsLoading={ov.isLoading} onBoard={setDetail} />
+          </div>
+        );
+      case "people":
+        return <CostsProductivity rows={people.data ?? []} detailed={fin.can("finance.view_employee_costs")} isLoading={people.isLoading} isError={people.isError} onRetry={() => people.refetch()} boardOrder={boardOrder} teamId={selectedTeamId} canEdit={fin.can("finance.manage_settings")} />;
+      case "allocation":
+        return <ExpensesAllocation rows={(alloc.data ?? []).filter((r) => boardFilter === "all" || !r.board_id || r.board_id === boardFilter)} isLoading={alloc.isLoading} isError={alloc.isError} onRetry={() => alloc.refetch()} boardOrder={boardOrder} canEdit={fin.can("finance.manage_expenses")} teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} overview={scopedOv} />;
+      case "simulator":
+        return ov.isError ? <p className="py-6 text-sm text-muted-foreground">Os quadros autorizados não puderam ser carregados. Tente novamente acima.</p> :
+          <PricingSimulator key={selectedTeamId} teamId={selectedTeamId!} boards={authorizedBoards} can={fin.can} isLoading={ov.isLoading} />;
+      case "closing":
+        return <MonthlyClosing teamId={selectedTeamId!} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} />;
+      case "manage":
+        return <FinanceManage teamId={selectedTeamId!} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} canAny={fin.canAny} isOwnerOrAdmin={isOwnerOrAdmin} overview={scopedOv} />;
+    }
+  };
 
-        {canView && (
-          <TabsContent value="byProject">
-            <div className="space-y-4">
-              <TeamRevenueTotal teamId={selectedTeamId} from={from} to={to} />
-              <TeamProjectsFinance teamId={selectedTeamId} from={from} to={to} boards={perBoard} boardsLoading={ov.isLoading} onBoard={setDetail} />
-            </div>
-          </TabsContent>
-        )}
+  return (
+    <div className="space-y-4 max-w-[1600px] mx-auto w-full">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <OpsLabel>{currentTeam?.name ?? "Equipe"}</OpsLabel>
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Inteligência Financeira</h1>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-1.5">
+          <MonthRangeField from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
+          <div>
+            <Select value={boardFilter} onValueChange={setBoardFilter}><SelectTrigger className="h-9 w-[180px] border-0 bg-muted/50" aria-label="Quadro"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="all">Todos autorizados</SelectItem>{authorizedBoards.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent></Select></div>
+          {canExport && <ExportReportButton className="h-9" onExport={(f) => (f === "pdf" ? exportPdf() : exportCsv())} disabled={!sorted.length} />}
+        </div>
+      </header>
 
-        {canView && (
-          <TabsContent value="people">
-            <CostsProductivity rows={people.data ?? []} detailed={fin.can("finance.view_employee_costs")} isLoading={people.isLoading} isError={people.isError} onRetry={() => people.refetch()} boardOrder={boardOrder} teamId={selectedTeamId} canEdit={fin.can("finance.manage_settings")} />
-          </TabsContent>
-        )}
-        {canView && (
-          <TabsContent value="allocation">
-            <ExpensesAllocation rows={(alloc.data ?? []).filter((r) => boardFilter === "all" || !r.board_id || r.board_id === boardFilter)} isLoading={alloc.isLoading} isError={alloc.isError} onRetry={() => alloc.refetch()} boardOrder={boardOrder} canEdit={fin.can("finance.manage_expenses")} teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} overview={scopedOv} />
-          </TabsContent>
-        )}
+      {canView && ov.isError && (
+        <FinanceNotice tone="error" action={<Button size="sm" variant="outline" className="gap-1.5" onClick={() => ov.refetch()}><RefreshCw className="h-4 w-4" />Tentar de novo</Button>}>
+          Não foi possível carregar os números financeiros.
+        </FinanceNotice>
+      )}
 
-        {canView && selectedTeamId && (
-          <TabsContent value="simulator">
-            {ov.isError ? <p className="py-6 text-sm text-muted-foreground">Os quadros autorizados não puderam ser carregados. Tente novamente acima.</p> :
-              <PricingSimulator key={selectedTeamId} teamId={selectedTeamId} boards={authorizedBoards} can={fin.can} isLoading={ov.isLoading} />}
-          </TabsContent>
-        )}
-
-        {(canView || fin.can("finance.close_period")) && selectedTeamId && (
-          <TabsContent value="closing">
-            <MonthlyClosing teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} />
-          </TabsContent>
-        )}
-
-        {(canManage || canView) && selectedTeamId && (
-          <TabsContent value="manage">
-            <FinanceManage teamId={selectedTeamId} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} canAny={fin.canAny} isOwnerOrAdmin={isOwnerOrAdmin} overview={scopedOv} />
-          </TabsContent>
-        )}
-      </Tabs>
+      <div className="grid gap-4 lg:grid-cols-[13rem_minmax(0,1fr)]">
+        <nav aria-label="Seções financeiras" className="flex w-full gap-1 overflow-x-auto lg:flex-col lg:self-start">
+          {sections.map(({ v, label, hint: h, icon: Icon }) => {
+            const on = active === v;
+            return (
+              <button key={v} type="button" onClick={() => jumpTo(v)} aria-current={on ? "true" : undefined}
+                className={cn("group flex shrink-0 items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
+                  on ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}>
+                <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-md border bg-background", on && "border-primary/40 text-primary")}><Icon className="h-3.5 w-3.5" /></span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold leading-tight">{label}</span>
+                  <span className="hidden text-[11px] leading-tight text-muted-foreground lg:block">{h}</span>
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+        <div ref={scrollRef} className="scroll-on-hover min-w-0 space-y-10 overflow-y-auto pr-1 h-[calc(100dvh-16rem)] min-h-[20rem]">
+          {sections.map(({ v, label, hint: h, icon: Icon }) => (
+            <section key={v} ref={(el) => { sectionRefs.current[v] = el; }} aria-label={label} className="scroll-mt-2">
+              <header className="mb-3 border-b pb-2">
+                <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border bg-muted/50 text-primary"><Icon className="h-3.5 w-3.5" /></span>
+                  {label}
+                </h2>
+                <p className="mt-1 pl-8 text-[11px] leading-tight text-muted-foreground">{h}</p>
+              </header>
+              {renderSection(v)}
+            </section>
+          ))}
+        </div>
+      </div>
 
       <Sheet open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">

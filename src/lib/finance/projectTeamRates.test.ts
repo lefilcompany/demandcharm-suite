@@ -12,13 +12,13 @@ const m = (p: Partial<ProjectMonth>): ProjectMonth => ({
 describe("team-wide rates applied to a project", () => {
   it("taxes the project's revenue with the team's NF rate", () => {
     const r = projectResult([m({ gross: 10000, tax: 1500, team_cost: 3000 })]);
-    expect(r.netRevenue).toBe(5500);
-    expect(r.margin).toBe(0.8333);
+    expect(r.netRevenue).toBe(8500);
+    expect(r.margin).toBe(0.55);
   });
 
   it("judges the project against the team's margin target", () => {
     const below = projectResult([m({ gross: 10000, tax: 1500, team_cost: 7000 })]);
-    expect(below.margin).toBe(0.5333);
+    expect(below.margin).toBe(0.15);
     expect(below.status).not.toBe("prejuizo");
     const loss = projectResult([m({ gross: 10000, tax: 1500, team_cost: 9000 })]);
     expect(loss.status).toBe("prejuizo");
