@@ -1,5 +1,7 @@
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, AlertCircle, Info, ChevronRight, ChevronLeft, CalendarDays, RefreshCw, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -17,10 +19,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 const hrs = (h: number) => `${h.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`;
 const monthLabel = (iso: string) => new Date(`${iso.substring(0, 10)}T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
 
-export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry, boardOrder, teamId, canEdit }: {
+export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry, boardOrder, teamId, canEdit, limit, allHref }: {
   rows: PeopleRow[]; detailed: boolean; isLoading: boolean; isError: boolean; onRetry: () => void; boardOrder: string[];
-  teamId: string | null; canEdit: boolean;
+  teamId: string | null; canEdit: boolean; limit?: number; allHref?: string;
 }) {
+  const { user } = useAuth();
+  const members = useQuery({
+    queryKey: ["finance-team-members", teamId, user?.id],
+    enabled: !!teamId && !!user && detailed,
+    queryFn: async () => {
+      const { data: tm, error } = await supabase.from("team_members").select("user_id").eq("team_id", teamId!);
+      if (error) throw error;
+      const ids = (tm ?? []).map((r) => r.user_id);
+      if (!ids.length) return [] as { id: string; name: string }[];
+      const { data: pf, error: e2 } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+      if (e2) throw e2;
+      const names = new Map((pf ?? []).map((p) => [p.id, p.full_name]));
+      return ids.map((id) => ({ id, name: names.get(id) || "Pessoa" }));
+    },
+  });
   const [openId, setOpenId] = useState<string | null>(null);
   const rates = useMemberRates(teamId, detailed);
   const rateBy = useMemo(() => new Map((rates.data ?? []).map((r) => [r.user_id, r])), [rates.data]);
@@ -41,8 +58,9 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
       const p = m.get(pm.userId) ?? { userId: pm.userId, name: pm.name, months: [] };
       p.months.push(pm); m.set(pm.userId, p);
     });
+    (members.data ?? []).forEach((u) => { if (!m.has(u.id)) m.set(u.id, { userId: u.id, name: u.name, months: [] }); });
     return [...m.values()].sort((a, b) => Number(hasGap(b)) - Number(hasGap(a)) || a.name.localeCompare(b.name));
-  }, [people]);
+  }, [people, members.data]);
   const totals = useMemo(() => {
     const hours = rows.reduce((s, r) => s + r.hours, 0);
     const cost = rows.reduce((s, r) => s + (r.cost ?? 0), 0);
@@ -91,10 +109,16 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
       )}
 
       {detailed && (
-        people.length === 0
-          ? <p className="rounded-xl border p-6 text-center text-sm text-muted-foreground">Ninguém apontou horas nem tem custo cadastrado no período.</p>
-          : <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
-              {persons.map((p) => <PersonCard key={p.userId} p={p} rate={rateBy.get(p.userId)} onOpen={() => setOpenId(p.userId)} />)}
+        persons.length === 0
+          ? <p className="rounded-xl border p-6 text-center text-sm text-muted-foreground">{members.isLoading ? "Carregando pessoas…" : "Nenhuma pessoa na equipe."}</p>
+          : <div className="space-y-3">
+              <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
+                {(limit ? persons.slice(0, limit) : persons).map((p) => <PersonCard key={p.userId} p={p} rate={rateBy.get(p.userId)} onOpen={() => setOpenId(p.userId)} />)}
+              </div>
+              {limit && allHref && persons.length > limit && (
+                <div className="flex justify-center"><Button asChild variant="outline" size="sm" className="gap-1.5 rounded-full">
+                  <Link to={allHref}>Ver todas as {persons.length} pessoas<ChevronRight className="h-4 w-4" /></Link></Button></div>
+              )}
             </div>
       )}
 
@@ -138,11 +162,11 @@ const hasGap = (p: Person) => p.months.some((m) => m.cost == null && m.hours > 0
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
 function PersonCard({ p, rate, onOpen }: { p: Person; rate?: MemberRate; onOpen: () => void }) {
-  const last = p.months[0];
+  const last = p.months[0] as PersonMonth | undefined;
   const priced = p.months.find((m) => m.cost != null && m.ref);
   const cph = rate ? costPerHour(rate.monthly_cost, rate.productive_hours) : priced ? costPerHour(priced.cost!, priced.ref!) : null;
   const hours = p.months.reduce((s, m) => s + m.hours, 0);
-  const occ = last.ref ? last.hours / last.ref : null;
+  const occ = last?.ref ? last.hours / last.ref : null;
   const gap = hasGap(p);
   return (
     <button type="button" onClick={onOpen}
@@ -162,7 +186,7 @@ function PersonCard({ p, rate, onOpen }: { p: Person; rate?: MemberRate; onOpen:
           : <p className="font-ops-display text-2xl font-semibold tabular-nums">{formatBRL(cph)}<span className="text-xs font-normal text-muted-foreground"> /h · configuração atual</span></p>}
       </div>
       <div className="space-y-1">
-        <div className="flex justify-between text-xs text-muted-foreground"><span>Ocupação · {monthLabel(last.month)}</span><span className="tabular-nums">{occ == null ? "—" : `${Math.round(occ * 100)}%`}</span></div>
+        <div className="flex justify-between text-xs text-muted-foreground"><span>Ocupação{last ? ` · ${monthLabel(last.month)}` : ""}</span><span className="tabular-nums">{occ == null ? "—" : `${Math.round(occ * 100)}%`}</span></div>
         <OccupancyRuler value={occ} />
       </div>
       {gap && <p className="text-xs text-primary">Há horas sem custo — clique para configurar.</p>}

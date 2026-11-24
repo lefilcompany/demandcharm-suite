@@ -60,6 +60,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const TimeManagement = lazy(() => import("./pages/TimeManagement"));
 const Finance = lazy(() => import("./pages/Finance"));
 const FinanceProjects = lazy(() => import("./pages/FinanceProjects"));
+const FinancePeople = lazy(() => import("./pages/FinancePeople"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const BoardSummary = lazy(() => import("./pages/BoardSummary"));
 const BoardAgent = lazy(() => import("./pages/BoardAgent"));
@@ -224,6 +225,7 @@ const App = () => {
                                 <Route path="/app/time-management" element={<ModuleGate perm="reports.view"><TimeManagement /></ModuleGate>} />
                                 <Route path="/app/finance" element={<Finance />} />
                                 <Route path="/app/finance/projetos" element={<FinanceProjects />} />
+                                <Route path="/app/finance/pessoas" element={<FinancePeople />} />
                                 <Route path="/app/board-summary" element={<BoardSummary />} />
                                 <Route path="/app/board-agent" element={<BoardAgent />} />
                                 <Route path="/app/sprints" element={<Sprints />} />

@@ -362,7 +362,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
           </div>
         );
       case "people":
-        return <CostsProductivity rows={people.data ?? []} detailed={fin.can("finance.view_employee_costs")} isLoading={people.isLoading} isError={people.isError} onRetry={() => people.refetch()} boardOrder={boardOrder} teamId={selectedTeamId} canEdit={fin.can("finance.manage_settings")} />;
+        return <CostsProductivity rows={people.data ?? []} detailed={fin.can("finance.view_employee_costs")} isLoading={people.isLoading} isError={people.isError} onRetry={() => people.refetch()} boardOrder={boardOrder} teamId={selectedTeamId} canEdit={fin.can("finance.manage_settings")} limit={3} allHref={`/app/finance/pessoas?de=${from}&ate=${to}`} />;
       case "simulator":
         return ov.isError ? <p className="py-6 text-sm text-muted-foreground">Os quadros autorizados não puderam ser carregados. Tente novamente acima.</p> :
           <PricingSimulator key={selectedTeamId} teamId={selectedTeamId!} boards={authorizedBoards} can={fin.can} isLoading={ov.isLoading} />;
