@@ -362,7 +362,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
       )}
 
       <div className="flex min-h-0 flex-1 flex-col gap-4">
-        <nav role="tablist" aria-label="Seções financeiras" className="flex shrink-0 gap-1 overflow-x-auto border-b">
+        <nav role="tablist" aria-label="Seções financeiras" className="flex shrink-0 flex-wrap gap-1 border-b">
           {sections.map(({ v, label, icon: Icon }) => {
             const on = shown === v;
             return (
