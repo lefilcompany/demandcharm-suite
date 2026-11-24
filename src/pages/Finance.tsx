@@ -52,6 +52,12 @@ const hint = (t: string) => (
     <TooltipContent className="max-w-[15rem] text-xs leading-snug normal-case tracking-normal font-normal">{t}</TooltipContent></Tooltip>
 );
 
+type LedgerGroup = {
+  title: string;
+  rows: { l: string; v: number; h: string; minus?: boolean }[];
+  foot: { l: string; v: number; h: string; minus?: boolean };
+};
+
 const hrs = (h: number) => `${h.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`;
 const monthLabel = (iso: string) => new Date(`${iso.substring(0, 10)}T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
 
@@ -261,15 +267,14 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                 </div>
                 {/* Composição: entradas e saídas */}
                 <div className="grid sm:grid-cols-2">
-                  {[
+                  {([
                     { title: "Entradas", rows: [
                       { l: "Faturamento bruto", v: total.gross, h: "Soma do faturado nos projetos no período." },
                     ], foot: { l: "Receita líquida", v: total.netRevenue, h: "Faturamento bruto menos impostos." } },
                     { title: "Saídas", rows: [
                       { l: "Impostos", v: total.tax, h: "Faturamento × alíquota da equipe.", minus: true },
-                      { l: "Custo total", v: total.totalCost, h: "Horas apontadas × custo/hora + despesas diretas + rateio dos custos da equipe.", minus: true },
-                    ], foot: null as null | { l: string; v: number; h: string } },
-                  ].map((g, gi) => (
+                    ], foot: { l: "Custo total", v: total.totalCost, h: "Horas apontadas × custo/hora + despesas diretas + rateio dos custos da equipe.", minus: true } },
+                  ] as LedgerGroup[]).map((g, gi) => (
                     <div key={g.title} className={cn("px-4 py-3 sm:px-5", gi === 1 && "border-t sm:border-t-0 sm:border-l border-ops-ink-foreground/10")}>
                       <OpsLabel>{g.title}</OpsLabel>
                       <dl className="mt-1.5 space-y-2">
@@ -284,7 +289,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                         {g.foot && (
                           <div className="min-w-0 border-t border-ops-ink-foreground/10 pt-1.5">
                             <dt className="flex items-center gap-1.5 text-xs font-semibold">{g.foot.l}{hint(g.foot.h)}</dt>
-                            <dd className="mt-0.5 tabular-nums font-ops-display text-lg font-semibold whitespace-nowrap">
+                            <dd className={cn("mt-0.5 tabular-nums font-ops-display text-lg font-semibold whitespace-nowrap", g.foot.minus && g.foot.v > 0 && "text-ops-ink-foreground/80")}>
                               {ov.isLoading ? <Skeleton className="h-5 w-24 bg-ops-ink-foreground/10" /> : formatBRL(g.foot.v)}
                             </dd>
                           </div>
