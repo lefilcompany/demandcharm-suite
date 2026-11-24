@@ -357,7 +357,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
         return (
           <div className="space-y-4">
             <TeamRevenueTotal teamId={selectedTeamId} from={from} to={to} />
-            <TeamProjectsFinance teamId={selectedTeamId} from={from} to={to} boards={perBoard} boardsLoading={ov.isLoading} onBoard={setDetail} />
+            <TeamProjectsFinance teamId={selectedTeamId} from={from} to={to} limit={2} />
           </div>
         );
       case "people":

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, LayoutGrid, Lock, RotateCw } from "lucide-react";
+import { ArrowRight, Lock, RotateCw } from "lucide-react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -8,32 +9,15 @@ import { cn } from "@/lib/utils";
 import { formatBRL, formatPct, resultLegendTones, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
 import { projectResult, type ProjectMonth } from "@/lib/finance/projectRollup";
 import { ProfitabilityTable } from "./ProfitabilityTable";
-import { DeviationTag, MarginRuler, MarginGoalBar } from "./MarginRuler";
+import { DeviationTag, MarginRuler } from "./MarginRuler";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ReferenceLine, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 
 interface TeamProject { project_id: string; name: string; months: ProjectMonth[] }
 
 export interface BoardAgg { boardId: string; name: string; gross: number; result: number; margin: number | null; target: number; hoursRealized: number }
 
-export function TeamProjectsFinance({ teamId, from, to, boards = [], boardsLoading, onBoard }: { teamId: string | null; from: string; to: string; boards?: BoardAgg[]; boardsLoading?: boolean; onBoard?: (id: string) => void }) {
+export function TeamProjectsFinance({ teamId, from, to, limit }: { teamId: string | null; from: string; to: string; limit?: number; boards?: BoardAgg[]; boardsLoading?: boolean; onBoard?: (id: string) => void }) {
   const { user } = useAuth();
-  const links = useQuery({
-    queryKey: ["team-project-board-map", teamId, user?.id],
-    enabled: !!user && !!teamId,
-    queryFn: async () => {
-      const [pb, pd] = await Promise.all([
-        supabase.from("project_boards").select("project_id, board_id").eq("team_id", teamId!).is("valid_to", null),
-        supabase.from("project_demands").select("project_id, demands(board_id)"),
-      ]);
-      if (pb.error) throw pb.error;
-      if (pd.error) throw pd.error;
-      const m = new Map<string, Set<string>>();
-      const add = (p: string, b?: string | null) => { if (!b) return; if (!m.has(p)) m.set(p, new Set()); m.get(p)!.add(b); };
-      pb.data?.forEach((r: any) => add(r.project_id, r.board_id));
-      pd.data?.forEach((r: any) => add(r.project_id, r.demands?.board_id));
-      return m;
-    },
-  });
   const q = useQuery({
     queryKey: ["team-projects-finance", teamId, from, to, user?.id],
     enabled: !!user && !!teamId && from <= to,
@@ -95,51 +79,16 @@ export function TeamProjectsFinance({ teamId, from, to, boards = [], boardsLoadi
       )}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        {ranked.map((p) => {
-          const ids = links.data?.get(p.project_id);
-          const own = boards.filter((b) => ids?.has(b.boardId));
-          return <ProjectCard key={p.project_id} {...p} boards={own} onBoard={onBoard} />;
-        })}
+        {(limit ? ranked.slice(0, limit) : ranked).map((p) => <ProjectCard key={p.project_id} {...p} />)}
       </div>
-
-      {!boardsLoading && links.data && (() => {
-        const used = new Set([...links.data.values()].flatMap((x) => [...x]));
-        const loose = boards.filter((b) => !used.has(b.boardId) && (b.gross !== 0 || b.result !== 0 || b.hoursRealized > 0));
-        if (!loose.length) return null;
-        return (
-          <section className="rounded-xl border border-dashed p-4 space-y-2">
-            <h3 className="text-sm font-semibold">Quadros fora de projetos</h3>
-            <p className="text-xs text-muted-foreground">Têm números no período, mas não fazem parte de nenhum projeto.</p>
-            <BoardList boards={loose} onBoard={onBoard} />
-          </section>
-        );
-      })()}
+      {limit && ranked.length > limit && (
+        <div className="flex justify-center">
+          <Button asChild variant="outline" className="gap-1.5">
+            <Link to={`/app/finance/projetos?de=${from}&ate=${to}`}>Ver todos os {ranked.length} projetos<ArrowRight className="h-4 w-4" /></Link>
+          </Button>
+        </div>
+      )}
     </div>
-  );
-}
-
-function BoardList({ boards, onBoard }: { boards: BoardAgg[]; onBoard?: (id: string) => void }) {
-  return (
-    <ul className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
-      {[...boards].sort((a, b) => b.result - a.result).map((b) => {
-        const below = b.margin !== null && b.margin < b.target;
-        return (
-          <li key={b.boardId}>
-            <button type="button" onClick={() => onBoard?.(b.boardId)}
-              className="group w-full rounded-lg border bg-background p-3 text-left transition-colors hover:border-primary/50 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <div className="flex items-center gap-2">
-                <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <span className="flex-1 truncate text-sm font-medium">{b.name}</span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-              </div>
-              <p className="mt-2 text-[11px] text-muted-foreground">Resultado</p>
-              <p className={cn("text-base font-semibold tabular-nums leading-tight", resultTone(b.result))}>{formatBRL(b.result)}</p>
-              <div className="mt-3"><MarginGoalBar margin={b.margin} target={b.target} /></div>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
   );
 }
 
@@ -159,7 +108,7 @@ function SeriesLegend({ payload }: { payload?: { value?: string; color?: string 
   );
 }
 
-function ProjectCard({ name, months, r, closed, incomplete, boards, onBoard }: TeamProject & { r: ReturnType<typeof projectResult>; closed: boolean; incomplete: boolean; boards: BoardAgg[]; onBoard?: (id: string) => void }) {
+function ProjectCard({ name, months, r, closed, incomplete }: TeamProject & { r: ReturnType<typeof projectResult>; closed: boolean; incomplete: boolean }) {
   const t = r.totals;
   const taxes = Math.max(0, t.gross - r.netRevenue);
   const parts = [
@@ -236,11 +185,6 @@ function ProjectCard({ name, months, r, closed, incomplete, boards, onBoard }: T
           </p>
         </div>
       )}
-
-      <div className="border-t pt-3">
-        <p className="mb-1 text-xs text-muted-foreground">Quadros deste projeto · {boards.length}</p>
-        {boards.length ? <BoardList boards={boards} onBoard={onBoard} /> : <p className="text-xs text-muted-foreground">Nenhum quadro com números no período.</p>}
-      </div>
 
       {empty && <p className="text-xs text-muted-foreground">Ainda não há faturamento nem custos neste período.</p>}
       {incomplete && <p className="text-xs text-primary">Custo incompleto: {t.hoursWithoutCost.toLocaleString("pt-BR")} h sem custo/hora cadastrado.</p>}
