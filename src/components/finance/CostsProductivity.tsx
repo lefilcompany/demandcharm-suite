@@ -19,9 +19,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 const hrs = (h: number) => `${h.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`;
 const monthLabel = (iso: string) => new Date(`${iso.substring(0, 10)}T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
 
-export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry, boardOrder, teamId, canEdit, limit, allHref }: {
+export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry, boardOrder, teamId, canEdit, limit, allHref, onlyConfigured }: {
   rows: PeopleRow[]; detailed: boolean; isLoading: boolean; isError: boolean; onRetry: () => void; boardOrder: string[];
-  teamId: string | null; canEdit: boolean; limit?: number; allHref?: string;
+  teamId: string | null; canEdit: boolean; limit?: number; allHref?: string; onlyConfigured?: boolean;
 }) {
   const { user } = useAuth();
   const members = useQuery({
@@ -61,6 +61,7 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
     (members.data ?? []).forEach((u) => { if (!m.has(u.id)) m.set(u.id, { userId: u.id, name: u.name, months: [] }); });
     return [...m.values()].sort((a, b) => Number(hasGap(b)) - Number(hasGap(a)) || a.name.localeCompare(b.name));
   }, [people, members.data]);
+  const visible = onlyConfigured ? persons.filter((p) => rateBy.has(p.userId) || p.months.some((m) => m.hours > 0)) : persons;
   const totals = useMemo(() => {
     const hours = rows.reduce((s, r) => s + r.hours, 0);
     const cost = rows.reduce((s, r) => s + (r.cost ?? 0), 0);
@@ -109,15 +110,15 @@ export function CostsProductivity({ rows, detailed, isLoading, isError, onRetry,
       )}
 
       {detailed && (
-        persons.length === 0
+        visible.length === 0
           ? <p className="rounded-xl border p-6 text-center text-sm text-muted-foreground">{members.isLoading ? "Carregando pessoas…" : "Nenhuma pessoa na equipe."}</p>
           : <div className="space-y-3">
               <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
-                {(limit ? persons.slice(0, limit) : persons).map((p) => <PersonCard key={p.userId} p={p} rate={rateBy.get(p.userId)} onOpen={() => setOpenId(p.userId)} />)}
+                {(limit ? visible.slice(0, limit) : visible).map((p) => <PersonCard key={p.userId} p={p} rate={rateBy.get(p.userId)} onOpen={() => setOpenId(p.userId)} />)}
               </div>
-              {limit && allHref && persons.length > limit && (
+              {limit && allHref && visible.length > limit && (
                 <div className="flex justify-center"><Button asChild variant="outline" size="sm" className="gap-1.5 rounded-full">
-                  <Link to={allHref}>Ver todas as {persons.length} pessoas<ChevronRight className="h-4 w-4" /></Link></Button></div>
+                  <Link to={allHref}>Ver todas as {visible.length} pessoas<ChevronRight className="h-4 w-4" /></Link></Button></div>
               )}
             </div>
       )}
