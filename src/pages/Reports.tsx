@@ -325,6 +325,13 @@ export default function Reports() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            {priorityData.length > 0 && (
+              <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#ef4444]" aria-hidden />Alta</span>
+                <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#f59e0b]" aria-hidden />Média</span>
+                <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#10b981]" aria-hidden />Baixa e demais</span>
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

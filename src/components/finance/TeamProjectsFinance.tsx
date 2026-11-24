@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { formatBRL, formatPct, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
+import { formatBRL, formatPct, resultLegendTones, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
 import { projectResult, type ProjectMonth } from "@/lib/finance/projectRollup";
 import { DeviationTag, MarginRuler, MarginGoalBar } from "./MarginRuler";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ReferenceLine, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
@@ -211,17 +211,27 @@ function ProjectCard({ name, months, r, closed, incomplete, boards, onBoard }: T
       <MarginRuler margin={r.margin} target={t.marginTarget} />
 
       {monthly.length > 1 && monthly.some((m) => m.Resultado !== 0) && (
-        <div className="h-24">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthly} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-              <XAxis dataKey="mes" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-              <RTooltip formatter={(v: number) => formatBRL(v)} />
-              <ReferenceLine y={0} className="stroke-border" />
-              <Bar dataKey="Resultado" radius={[3, 3, 0, 0]}>
-                {monthly.map((m, i) => <Cell key={i} fill={m.Resultado < 0 ? "hsl(var(--destructive))" : m.Resultado > 0 ? "hsl(var(--success))" : "hsl(var(--foreground))"} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+        <div>
+          <div className="h-24">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthly} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+                <XAxis dataKey="mes" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <RTooltip formatter={(v: number) => formatBRL(v)} />
+                <ReferenceLine y={0} className="stroke-border" />
+                <Bar dataKey="Resultado" radius={[3, 3, 0, 0]}>
+                  {monthly.map((m, i) => <Cell key={i} fill={m.Resultado < 0 ? "hsl(var(--destructive))" : m.Resultado > 0 ? "hsl(var(--success))" : "hsl(var(--foreground))"} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
+            {resultLegendTones(monthly.map((m) => m.Resultado)).map((t) => (
+              <span key={t.label} className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: t.color }} aria-hidden />
+                {t.label}
+              </span>
+            ))}
+          </p>
         </div>
       )}
 

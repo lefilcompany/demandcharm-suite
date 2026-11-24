@@ -302,7 +302,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                           contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 10, fontSize: 12, padding: "8px 10px" }} />
                         <Legend wrapperStyle={{ fontSize: 12 }} content={<MonthlyLegend resultTones={resultLegend} />} />
                         <Bar dataKey="Faturamento" fill="hsl(var(--chart-receita))" radius={[2, 2, 0, 0]} />
-                        <Bar dataKey="Custos" fill="hsl(var(--chart-custo))" radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="Custos" name="Custos + impostos" fill="hsl(var(--chart-custo))" radius={[2, 2, 0, 0]} />
                         <Bar dataKey="Resultado" fill="hsl(var(--muted-foreground))" radius={[2, 2, 0, 0]}>
                           {months.map((m, i) => <Cell key={i} fill={m.Resultado < 0 ? "hsl(var(--destructive))" : m.Resultado > 0 ? "hsl(var(--success))" : "hsl(var(--muted-foreground))"} />)}
                         </Bar>

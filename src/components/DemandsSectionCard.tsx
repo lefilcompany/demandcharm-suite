@@ -172,6 +172,13 @@ export function DemandsSectionCard({ demands }: DemandsSectionCardProps) {
   const activeVisibleSet = trendViewMode === "simple" ? visibleSimpleStatuses : currentVisibleDetailed;
   const activeColorMap = trendViewMode === "simple" ? STATUS_CHART_COLORS : (boardStatusInfo?.colorMap || {});
 
+  // Cor de cada etapa, resolvida uma única vez: as áreas do gráfico e as bolinhas
+  // da legenda leem deste mesmo mapa, então nunca mostram cores diferentes.
+  const trendColors: Record<string, string> = {};
+  activeStatusKeys.forEach((key, idx) => {
+    trendColors[key] = activeColorMap[key] || DETAILED_STATUS_COLORS[idx % DETAILED_STATUS_COLORS.length];
+  });
+
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className="pb-2 p-4 md:p-6 md:pb-2">
@@ -304,16 +311,16 @@ export function DemandsSectionCard({ demands }: DemandsSectionCardProps) {
                       label={{ value: "DEMANDAS", angle: -90, position: "insideLeft", offset: 15, style: { fontSize: 8, fill: "hsl(var(--muted-foreground))" } }}
                     />
                     <Tooltip content={<CustomAreaTooltip />} />
-                    {activeStatusKeys.filter((key) => activeVisibleSet.has(key)).map((key, idx) => (
+                    {activeStatusKeys.filter((key) => activeVisibleSet.has(key)).map((key) => (
                       <Area
                         key={key}
                         type="monotone"
                         dataKey={key}
-                        stroke={activeColorMap[key] || DETAILED_STATUS_COLORS[idx % DETAILED_STATUS_COLORS.length]}
-                        fill={activeColorMap[key] || DETAILED_STATUS_COLORS[idx % DETAILED_STATUS_COLORS.length]}
+                        stroke={trendColors[key]}
+                        fill={trendColors[key]}
                         fillOpacity={0.15}
                         strokeWidth={2}
-                        dot={{ r: 2, fill: activeColorMap[key] || DETAILED_STATUS_COLORS[idx % DETAILED_STATUS_COLORS.length] }}
+                        dot={{ r: 2, fill: trendColors[key] }}
                         activeDot={{ r: 4 }}
                       />
                     ))}
@@ -322,7 +329,7 @@ export function DemandsSectionCard({ demands }: DemandsSectionCardProps) {
                 <div className="flex flex-wrap gap-x-1 gap-y-1 justify-center">
                   {activeStatusKeys.map((key) => {
                     const isActive = activeVisibleSet.has(key);
-                    const color = activeColorMap[key] || DETAILED_STATUS_COLORS[activeStatusKeys.indexOf(key) % DETAILED_STATUS_COLORS.length];
+                    const color = trendColors[key];
                     return (
                       <button
                         key={key}
