@@ -308,9 +308,6 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                   ))}
                 </div>
               </div>
-              <div className="px-4 sm:px-5 pb-3 pt-2 [&_*]:!text-ops-ink-foreground/70">
-                <MarginRuler margin={total.margin} target={total.target} />
-              </div>
             </section>
 
             {total.hoursWithoutCost > 0 && (
