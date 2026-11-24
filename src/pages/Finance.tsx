@@ -98,7 +98,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
   const { data: memberBoards = [] } = useBoards(forcedTeamId !== undefined ? null : selectedTeamId);
   const { data: members = [] } = useTeamMembers(selectedTeamId);
   const now = new Date();
-  const defFrom = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString().substring(0, 7);
+  const defFrom = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().substring(0, 7);
   const [from, setFrom] = useState(defFrom);
   const [to, setTo] = useState(now.toISOString().substring(0, 7));
   const [boardFilter, setBoardFilter] = useState("all");
