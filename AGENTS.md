@@ -44,7 +44,7 @@ One rule per decision, with the reason.
 
 ## Board assistant actions
 
-- The assistant reads its board catalog live per request (`board-agent/catalog.ts`); read failures abort instead of reporting no services, and `board-agent/history.ts` strips stale read results/"no services" claims from old turns.
+- The assistant reads its board catalog live (`board-agent/catalog.ts`); read failures abort, and `history.ts` strips stale read results.
 
 - Assistant mutations use AI SDK manual approval with a server-signed input bound to user/board, then `execute_board_agent_action` (SECURITY INVOKER) validates live role/scope and commits changes plus per-user tool-call receipts atomically; replay returns the same result instead of duplicate demands/comments, while diagnostics keep canonical board metrics and explicitly flag incomplete history/sample limits.
 - Chat document attachments reuse the document-import extraction and review dialog pinned to the current board, with extracted text supplied as untrusted chat context; original files are not persisted, and demand creation still requires selecting valid reviewed rows and explicitly submitting them.
@@ -76,4 +76,4 @@ One rule per decision, with the reason.
 
 ## Team performances
 
-- Performances (N:N `team_performance_members`) replace deprecated `team_positions`; a trigger admits only internal same-team members.
+- Performances (N:N `team_performance_members`) replace deprecated `team_positions`; trigger admits internal same-team members only.
