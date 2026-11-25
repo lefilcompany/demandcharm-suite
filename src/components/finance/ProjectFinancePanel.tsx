@@ -12,7 +12,7 @@ import type { Scenario } from "@/lib/finance/simulator";
 import { ProjectFinanceSummary } from "./ProjectFinanceSummary";
 
 const SECTIONS = [
-  { v: "result", label: "Resultado", hint: "Lucro e margem do mês", icon: LineChart },
+  { v: "result", label: "Resultado", hint: "Lucro e margem do período", icon: LineChart },
   { v: "revenue", label: "Faturamento", hint: "Contratos do projeto", icon: Receipt },
   { v: "hours", label: "Horas e custos", hint: "Horas contratadas × custo", icon: Clock },
   { v: "price", label: "Proposta simulada", hint: "Valores da simulação de origem", icon: Tag },
