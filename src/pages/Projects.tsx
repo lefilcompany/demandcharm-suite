@@ -153,9 +153,9 @@ export default function Projects() {
         </div>
         <Button
           onClick={() => setCreateOpen(true)}
-          className="group h-10 gap-2 rounded-full bg-primary pl-2 pr-5 font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 active:translate-y-0 active:shadow-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="group h-10 gap-2 rounded-full bg-primary pl-2 pr-5 font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-strong hover:shadow-lg hover:shadow-primary/30 active:translate-y-0 active:shadow-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground/20 transition-transform duration-300 group-hover:rotate-90 group-hover:bg-primary-foreground/30">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground/25 transition-transform duration-300 group-hover:rotate-90 group-hover:bg-primary-foreground/35">
             <Plus className="h-4 w-4" />
           </span>
           Novo projeto

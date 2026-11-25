@@ -112,6 +112,8 @@ All colors MUST be HSL.
     /* Primary brand color - Orange #F28705 */
     --primary: 33 95% 49%;
     --primary-foreground: 0 0% 100%;
+    /* Solid hover tone: never a translucent primary, it washes out on light pages */
+    --primary-strong: 24 96% 43%;
     --ops-ink: 0 0% 11%;
     --ops-ink-foreground: 0 0% 98%;
     --ops-muted: 34 6% 51%;
@@ -197,6 +199,7 @@ All colors MUST be HSL.
     /* Primary - Orange */
     --primary: 33 95% 49%;
     --primary-foreground: 0 0% 100%;
+    --primary-strong: 33 95% 57%;
     --ops-ink: 0 0% 7%;
     --ops-ink-foreground: 0 0% 98%;
     --ops-muted: 34 6% 60%;
