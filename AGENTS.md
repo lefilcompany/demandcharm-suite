@@ -68,7 +68,7 @@ One rule per decision, with the reason.
 
 ## Project visibility
 
-- A project is visible only to its creator, team owners, members with the `project_manager` access profile (scoped or all projects) and its staff (`project_members`), via `can_view_project` used by RLS and `has_project_access`; external sharing (`project_shares`) is disabled and the UI trusts RLS instead of filtering client-side — one rule for every client.
+- Project visibility = creator, team owner, `project_manager` profile, project staff, via `can_view_project` in RLS; `project_shares` disabled, UI trusts RLS.
 
 ## Project activation
 
