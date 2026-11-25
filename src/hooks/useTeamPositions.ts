@@ -138,6 +138,45 @@ export function useTogglePerformanceMember() {
         if (error) throw error;
       }
     },
-    onSuccess: (_, v) => invalidate(qc, v.teamId),
+    // Seleção otimista: marca/desmarca na hora e confirma em segundo plano.
+    onMutate: async (v) => {
+      await qc.cancelQueries({ queryKey: ["team-members", v.teamId] });
+      await qc.cancelQueries({ queryKey: ["team-performances", v.teamId] });
+      const prevMembers = qc.getQueryData<any[]>(["team-members", v.teamId]);
+      const prevPerfs = qc.getQueryData<TeamPosition[]>(["team-performances", v.teamId]);
+      const perf = prevPerfs?.find((p) => p.id === v.performanceId);
+
+      if (prevMembers) {
+        qc.setQueryData(["team-members", v.teamId], prevMembers.map((m: any) => {
+          if (m.id !== v.memberId) return m;
+          const list: any[] = m.performances ?? [];
+          const has = list.some((p) => p.id === v.performanceId);
+          if (v.add && !has && perf) {
+            return {
+              ...m,
+              performances: [...list, { id: perf.id, name: perf.name, color: perf.color, text_color: perf.text_color }]
+                .sort((a, b) => a.name.localeCompare(b.name)),
+            };
+          }
+          if (!v.add && has) {
+            return { ...m, performances: list.filter((p) => p.id !== v.performanceId) };
+          }
+          return m;
+        }));
+      }
+      if (prevPerfs) {
+        qc.setQueryData(["team-performances", v.teamId], prevPerfs.map((p) =>
+          p.id === v.performanceId
+            ? { ...p, member_count: Math.max(0, (p.member_count ?? 0) + (v.add ? 1 : -1)) }
+            : p,
+        ));
+      }
+      return { prevMembers, prevPerfs };
+    },
+    onError: (_e, v, ctx) => {
+      if (ctx?.prevMembers) qc.setQueryData(["team-members", v.teamId], ctx.prevMembers);
+      if (ctx?.prevPerfs) qc.setQueryData(["team-performances", v.teamId], ctx.prevPerfs);
+    },
+    onSettled: (_, __, v) => invalidate(qc, v.teamId),
   });
 }

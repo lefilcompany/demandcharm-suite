@@ -166,7 +166,6 @@ export function TeamPositionsManager({ teamId, canManage }: Props) {
                             {canManage && (
                               <Checkbox
                                 checked={checked}
-                                disabled={toggle.isPending}
                                 onCheckedChange={(v) =>
                                   toggle.mutate(
                                     { performanceId: open.id, memberId: m.id, add: !!v, teamId },
