@@ -48,9 +48,7 @@ export function TeamPositionsManager({ teamId, canManage }: Props) {
     [members],
   );
   const inOpen = (m: (typeof internals)[number]) => !!open && m.performances.some((p) => p.id === open.id);
-  const shown = internals
-    .filter((m) => m.profile.full_name.toLowerCase().includes(q.toLowerCase()))
-    .sort((a, b) => Number(inOpen(b)) - Number(inOpen(a)));
+  const shown = internals.filter((m) => m.profile.full_name.toLowerCase().includes(q.toLowerCase()));
   const openCount = internals.filter(inOpen).length;
 
   const save = async (data: { name: string; description?: string; color: string; textColor: string }) => {
