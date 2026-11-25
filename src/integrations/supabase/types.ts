@@ -5935,6 +5935,16 @@ export type Database = {
         Args: { _from: string; _team_id: string; _to: string }
         Returns: Json
       }
+      get_team_projects_hours: {
+        Args: { _from: string; _team_id: string; _to: string }
+        Returns: {
+          finance_enabled: boolean
+          hours_registered: number
+          name: string
+          project_id: string
+          status: string
+        }[]
+      }
       get_team_revenue_summary: {
         Args: { _month: string; _team_id: string }
         Returns: Json

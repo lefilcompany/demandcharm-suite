@@ -14,6 +14,7 @@ import { ExpensesAllocation } from "@/components/finance/ExpensesAllocation";
 import { PricingSimulator } from "@/components/finance/PricingSimulator";
 import { MonthlyClosing } from "@/components/finance/MonthlyClosing";
 import { TeamProjectsFinance } from "@/components/finance/TeamProjectsFinance";
+import { ProjectsPortfolioSummary } from "@/components/finance/ProjectsPortfolioSummary";
 import { TeamRevenueTotal } from "@/components/finance/TeamRevenueTotal";
 import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { computeFinance, FinanceResult, formatBRL, formatPct, resultLegendTones, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
@@ -299,26 +300,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
                 </div>
             </section>
 
-            <FinanceSection title="Horas previstas × realizadas" description="Barra laranja: passou do previsto.">
-              <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
-                {perBoard.map((b) => {
-                  const ratio = b.hoursPlanned > 0 ? b.hoursRealized / b.hoursPlanned : null;
-                  return (
-                    <div key={b.boardId} className="space-y-1 text-sm">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate">{b.name}</span>
-                        <span className={cn("font-ops-label text-xs tabular-nums shrink-0 text-muted-foreground", ratio !== null && ratio > 1 && "text-primary")}>
-                          {hrs(b.hoursRealized)} / {b.hoursPlanned ? hrs(b.hoursPlanned) : "sem previsão"}
-                        </span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div className={cn("h-full rounded-full", ratio !== null && ratio > 1 ? "bg-primary" : "bg-foreground/60")} style={{ width: `${ratio === null ? 0 : Math.min(100, ratio * 100)}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </FinanceSection>
+            <ProjectsPortfolioSummary teamId={selectedTeamId} from={from} to={to} />
 
           </div>
         );

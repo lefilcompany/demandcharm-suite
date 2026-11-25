@@ -414,6 +414,13 @@
       "when": 1795533490562,
       "tag": "0058_finance_cost_by_contracted_hours",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1795604068824,
+      "tag": "0059_team_projects_hours_summary",
+      "breakpoints": true
     }
   ]
 }
