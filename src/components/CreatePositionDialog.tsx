@@ -75,7 +75,7 @@ export function CreatePositionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:p-0 sm:max-w-2xl">
         <DialogHeader className="space-y-1 border-b px-6 py-4 text-left">
           <DialogTitle>{isEditing ? "Editar performance" : "Criar performance"}</DialogTitle>
           <DialogDescription>
