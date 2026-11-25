@@ -66,6 +66,10 @@ One rule per decision, with the reason.
 - A project (`projects`) is the financial cost centre and may group several boards over time (`project_boards` with validity); each demand has one financial destination per month in `finance_demand_attributions` (unique per demand+competence), set automatically by trigger only when its board is in exactly one finance-enabled project, otherwise `pending` — manual choices via RPC `finance_assign_demand` are never overwritten, so hours are never counted twice. Member employment kind lives in `finance_member_profiles` with non-overlapping validity, independent of team/board roles.
 
 
+## Project visibility
+
+- A project is visible only to its creator, team owners, members with the `project_manager` access profile (scoped or all projects) and its staff (`project_members`), via `can_view_project` used by RLS and `has_project_access`; external sharing (`project_shares`) is disabled and the UI trusts RLS instead of filtering client-side — one rule for every client.
+
 ## Project activation
 
 - Project status (`projects.status` + `project_status_history`) changes only via RPC `set_project_status` (owner / `projects.edit`); a board whose current projects are all inactive is frozen by trigger `guard_board_frozen` (no new demands/requests, stage moves or timers) so every client, assistant and API obeys it; the UI only mirrors it via `is_board_frozen`.
