@@ -15,7 +15,6 @@ import { ColorPicker } from "@/components/ColorPicker";
 import { PositionBadge } from "@/components/PositionBadge";
 import { Loader2 } from "lucide-react";
 import { TeamPosition } from "@/hooks/useTeamPositions";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface CreatePositionDialogProps {
   open: boolean;
@@ -68,87 +67,69 @@ export function CreatePositionDialog({
 
   const isEditing = !!editingPosition;
 
+  const TEXT_OPTIONS = [
+    { v: "auto", label: "Auto" },
+    { v: "light", label: "Claro" },
+    { v: "dark", label: "Escuro" },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing ? "Editar performance" : "Criar performance"}
-          </DialogTitle>
+      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogHeader className="space-y-1 border-b px-6 py-4 text-left">
+          <DialogTitle>{isEditing ? "Editar performance" : "Criar performance"}</DialogTitle>
           <DialogDescription>
-            {isEditing
-              ? "Altere as informações da performance."
-              : "Crie um grupo de membros internos da equipe."}
+            {isEditing ? "Altere as informações da performance." : "Agrupe membros internos da equipe. Uma pessoa pode estar em várias."}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome da performance *</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Desenvolvedor, Designer, Analista..."
-              maxLength={50}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição (opcional)</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva o foco desta performance..."
-              rows={3}
-              maxLength={255}
-            />
-          </div>
-
-          <ColorPicker
-            value={color}
-            onChange={setColor}
-            label="Cor do badge"
-          />
-
-          {/* Text Color Selection */}
-          <div className="space-y-2">
-            <Label>Cor do texto</Label>
-            <RadioGroup value={textColor} onValueChange={setTextColor} className="flex gap-4">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="auto" id="auto" />
-                <Label htmlFor="auto" className="cursor-pointer font-normal">Automático</Label>
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto px-6 py-5 md:grid-cols-[1fr_15rem]">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="name">Nome *</Label>
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Produto, Squad Mobile, Atendimento" maxLength={50} required autoFocus />
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="light" id="light" />
-                <Label htmlFor="light" className="cursor-pointer font-normal">Claro</Label>
+              <div className="space-y-1.5">
+                <div className="flex items-baseline justify-between">
+                  <Label htmlFor="description">Descrição</Label>
+                  <span className="text-[11px] tabular-nums text-muted-foreground">{description.length}/255</span>
+                </div>
+                <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Qual é o foco deste grupo?" rows={3} maxLength={255} className="resize-none" />
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="dark" id="dark" />
-                <Label htmlFor="dark" className="cursor-pointer font-normal">Escuro</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {/* Preview */}
-          <div className="space-y-2">
-            <Label>Preview</Label>
-            <div className="p-4 rounded-lg bg-muted/50 flex items-center justify-center">
-              <PositionBadge name={name || "Performance"} color={color} textColor={textColor} />
+              <ColorPicker value={color} onChange={setColor} label="Cor" />
             </div>
+
+            <aside className="flex flex-col gap-4 rounded-xl bg-muted/50 p-4">
+              <div className="space-y-2">
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Prévia</span>
+                <div className="flex min-h-20 items-center justify-center rounded-lg border bg-background px-3">
+                  <PositionBadge name={name || "Performance"} color={color} textColor={textColor} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Cor do texto</span>
+                <div className="grid grid-cols-3 gap-1 rounded-lg border bg-background p-1">
+                  {TEXT_OPTIONS.map((o) => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      onClick={() => setTextColor(o.v)}
+                      className={`rounded-md px-1 py-1.5 text-xs font-medium transition-colors ${textColor === o.v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {description.trim() && (
+                <p className="line-clamp-3 text-xs text-muted-foreground">{description}</p>
+              )}
+            </aside>
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isLoading}
-            >
-              Cancelar
-            </Button>
+          <DialogFooter className="border-t px-6 py-3">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancelar</Button>
             <Button type="submit" disabled={!name.trim() || isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEditing ? "Salvar alterações" : "Criar performance"}
