@@ -23,6 +23,7 @@ import { ProjectStatusBadge, useProjectStatusToggle } from "@/components/project
 import { supabase } from "@/integrations/supabase/client";
 import { CreateFolderDialog, type ProjectStaff } from "@/components/CreateFolderDialog";
 import { FolderShareDialog } from "@/components/FolderShareDialog";
+import { useTeamPerformances } from "@/hooks/useTeamPositions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +49,8 @@ export default function Projects() {
   // "Gestão financeira" no menu do projeto: só com permissão no perfil de acesso ou sendo dono da equipe.
   const financeAccess = useFinanceAccess(selectedTeamId);
   const { data: projectBoards = [] } = useBoards(selectedTeamId);
+  const { data: performances = [] } = useTeamPerformances(selectedTeamId);
+  const perfById = new Map(performances.map((p) => [p.id, p]));
   const boardNameById = new Map(projectBoards.map((b) => [b.id, b.name]));
   const { data: boardLinks = [] } = useQuery({
     queryKey: ["project-board-links", selectedTeamId, user?.id],
@@ -223,6 +226,7 @@ export default function Projects() {
                 ownerProfile={memberMap.get(project.created_by)}
                 onOpen={() => navigate(`/app/projects/${project.id}`)}
                 onEdit={() => setEditing(project)}
+                performance={perfById.get((project as any).performance_id ?? "")}
                 onShare={() => setSharing(project)}
                 onDelete={() => setDeleting(project)}
                 canManage={canEdit}
@@ -303,6 +307,7 @@ interface ProjectCardProps {
   onOpen: () => void;
   onEdit: () => void;
   onShare: () => void;
+  performance?: { name: string; color: string };
   onDelete: () => void;
   canManage: boolean;
   canDelete?: boolean;
@@ -311,7 +316,7 @@ interface ProjectCardProps {
   onOpenFinance: () => void;
 }
 
-function ProjectCard({ project, boardNames, memberMap, ownerProfile, onOpen, onEdit, onShare, onDelete, canManage, canDelete, myAccess, canSeeFinance, onOpenFinance }: ProjectCardProps) {
+function ProjectCard({ project, performance, boardNames, memberMap, ownerProfile, onOpen, onEdit, onShare, onDelete, canManage, canDelete, myAccess, canSeeFinance, onOpenFinance }: ProjectCardProps) {
   const sharedUsers = (project.shared_with || []).map((s) => memberMap.get(s.user_id)).filter(Boolean);
   const accessUsers = [ownerProfile, ...sharedUsers].filter(Boolean);
   const visibleAvatars = accessUsers.slice(0, 4);
@@ -351,8 +356,8 @@ function ProjectCard({ project, boardNames, memberMap, ownerProfile, onOpen, onE
                 <Landmark className="h-4 w-4 mr-2" /> Gestão financeira
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={onShare} disabled={!canManage}>
-              <Share2 className="h-4 w-4 mr-2" /> Gerenciar acesso
+            <DropdownMenuItem onClick={onShare}>
+              <Share2 className="h-4 w-4 mr-2" /> {myAccess === "owner" ? "Gerenciar acesso" : "Ver acesso"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onEdit} disabled={!canManage}>
               <Pencil className="h-4 w-4 mr-2" /> Editar
@@ -386,6 +391,17 @@ function ProjectCard({ project, boardNames, memberMap, ownerProfile, onOpen, onE
           >
             {myAccess === "owner" ? "Proprietário" : myAccess === "edit" ? "Edição" : "Visualização"}
           </span>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+          <Users className="h-3.5 w-3.5 shrink-0" />
+          {performance ? (
+            <span className="inline-flex items-center gap-1.5 truncate">
+              <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: performance.color }} />
+              <span className="text-foreground font-medium truncate">{performance.name}</span>
+            </span>
+          ) : (
+            <span className="italic">Sem performance</span>
+          )}
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0" title={boardNames.join(", ")}>
           <LayoutGrid className="h-3.5 w-3.5 shrink-0" />

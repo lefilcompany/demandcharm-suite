@@ -26,7 +26,7 @@ interface CreateFolderDialogProps {
   teamId?: string | null;
 }
 
-function usePerformanceStaff(performanceId: string) {
+export function usePerformanceStaff(performanceId: string) {
   return useQuery({
     queryKey: ["performance-staff", performanceId],
     enabled: !!performanceId,
