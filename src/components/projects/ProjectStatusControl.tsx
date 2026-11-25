@@ -81,9 +81,14 @@ export function ProjectStatusButton({ project, onDone }: { project: { id: string
   const active = (project.status ?? "active") === "active";
   return (
     <>
-      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => open({ id: project.id, name: project.name, status: project.status ?? "active" })}>
-        <Power className="h-4 w-4" />{active ? "Inativar projeto" : "Ativar projeto"}
-      </Button>
+      <button
+        type="button"
+        onClick={() => open({ id: project.id, name: project.name, status: project.status ?? "active" })}
+        className="flex items-center gap-1.5 p-2 md:px-3 md:py-1.5 rounded-lg border border-border/60 hover:bg-muted/60 transition-colors"
+      >
+        <Power className="h-4 w-4 text-muted-foreground" />
+        <span className="hidden md:inline text-xs font-medium text-muted-foreground">{active ? "Inativar projeto" : "Ativar projeto"}</span>
+      </button>
       {dialog}
     </>
   );
