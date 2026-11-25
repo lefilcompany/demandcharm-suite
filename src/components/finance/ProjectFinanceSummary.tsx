@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { OpsLabel } from "@/components/ops/OpsParts";
-import { MarginGoalBar } from "./MarginRuler";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import { AlertTriangle, RotateCw, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatPct, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
@@ -63,15 +64,46 @@ export function ProjectFinanceSummary({ projectId, from, to, onRange }: { projec
         </div>
       ) : !r || !m0 ? <Skeleton className="h-28 w-full rounded-xl" /> : (
         <section aria-label="Resultado do projeto" className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl overflow-hidden">
-          <div className="grid grid-cols-2 md:grid-cols-4">
-            <Cell label="Faturamento" value={formatBRL(r.gross)} note={`Impostos ${formatBRL(r.tax)} · ${formatPct(taxRate)}`} />
-            <Cell label="Custo total" value={formatBRL(r.totalCost + r.totals.variable)} note={`Pessoal ${formatBRL(r.totals.teamCost)} · ${fmtHours(r.totals.hours)}`}
-              warn={r.totals.hoursWithoutCost > 0} />
-            <Cell label="Resultado" value={formatBRL(r.result)} note={STATUS_LABEL[r.status]} tone={resultTone(r.result)} />
-            <Cell label="Margem de lucro" value={r.margin == null ? "—" : formatPct(r.margin)} note={`Meta da equipe: ${formatPct(r.totals.marginTarget)}`}
-              tone={r.margin == null ? "" : r.margin < 0 ? "text-destructive" : r.margin >= r.totals.marginTarget ? "text-success" : "text-primary"} />
+          {/* Mesmo "ledger" do Sumário da Inteligência Financeira: resultado em destaque + entradas/saídas */}
+          <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+            <div className="px-5 py-5 sm:px-6 border-b lg:border-b-0 lg:border-r border-ops-ink-foreground/10 flex flex-col justify-center">
+              <div className="text-sm font-semibold uppercase tracking-wider text-ops-ink-foreground/80">Resultado do período</div>
+              <div className={cn("mt-1 font-ops-display text-2xl sm:text-3xl xl:text-4xl font-semibold tabular-nums leading-tight whitespace-nowrap", resultTone(r.result))} title={formatBRL(r.result)}>
+                {formatBRL(r.result)}
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-base text-ops-ink-foreground/80">
+                <span>Margem</span>
+                <span className={cn("font-ops-display text-xl font-semibold tabular-nums", resultTone(r.result))}>{r.margin == null ? "—" : formatPct(r.margin)}</span>
+                {hint("Resultado ÷ faturamento bruto. Indisponível quando não há faturamento.")}
+                <span className="text-xs text-ops-ink-foreground/60">· meta da equipe {formatPct(r.totals.marginTarget)}</span>
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2">
+              {[
+                { title: "Entradas", rows: [{ l: "Faturamento bruto", v: r.gross, h: "Soma do faturado no projeto no período." }],
+                  foot: { l: "Receita líquida", v: r.netRevenue, h: "Faturamento bruto menos impostos." } },
+                { title: "Saídas", rows: [{ l: `Impostos · ${formatPct(taxRate)}`, v: r.tax, h: "Faturamento × alíquota da equipe.", minus: true },
+                  { l: `Pessoal · ${fmtHours(r.totals.hours)}`, v: r.totals.teamCost, h: "Custo mensal dos integrantes do projeto pelas horas contratadas.", minus: true }],
+                  foot: { l: "Custo total", v: r.totalCost + r.totals.variable, h: "Pessoal + despesas diretas + rateio dos custos da equipe.", minus: true } },
+              ].map((g, gi) => (
+                <div key={g.title} className={cn("px-4 py-3 sm:px-5", gi === 1 && "border-t sm:border-t-0 sm:border-l border-ops-ink-foreground/10")}>
+                  <OpsLabel>{g.title}</OpsLabel>
+                  <dl className="mt-1.5 space-y-2">
+                    {g.rows.map((row: any) => (
+                      <div key={row.l} className="min-w-0">
+                        <dt className="flex items-center gap-1.5 text-xs text-ops-ink-foreground/70">{row.l}{hint(row.h)}</dt>
+                        <dd className={cn("mt-0.5 tabular-nums text-base font-semibold whitespace-nowrap", row.minus && row.v > 0 && "text-ops-ink-foreground/80")}>{formatBRL(row.v)}</dd>
+                      </div>
+                    ))}
+                    <div className="min-w-0 border-t border-ops-ink-foreground/10 pt-1.5">
+                      <dt className="flex items-center gap-1.5 text-xs font-semibold">{g.foot.l}{hint(g.foot.h)}</dt>
+                      <dd className={cn("mt-0.5 tabular-nums font-ops-display text-lg font-semibold whitespace-nowrap", (g.foot as any).minus && g.foot.v > 0 && "text-ops-ink-foreground/80")}>{formatBRL(g.foot.v)}</dd>
+                    </div>
+                  </dl>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="px-4 pb-4 pt-1"><MarginGoalBar margin={r.margin} target={r.totals.marginTarget} variant="ink" /></div>
           {r.totals.hoursWithoutCost > 0 && (
             <p className="px-4 pb-3 text-xs text-primary">Custo incompleto: {fmtHours(r.totals.hoursWithoutCost)} de pessoas sem custo cadastrado no período.</p>
           )}
@@ -98,6 +130,11 @@ export function ProjectFinanceSummary({ projectId, from, to, onRange }: { projec
     </div>
   );
 }
+
+const hint = (t: string) => (
+  <Tooltip><TooltipTrigger asChild><button type="button" className="text-ops-ink-foreground/60 hover:text-ops-ink-foreground" aria-label="Explicação"><Info className="h-3 w-3" /></button></TooltipTrigger>
+    <TooltipContent className="max-w-[15rem] text-xs leading-snug">{t}</TooltipContent></Tooltip>
+);
 
 const ADJ_LABEL: Record<string, string> = {
   gross: "Faturamento", tax: "Impostos", direct_expenses: "Despesas diretas", allocated_expenses: "Rateios", team_cost: "Custo de pessoal",
