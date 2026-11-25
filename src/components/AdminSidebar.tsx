@@ -36,7 +36,7 @@ export function AdminSidebar() {
   const location = useLocation();
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="left-2 md:left-3">
       <SidebarHeader className="p-4 flex items-center justify-center">
         {collapsed ? (
           <img src="/lovable-uploads/8967ad53-156a-4e31-a5bd-b472b7cde839.png" alt="SoMA" className="h-5 w-5 object-scale-down" />
