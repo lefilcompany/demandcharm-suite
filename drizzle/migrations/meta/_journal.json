@@ -463,6 +463,13 @@
       "when": 1795614543019,
       "tag": "0065_project_visibility_owner_manager_staff",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1795614887848,
+      "tag": "0066_module_access_project_staff",
+      "breakpoints": true
     }
   ]
 }
