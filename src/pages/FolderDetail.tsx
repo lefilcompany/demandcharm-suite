@@ -320,21 +320,6 @@ export default function FolderDetail() {
             </Tooltip>
           )}
 </div>
-          <div className="hidden md:block h-6 w-px bg-border" />
-          {canEdit && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setManagerOpen(true)}
-                  className="flex items-center gap-1.5 p-2 md:px-3 md:py-1.5 rounded-lg border border-border/60 bg-primary border-primary hover:bg-primary/90 transition-colors"
-                >
-                  <Plus className="h-4 w-4 text-primary-foreground" />
-                  <span className="hidden md:inline text-xs font-semibold text-primary-foreground">Adicionar demanda</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent className="md:hidden">Adicionar demanda</TooltipContent>
-            </Tooltip>
-          )}
           </div>
       </div>
 
