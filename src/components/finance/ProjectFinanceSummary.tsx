@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Info } from "lucide-react";
 import { AlertTriangle, RotateCw, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatBRL, formatPct, resultTone, STATUS_LABEL } from "@/lib/finance/engine";
+import { formatBRL, formatPct, resultTone } from "@/lib/finance/engine";
 import { projectResult, type ProjectMonth } from "@/lib/finance/projectRollup";
 import { fmtHours } from "@/lib/finance/timeSlices";
 
@@ -27,16 +27,6 @@ export function useProjectFinanceOverview(projectId: string, month: string, toMo
       return (data ?? []) as unknown as ProjectMonth[];
     },
   });
-}
-
-function Cell({ label, value, note, warn, tone }: { label: string; value: string; note?: string; warn?: boolean; tone?: string }) {
-  return (
-    <div className="flex flex-col gap-1 px-4 py-3 border-ops-ink-foreground/10 [&:not(:first-child)]:border-l">
-      <OpsLabel>{label}</OpsLabel>
-      <span className={cn("font-ops-display text-2xl font-semibold leading-none tabular-nums", tone || (warn ? "text-primary" : "text-ops-ink-foreground"))}>{value}</span>
-      {note && <span className="text-xs text-ops-ink-foreground/70">{note}</span>}
-    </div>
-  );
 }
 
 export function ProjectFinanceSummary({ projectId, from, to, onRange }: { projectId: string; from: string; to: string; onRange: (from: string, to: string) => void }) {
