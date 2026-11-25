@@ -27,8 +27,7 @@ import { TeamMember } from "@/hooks/useTeamMembers";
 import type { TeamMemberAvailability, AvailabilityStatus } from "@/hooks/useTeamAvailability";
 import { TeamRole } from "@/hooks/useTeamRole";
 import { buildAvailabilityDetail } from "@/lib/availabilityDisplay";
-import { PositionBadge } from "@/components/PositionBadge";
-import { PositionSelector } from "@/components/PositionSelector";
+import { MemberPerformancesPicker } from "@/components/MemberPerformancesPicker";
 import { TeamPosition } from "@/hooks/useTeamPositions";
 import { MemberAccessProfileDialog } from "@/components/team/MemberAccessProfileDialog";
 import { useState } from "react";
@@ -245,7 +244,7 @@ export function MemberCard({
                 <AlertDialogTitle>Promover a Dono</AlertDialogTitle>
                 <AlertDialogDescription>
                   Tem certeza que deseja promover <strong>{member.profile.full_name}</strong> a Dono da equipe?
-                  Donos podem gerenciar membros, quadros, cargos e aceitar solicitações.
+                  Donos podem gerenciar membros, quadros, performances e aceitar solicitações.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -412,21 +411,9 @@ export function MemberCard({
               <div className="flex justify-center"><MemberKindBadge kind={member.member_kind} /></div>
             )}
 
-            {canManage && positions.length > 0 ? (
-              <PositionSelector
-                positions={positions}
-                value={member.position_id}
-                onChange={handlePositionChange}
-                disabled={isChangingPosition}
-                placeholder="Atribuir cargo"
-              />
-            ) : member.position ? (
-              <PositionBadge
-                name={member.position.name}
-                color={member.position.color}
-                textColor={member.position.text_color}
-              />
-            ) : null}
+            {teamId && (
+              <MemberPerformancesPicker teamId={teamId} member={member} performances={positions} canManage={canManage} />
+            )}
 
             {/* Disponibilidade da equipe (independente do status online/offline) */}
             {availability && (

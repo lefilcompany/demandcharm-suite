@@ -254,16 +254,16 @@ var listTeamMembersTool = defineTool2({
 });
 var listTeamPositionsTool = defineTool2({
   name: "list_team_positions",
-  title: "List team positions",
-  description: "List the job positions defined for a team.",
+  title: "List team performances",
+  description: "List the performances (groups of internal members) of a team, with their member ids. A member can belong to several.",
   inputSchema: { team_id: zUuid },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ team_id }, ctx) => {
     const a = requireAuth(ctx);
     if (a) return a;
-    const { data, error } = await sb(ctx).from("team_positions").select("*").eq("team_id", team_id);
+    const { data, error } = await sb(ctx).from("team_performances").select("*, team_performance_members(team_member_id)").eq("team_id", team_id);
     if (error) return fromPgError(error);
-    return okList("positions", data ?? []);
+    return okList("performances", data ?? []);
   }
 });
 var joinTeamWithCodeTool = defineTool2({

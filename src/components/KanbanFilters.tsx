@@ -385,7 +385,7 @@ export function KanbanFilters({ teamId, boardId, filters, onChange }: KanbanFilt
             {positions && positions.length > 0 && (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <Briefcase className="h-3 w-3" /> Cargo
+                  <Briefcase className="h-3 w-3" /> Performance
                 </label>
                 <NativeSelect
                   value={filters.position}

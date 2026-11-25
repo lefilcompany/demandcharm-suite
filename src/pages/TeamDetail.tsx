@@ -19,7 +19,7 @@ import { useTeamAvailability, type TeamMemberAvailability } from "@/hooks/useTea
 import { useIsTeamAdmin, useTeamRole } from "@/hooks/useTeamRole";
 import { useTeamScope } from "@/hooks/useTeamScope";
 import { useSelectedTeam } from "@/contexts/TeamContext";
-import { useTeamPositions, useAssignPosition } from "@/hooks/useTeamPositions";
+import { useTeamPositions } from "@/hooks/useTeamPositions";
 import { MemberCard } from "@/components/MemberCard";
 import { TeamAvailabilitySummary } from "@/components/TeamAvailabilitySummary";
 import { TeamScopeConfig } from "@/components/TeamScopeConfig";
@@ -66,7 +66,6 @@ export default function TeamDetail() {
   const { data: positions } = useTeamPositions(id);
   const removeMember = useRemoveMember();
   const updateMemberRole = useUpdateMemberRole();
-  const assignPosition = useAssignPosition();
   const deleteTeam = useDeleteTeam();
   const team = teams?.find(t => t.id === id);
   const canManage = role === "owner";
@@ -78,15 +77,6 @@ export default function TeamDetail() {
     requester: "Solicitante",
   };
 
-  const handlePositionChange = (memberId: string, positionId: string | null) => {
-    assignPosition.mutate(
-      { memberId, positionId },
-      {
-        onSuccess: () => toast.success("Cargo atribuído!"),
-        onError: () => toast.error("Erro ao atribuir cargo"),
-      }
-    );
-  };
 
   const handleRoleChange = (memberId: string, newRole: "owner" | "member") => {
     // Map UI roles to DB roles: owner→admin, member→requester
@@ -174,7 +164,7 @@ export default function TeamDetail() {
         )} */}
       </div>
 
-      {/* Solicitações de entrada + cargos da equipe, lado a lado */}
+      {/* Solicitações de entrada + performances da equipe, lado a lado */}
       {canManage && id && (
         <div className="grid items-start gap-6 lg:grid-cols-2">
           <TeamJoinRequestsCard teamId={id} accessCode={team.access_code} />
@@ -255,7 +245,7 @@ export default function TeamDetail() {
                 if (!memberSearch.trim()) return true;
                 const q = memberSearch.toLowerCase();
                 const name = member.profile?.full_name?.toLowerCase() || "";
-                const positionName = member.position?.name?.toLowerCase() || "";
+                const positionName = member.performances.map((p) => p.name).join(" ").toLowerCase();
                 const roleLabel = roleLabels[member.role]?.toLowerCase() || "";
                 return name.includes(q) || positionName.includes(q) || roleLabel.includes(q);
               }).sort((a, b) => {
@@ -275,8 +265,6 @@ export default function TeamDetail() {
                   isRemoving={removeMember.isPending}
                   canManage={canManage}
                   positions={positions || []}
-                  onPositionChange={handlePositionChange}
-                  isChangingPosition={assignPosition.isPending}
                   onRoleChange={canManage ? handleRoleChange : undefined}
                   isChangingRole={updateMemberRole.isPending}
                   availability={availabilityByUser.get(member.user_id)}

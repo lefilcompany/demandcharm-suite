@@ -73,18 +73,18 @@ export function CreatePositionDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Editar Cargo" : "Criar Cargo"}
+            {isEditing ? "Editar performance" : "Criar performance"}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "Altere as informações do cargo."
-              : "Crie um novo cargo personalizado para sua equipe."}
+              ? "Altere as informações da performance."
+              : "Crie um grupo de membros internos da equipe."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nome do cargo *</Label>
+            <Label htmlFor="name">Nome da performance *</Label>
             <Input
               id="name"
               value={name}
@@ -101,7 +101,7 @@ export function CreatePositionDialog({
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva as responsabilidades deste cargo..."
+              placeholder="Descreva o foco desta performance..."
               rows={3}
               maxLength={255}
             />
@@ -136,7 +136,7 @@ export function CreatePositionDialog({
           <div className="space-y-2">
             <Label>Preview</Label>
             <div className="p-4 rounded-lg bg-muted/50 flex items-center justify-center">
-              <PositionBadge name={name || "Cargo"} color={color} textColor={textColor} />
+              <PositionBadge name={name || "Performance"} color={color} textColor={textColor} />
             </div>
           </div>
 
@@ -151,7 +151,7 @@ export function CreatePositionDialog({
             </Button>
             <Button type="submit" disabled={!name.trim() || isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Salvar Alterações" : "Criar Cargo"}
+              {isEditing ? "Salvar alterações" : "Criar performance"}
             </Button>
           </DialogFooter>
         </form>

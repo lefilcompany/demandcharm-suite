@@ -4703,6 +4703,86 @@ export type Database = {
           },
         ]
       }
+      team_performance_members: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          performance_id: string
+          team_member_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          performance_id: string
+          team_member_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          performance_id?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_performance_members_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "team_performances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_performance_members_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_performances: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          legacy_position_id: string | null
+          name: string
+          team_id: string
+          text_color: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          legacy_position_id?: string | null
+          name: string
+          team_id: string
+          text_color?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          legacy_position_id?: string | null
+          name?: string
+          team_id?: string
+          text_color?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_performances_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_positions: {
         Row: {
           color: string
@@ -6101,6 +6181,10 @@ export type Database = {
         }[]
       }
       password_reset_required: { Args: { _email: string }; Returns: boolean }
+      performance_team_id: {
+        Args: { _performance_id: string }
+        Returns: string
+      }
       profile_grants: {
         Args: {
           _board_id: string

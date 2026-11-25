@@ -16,9 +16,10 @@ import { useTeamMembers, useRemoveMember } from "@/hooks/useTeamMembers";
 import { useSelectedTeam } from "@/contexts/TeamContext";
 import { useTeamRole } from "@/hooks/useTeamRole";
 import { useTeamScope } from "@/hooks/useTeamScope";
-import { useTeamPositions, useAssignPosition } from "@/hooks/useTeamPositions";
+import { useTeamPositions } from "@/hooks/useTeamPositions";
 import { TeamScopeConfig } from "@/components/TeamScopeConfig";
 import { TeamPositionsManager } from "@/components/TeamPositionsManager";
+import { MemberPerformancesPicker } from "@/components/MemberPerformancesPicker";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { PositionBadge } from "@/components/PositionBadge";
 import { PositionSelector } from "@/components/PositionSelector";
@@ -59,7 +60,6 @@ export default function TeamConfig() {
   const { data: teamScope } = useTeamScope(selectedTeamId);
   const { data: positions } = useTeamPositions(selectedTeamId);
   const removeMember = useRemoveMember();
-  const assignPosition = useAssignPosition();
   const queryClient = useQueryClient();
   const redeemCoupon = useRedeemCoupon();
   
@@ -475,37 +475,13 @@ export default function TeamConfig() {
                             <Badge className={`text-xs pointer-events-none ${roleColors[member.role] || ""}`}>
                               {roleLabels[member.role] || member.role}
                             </Badge>
-                            {member.position && (
-                              <PositionBadge 
-                                name={member.position.name} 
-                                color={member.position.color}
-                                textColor={member.position.text_color}
-                                showIcon={false}
-                                className="text-xs"
-                              />
-                            )}
                           </div>
                         </div>
                       </div>
                       
-                      {/* Position Selector for Admins/Moderators */}
-                      {isAdminOrModerator && positions && positions.length > 0 && (
-                        <div className="w-full sm:w-40 shrink-0">
-                          <PositionSelector
-                            positions={positions}
-                            value={member.position_id}
-                            onChange={(positionId) => {
-                              assignPosition.mutate(
-                                { memberId: member.id, positionId },
-                                {
-                                  onSuccess: () => toast.success("Cargo atribuído!"),
-                                  onError: () => toast.error("Erro ao atribuir cargo"),
-                                }
-                              );
-                            }}
-                            disabled={assignPosition.isPending}
-                            placeholder="Atribuir cargo"
-                          />
+                      {selectedTeamId && (
+                        <div className="w-full sm:w-auto shrink-0">
+                          <MemberPerformancesPicker teamId={selectedTeamId} member={member} performances={positions ?? []} canManage={isAdminOrModerator} align="start" />
                         </div>
                       )}
                       

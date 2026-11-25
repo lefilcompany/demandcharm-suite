@@ -24,6 +24,8 @@ export interface TeamMember {
   joined_at: string;
   position_id: string | null;
   position: TeamMemberPosition | null;
+  /** Performances (grupos) das quais o membro faz parte. */
+  performances: TeamMemberPosition[];
   member_kind: "internal" | "client_external" | "contractor";
   profile: {
     full_name: string;
@@ -48,7 +50,8 @@ export function useTeamMembers(teamId: string | null) {
           position_id,
           member_kind,
           profiles!team_members_user_id_fkey(full_name, email, avatar_url),
-          team_positions(id, name, color, text_color)
+          team_positions(id, name, color, text_color),
+          team_performance_members(team_performances(id, name, color, text_color))
         `)
         .eq("team_id", teamId)
         .order("joined_at", { ascending: true });
@@ -68,6 +71,11 @@ export function useTeamMembers(teamId: string | null) {
           color: (member.team_positions as any).color,
           text_color: (member.team_positions as any).text_color || "auto",
         } : null,
+        performances: (((member as any).team_performance_members ?? []) as any[])
+          .map((r) => r.team_performances)
+          .filter(Boolean)
+          .map((p: any) => ({ id: p.id, name: p.name, color: p.color, text_color: p.text_color || "auto" }))
+          .sort((a, b) => a.name.localeCompare(b.name)),
         profile: {
           full_name: (member.profiles as any)?.full_name || "Usuário",
           email: (member.profiles as any)?.email || null,

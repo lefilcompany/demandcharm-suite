@@ -69,3 +69,7 @@ One rule per decision, with the reason.
 ## Project activation
 
 - Project status (`projects.status` + `project_status_history`) changes only via RPC `set_project_status` (owner / `projects.edit`); a board whose current projects are all inactive is frozen by trigger `guard_board_frozen` (no new demands/requests, stage moves or timers) so every client, assistant and API obeys it; the UI only mirrors it via `is_board_frozen`.
+
+## Team performances
+
+- Performances (N:N `team_performance_members`) replace deprecated `team_positions`; a trigger admits only internal same-team members.
