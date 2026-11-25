@@ -43,7 +43,7 @@ export function TeamPositionsManager({ teamId, canManage }: Props) {
 
   const open = performances?.find((p) => p.id === openId) ?? null;
   const internals = useMemo(
-    () => (members ?? []).filter((m) => canJoinPerformance(m.member_kind))
+    () => (members ?? []).filter((m) => canJoinPerformance(m.member_kind, m.role))
       .sort((a, b) => a.profile.full_name.localeCompare(b.profile.full_name)),
     [members],
   );
@@ -196,7 +196,7 @@ export function TeamPositionsManager({ teamId, canManage }: Props) {
                   </ul>
                 )}
               </div>
-              <p className="text-[11px] text-muted-foreground">Somente membros internos podem fazer parte de performances.</p>
+              <p className="text-[11px] text-muted-foreground">Somente membros internos podem fazer parte de performances. O dono da equipe gerencia todas, mas não entra nelas.</p>
             </>
           )}
         </SheetContent>

@@ -8,7 +8,7 @@ export function userIdsInPerformances(links: PerformanceLink[], selected: string
   return [...out];
 }
 
-/** Só membros internos podem entrar numa performance. */
-export function canJoinPerformance(memberKind: string | null | undefined): boolean {
-  return (memberKind ?? "internal") === "internal";
+/** Só membros internos (não o dono da equipe) podem entrar numa performance. */
+export function canJoinPerformance(memberKind: string | null | undefined, role?: string | null): boolean {
+  return (memberKind ?? "internal") === "internal" && role !== "owner" && role !== "admin";
 }

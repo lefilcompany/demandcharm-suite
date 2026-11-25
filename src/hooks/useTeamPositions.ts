@@ -21,6 +21,7 @@ const dupMsg = "Já existe uma performance com este nome nesta equipe";
 export function friendlyPerformanceError(e: any): string {
   const m = String(e?.message ?? "");
   if (m.includes("PERFORMANCE_MEMBER_NOT_INTERNAL")) return "Só membros internos podem fazer parte de uma performance";
+  if (m.includes("PERFORMANCE_MEMBER_IS_OWNER")) return "O dono da equipe não faz parte de performances";
   if (m.includes("PERFORMANCE_MEMBER_OTHER_TEAM")) return "Essa pessoa não é desta equipe";
   if (e?.code === "23505") return dupMsg;
   return m || "Erro ao salvar performance";

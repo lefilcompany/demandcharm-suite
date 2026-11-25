@@ -20,7 +20,7 @@ interface Props {
 export function MemberPerformancesPicker({ teamId, member, performances, canManage, align = "center" }: Props) {
   const toggle = useTogglePerformanceMember();
   const current = new Set(member.performances.map((p) => p.id));
-  const eligible = canJoinPerformance(member.member_kind);
+  const eligible = canJoinPerformance(member.member_kind, member.role);
 
   const onToggle = (performanceId: string, add: boolean) =>
     toggle.mutate(

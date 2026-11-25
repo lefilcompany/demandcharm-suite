@@ -428,6 +428,13 @@
       "when": 1795608173476,
       "tag": "0060_team_performances",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1795608974404,
+      "tag": "0061_performance_exclude_owner",
+      "breakpoints": true
     }
   ]
 }

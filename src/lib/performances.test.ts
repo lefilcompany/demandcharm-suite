@@ -7,6 +7,10 @@ describe("performances", () => {
     expect(canJoinPerformance("client_external")).toBe(false);
     expect(canJoinPerformance("contractor")).toBe(false);
   });
+  it("dono da equipe não entra em performance", () => {
+    expect(canJoinPerformance("internal", "owner")).toBe(false);
+    expect(canJoinPerformance("internal", "member")).toBe(true);
+  });
   it("uma pessoa em várias performances aparece uma vez", () => {
     const links = [
       { performance_id: "a", user_id: "u1" },
