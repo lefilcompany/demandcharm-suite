@@ -4,7 +4,7 @@ import { FolderOpen, Plus, MoreVertical, Pencil, Trash2, ListChecks, Users, Shar
 import { useDemandFolders, useCreateFolder, useUpdateFolder, useDeleteFolder, DemandFolder } from "@/hooks/useDemandFolders";
 import { useBoards } from "@/hooks/useBoards";
 import { useAuth } from "@/lib/auth";
-import { CreateFolderDialog } from "@/components/CreateFolderDialog";
+import { CreateFolderDialog, type ProjectStaff } from "@/components/CreateFolderDialog";
 import { FolderDemandManager } from "@/components/FolderDemandManager";
 import { FolderShareDialog } from "@/components/FolderShareDialog";
 import { MoveFolderToBoardDialog } from "@/components/MoveFolderToBoardDialog";
@@ -69,9 +69,9 @@ export function DemandFolderStrip({ teamId, boardId, selectedFolderId, onSelectF
   const [sharingFolder, setSharingFolder] = useState<DemandFolder | null>(null);
   const [movingFolder, setMovingFolder] = useState<DemandFolder | null>(null);
 
-  const handleCreate = (name: string, color: string) => {
+  const handleCreate = (name: string, color: string, staff?: ProjectStaff) => {
     if (!teamId || !user?.id) return;
-    createFolder.mutate({ name, color, team_id: teamId, created_by: user.id, board_id: boardId ?? null });
+    createFolder.mutate({ name, color, team_id: teamId, created_by: user.id, board_id: boardId ?? null, staff });
   };
 
 
@@ -286,6 +286,7 @@ export function DemandFolderStrip({ teamId, boardId, selectedFolderId, onSelectF
         open={createOpen}
         onOpenChange={setCreateOpen}
         onConfirm={handleCreate}
+        teamId={teamId}
       />
 
       {editingFolder && (

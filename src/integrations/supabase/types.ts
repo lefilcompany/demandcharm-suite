@@ -3861,6 +3861,38 @@ export type Database = {
           },
         ]
       }
+      project_members: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          project_id: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          project_id: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          project_id?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_shares: {
         Row: {
           id: string
@@ -3942,6 +3974,7 @@ export type Database = {
           id: string
           integration_key: string
           name: string
+          performance_id: string | null
           source_scenario_id: string | null
           status: string
           team_id: string
@@ -3957,6 +3990,7 @@ export type Database = {
           id?: string
           integration_key?: string
           name: string
+          performance_id?: string | null
           source_scenario_id?: string | null
           status?: string
           team_id: string
@@ -3972,6 +4006,7 @@ export type Database = {
           id?: string
           integration_key?: string
           name?: string
+          performance_id?: string | null
           source_scenario_id?: string | null
           status?: string
           team_id?: string
@@ -3991,6 +4026,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "team_performances"
             referencedColumns: ["id"]
           },
           {
@@ -6257,6 +6299,14 @@ export type Database = {
       }
       set_member_kind: {
         Args: { _kind: string; _team_id: string; _user_id: string }
+        Returns: undefined
+      }
+      set_project_staff: {
+        Args: {
+          _performance_id: string
+          _project_id: string
+          _user_ids: string[]
+        }
         Returns: undefined
       }
       set_project_status: {

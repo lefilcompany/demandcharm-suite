@@ -21,7 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Power } from "lucide-react";
 import { ProjectStatusBadge, useProjectStatusToggle } from "@/components/projects/ProjectStatusControl";
 import { supabase } from "@/integrations/supabase/client";
-import { CreateFolderDialog } from "@/components/CreateFolderDialog";
+import { CreateFolderDialog, type ProjectStaff } from "@/components/CreateFolderDialog";
 import { FolderShareDialog } from "@/components/FolderShareDialog";
 import {
   AlertDialog,
@@ -117,9 +117,9 @@ export default function Projects() {
     return accessible.filter((p) => p.name.toLowerCase().includes(q));
   }, [accessible, search]);
 
-  const handleCreate = (name: string, color: string) => {
+  const handleCreate = (name: string, color: string, staff?: ProjectStaff) => {
     if (!selectedTeamId || !user) return;
-    createMutation.mutate({ name, color, team_id: selectedTeamId, created_by: user.id });
+    createMutation.mutate({ name, color, team_id: selectedTeamId, created_by: user.id, staff });
   };
 
   const handleUpdate = (name: string, color: string) => {
@@ -241,6 +241,7 @@ export default function Projects() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onConfirm={handleCreate}
+        teamId={selectedTeamId}
       />
 
       {editing && (

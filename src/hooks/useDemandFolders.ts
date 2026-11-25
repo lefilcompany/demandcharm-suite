@@ -201,8 +201,11 @@ export function useFolderDemandIds(folderId: string | null) {
 export function useCreateFolder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { name: string; color: string; team_id: string; created_by: string; board_id?: string | null }) => {
-      const { board_id, ...base } = params;
+    mutationFn: async (params: {
+      name: string; color: string; team_id: string; created_by: string; board_id?: string | null;
+      staff?: { performanceId: string; userIds: string[] };
+    }) => {
+      const { board_id, staff, ...base } = params;
       const { data, error } = await supabase
         .from("projects")
         .insert({ ...base, board_id: board_id ?? null } as any)
@@ -219,6 +222,16 @@ export function useCreateFolder() {
       }
 
       if (error) throw error;
+
+      if (data?.id && staff) {
+        const { error: se } = await (supabase as any).rpc("set_project_staff", {
+          _project_id: data.id, _performance_id: staff.performanceId, _user_ids: staff.userIds,
+        });
+        if (se) {
+          await supabase.from("projects").delete().eq("id", data.id);
+          throw se;
+        }
+      }
 
       let linked = 0;
       let linkFailed = false;
@@ -246,7 +259,13 @@ export function useCreateFolder() {
         toast.success("Projeto criado com sucesso");
       }
     },
-    onError: () => toast.error("Erro ao criar projeto"),
+    onError: (e: any) => {
+      const m = String(e?.message ?? "");
+      if (m.includes("MEMBER_NOT_IN_PERFORMANCE")) toast.error("Algum integrante não faz parte da performance escolhida");
+      else if (m.includes("PERFORMANCE_REQUIRED")) toast.error("Escolha a performance que vai atuar no projeto");
+      else if (m.includes("PROJECT_MEMBERS_REQUIRED")) toast.error("Escolha ao menos um integrante da performance");
+      else toast.error("Erro ao criar projeto");
+    },
 
   });
 }
