@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Eye, Lock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -57,6 +56,8 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
     setShareSel(new Set(sharedWith.map((s) => s.user_id)));
   }, [open, project, sharedWith]);
 
+  const currentPerf = useMemo(() => performances.find((p) => p.id === perf), [performances, perf]);
+
   const externals = useMemo(
     () =>
       (members as any[])
@@ -72,16 +73,19 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
   };
 
   const handleSave = async () => {
-    if (!perf || staffSel.size === 0) {
-      toast.error("Escolha a performance e ao menos um integrante");
+    if (perf && staffSel.size === 0) {
+      toast.error("Marque ao menos um integrante da performance");
       return;
     }
     setSaving(true);
     try {
-      const { error } = await (supabase as any).rpc("set_project_staff", {
-        _project_id: folderId, _performance_id: perf, _user_ids: [...staffSel],
-      });
-      if (error) throw error;
+      if (perf) {
+        // A performance é fixa por projeto; o RPC valida que os integrantes pertencem a ela.
+        const { error } = await (supabase as any).rpc("set_project_staff", {
+          _project_id: folderId, _performance_id: perf, _user_ids: [...staffSel],
+        });
+        if (error) throw error;
+      }
       // Compartilhamento externo: sempre somente leitura.
       const current = new Set(sharedWith.map((s) => s.user_id));
       const externalIds = new Set(externals.map((m: any) => m.user_id));
@@ -129,16 +133,18 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
 
         <section className="space-y-2">
           <h4 className="flex items-center gap-2 text-sm font-semibold"><Users className="h-4 w-4" /> Performance e integrantes</h4>
-          <Select value={perf} onValueChange={(v) => { setPerf(v); setStaffSel(new Set()); }} disabled={!isOwner}>
-            <SelectTrigger aria-label="Performance"><SelectValue placeholder="Escolha a performance" /></SelectTrigger>
-            <SelectContent>
-              {performances.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  <span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />{p.name}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* A performance é fixa por projeto (definida na criação): aqui só se exibe; o que muda são os integrantes. */}
+          {currentPerf ? (
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: currentPerf.color }} />
+              <span className="text-sm font-medium">{currentPerf.name}</span>
+              <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Fixa no projeto</span>
+            </div>
+          ) : (
+            <p className="rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              Este projeto não tem performance definida; apenas o compartilhamento externo pode ser alterado.
+            </p>
+          )}
           {perf && (
             <ul className="max-h-44 overflow-y-auto rounded-lg border divide-y">
               {staffLoading && <li className="p-3 text-sm text-muted-foreground">Carregando...</li>}
