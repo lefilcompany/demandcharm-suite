@@ -156,8 +156,8 @@
       },
       {
         "name": "list_team_positions",
-        "title": "List team positions",
-        "description": "List the job positions defined for a team.",
+        "title": "List team performances",
+        "description": "List the performances (groups of internal members) of a team, with their member ids. A member can belong to several.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
