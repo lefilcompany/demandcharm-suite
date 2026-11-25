@@ -84,7 +84,7 @@ export function AppSidebar() {
         { title: "Meus Quadros", url: "/app/boards", icon: LayoutGrid },
         ...(canProjects ? [{ title: "Projetos", url: "/app/projects", icon: Briefcase }] : []),
         ...(financeAccess.hasModule && selectedTeamId
-          ? [{ title: "Gestão Financeira", url: "/app/finance", icon: Landmark }]
+          ? [{ title: "Inteligência Financeira", url: "/app/finance", icon: Landmark }]
           : []),
         ...(selectedTeamId
           ? [{ title: "Participantes", url: `/app/teams/${selectedTeamId}`, icon: UsersRound, end: true }]
