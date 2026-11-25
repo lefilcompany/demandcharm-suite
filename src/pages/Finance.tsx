@@ -1,3 +1,5 @@
+import { PerformanceFinance } from "@/components/finance/PerformanceFinance";
+import { Layers } from "lucide-react";
 import { generateProfitabilityPdf } from "@/lib/finance/profitabilityPdf";
 import { useAuth } from "@/lib/auth";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -84,6 +86,7 @@ function MonthlyLegend({ payload, resultTones }: { payload?: { value?: string; c
 const SECTIONS = [
   { v: "overview", label: "Sumário", hint: "Visão consolidada da equipe", icon: LayoutDashboard },
   { v: "byProject", label: "Por projeto", hint: "Faturamento e resultado de cada projeto", icon: PieChart },
+  { v: "byPerformance", label: "Por performance", hint: "Projetos, receita e custos por performance", icon: Layers },
   { v: "people", label: "Pessoas", hint: "Custos e produtividade por pessoa", icon: Users },
   { v: "manage", label: "Custos", hint: "Custos gerais da equipe", icon: Wallet },
   { v: "simulator", label: "Simulador", hint: "Simulação de precificação", icon: Calculator },
@@ -311,6 +314,8 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
             <TeamProjectsFinance teamId={selectedTeamId} from={from} to={to} limit={2} />
           </div>
         );
+      case "byPerformance":
+        return <PerformanceFinance teamId={selectedTeamId} from={from} to={to} />;
       case "people":
         return <CostsProductivity rows={people.data ?? []} detailed={fin.can("finance.view_employee_costs")} isLoading={people.isLoading} isError={people.isError} onRetry={() => people.refetch()} boardOrder={boardOrder} teamId={selectedTeamId} canEdit={fin.can("finance.manage_settings")} onlyConfigured />;
       case "simulator":
