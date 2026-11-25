@@ -22,7 +22,8 @@ export default function AdminFinance() {
   });
   const [teamId, setTeamId] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  const [month, setMonth] = useState(new Date().toISOString().substring(0, 7));
+  const [from, setFrom] = useState(new Date().toISOString().substring(0, 7));
+  const [to, setTo] = useState(new Date().toISOString().substring(0, 7));
   const [page, setPage] = useState(0);
   const PAGE = 12;
   const list = useMemo(() => [...scopes].sort((a, b) =>
@@ -51,7 +52,7 @@ export default function AdminFinance() {
         </div>
         {team?.kind === "project" && (
           <div className="grid gap-4 rounded-xl border bg-card p-4 xl:grid-cols-2">
-            <ProjectFinanceSummary projectId={team.scope_id} month={month} onMonth={setMonth} />
+            <ProjectFinanceSummary projectId={team.scope_id} from={from} to={to} onRange={(f, t) => { setFrom(f); setTo(t); }} />
             <ProjectHoursCosts projectId={team.scope_id} canExport />
           </div>
         )}

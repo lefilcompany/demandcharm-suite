@@ -39,7 +39,8 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
     },
   });
   const sections = SECTIONS.filter((s) => s.v !== "price" || !!proposal.data);
-  const [month, setMonth] = useState(competence.substring(0, 7));
+  const [from, setFrom] = useState(competence.substring(0, 7));
+  const [to, setTo] = useState(competence.substring(0, 7));
   const [active, setActive] = useState<SectionId>("result");
   const scrollRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Partial<Record<SectionId, HTMLElement | null>>>({});
@@ -126,7 +127,7 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
               </h2>
               <p className="mt-1 pl-8 text-[11px] leading-tight text-muted-foreground">{hint}</p>
             </header>
-            {v === "result" && <ProjectFinanceSummary projectId={projectId} month={month} onMonth={setMonth} />}
+            {v === "result" && <ProjectFinanceSummary projectId={projectId} from={from} to={to} onRange={(f, t) => { setFrom(f); setTo(t); }} />}
             {v === "revenue" && <ProjectRevenue projectId={projectId} teamId={teamId} canManage={!!canManage} />}
             {v === "hours" && <ProjectHoursCosts projectId={projectId} canExport={!!canManage} />}
             {v === "price" && proposal.data && <ProjectScenarioProposal scenario={proposal.data} />}

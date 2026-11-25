@@ -1,4 +1,4 @@
-import { MonthField } from "@/components/ops/MonthField";
+import { MonthRangeField } from "@/components/ops/MonthRangeField";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -14,15 +14,14 @@ import { formatBRL, formatPct, resultTone, STATUS_LABEL } from "@/lib/finance/en
 import { projectResult, type ProjectMonth } from "@/lib/finance/projectRollup";
 import { fmtHours } from "@/lib/finance/timeSlices";
 
-export function useProjectFinanceOverview(projectId: string, month: string) {
+export function useProjectFinanceOverview(projectId: string, month: string, toMonth: string = month) {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["project-finance-overview", projectId, month, user?.id],
+    queryKey: ["project-finance-overview", projectId, month, toMonth, user?.id],
     enabled: !!user && !!projectId,
     retry: (n, e: any) => !String(e?.message).includes("FORBIDDEN") && n < 2,
     queryFn: async () => {
-      const d = `${month}-01`;
-      const { data, error } = await supabase.rpc("get_project_finance_overview", { _project_id: projectId, _from: d, _to: d });
+      const { data, error } = await supabase.rpc("get_project_finance_overview", { _project_id: projectId, _from: `${month}-01`, _to: `${toMonth}-01` });
       if (error) throw error;
       return (data ?? []) as unknown as ProjectMonth[];
     },
@@ -39,19 +38,23 @@ function Cell({ label, value, note, warn, tone }: { label: string; value: string
   );
 }
 
-export function ProjectFinanceSummary({ projectId, month, onMonth }: { projectId: string; month: string; onMonth: (m: string) => void }) {
-  const q = useProjectFinanceOverview(projectId, month);
+export function ProjectFinanceSummary({ projectId, from, to, onRange }: { projectId: string; from: string; to: string; onRange: (from: string, to: string) => void }) {
+  const q = useProjectFinanceOverview(projectId, from, to);
   if (q.isError && String((q.error as any)?.message).includes("FORBIDDEN"))
     return <p className="text-sm text-muted-foreground">Você ainda não tem acesso aos números deste projeto. O dono da equipe pode liberar em Configurações da equipe.</p>;
   const r = q.data && q.data.length ? projectResult(q.data) : null;
   const m0 = q.data?.[0];
+  const single = from === to;
+  const closedCount = (q.data ?? []).filter((m) => m.period_status !== "open").length;
+  const taxRate = single && m0 ? Number(m0.tax_rate) : r && r.gross > 0 ? r.tax / r.gross : Number(m0?.tax_rate ?? 0);
+  const adjustments = (q.data ?? []).flatMap((m) => m.adjustments ?? []);
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-medium flex-1">Resultado do projeto</h3>
-        {m0 && m0.period_status !== "open" && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" />{m0.has_adjustments ? "Fechado + ajustes" : "Mês fechado"}</span>}
-        <MonthField aria-label="Mês do resultado" value={month} onChange={onMonth} className="h-8 w-40" />
+        {closedCount > 0 && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" />{single ? (m0?.has_adjustments ? "Fechado + ajustes" : "Mês fechado") : `${closedCount} ${closedCount === 1 ? "mês fechado" : "meses fechados"}`}</span>}
+        <MonthRangeField from={from} to={to} onChange={onRange} />
       </div>
       {q.isError ? (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/40 p-3 text-sm text-destructive">
@@ -61,7 +64,7 @@ export function ProjectFinanceSummary({ projectId, month, onMonth }: { projectId
       ) : !r || !m0 ? <Skeleton className="h-28 w-full rounded-xl" /> : (
         <section aria-label="Resultado do projeto" className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl overflow-hidden">
           <div className="grid grid-cols-2 md:grid-cols-4">
-            <Cell label="Faturamento" value={formatBRL(r.gross)} note={`Impostos ${formatBRL(r.tax)} · ${formatPct(Number(m0.tax_rate))}`} />
+            <Cell label="Faturamento" value={formatBRL(r.gross)} note={`Impostos ${formatBRL(r.tax)} · ${formatPct(taxRate)}`} />
             <Cell label="Custo total" value={formatBRL(r.totalCost + r.totals.variable)} note={`Pessoal ${formatBRL(r.totals.teamCost)} · ${fmtHours(r.totals.hours)}`}
               warn={r.totals.hoursWithoutCost > 0} />
             <Cell label="Resultado" value={formatBRL(r.result)} note={STATUS_LABEL[r.status]} tone={resultTone(r.result)} />
@@ -70,16 +73,16 @@ export function ProjectFinanceSummary({ projectId, month, onMonth }: { projectId
           </div>
           <div className="px-4 pb-4 pt-1"><MarginGoalBar margin={r.margin} target={r.totals.marginTarget} variant="ink" /></div>
           {r.totals.hoursWithoutCost > 0 && (
-            <p className="px-4 pb-3 text-xs text-primary">Custo incompleto: {fmtHours(r.totals.hoursWithoutCost)} de pessoas sem custo cadastrado no mês.</p>
+            <p className="px-4 pb-3 text-xs text-primary">Custo incompleto: {fmtHours(r.totals.hoursWithoutCost)} de pessoas sem custo cadastrado no período.</p>
           )}
-          {m0.board_ids.length === 0 && <p className="px-4 pb-3 text-xs text-ops-ink-foreground/70">Nenhum quadro vinculado neste mês.</p>}
+          {(q.data ?? []).every((m) => m.board_ids.length === 0) && <p className="px-4 pb-3 text-xs text-ops-ink-foreground/70">Nenhum quadro vinculado no período.</p>}
         </section>
       )}
-      {m0?.adjustments && m0.adjustments.length > 0 && (
+      {adjustments.length > 0 && (
         <div className="rounded-lg border text-sm">
           <p className="px-3 py-2 text-xs font-medium text-muted-foreground border-b">Ajustes depois do fechamento</p>
           <ul className="divide-y">
-            {m0.adjustments.map((a) => (
+            {adjustments.map((a) => (
               <li key={a.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-3 py-2">
                 <span className="font-medium">{a.board_name ?? "Quadro"}</span>
                 <span className="text-muted-foreground">{ADJ_LABEL[a.target] ?? a.target}</span>
