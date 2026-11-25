@@ -80,6 +80,22 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
     root.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
   };
 
+  // Fill down to the bottom of the content card instead of a fixed guess, so nothing is cut off.
+  const [scrollH, setScrollH] = useState<number | null>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const measure = () => {
+      const card = el.closest("main") as HTMLElement | null;
+      const bottom = card ? card.getBoundingClientRect().bottom : window.innerHeight;
+      const top = el.getBoundingClientRect().top + (card ? card.scrollTop : 0);
+      setScrollH(Math.max(320, Math.floor(bottom - top - 24)));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [isError]);
+
   if (isError) return null;
 
   return (
@@ -100,7 +116,7 @@ export function ProjectFinancePanel({ projectId, teamId }: { projectId: string; 
           );
         })}
       </nav>
-      <div ref={scrollRef} className="scroll-on-hover min-w-0 space-y-10 overflow-y-auto pr-1 h-[calc(100dvh-16rem)] min-h-[20rem]">
+      <div ref={scrollRef} className="scroll-on-hover min-w-0 space-y-10 overflow-y-auto pr-1 min-h-[20rem]" style={{ height: scrollH ? `${scrollH}px` : "calc(100dvh - 16rem)" }}>
         {sections.map(({ v, label, hint, icon: Icon }) => (
           <section key={v} ref={(el) => { sectionRefs.current[v] = el; }} aria-label={label} className="scroll-mt-2">
             <header className="mb-3 border-b pb-2">
