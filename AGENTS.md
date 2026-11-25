@@ -40,7 +40,7 @@ One rule per decision, with the reason.
 
 ## Release news
 
-- Product-update clicks in the notification dropdown and toast stack use `notificationNewsBus` to open the shared `NotificationNewsDialog` with the recipient's stored notification text; the CTA stays separate from reading, avoiding new access to admin-only release tables.
+- Product-update clicks open shared `NotificationNewsDialog` via `notificationNewsBus` using the stored notification text — no access to admin release tables.
 
 ## Board assistant actions
 
