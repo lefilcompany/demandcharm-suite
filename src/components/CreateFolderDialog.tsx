@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ColorPicker } from "@/components/ColorPicker";
 import { supabase } from "@/integrations/supabase/client";
-import { useTeamPerformances } from "@/hooks/useTeamPositions";
+import { useTeamPerformances, useTeamPerformanceStaff } from "@/hooks/useTeamPositions";
 
 export interface ProjectStaff {
   performanceId: string;
@@ -26,25 +25,19 @@ interface CreateFolderDialogProps {
   teamId?: string | null;
 }
 
-export function usePerformanceStaff(performanceId: string) {
-  return useQuery({
-    queryKey: ["performance-staff", performanceId],
-    enabled: !!performanceId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("team_performance_members")
-        .select("team_member_id, team_members!inner(user_id)")
-        .eq("performance_id", performanceId);
-      if (error) throw error;
-      const ids = (data ?? []).map((r: any) => r.team_members?.user_id).filter(Boolean) as string[];
-      if (!ids.length) return [];
-      const { data: profs, error: pe } = await supabase.from("profiles").select("id, full_name").in("id", ids);
-      if (pe) throw pe;
-      return (profs ?? [])
-        .map((p: any) => ({ userId: p.id as string, name: (p.full_name as string) || "Sem nome" }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-    },
-  });
+export function usePerformanceStaff(teamId: string | null | undefined, performanceId: string) {
+  const q = useTeamPerformanceStaff(teamId);
+  const data = useMemo(
+    () =>
+      performanceId
+        ? (q.data ?? [])
+            .filter((r) => r.performance_id === performanceId)
+            .map((r) => ({ userId: r.user_id, name: r.full_name }))
+            .sort((a, b) => a.name.localeCompare(b.name))
+        : [],
+    [q.data, performanceId],
+  );
+  return { data, isLoading: !!performanceId && q.isLoading };
 }
 
 export function CreateFolderDialog({
@@ -62,7 +55,7 @@ export function CreateFolderDialog({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const needsStaff = !isEditing && !!teamId;
   const { data: performances = [], isLoading: perfLoading } = useTeamPerformances(needsStaff ? teamId : null);
-  const { data: staff = [], isLoading: staffLoading } = usePerformanceStaff(needsStaff ? performanceId : "");
+  const { data: staff = [], isLoading: staffLoading } = usePerformanceStaff(needsStaff ? teamId : null, needsStaff ? performanceId : "");
 
   useEffect(() => {
     if (open) {

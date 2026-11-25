@@ -48,9 +48,26 @@ export function useTeamPositions(teamId: string | null | undefined) {
 }
 export const useTeamPerformances = useTeamPositions;
 
+export interface PerformanceStaffRow { performance_id: string; user_id: string; full_name: string }
+
+/** Todos os integrantes de todas as performances da equipe numa única chamada (cacheada). */
+export function useTeamPerformanceStaff(teamId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["team-performance-staff", teamId],
+    enabled: !!teamId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_team_performance_staff", { _team_id: teamId! });
+      if (error) throw error;
+      return (data ?? []) as PerformanceStaffRow[];
+    },
+  });
+}
+
 function invalidate(qc: ReturnType<typeof useQueryClient>, teamId?: string) {
   qc.invalidateQueries({ queryKey: ["team-performances", teamId] });
   qc.invalidateQueries({ queryKey: ["performance-members"] });
+  qc.invalidateQueries({ queryKey: ["team-performance-staff"] });
   qc.invalidateQueries({ queryKey: ["members-by-position"] });
   qc.invalidateQueries({ queryKey: ["team-members"] });
 }

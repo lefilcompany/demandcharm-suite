@@ -1,26 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
 import { userIdsInPerformances } from "@/lib/performances";
+import { useTeamPerformanceStaff } from "@/hooks/useTeamPositions";
 
-/** user_ids que pertencem a qualquer uma das performances informadas. */
+/** user_ids que pertencem a qualquer uma das performances informadas (usa o cache único da equipe). */
 export function useMembersByPosition(teamId: string | null | undefined, performance: string | string[] | null) {
   const ids = (Array.isArray(performance) ? performance : performance ? [performance] : []).filter(Boolean);
-  return useQuery({
-    queryKey: ["members-by-position", teamId, [...ids].sort().join(",")],
-    queryFn: async () => {
-      if (!teamId || ids.length === 0) return [];
-      const { data, error } = await supabase
-        .from("team_performance_members")
-        .select("performance_id, team_members!inner(user_id, team_id)")
-        .in("performance_id", ids)
-        .eq("team_members.team_id", teamId);
-      if (error) throw error;
-      return userIdsInPerformances(
-        (data ?? []).map((r: any) => ({ performance_id: r.performance_id, user_id: r.team_members?.user_id })),
-        ids,
-      );
-    },
-    enabled: !!teamId && ids.length > 0,
-  });
+  const key = [...ids].sort().join(",");
+  const q = useTeamPerformanceStaff(ids.length ? teamId : null);
+  const data = useMemo(
+    () => (ids.length && q.data ? userIdsInPerformances(q.data, ids) : ids.length ? undefined : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [q.data, key],
+  );
+  return { ...q, data } as typeof q & { data: string[] | undefined };
 }
 export const useMembersByPerformance = useMembersByPosition;

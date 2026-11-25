@@ -48,7 +48,7 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
   const [staffSel, setStaffSel] = useState<Set<string>>(new Set());
   const [shareSel, setShareSel] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
-  const { data: staff = [], isLoading: staffLoading } = usePerformanceStaff(perf);
+  const { data: staff = [], isLoading: staffLoading } = usePerformanceStaff(teamId, perf);
 
   useEffect(() => {
     if (!open || !project) return;

@@ -6021,6 +6021,14 @@ export type Database = {
         Args: { _competence: string; _team_id: string }
         Returns: Json
       }
+      get_team_performance_staff: {
+        Args: { _team_id: string }
+        Returns: {
+          full_name: string
+          performance_id: string
+          user_id: string
+        }[]
+      }
       get_team_plan: {
         Args: { _team_id: string }
         Returns: {
