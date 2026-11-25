@@ -62,9 +62,14 @@ export default function ProjectFinance() {
           </p>
         </div>
         <ProjectStatusButton project={folder} />
-        <Button variant="outline" size="sm" onClick={() => navigate(`/app/projects/${folder.id}`)}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao projeto
-        </Button>
+        <button
+          type="button"
+          onClick={() => navigate(`/app/projects/${folder.id}`)}
+          className="flex items-center gap-1.5 p-2 md:px-3 md:py-1.5 rounded-lg border border-border/60 hover:bg-muted/60 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+          <span className="hidden md:inline text-xs font-medium text-muted-foreground">Voltar ao projeto</span>
+        </button>
       </div>
 
       <ProjectFinancePanel projectId={folder.id} teamId={currentTeamId} />
