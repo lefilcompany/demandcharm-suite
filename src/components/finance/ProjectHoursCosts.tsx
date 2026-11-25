@@ -141,10 +141,6 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
                   <span className="tabular-nums font-medium">{brl(Number(s.personnel_cost))}</span>
                 </li>
                 <li className="flex items-baseline justify-between gap-2">
-                  <span className="flex items-center gap-1.5"><CircleDot className="h-3 w-3 text-muted-foreground" />Despesas diretas do projeto</span>
-                  <span className="tabular-nums font-medium">{brl(Number(r.expenses.direct))}</span>
-                </li>
-                <li className="flex items-baseline justify-between gap-2">
                   <span className="flex items-center gap-1.5"><CircleDot className="h-3 w-3 text-muted-foreground" />Rateio de custos fixos</span>
                   <span className="tabular-nums font-medium">{brl(Number(r.expenses.fixa))}</span>
                 </li>
