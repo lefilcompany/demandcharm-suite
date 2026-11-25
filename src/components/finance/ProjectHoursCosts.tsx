@@ -12,7 +12,7 @@ import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { cn } from "@/lib/utils";
 import { useProjectFinanceOverview } from "@/components/finance/ProjectFinanceSummary";
 import { projectResult } from "@/lib/finance/projectRollup";
-import { fmtHours, hoursCostsCsv, kindLabel, type HoursCostsReport } from "@/lib/finance/timeSlices";
+import { fmtHours, hoursCostsCsv, kindLabel, monthExpensesTotal, type HoursCostsReport } from "@/lib/finance/timeSlices";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -137,6 +137,10 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
               <OpsLabel className="text-muted-foreground">Despesas do mês</OpsLabel>
               <ul className="mt-2 space-y-1.5">
                 <li className="flex items-baseline justify-between gap-2">
+                  <span className="flex items-center gap-1.5"><CircleDot className="h-3 w-3 text-muted-foreground" />Custo hora/homem do projeto</span>
+                  <span className="tabular-nums font-medium">{brl(Number(s.personnel_cost))}</span>
+                </li>
+                <li className="flex items-baseline justify-between gap-2">
                   <span className="flex items-center gap-1.5"><CircleDot className="h-3 w-3 text-muted-foreground" />Despesas diretas do projeto</span>
                   <span className="tabular-nums font-medium">{brl(Number(r.expenses.direct))}</span>
                 </li>
@@ -166,7 +170,14 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
               <p className="mt-2 flex items-baseline justify-between gap-2 border-t pt-2">
                 <span className="font-semibold">Total de despesas do projeto</span>
                 <span className="tabular-nums font-semibold">
-                  {brl(Number(r.expenses.direct) + Number(r.expenses.fixa) + Number(r.expenses.operacional) + Number(r.expenses.administrativa) + tax)}
+                  {brl(monthExpensesTotal({
+                    personnel_cost: Number(s.personnel_cost),
+                    direct: Number(r.expenses.direct),
+                    fixa: Number(r.expenses.fixa),
+                    operacional: Number(r.expenses.operacional),
+                    administrativa: Number(r.expenses.administrativa),
+                    tax,
+                  }))}
                 </span>
               </p>
             </div>

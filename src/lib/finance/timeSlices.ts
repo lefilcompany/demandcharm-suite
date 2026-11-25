@@ -68,6 +68,16 @@ export interface HoursCostsReport {
   expenses: { direct: number; fixa: number; operacional: number; administrativa: number; team_unallocated: number };
 }
 
+/** Month's total project expenses: man-hour cost + direct + allocated team costs + taxes (cent-exact). */
+export function monthExpensesTotal(e: {
+  personnel_cost: number; direct: number; fixa: number; operacional: number; administrativa: number; tax: number;
+}) {
+  const cents = (v: number) => Math.round((Number(v) || 0) * 100);
+  return (
+    (cents(e.personnel_cost) + cents(e.direct) + cents(e.fixa) + cents(e.operacional) + cents(e.administrativa) + cents(e.tax)) / 100
+  );
+}
+
 export function hoursCostsCsv(r: HoursCostsReport): string {
   const rows: (string | number)[][] = [["Mês", r.competence.substring(0, 7)], [],
     ["Horas internas", r.summary.internal_hours], ["Horas cliente externo", r.summary.client_external_hours],

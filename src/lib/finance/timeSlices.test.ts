@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sliceEntries, personCost } from "./timeSlices";
+import { sliceEntries, personCost, monthExpensesTotal } from "./timeSlices";
 
 const t = (iso: string) => new Date(iso).getTime();
 const sum = (xs: { hours: number }[]) => xs.reduce((a, x) => a + x.hours, 0);
@@ -47,5 +47,21 @@ describe("personCost", () => {
   });
   it("calcula horas × custo/hora", () => {
     expect(personCost(2.5, 80)).toBe(200);
+  });
+});
+
+describe("monthExpensesTotal", () => {
+  const base = { personnel_cost: 14450, direct: 0, fixa: 5000, operacional: 3333.33, administrativa: 1666.67, tax: 5250 };
+
+  it("soma o custo hora/homem do projeto às demais despesas do mês", () => {
+    expect(monthExpensesTotal(base)).toBe(29700);
+  });
+
+  it("sem custo hora/homem o total é menor que o total com ele", () => {
+    expect(monthExpensesTotal({ ...base, personnel_cost: 0 })).toBe(15250);
+  });
+
+  it("não perde centavos na soma", () => {
+    expect(monthExpensesTotal({ personnel_cost: 0.1, direct: 0.2, fixa: 0, operacional: 0, administrativa: 0, tax: 0 })).toBe(0.3);
   });
 });
