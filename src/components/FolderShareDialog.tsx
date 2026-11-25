@@ -159,7 +159,6 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
               ))}
             </ul>
           )}
-          <p className="text-xs text-muted-foreground">O custo hora/homem dos integrantes marcados entra no projeto.</p>
         </section>
 
         <section className="space-y-2">
