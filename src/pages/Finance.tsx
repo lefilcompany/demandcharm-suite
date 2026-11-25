@@ -81,7 +81,7 @@ function MonthlyLegend({ payload, resultTones }: { payload?: { value?: string; c
 }
 
 const SECTIONS = [
-  { v: "overview", label: "Resultado da equipe", hint: "Resultado consolidado da equipe", icon: LayoutDashboard },
+  { v: "overview", label: "Sumário", hint: "Visão consolidada da equipe", icon: LayoutDashboard },
   { v: "byProject", label: "Por projeto", hint: "Faturamento e resultado de cada projeto", icon: PieChart },
   { v: "people", label: "Pessoas", hint: "Custos e produtividade por pessoa", icon: Users },
   { v: "manage", label: "Custos", hint: "Custos gerais da equipe", icon: Wallet },
