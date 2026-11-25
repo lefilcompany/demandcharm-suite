@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, Lock, Users } from "lucide-react";
+import { Lock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -45,7 +45,6 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
 
   const [perf, setPerf] = useState("");
   const [staffSel, setStaffSel] = useState<Set<string>>(new Set());
-  const [shareSel, setShareSel] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const { data: staff = [], isLoading: staffLoading } = usePerformanceStaff(teamId, perf);
 
@@ -53,18 +52,9 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
     if (!open || !project) return;
     setPerf(project.performanceId ?? "");
     setStaffSel(new Set(project.userIds));
-    setShareSel(new Set(sharedWith.map((s) => s.user_id)));
   }, [open, project, sharedWith]);
 
   const currentPerf = useMemo(() => performances.find((p) => p.id === perf), [performances, perf]);
-
-  const externals = useMemo(
-    () =>
-      (members as any[])
-        .filter((m) => m.member_kind !== "internal" && m.user_id !== user?.id)
-        .sort((a, b) => (a.profile?.full_name ?? "").localeCompare(b.profile?.full_name ?? "")),
-    [members, user?.id],
-  );
 
   const toggle = (set: Set<string>, setter: (s: Set<string>) => void, id: string) => {
     const n = new Set(set);
@@ -85,24 +75,6 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
           _project_id: folderId, _performance_id: perf, _user_ids: [...staffSel],
         });
         if (error) throw error;
-      }
-      // Compartilhamento externo: sempre somente leitura.
-      const current = new Set(sharedWith.map((s) => s.user_id));
-      const externalIds = new Set(externals.map((m: any) => m.user_id));
-      const toAdd = [...shareSel].filter((id) => !current.has(id));
-      const toRemove = [...current].filter((id) => !shareSel.has(id) && externalIds.has(id));
-      const toDowngrade = sharedWith.filter((s) => shareSel.has(s.user_id) && s.permission !== "view").map((s) => s.user_id);
-      if (toAdd.length) {
-        const { error: e } = await supabase.from("project_shares").insert(toAdd.map((uid) => ({ project_id: folderId, user_id: uid, permission: "view" })) as any);
-        if (e) throw e;
-      }
-      if (toRemove.length) {
-        const { error: e } = await supabase.from("project_shares").delete().eq("project_id", folderId).in("user_id", toRemove);
-        if (e) throw e;
-      }
-      if (toDowngrade.length) {
-        const { error: e } = await supabase.from("project_shares").update({ permission: "view" } as any).eq("project_id", folderId).in("user_id", toDowngrade);
-        if (e) throw e;
       }
       qc.invalidateQueries({ queryKey: ["demand-folders"] });
       qc.invalidateQueries({ queryKey: ["project-staff"] });
@@ -127,7 +99,7 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
 
         {project && !isOwner && (
           <div className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-            <Lock className="h-4 w-4 shrink-0" /> Só o proprietário do projeto pode alterar integrantes e compartilhamento.
+            <Lock className="h-4 w-4 shrink-0" /> Só o proprietário do projeto pode alterar os integrantes.
           </div>
         )}
 
@@ -141,7 +113,7 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
             </div>
           ) : (
             <p className="rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-              Este projeto não tem performance definida; apenas o compartilhamento externo pode ser alterado.
+              Este projeto não tem performance definida; os integrantes não podem ser alterados.
             </p>
           )}
           {perf && (
@@ -158,23 +130,6 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
               ))}
             </ul>
           )}
-        </section>
-
-        <section className="space-y-2">
-          <h4 className="flex items-center gap-2 text-sm font-semibold"><Eye className="h-4 w-4" /> Compartilhamento externo</h4>
-          <p className="text-xs text-muted-foreground">Pessoas externas da equipe veem o projeto somente em modo leitura.</p>
-          <ul className="max-h-40 overflow-y-auto rounded-lg border divide-y">
-            {externals.length === 0 && <li className="p-3 text-sm text-muted-foreground">Nenhum membro externo na equipe.</li>}
-            {externals.map((m: any) => (
-              <li key={m.user_id}>
-                <label className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/50">
-                  <Checkbox checked={shareSel.has(m.user_id)} disabled={!isOwner} onCheckedChange={() => toggle(shareSel, setShareSel, m.user_id)} />
-                  <span className="text-sm flex-1">{m.profile?.full_name || "Sem nome"}</span>
-                  <span className="text-[10px] uppercase text-muted-foreground">Leitura</span>
-                </label>
-              </li>
-            ))}
-          </ul>
         </section>
 
         <DialogFooter>

@@ -5673,6 +5673,10 @@ export type Database = {
         Args: { _board_id: string; _team_id: string; _user_id: string }
         Returns: boolean
       }
+      can_view_project: {
+        Args: { _project_id: string; _user_id: string }
+        Returns: boolean
+      }
       check_access_code_exists: { Args: { code: string }; Returns: boolean }
       check_plan_limit: {
         Args: { _resource: string; _team_id: string }

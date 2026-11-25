@@ -120,9 +120,8 @@ export default function Projects() {
 
   const accessible = useMemo(() => {
     if (!user) return [];
-    return projects.filter(
-      (p) => p.is_owner === true || (p.shared_with || []).some((s) => s.user_id === user.id),
-    );
+    // Visibilidade decidida no banco (dono da equipe, gestor de projetos, integrantes).
+    return projects;
   }, [projects, user]);
 
   const filtered = useMemo(() => {
