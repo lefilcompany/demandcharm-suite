@@ -138,7 +138,6 @@ export function FolderShareDialog({ open, onOpenChange, folderId, folderName, te
             <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: currentPerf.color }} />
               <span className="text-sm font-medium">{currentPerf.name}</span>
-              <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Fixa no projeto</span>
             </div>
           ) : (
             <p className="rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
