@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +14,7 @@ import { Pencil, Plus, Search, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   useTeamPositions, useCreatePosition, useUpdatePosition, useDeletePosition,
-  useTogglePerformanceMember, TeamPosition,
+  useSavePerformanceMembers, TeamPosition,
 } from "@/hooks/useTeamPositions";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { CreatePositionDialog } from "@/components/CreatePositionDialog";
@@ -33,7 +33,7 @@ export function TeamPositionsManager({ teamId, canManage }: Props) {
   const create = useCreatePosition();
   const update = useUpdatePosition();
   const remove = useDeletePosition();
-  const toggle = useTogglePerformanceMember();
+  const saveMembers = useSavePerformanceMembers();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<TeamPosition | null>(null);
@@ -50,6 +50,28 @@ export function TeamPositionsManager({ teamId, canManage }: Props) {
   const inOpen = (m: (typeof internals)[number]) => !!open && m.performances.some((p) => p.id === open.id);
   const shown = internals.filter((m) => m.profile.full_name.toLowerCase().includes(q.toLowerCase()));
   const openCount = internals.filter(inOpen).length;
+
+  // Seleção em rascunho: os checkboxes só marcam localmente; "Confirmar seleção" grava tudo de uma vez.
+  const [draft, setDraft] = useState<Set<string> | null>(null);
+  const serverIds = useMemo(() => new Set(internals.filter(inOpen).map((m) => m.id)), [internals, open]);
+  useEffect(() => {
+    setDraft(open ? new Set(serverIds) : null);
+  }, [open?.id, members]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const selected = draft ?? serverIds;
+  const toAdd = [...selected].filter((id) => !serverIds.has(id));
+  const toRemove = [...serverIds].filter((id) => !selected.has(id));
+  const dirty = toAdd.length + toRemove.length;
+
+  const confirmSelection = async () => {
+    if (!open || dirty === 0) return;
+    try {
+      await saveMembers.mutateAsync({ performanceId: open.id, teamId, add: toAdd, remove: toRemove });
+      toast.success("Seleção confirmada");
+    } catch (e: any) {
+      toast.error(e?.message || "Não foi possível confirmar a seleção");
+    }
+  };
 
   const save = async (data: { name: string; description?: string; color: string; textColor: string }) => {
     try {
@@ -158,7 +180,7 @@ export function TeamPositionsManager({ teamId, canManage }: Props) {
                 ) : (
                   <ul className="space-y-0.5">
                     {shown.map((m) => {
-                      const checked = inOpen(m);
+                      const checked = selected.has(m.id);
                       if (!canManage && !checked) return null;
                       return (
                         <li key={m.id}>
@@ -167,10 +189,11 @@ export function TeamPositionsManager({ teamId, canManage }: Props) {
                               <Checkbox
                                 checked={checked}
                                 onCheckedChange={(v) =>
-                                  toggle.mutate(
-                                    { performanceId: open.id, memberId: m.id, add: !!v, teamId },
-                                    { onError: (e: any) => toast.error(e?.message || "Não foi possível alterar") },
-                                  )
+                                  setDraft((prev) => {
+                                    const next = new Set(prev ?? serverIds);
+                                    if (v) next.add(m.id); else next.delete(m.id);
+                                    return next;
+                                  })
                                 }
                               />
                             )}
@@ -193,6 +216,23 @@ export function TeamPositionsManager({ teamId, canManage }: Props) {
                   </ul>
                 )}
               </div>
+              {canManage && (
+                <div className="flex items-center justify-between gap-3 border-t pt-3">
+                  <span className="text-xs text-muted-foreground">
+                    {dirty === 0
+                      ? "Nenhuma alteração pendente"
+                      : `${dirty} ${dirty === 1 ? "alteração pendente" : "alterações pendentes"}`}
+                  </span>
+                  <Button
+                    size="sm"
+                    className="h-8 gap-1.5"
+                    disabled={dirty === 0 || saveMembers.isPending}
+                    onClick={confirmSelection}
+                  >
+                    {saveMembers.isPending ? "Confirmando..." : "Confirmar seleção"}
+                  </Button>
+                </div>
+              )}
               <p className="text-[11px] text-muted-foreground">Somente membros internos podem fazer parte de performances. O dono da equipe gerencia todas, mas não entra nelas.</p>
             </>
           )}

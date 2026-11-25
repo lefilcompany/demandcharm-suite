@@ -180,3 +180,28 @@ export function useTogglePerformanceMember() {
     onSettled: (_, __, v) => invalidate(qc, v.teamId),
   });
 }
+
+/** Grava de uma vez as entradas e saídas de membros de uma performance (seleção com confirmação). */
+export function useSavePerformanceMembers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ performanceId, add, remove }: { performanceId: string; teamId: string; add: string[]; remove: string[] }) => {
+      if (add.length > 0) {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase
+          .from("team_performance_members")
+          .insert(add.map((id) => ({ performance_id: performanceId, team_member_id: id, added_by: user?.id ?? null })));
+        if (error && error.code !== "23505") throw new Error(friendlyPerformanceError(error));
+      }
+      if (remove.length > 0) {
+        const { error } = await supabase
+          .from("team_performance_members")
+          .delete()
+          .eq("performance_id", performanceId)
+          .in("team_member_id", remove);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, v) => invalidate(qc, v.teamId),
+  });
+}
