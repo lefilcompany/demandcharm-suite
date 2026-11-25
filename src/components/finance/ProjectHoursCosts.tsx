@@ -10,6 +10,8 @@ import { OpsLabel } from "@/components/ops/OpsParts";
 import { AlertTriangle, CheckCircle2, CircleDot, RotateCw, Scissors, Timer, Copy } from "lucide-react";
 import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { cn } from "@/lib/utils";
+import { useProjectFinanceOverview } from "@/components/finance/ProjectFinanceSummary";
+import { projectResult } from "@/lib/finance/projectRollup";
 import { fmtHours, hoursCostsCsv, kindLabel, type HoursCostsReport } from "@/lib/finance/timeSlices";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -43,6 +45,10 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
   const q = useProjectHoursCosts(projectId, competence);
   const r = q.data;
   const s = r?.summary;
+  const fin = useProjectFinanceOverview(projectId, month);
+  const finR = fin.data && fin.data.length ? projectResult(fin.data) : null;
+  const tax = finR ? Number(finR.tax) : 0;
+  const taxRate = Number(fin.data?.[0]?.tax_rate ?? 0);
 
   const download = () => {
     if (!r) return;
@@ -146,6 +152,10 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
                   <span className="flex items-center gap-1.5"><CircleDot className="h-3 w-3 text-muted-foreground" />Rateio de custos administrativos</span>
                   <span className="tabular-nums font-medium">{brl(Number(r.expenses.administrativa))}</span>
                 </li>
+                <li className="flex items-baseline justify-between gap-2">
+                  <span className="flex items-center gap-1.5"><CircleDot className="h-3 w-3 text-muted-foreground" />Impostos · {(taxRate * 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}% do faturamento</span>
+                  <span className="tabular-nums font-medium">{fin.isLoading ? "…" : brl(tax)}</span>
+                </li>
               </ul>
               {Number(r.expenses.team_unallocated) > 0 && (
                 <p className="mt-2 flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1.5 text-xs text-primary">
@@ -156,7 +166,7 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
               <p className="mt-2 flex items-baseline justify-between gap-2 border-t pt-2">
                 <span className="font-semibold">Total de despesas do projeto</span>
                 <span className="tabular-nums font-semibold">
-                  {brl(Number(r.expenses.direct) + Number(r.expenses.fixa) + Number(r.expenses.operacional) + Number(r.expenses.administrativa))}
+                  {brl(Number(r.expenses.direct) + Number(r.expenses.fixa) + Number(r.expenses.operacional) + Number(r.expenses.administrativa) + tax)}
                 </span>
               </p>
             </div>
