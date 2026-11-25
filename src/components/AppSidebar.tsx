@@ -208,7 +208,7 @@ export function AppSidebar() {
         </NavLink>
 
         {isTeamView && showText && (
-          <div className="mx-2 px-2 pt-2 pb-1">
+          <div className="mx-2 px-2 pt-2 pb-1 flex justify-center">
             <NavLink
               to={lastBoardRoute}
               onClick={closeMobileSidebar}
@@ -257,10 +257,10 @@ export function AppSidebar() {
                 const hasBadge = (item as any).showDemandRequestBadge || (item as any).showJoinRequestBadge || (item as any).showReturnedBadge;
                 return (
                 <SidebarMenuItem key={item.title} className="relative" data-tour={tourId}>
-                    <SidebarMenuButton asChild tooltip={item.title} size="default" className={`h-auto min-h-8 py-1.5 overflow-visible w-full ${showText ? 'items-start' : 'mx-auto items-center justify-center'}`}>
-                      <NavLink to={item.url} end={(item as any).end ?? !isTeamView} onClick={closeMobileSidebar} className={`flex w-full min-w-0 hover:bg-sidebar-accent transition-colors ${showText ? 'items-start gap-2' : 'items-center justify-center'} ${isBack ? 'text-muted-foreground' : ''}`} activeClassName={isBack ? '' : 'bg-sidebar-accent text-sidebar-primary font-medium'}>
+                    <SidebarMenuButton asChild tooltip={item.title} size="default" className={`h-auto min-h-8 py-1.5 overflow-visible w-full ${showText ? 'items-start justify-center' : 'mx-auto items-center justify-center'}`}>
+                      <NavLink to={item.url} end={(item as any).end ?? !isTeamView} onClick={closeMobileSidebar} className={`flex w-full min-w-0 hover:bg-sidebar-accent transition-colors ${showText ? 'items-start justify-center gap-2' : 'items-center justify-center'} ${isBack ? 'text-muted-foreground' : ''}`} activeClassName={isBack ? '' : 'bg-sidebar-accent text-sidebar-primary font-medium'}>
                         <item.icon className={`h-4 w-4 shrink-0 ${showText ? 'mt-0.5' : ''}`} />
-                        {showText && <span className={`text-sm flex-1 min-w-0 whitespace-normal break-words leading-snug ${hasBadge ? 'pr-7' : ''}`}>{item.title}</span>}
+                        {showText && <span className={`text-sm min-w-0 whitespace-normal break-words leading-snug text-center ${hasBadge ? 'pr-7' : ''}`}>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                     {showText && (item as any).showDemandRequestBadge && typeof pendingDemandRequests === "number" && pendingDemandRequests > 0 && (
