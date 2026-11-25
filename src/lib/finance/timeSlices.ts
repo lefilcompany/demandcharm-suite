@@ -61,9 +61,9 @@ export interface HoursCostsReport {
   can_see_people: boolean;
   summary: {
     internal_hours: number; client_external_hours: number; contractor_hours: number; unclassified_hours: number;
-    personnel_cost: number; missing_cost_people: number; missing_cost_hours: number; people_count: number; pending_hours: number;
+    personnel_cost: number; missing_cost_people: number; missing_cost_hours: number; people_count: number; pending_hours: number; planned_hours?: number; actual_hours?: number;
   };
-  people: { user_id: string; name: string; kind: string | null; hours: number; hourly_cost: number | null; cost: number | null }[] | null;
+  people: { user_id: string; name: string; kind: string | null; hours: number; actual_hours?: number; hourly_cost: number | null; cost: number | null }[] | null;
   audit: { overlap_entries: number; overlap_hours_removed: number; split_entries: number; running_entries: number };
   expenses: { direct: number; fixa: number; operacional: number; administrativa: number; team_unallocated: number };
 }
@@ -77,8 +77,8 @@ export function hoursCostsCsv(r: HoursCostsReport): string {
     ["Despesa direta", r.expenses.direct], ["Rateio fixa", r.expenses.fixa], ["Rateio operacional", r.expenses.operacional],
     ["Rateio administrativa", r.expenses.administrativa]];
   if (r.people?.length) {
-    rows.push([], ["Pessoa", "Vínculo", "Horas", "Custo/hora", "Custo"]);
-    for (const p of r.people) rows.push([p.name, kindLabel(p.kind), p.hours, p.hourly_cost ?? "faltante", p.cost ?? "faltante"]);
+    rows.push([], ["Pessoa", "Vínculo", "Horas previstas", "Horas reais", "Custo/hora", "Custo"]);
+    for (const p of r.people) rows.push([p.name, kindLabel(p.kind), p.hours, p.actual_hours ?? 0, p.hourly_cost ?? "faltante", p.cost ?? "faltante"]);
   }
   return rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
 }

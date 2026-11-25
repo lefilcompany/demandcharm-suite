@@ -72,13 +72,15 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
       ) : (
         <>
           <section aria-label="Resumo de horas e custos" className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl overflow-hidden grid grid-cols-2 md:grid-cols-4">
-            <Cell label="Horas internas" value={fmtHours(s.internal_hours)} note={`${s.people_count} pessoa(s) no projeto`} />
+            <Cell label="Reais / previstas" value={`${fmtHours(s.actual_hours ?? 0)} / ${fmtHours(s.planned_hours ?? s.internal_hours)}`} note={`${s.people_count} pessoa(s) no projeto`} />
             <Cell label="Externo · prestador" value={`${fmtHours(s.client_external_hours)} · ${fmtHours(s.contractor_hours)}`}
               note={s.unclassified_hours > 0 ? `${fmtHours(s.unclassified_hours)} sem vínculo` : "Todos classificados"} warn={s.unclassified_hours > 0} />
             <Cell label="Custo de pessoal" value={brl(Number(s.personnel_cost))}
               note={s.missing_cost_people > 0 ? `Incompleto: ${s.missing_cost_people} sem custo (${fmtHours(s.missing_cost_hours)})` : "Custo completo"} warn={s.missing_cost_people > 0} />
             <Cell label="Horas sem projeto" value={fmtHours(s.pending_hours)} note="Na equipe, aguardando destino" warn={s.pending_hours > 0} />
           </section>
+
+          <TeamTable r={r} />
 
           <div className="grid gap-3 md:grid-cols-2">
             <div className="rounded-lg border p-3 text-sm">
@@ -160,25 +162,61 @@ export function ProjectHoursCosts({ projectId, canExport }: { projectId: string;
             </div>
           </div>
 
-          {r.can_see_people ? (
-            r.people && r.people.length > 0 ? (
-              <ul className="divide-y rounded-lg border text-sm">
-                {r.people.map((p) => (
-                  <li key={p.user_id} className="flex items-center gap-3 px-3 py-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate font-medium">{p.name}</p>
-                      <p className={cn("text-xs", p.kind ? "text-muted-foreground" : "text-primary")}>{kindLabel(p.kind)}</p>
-                    </div>
-                    <span className="tabular-nums w-16 text-right">{fmtHours(p.hours)}</span>
-                    <span className="tabular-nums w-24 text-right text-muted-foreground">{p.hourly_cost == null ? "—" : `${brl(p.hourly_cost)}/h`}</span>
-                    <span className={cn("tabular-nums w-24 text-right", p.cost == null && "text-primary font-medium")}>{p.cost == null ? "Sem custo" : brl(p.cost)}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : <p className="text-sm text-muted-foreground">Nenhum integrante interno com custo neste projeto no mês.</p>
-          ) : <p className="text-xs text-muted-foreground">Valores por pessoa ficam visíveis só para quem tem acesso a custos individuais.</p>}
         </>
       )}
     </div>
+  );
+}
+
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
+}
+
+function TeamTable({ r }: { r: HoursCostsReport }) {
+  if (!r.can_see_people) return <p className="text-xs text-muted-foreground">Valores por pessoa ficam visíveis só para quem tem acesso a custos individuais.</p>;
+  const people = r.people ?? [];
+  if (people.length === 0) return <p className="text-sm text-muted-foreground">Nenhum integrante com horas previstas neste projeto no mês.</p>;
+  const totalCost = people.reduce((a, p) => a + Number(p.cost ?? 0), 0);
+  return (
+    <section aria-label="Integrantes do projeto" className="rounded-xl border bg-card overflow-hidden">
+      <header className="flex items-baseline justify-between gap-2 px-4 py-2.5 border-b">
+        <OpsLabel className="text-muted-foreground">Integrantes do projeto</OpsLabel>
+        <span className="text-xs text-muted-foreground tabular-nums">{people.length} pessoa(s) · {brl(totalCost)}</span>
+      </header>
+      <div className="hidden md:grid grid-cols-[minmax(0,1.4fr)_minmax(0,2fr)_6rem_7rem] gap-4 px-4 py-1.5 text-[11px] uppercase tracking-wide text-muted-foreground border-b bg-muted/40">
+        <span>Pessoa</span><span>Horas reais x previstas</span><span className="text-right">Custo/h</span><span className="text-right">Custo no mês</span>
+      </div>
+      <ul className="divide-y text-sm">
+        {people.map((p) => {
+          const planned = Number(p.hours) || 0;
+          const actual = Number(p.actual_hours ?? 0) || 0;
+          const pct = planned > 0 ? Math.round((actual / planned) * 100) : null;
+          const over = planned > 0 && actual > planned;
+          const width = planned > 0 ? Math.min(100, (actual / planned) * 100) : 0;
+          return (
+            <li key={p.user_id} className="grid grid-cols-2 md:grid-cols-[minmax(0,1.4fr)_minmax(0,2fr)_6rem_7rem] items-center gap-x-4 gap-y-2 px-4 py-2.5">
+              <div className="flex items-center gap-2.5 min-w-0 col-span-2 md:col-span-1">
+                <span aria-hidden className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{initials(p.name)}</span>
+                <div className="min-w-0">
+                  <p className="truncate font-medium leading-tight">{p.name}</p>
+                  <p className={cn("text-xs", p.kind ? "text-muted-foreground" : "text-primary")}>{kindLabel(p.kind)}</p>
+                </div>
+              </div>
+              <div className="col-span-2 md:col-span-1 min-w-0">
+                <div className="flex items-baseline justify-between gap-2 text-xs tabular-nums">
+                  <span><span className="font-semibold text-foreground">{fmtHours(actual)}</span><span className="text-muted-foreground"> / {fmtHours(planned)}</span></span>
+                  <span className={cn("font-medium", over ? "text-destructive" : "text-muted-foreground")}>{pct == null ? "—" : `${pct}%`}</span>
+                </div>
+                <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ?? 0} aria-label={`Horas reais de ${p.name}`}>
+                  <div className={cn("h-full rounded-full", over ? "bg-destructive" : "bg-primary")} style={{ width: `${width}%` }} />
+                </div>
+              </div>
+              <span className="tabular-nums text-left md:text-right text-muted-foreground">{p.hourly_cost == null ? "—" : `${brl(Number(p.hourly_cost))}/h`}</span>
+              <span className={cn("tabular-nums text-right font-semibold", p.cost == null && "text-primary")}>{p.cost == null ? "Sem custo" : brl(Number(p.cost))}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

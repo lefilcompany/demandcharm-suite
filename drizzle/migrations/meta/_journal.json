@@ -470,6 +470,13 @@
       "when": 1795614887848,
       "tag": "0066_module_access_project_staff",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1795616266122,
+      "tag": "0067_project_hours_actual_per_member",
+      "breakpoints": true
     }
   ]
 }
