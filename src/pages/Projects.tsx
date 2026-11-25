@@ -52,6 +52,17 @@ export default function Projects() {
   const { data: performances = [] } = useTeamPerformances(selectedTeamId);
   const perfById = new Map(performances.map((p) => [p.id, p]));
   const boardNameById = new Map(projectBoards.map((b) => [b.id, b.name]));
+  const { data: staffRows = [] } = useQuery({
+    queryKey: ["project-staff-all", selectedTeamId],
+    enabled: !!selectedTeamId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("project_members").select("project_id, user_id").eq("team_id", selectedTeamId!);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const staffByProject = new Map<string, string[]>();
+  staffRows.forEach((r) => staffByProject.set(r.project_id, [...(staffByProject.get(r.project_id) ?? []), r.user_id]));
   const { data: boardLinks = [] } = useQuery({
     queryKey: ["project-board-links", selectedTeamId, user?.id],
     enabled: !!selectedTeamId && !!user?.id,
@@ -227,6 +238,7 @@ export default function Projects() {
                 onOpen={() => navigate(`/app/projects/${project.id}`)}
                 onEdit={() => setEditing(project)}
                 performance={perfById.get((project as any).performance_id ?? "")}
+                staffIds={staffByProject.get(project.id) ?? []}
                 onShare={() => setSharing(project)}
                 onDelete={() => setDeleting(project)}
                 canManage={canEdit}
@@ -308,6 +320,7 @@ interface ProjectCardProps {
   onEdit: () => void;
   onShare: () => void;
   performance?: { name: string; color: string };
+  staffIds: string[];
   onDelete: () => void;
   canManage: boolean;
   canDelete?: boolean;
@@ -316,9 +329,10 @@ interface ProjectCardProps {
   onOpenFinance: () => void;
 }
 
-function ProjectCard({ project, performance, boardNames, memberMap, ownerProfile, onOpen, onEdit, onShare, onDelete, canManage, canDelete, myAccess, canSeeFinance, onOpenFinance }: ProjectCardProps) {
-  const sharedUsers = (project.shared_with || []).map((s) => memberMap.get(s.user_id)).filter(Boolean);
-  const accessUsers = [ownerProfile, ...sharedUsers].filter(Boolean);
+function ProjectCard({ project, performance, staffIds, boardNames, memberMap, ownerProfile, onOpen, onEdit, onShare, onDelete, canManage, canDelete, myAccess, canSeeFinance, onOpenFinance }: ProjectCardProps) {
+  const staffUsers = staffIds.map((id) => memberMap.get(id)).filter(Boolean);
+  const sharedUsers = (project.shared_with || []).filter((s) => !staffIds.includes(s.user_id)).map((s) => memberMap.get(s.user_id)).filter(Boolean);
+  const accessUsers = staffUsers;
   const visibleAvatars = accessUsers.slice(0, 4);
   const extraCount = Math.max(0, accessUsers.length - visibleAvatars.length);
 
@@ -392,17 +406,6 @@ function ProjectCard({ project, performance, boardNames, memberMap, ownerProfile
             {myAccess === "owner" ? "Proprietário" : myAccess === "edit" ? "Edição" : "Visualização"}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-          <Users className="h-3.5 w-3.5 shrink-0" />
-          {performance ? (
-            <span className="inline-flex items-center gap-1.5 truncate">
-              <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: performance.color }} />
-              <span className="text-foreground font-medium truncate">{performance.name}</span>
-            </span>
-          ) : (
-            <span className="italic">Sem performance</span>
-          )}
-        </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0" title={boardNames.join(", ")}>
           <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
           {boardNames.length === 0 ? (
@@ -416,28 +419,58 @@ function ProjectCard({ project, performance, boardNames, memberMap, ownerProfile
         </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex -space-x-2">
-            {visibleAvatars.map((p, i) => (
-              <Avatar key={i} className="h-7 w-7 ring-2 ring-background">
-                <AvatarImage src={p?.avatar_url || ""} />
-                <AvatarFallback className="text-[10px]">
-                  {(p?.full_name || "?").split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {extraCount > 0 && (
-              <div className="h-7 w-7 rounded-full bg-muted ring-2 ring-background flex items-center justify-center text-[10px] font-medium">
-                +{extraCount}
+      <div className="mt-4 pt-4 border-t space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Performance</span>
+          {performance ? (
+            <span
+              className="inline-flex max-w-[65%] items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+              style={{ backgroundColor: `${performance.color}1F`, color: performance.color }}
+            >
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: performance.color }} />
+              <span className="truncate">{performance.name}</span>
+            </span>
+          ) : (
+            <span className="text-xs italic text-muted-foreground">Não definida</span>
+          )}
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          {accessUsers.length === 0 ? (
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Users className="h-3.5 w-3.5" /> Nenhum integrante
+            </span>
+          ) : (
+            <div className="flex min-w-0 items-center gap-2" title={accessUsers.map((p: any) => p?.full_name).join(", ")}>
+              <div className="flex -space-x-2 shrink-0">
+                {visibleAvatars.map((p, i) => (
+                  <Avatar key={i} className="h-7 w-7 ring-2 ring-background">
+                    <AvatarImage src={p?.avatar_url || ""} />
+                    <AvatarFallback className="text-[10px]">
+                      {(p?.full_name || "?").split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
+                {extraCount > 0 && (
+                  <div className="h-7 w-7 rounded-full bg-muted ring-2 ring-background flex items-center justify-center text-[10px] font-medium">
+                    +{extraCount}
+                  </div>
+                )}
               </div>
-            )}
-            {accessUsers.length === 0 && (
-              <div className="h-7 w-7 rounded-full bg-muted ring-2 ring-background flex items-center justify-center">
-                <Users className="h-3 w-3 text-muted-foreground" />
+              <div className="min-w-0 leading-tight">
+                <p className="text-xs font-medium text-foreground">
+                  {accessUsers.length} integrante{accessUsers.length === 1 ? "" : "s"}
+                </p>
+                <p className="truncate text-[11px] text-muted-foreground">
+                  {accessUsers.map((p: any) => (p?.full_name || "").split(" ")[0]).join(", ")}
+                </p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+          {sharedUsers.length > 0 && (
+            <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground" title="Compartilhado em modo leitura">
+              +{sharedUsers.length} leitura
+            </span>
+          )}
         </div>
       </div>
     </div>
