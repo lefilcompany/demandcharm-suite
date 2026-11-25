@@ -1,5 +1,5 @@
 import { PerformanceFinance } from "@/components/finance/PerformanceFinance";
-import { Layers } from "lucide-react";
+import { Gauge } from "lucide-react";
 import { generateProfitabilityPdf } from "@/lib/finance/profitabilityPdf";
 import { useAuth } from "@/lib/auth";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -86,7 +86,7 @@ function MonthlyLegend({ payload, resultTones }: { payload?: { value?: string; c
 const SECTIONS = [
   { v: "overview", label: "Sumário", hint: "Visão consolidada da equipe", icon: LayoutDashboard },
   { v: "byProject", label: "Por projeto", hint: "Faturamento e resultado de cada projeto", icon: PieChart },
-  { v: "byPerformance", label: "Por performance", hint: "Projetos, receita e custos por performance", icon: Layers },
+  { v: "byPerformance", label: "Por performance", hint: "Projetos, receita e custos por performance", icon: Gauge },
   { v: "people", label: "Pessoas", hint: "Custos e produtividade por pessoa", icon: Users },
   { v: "manage", label: "Custos", hint: "Custos gerais da equipe", icon: Wallet },
   { v: "simulator", label: "Simulador", hint: "Simulação de precificação", icon: Calculator },
