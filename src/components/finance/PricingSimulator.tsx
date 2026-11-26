@@ -10,6 +10,7 @@ import { ExportReportButton } from "@/components/finance/ExportReportButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useFinancePeople, type FinancePermission } from "@/hooks/useFinance";
 import { useFinanceScenarios } from "@/hooks/useFinanceScenarios";
+import { useFinancePresets } from "@/hooks/useFinancePresets";
 import { DEFAULT_MARGIN_TARGET, DEFAULT_TAX_RATE, costPerHour, formatBRL, formatPct, resultTone } from "@/lib/finance/engine";
 import { MAX_COMPARISON, scenarioCsv, simulatePricing, toggleComparison, validScenario, type Scenario, type ScenarioInputs } from "@/lib/finance/simulator";
 import { MarginRuler } from "./MarginRuler";
@@ -63,6 +64,13 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
   const [personHours, setPersonHours] = useState(0);
   const [personPlans, setPersonPlans] = useState<PersonPlan[]>([]);
   const [costMode, setCostMode] = useState(false);
+  const presets = useFinancePresets(teamId);
+  const [presetId, setPresetId] = useState("");
+  const applyPreset = (id: string) => {
+    const pr = presets.data?.find((x) => x.id === id);
+    setPresetId(id);
+    if (pr) setDraft((d) => ({ ...d, tax_rate: Number(pr.tax_rate), variable_rate: Number(pr.variable_rate), margin_target: Number(pr.margin_target) }));
+  };
   const boardId = draft.board_id || boards[0]?.id || "";
   const canCosts = can("finance.view_employee_costs");
   const people = useFinancePeople(teamId, draft.competence, draft.competence, canCosts);
@@ -141,7 +149,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
       planned_hours: s.planned_hours, direct_expenses: s.direct_expenses, shared_costs: s.shared_costs });
     setEditing(s.id); setPersonPlans([]); setCostMode(false); setAutoFilled(false);
   };
-  const reset = () => { manualRef.current = false; setAutoFilled(false); setDraft(blank(boardId)); setEditing(null); setPersonPlans([]); setCostMode(false); };
+  const reset = () => { manualRef.current = false; setAutoFilled(false); setDraft(blank(boardId)); setPresetId(""); setEditing(null); setPersonPlans([]); setCostMode(false); };
   const remove = async () => {
     if (!deleting || busy) return;
     setBusy(true);
@@ -188,6 +196,12 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
           <label className="space-y-1.5 text-xs text-muted-foreground">Competência<MonthField aria-label="Competência do cenário" value={draft.competence.substring(0, 7)} onChange={(v) => { update("competence", `${v}-01`); setPerson(""); }} /></label>
         </div>
         <section className="space-y-3 border-t pt-4"><OpsLabel>01 · Receita e meta</OpsLabel><div className="grid gap-3 sm:grid-cols-2">
+          {(presets.data?.length ?? 0) > 0 && (
+            <div className="space-y-1.5 sm:col-span-2"><span className="text-xs text-muted-foreground">Perfil de configuração</span>
+              <Select value={presetId} onValueChange={applyPreset}><SelectTrigger aria-label="Perfil de configuração" className="h-9"><SelectValue placeholder="Aplicar impostos, custos e meta de um perfil" /></SelectTrigger>
+                <SelectContent>{presets.data!.map((pr) => <SelectItem key={pr.id} value={pr.id}>{pr.name}{pr.is_default ? " · padrão" : ""} — impostos {formatPct(Number(pr.tax_rate))}, meta {formatPct(Number(pr.margin_target))}</SelectItem>)}</SelectContent></Select>
+            </div>
+          )}
           <Numeric label="Receita estimada (R$)" value={draft.gross} onChange={(v) => update("gross", v)} />
           <Numeric label="Impostos (%)" percent value={draft.tax_rate} onChange={(v) => update("tax_rate", v)} />
           <Numeric label="Custos variáveis sobre receita (%)" percent value={draft.variable_rate} onChange={(v) => update("variable_rate", v)} />
