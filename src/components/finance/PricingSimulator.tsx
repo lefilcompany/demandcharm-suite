@@ -205,7 +205,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
       <form className="min-w-0 space-y-4" onSubmit={(e) => { e.preventDefault(); void save(); }}>
         <div className="flex items-center justify-between border-b pb-3 gap-2"><div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary" /><h2 className="font-medium">{editing ? "Cenário salvo" : "Nova simulação"}</h2></div>
           <Button type="button" variant="ghost" size="sm" onClick={reset}><Plus className="mr-1.5 h-4 w-4" />Novo</Button></div>
-        <div className="grid gap-3 sm:grid-cols-2 rounded-xl border bg-muted/30 p-4">
+        <div className="grid gap-3 sm:grid-cols-3 rounded-xl border bg-muted/30 p-4">
           <label className="space-y-1.5 text-xs text-muted-foreground">Nome do cenário<Input aria-label="Nome do cenário" value={draft.name} maxLength={160} required onChange={(e) => update("name", e.target.value)} className="h-9" /></label>
           <label className="space-y-1.5 text-xs text-muted-foreground">Cliente / proposta<Input aria-label="Cliente / proposta" value={draft.client_label} maxLength={160} onChange={(e) => update("client_label", e.target.value)} className="h-9" /></label>
           <label className="space-y-1.5 text-xs text-muted-foreground">Competência<MonthField aria-label="Competência do cenário" value={draft.competence.substring(0, 7)} onChange={(v) => { update("competence", `${v}-01`); setPerson(""); }} /></label>
