@@ -68,7 +68,10 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
     finally { setBusy(false); }
   };
   const scenarios = useFinanceScenarios(teamId, true);
-  const [draft, setDraft] = useState<Draft>(() => blank(boards[0]?.id ?? ""));
+  // O cenário continua vinculado a um quadro no banco (é o que autoriza salvar/exportar),
+  // mas isso é interno: a simulação não pede que a pessoa escolha um quadro.
+  const defaultBoardId = boards.find((b) => can("finance.manage_revenue", b.id))?.id ?? boards[0]?.id ?? "";
+  const [draft, setDraft] = useState<Draft>(() => blank(defaultBoardId));
   const [editing, setEditing] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<Scenario | null>(null);
@@ -84,7 +87,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
     setPresetId(id);
     if (pr) setDraft((d) => ({ ...d, tax_rate: Number(pr.tax_rate), variable_rate: Number(pr.variable_rate), margin_target: Number(pr.margin_target) }));
   };
-  const boardId = draft.board_id || boards[0]?.id || "";
+  const boardId = draft.board_id || defaultBoardId;
   const canCosts = can("finance.view_employee_costs");
   const people = useFinancePeople(teamId, draft.competence, draft.competence, canCosts);
   const availablePeople = useMemo(() => {
@@ -162,7 +165,7 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
       planned_hours: s.planned_hours, direct_expenses: s.direct_expenses, shared_costs: s.shared_costs });
     setEditing(s.id); setPersonPlans([]); setCostMode(false); setAutoFilled(false);
   };
-  const reset = () => { manualRef.current = false; setAutoFilled(false); setDraft(blank(boardId)); setPresetId(""); setEditing(null); setPersonPlans([]); setCostMode(false); };
+  const reset = () => { manualRef.current = false; setAutoFilled(false); setDraft(blank(defaultBoardId)); setPresetId(""); setEditing(null); setPersonPlans([]); setCostMode(false); };
   const remove = async () => {
     if (!deleting || busy) return;
     setBusy(true);
@@ -205,7 +208,6 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
         <div className="grid gap-3 sm:grid-cols-2 rounded-xl border bg-muted/30 p-4">
           <label className="space-y-1.5 text-xs text-muted-foreground">Nome do cenário<Input aria-label="Nome do cenário" value={draft.name} maxLength={160} required onChange={(e) => update("name", e.target.value)} className="h-9" /></label>
           <label className="space-y-1.5 text-xs text-muted-foreground">Cliente / proposta<Input aria-label="Cliente / proposta" value={draft.client_label} maxLength={160} onChange={(e) => update("client_label", e.target.value)} className="h-9" /></label>
-          <div className="space-y-1.5"><span className="text-xs text-muted-foreground">Quadro / projeto</span><Select value={boardId} disabled={!!editing} onValueChange={(v) => update("board_id", v)}><SelectTrigger aria-label="Quadro do cenário" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{boards.map((b) => <SelectItem value={b.id} key={b.id}>{b.name}</SelectItem>)}</SelectContent></Select></div>
           <label className="space-y-1.5 text-xs text-muted-foreground">Competência<MonthField aria-label="Competência do cenário" value={draft.competence.substring(0, 7)} onChange={(v) => { update("competence", `${v}-01`); setPerson(""); }} /></label>
         </div>
         <Step n={1} title="Receita e meta" hint="Quanto você pretende cobrar e qual margem quer alcançar." totalLabel="Receita líquida" total={valid ? formatBRL(result.netRevenue) : "—"}><div className="grid gap-3 sm:grid-cols-2">
