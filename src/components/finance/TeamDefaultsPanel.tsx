@@ -31,10 +31,12 @@ export function TeamDefaultsPanel({ teamId, onSaved }: { teamId: string; onSaved
   const [busy, setBusy] = useState(false);
   const hourly = useTeamHourlyCost(teamId, thisMonth);
   const refresh = () => qc.invalidateQueries({ queryKey: ["finance-team-defaults", teamId] });
-  const p = (v: string) => Number(v || 0) / 100;
+  const p = (v: string) => Number(String(v || 0).replace(",", ".")) / 100;
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
+    const vals = FIELDS.map((x) => Number(String(f[x.k] || 0).replace(",", ".")));
+    if (vals.some((v) => !Number.isFinite(v) || v < 0 || v >= 100)) return toast({ title: "Use percentuais entre 0 e 99,99%.", variant: "destructive" });
     if (p(f.tax) + p(f.variable) + p(f.alloc) + p(f.target) >= 1) return toast({ title: "Impostos, custos, rateio e meta somam 100% ou mais.", variant: "destructive" });
     setBusy(true);
     const { error } = await supabase.from("finance_team_defaults").upsert({
@@ -64,7 +66,7 @@ export function TeamDefaultsPanel({ teamId, onSaved }: { teamId: string; onSaved
           Hora/homem da equipe: <strong className="text-foreground tabular-nums">{hourly.data?.hourly_cost != null ? `${formatBRL(Number(hourly.data.hourly_cost))}/h` : "—"}</strong>
           {hourly.data?.competence ? ` · média de ${hourly.data.people} pessoa(s) em ${hourly.data.competence.substring(0, 7).split("-").reverse().join("/")}, pelo custo e horas lançados para cada um` : " · lance o custo de cada pessoa em \"Custo das pessoas\" para calcular"}
         </p>
-        <form onSubmit={save} className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 items-end">
+        <form onSubmit={save} noValidate className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 items-end">
           <label className="space-y-1"><span className="text-xs text-muted-foreground">Vale a partir de</span>
             <MonthField value={from} onChange={setFrom} aria-label="Vale a partir de" /></label>
           {FIELDS.map((x) => (
