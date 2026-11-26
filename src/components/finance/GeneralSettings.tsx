@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { TeamDefaultsPanel, type SavedDefaults } from "@/components/finance/TeamDefaultsPanel";
 import { formatPct } from "@/lib/finance/engine";
 import { useFinancePresets, type FinancePreset } from "@/hooks/useFinancePresets";
+import { OpsLabel } from "@/components/ops/OpsParts";
 
 const TEAM_PRESET = "Padrão da equipe";
 
@@ -86,7 +87,8 @@ export function GeneralSettings({ teamId, canEdit }: { teamId: string; canEdit: 
       <section className="rounded-xl border bg-card">
         <header className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-5">
           <div>
-            <h3 className="text-sm font-semibold">Perfis de configuração</h3>
+            <OpsLabel>Ao criar um projeto</OpsLabel>
+            <h3 className="mt-0.5 text-sm font-semibold">Perfis de configuração</h3>
             <p className="text-xs text-muted-foreground">Escolhidos ao criar um projeto novo. Os valores são copiados para o projeto; editar o perfil depois não muda projetos existentes.</p>
           </div>
           {canEdit && <Button size="sm" onClick={() => setDraft(toDraft())}><Plus className="mr-1 h-4 w-4" />Novo perfil</Button>}

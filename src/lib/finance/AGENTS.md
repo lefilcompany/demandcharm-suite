@@ -16,4 +16,5 @@
 
 ## Finance presets
 
+- `TeamDefaultsPanel` pré-preenche os campos com a linha em vigor (`inForceRow`: a mais recente com `valid_from` até o mês escolhido; mês anterior a todas fica em branco) e nunca sobrescreve o que a pessoa já editou — campos vazios ao lado do histórico liam-se como "os valores sumiram".
 - Finance configuration presets (`finance_config_presets`, one default per team via partial unique index) are copied into `finance_project_settings` by trigger `trg_project_seed_from_preset` when a project is created with `finance_preset_id` — never linked live, so editing a preset never changes existing projects; writes require `finance.manage_settings`; `_finance_project_rates` serves those copied rates to `_finance_project_month_live`/`_finance_overview_all` only for projects with a preset, others keep team rates.
