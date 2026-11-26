@@ -13,3 +13,7 @@
 - The team's total revenue for a month comes only from RPC `get_team_revenue_summary` (SECURITY INVOKER, so RLS applies); rows without a project are shown as "Sem projeto" so the team total never double-counts.
 - The team overview (`_finance_overview_all`) includes team costs (month total ÷ active projects, each part split equally over the project's boards) instead of legacy allocations whenever team costs are configured, and counts project revenue split the same way at the team tax rate — so the overview total matches the sum of the projects.
 - Project revenue is launched as a contract (total + start + duration in days/months/years) and stored as monthly `finance_revenues` rows sharing `contract_id`, split by pure `src/lib/finance/revenueContract.ts` — so every monthly aggregation keeps working unchanged.
+
+## Finance presets
+
+- Finance configuration presets (`finance_config_presets`, one default per team via partial unique index) are copied into `finance_project_settings` by trigger `trg_project_seed_from_preset` when a project is created with `finance_preset_id` — never linked live, so editing a preset never changes existing projects; writes require `finance.manage_settings`; `_finance_project_rates` serves those copied rates to `_finance_project_month_live`/`_finance_overview_all` only for projects with a preset, others keep team rates.

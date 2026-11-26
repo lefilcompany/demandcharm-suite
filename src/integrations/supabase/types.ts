@@ -2098,6 +2098,62 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_config_presets: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_default: boolean
+          margin_target: number
+          max_discount: number
+          name: string
+          tax_rate: number
+          team_id: string
+          updated_at: string
+          variable_rate: number
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          margin_target?: number
+          max_discount?: number
+          name: string
+          tax_rate?: number
+          team_id: string
+          updated_at?: string
+          variable_rate?: number
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          margin_target?: number
+          max_discount?: number
+          name?: string
+          tax_rate?: number
+          team_id?: string
+          updated_at?: string
+          variable_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_config_presets_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_demand_attributions: {
         Row: {
           competence: string
@@ -3971,6 +4027,7 @@ export type Database = {
           created_at: string
           created_by: string
           finance_enabled: boolean
+          finance_preset_id: string | null
           id: string
           integration_key: string
           name: string
@@ -3987,6 +4044,7 @@ export type Database = {
           created_at?: string
           created_by: string
           finance_enabled?: boolean
+          finance_preset_id?: string | null
           id?: string
           integration_key?: string
           name: string
@@ -4003,6 +4061,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           finance_enabled?: boolean
+          finance_preset_id?: string | null
           id?: string
           integration_key?: string
           name?: string
@@ -4026,6 +4085,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_finance_preset_id_fkey"
+            columns: ["finance_preset_id"]
+            isOneToOne: false
+            referencedRelation: "finance_config_presets"
             referencedColumns: ["id"]
           },
           {
@@ -5508,6 +5574,14 @@ export type Database = {
       _finance_project_month_live: {
         Args: { _competence: string; _project_id: string }
         Returns: Json
+      }
+      _finance_project_rates: {
+        Args: { _comp: string; _project_id: string; _team_id: string }
+        Returns: {
+          margin_target: number
+          tax_rate: number
+          variable_rate: number
+        }[]
       }
       _finance_project_staffing: {
         Args: { _comp: string; _team_id: string }

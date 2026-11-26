@@ -7,11 +7,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ColorPicker } from "@/components/ColorPicker";
 import { supabase } from "@/integrations/supabase/client";
+import { useFinancePresets } from "@/hooks/useFinancePresets";
 import { useTeamPerformances, useTeamPerformanceStaff } from "@/hooks/useTeamPositions";
 
 export interface ProjectStaff {
   performanceId: string;
   userIds: string[];
+  presetId?: string | null;
 }
 
 interface CreateFolderDialogProps {
@@ -66,12 +68,16 @@ export function CreateFolderDialog({
     }
   }, [open, initialName, initialColor]);
 
+  const { data: presets = [] } = useFinancePresets(needsStaff ? teamId : null);
+  const [presetId, setPresetId] = useState("");
+  useEffect(() => { if (open) setPresetId(""); }, [open]);
+  const effectivePreset = presetId || presets.find((p) => p.is_default)?.id || "";
   const canSubmit = !!name.trim() && (!needsStaff || (!!performanceId && selected.size > 0));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    onConfirm(name.trim(), color, needsStaff ? { performanceId, userIds: [...selected] } : undefined);
+    onConfirm(name.trim(), color, needsStaff ? { performanceId, userIds: [...selected], presetId: effectivePreset || null } : undefined);
     onOpenChange(false);
   };
 
@@ -101,6 +107,18 @@ export function CreateFolderDialog({
             />
           </div>
           <ColorPicker value={color} onChange={setColor} label="Cor" />
+
+          {needsStaff && presets.length > 0 && (
+            <div className="space-y-2">
+              <Label>Perfil financeiro</Label>
+              <Select value={effectivePreset} onValueChange={setPresetId}>
+                <SelectTrigger aria-label="Perfil financeiro"><SelectValue placeholder="Escolha o perfil" /></SelectTrigger>
+                <SelectContent>
+                  {presets.map((p) => (<SelectItem key={p.id} value={p.id}>{p.name}{p.is_default ? " · padrão" : ""}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {needsStaff && (
             <>

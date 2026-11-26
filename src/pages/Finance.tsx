@@ -1,5 +1,6 @@
 import { PerformanceFinance } from "@/components/finance/PerformanceFinance";
-import { Gauge } from "lucide-react";
+import { Gauge, SlidersHorizontal } from "lucide-react";
+import { GeneralSettings } from "@/components/finance/GeneralSettings";
 import { generateProfitabilityPdf } from "@/lib/finance/profitabilityPdf";
 import { useAuth } from "@/lib/auth";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -90,6 +91,7 @@ const SECTIONS = [
   { v: "people", label: "Pessoas", hint: "Custos e produtividade por pessoa", icon: Users },
   { v: "manage", label: "Custos", hint: "Custos gerais da equipe", icon: Wallet },
   { v: "simulator", label: "Simulador", hint: "Simulação de precificação", icon: Calculator },
+  { v: "settings", label: "Configurações Gerais", hint: "Alíquotas, metas e perfis para projetos novos", icon: SlidersHorizontal },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["v"];
 
@@ -321,6 +323,8 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
       case "simulator":
         return ov.isError ? <p className="py-6 text-sm text-muted-foreground">Os quadros autorizados não puderam ser carregados. Tente novamente acima.</p> :
           <PricingSimulator key={selectedTeamId} teamId={selectedTeamId!} boards={authorizedBoards} can={fin.can} isLoading={ov.isLoading} />;
+      case "settings":
+        return <GeneralSettings teamId={selectedTeamId!} canEdit={fin.can("finance.manage_settings")} />;
       case "manage":
         return <FinanceManage teamId={selectedTeamId!} boards={boards.map((b) => ({ id: b.id, name: b.name }))} members={memberList} can={fin.can} canAny={fin.canAny} isOwnerOrAdmin={isOwnerOrAdmin} overview={scopedOv} />;
     }

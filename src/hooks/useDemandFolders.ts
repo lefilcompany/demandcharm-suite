@@ -203,12 +203,12 @@ export function useCreateFolder() {
   return useMutation({
     mutationFn: async (params: {
       name: string; color: string; team_id: string; created_by: string; board_id?: string | null;
-      staff?: { performanceId: string; userIds: string[] };
+      staff?: { performanceId: string; userIds: string[]; presetId?: string | null };
     }) => {
       const { board_id, staff, ...base } = params;
       const { data, error } = await supabase
         .from("projects")
-        .insert({ ...base, board_id: board_id ?? null } as any)
+        .insert({ ...base, board_id: board_id ?? null, ...(staff?.presetId ? { finance_preset_id: staff.presetId } : {}) } as any)
         .select()
         .maybeSingle();
       if (error && shouldFallbackToLegacyFolders(error)) {

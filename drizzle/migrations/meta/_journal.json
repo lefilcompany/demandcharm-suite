@@ -477,6 +477,20 @@
       "when": 1795616266122,
       "tag": "0067_project_hours_actual_per_member",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1795687761697,
+      "tag": "0068_finance_config_presets",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1795687901144,
+      "tag": "0069_finance_project_rates_from_preset",
+      "breakpoints": true
     }
   ]
 }
