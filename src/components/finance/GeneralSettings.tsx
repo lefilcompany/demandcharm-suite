@@ -9,9 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TeamDefaultsPanel } from "@/components/finance/TeamDefaultsPanel";
+import { TeamDefaultsPanel, type SavedDefaults } from "@/components/finance/TeamDefaultsPanel";
 import { formatPct } from "@/lib/finance/engine";
 import { useFinancePresets, type FinancePreset } from "@/hooks/useFinancePresets";
+
+const TEAM_PRESET = "Padrão da equipe";
 
 const FIELDS = [
   { k: "tax_rate", label: "Impostos %" },
@@ -52,6 +54,17 @@ export function GeneralSettings({ teamId, canEdit }: { teamId: string; canEdit: 
     if (error) return fail();
     toast({ title: "Perfil salvo" });
     setDraft(null);
+    refresh();
+  };
+
+  /** Salvar os valores padrão também cria/atualiza o perfil "Padrão da equipe". */
+  const syncTeamPreset = async (v: SavedDefaults) => {
+    const { data: found } = await supabase.from("finance_config_presets").select("id").eq("team_id", teamId).eq("name", TEAM_PRESET).is("archived_at", null).maybeSingle();
+    const hasDefault = (presets.data ?? []).some((x) => x.is_default);
+    const { error } = found
+      ? await supabase.from("finance_config_presets").update({ ...v, updated_at: new Date().toISOString() }).eq("id", found.id)
+      : await supabase.from("finance_config_presets").insert({ ...v, team_id: teamId, name: TEAM_PRESET, description: "Valores padrão da equipe", created_by: user!.id, is_default: !hasDefault });
+    if (error) fail();
     refresh();
   };
 
@@ -108,7 +121,7 @@ export function GeneralSettings({ teamId, canEdit }: { teamId: string; canEdit: 
       </section>
 
       <fieldset disabled={!canEdit} className="min-w-0">
-        <TeamDefaultsPanel teamId={teamId} />
+        <TeamDefaultsPanel teamId={teamId} onSaved={syncTeamPreset} />
       </fieldset>
       {!canEdit && <p className="text-xs text-muted-foreground">Somente o gestor financeiro pode alterar estas configurações.</p>}
 

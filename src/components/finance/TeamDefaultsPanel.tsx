@@ -18,7 +18,9 @@ const FIELDS = [
 ] as const;
 type Key = (typeof FIELDS)[number]["k"];
 
-export function TeamDefaultsPanel({ teamId }: { teamId: string }) {
+export type SavedDefaults = { tax_rate: number; variable_rate: number; margin_target: number; max_discount: number };
+
+export function TeamDefaultsPanel({ teamId, onSaved }: { teamId: string; onSaved?: (v: SavedDefaults) => Promise<void> | void }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -41,7 +43,8 @@ export function TeamDefaultsPanel({ teamId }: { teamId: string }) {
     }, { onConflict: "team_id,valid_from" });
     setBusy(false);
     if (error) return toast({ title: "Não foi possível salvar.", variant: "destructive" });
-    toast({ title: "Valores padrão salvos" });
+    await onSaved?.({ tax_rate: p(f.tax), variable_rate: p(f.variable), margin_target: p(f.target), max_discount: p(f.discount) });
+    toast({ title: "Valores padrão salvos", description: onSaved ? "O perfil \"Padrão da equipe\" foi atualizado." : undefined });
     refresh();
   };
   const remove = async (id: string) => {
