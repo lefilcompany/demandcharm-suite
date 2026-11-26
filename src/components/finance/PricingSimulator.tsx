@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { downloadFinancePdf } from "@/lib/finance/pdfExport";
 import { MonthField } from "@/components/ops/MonthField";
@@ -37,6 +38,18 @@ function Numeric({ label, value, onChange, percent = false, max }: { label: stri
   return <label className="block min-w-0 space-y-1.5"><span className="text-xs text-muted-foreground">{label}</span>
     <Input aria-label={label} type="number" inputMode="decimal" min={0} max={max ?? (percent ? 100 : undefined)} step={percent ? "0.1" : "0.01"} value={Number.isFinite(value) ? Number((value * (percent ? 100 : 1)).toFixed(6)) : ""} onChange={(e) => onChange(e.target.value === "" ? 0 : Number(e.target.value) / (percent ? 100 : 1))} className="h-9 tabular-nums" />
   </label>;
+}
+
+function Step({ n, title, hint, total, totalLabel, children, action }: { n: number; title: string; hint: string; total?: string; totalLabel?: string; children: ReactNode; action?: ReactNode }) {
+  return <section className="rounded-xl border bg-card p-4 space-y-4">
+    <header className="flex flex-wrap items-start gap-3">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary tabular-nums">{n}</span>
+      <div className="min-w-0 flex-1"><h3 className="text-sm font-semibold leading-7">{title}</h3><p className="text-xs text-muted-foreground">{hint}</p></div>
+      {action}
+      {total && <div className="text-right"><div className="text-[11px] uppercase tracking-wide text-muted-foreground">{totalLabel}</div><div className="text-sm font-semibold tabular-nums">{total}</div></div>}
+    </header>
+    {children}
+  </section>;
 }
 
 export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
@@ -186,16 +199,16 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
 
   return <div className="space-y-6">
     <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(280px,2fr)]">
-      <form className="min-w-0 space-y-5" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+      <form className="min-w-0 space-y-4" onSubmit={(e) => { e.preventDefault(); void save(); }}>
         <div className="flex items-center justify-between border-b pb-3 gap-2"><div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary" /><h2 className="font-medium">{editing ? "Cenário salvo" : "Nova simulação"}</h2></div>
           <Button type="button" variant="ghost" size="sm" onClick={reset}><Plus className="mr-1.5 h-4 w-4" />Novo</Button></div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 rounded-xl border bg-muted/30 p-4">
           <label className="space-y-1.5 text-xs text-muted-foreground">Nome do cenário<Input aria-label="Nome do cenário" value={draft.name} maxLength={160} required onChange={(e) => update("name", e.target.value)} className="h-9" /></label>
           <label className="space-y-1.5 text-xs text-muted-foreground">Cliente / proposta<Input aria-label="Cliente / proposta" value={draft.client_label} maxLength={160} onChange={(e) => update("client_label", e.target.value)} className="h-9" /></label>
           <div className="space-y-1.5"><span className="text-xs text-muted-foreground">Quadro / projeto</span><Select value={boardId} disabled={!!editing} onValueChange={(v) => update("board_id", v)}><SelectTrigger aria-label="Quadro do cenário" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{boards.map((b) => <SelectItem value={b.id} key={b.id}>{b.name}</SelectItem>)}</SelectContent></Select></div>
           <label className="space-y-1.5 text-xs text-muted-foreground">Competência<MonthField aria-label="Competência do cenário" value={draft.competence.substring(0, 7)} onChange={(v) => { update("competence", `${v}-01`); setPerson(""); }} /></label>
         </div>
-        <section className="space-y-3 border-t pt-4"><OpsLabel>01 · Receita e meta</OpsLabel><div className="grid gap-3 sm:grid-cols-2">
+        <Step n={1} title="Receita e meta" hint="Quanto você pretende cobrar e qual margem quer alcançar." totalLabel="Receita líquida" total={valid ? formatBRL(result.netRevenue) : "—"}><div className="grid gap-3 sm:grid-cols-2">
           {(presets.data?.length ?? 0) > 0 && (
             <div className="space-y-1.5 sm:col-span-2"><span className="text-xs text-muted-foreground">Perfil de configuração</span>
               <Select value={presetId} onValueChange={applyPreset}><SelectTrigger aria-label="Perfil de configuração" className="h-9"><SelectValue placeholder="Aplicar impostos, custos e meta de um perfil" /></SelectTrigger>
@@ -206,15 +219,15 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
           <Numeric label="Impostos (%)" percent value={draft.tax_rate} onChange={(v) => update("tax_rate", v)} />
           <Numeric label="Custos variáveis sobre receita (%)" percent value={draft.variable_rate} onChange={(v) => update("variable_rate", v)} />
           <Numeric label="Meta de margem (%)" percent value={draft.margin_target} onChange={(v) => update("margin_target", v)} />
-        </div></section>
-        <section className="space-y-3 border-t pt-4"><div className="flex flex-wrap items-center justify-between gap-2"><OpsLabel>02 · Equipe</OpsLabel>
-          {canCosts && <Button type="button" size="sm" variant={costMode ? "secondary" : "ghost"} onClick={() => { setCostMode(!costMode); if (!autoFilled) setPersonPlans([]); }}><Users className="mr-1.5 h-4 w-4" />Custos cadastrados</Button>}</div>
+        </div></Step>
+        <Step n={2} title="Equipe" hint="Horas e custo das pessoas que vão trabalhar no projeto." totalLabel="Custo da equipe" total={formatBRL(draft.team_cost)}
+          action={canCosts ? <Button type="button" size="sm" variant={costMode ? "secondary" : "outline"} onClick={() => { setCostMode(!costMode); if (!autoFilled) setPersonPlans([]); }}><Users className="mr-1.5 h-4 w-4" />Montar por pessoa</Button> : undefined}>
           <div className="grid gap-3 sm:grid-cols-2"><Numeric label="Horas previstas" value={draft.planned_hours} onChange={(v) => { markManual(); update("planned_hours", v); setPersonPlans([]); }} /><Numeric label="Custo estimado da equipe (R$)" value={draft.team_cost} onChange={(v) => { markManual(); update("team_cost", v); setPersonPlans([]); }} /></div>
           {autoFilled && autoPlans.length > 0 && <div role="note" className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs space-y-2">
             <p className="flex items-start gap-1.5 font-medium text-foreground"><Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />Preenchido automaticamente com os custos cadastrados</p>
-            <p className="text-muted-foreground">{autoPlans.length === 1 ? "1 participante" : `${autoPlans.length} participantes`} de “{boards.find((b) => b.id === boardId)?.name ?? "quadro"}” têm custo lançado em {draft.competence.substring(5, 7)}/{draft.competence.substring(0, 4)}. Horas previstas = maior carga individual de horas produtivas (as pessoas trabalham em paralelo); custo da equipe = horas × hora/homem de cada pessoa (custo mensal ÷ horas produtivas).</p>
+            <p className="text-muted-foreground">{autoPlans.length === 1 ? "1 participante" : `${autoPlans.length} participantes`} de “{boards.find((b) => b.id === boardId)?.name ?? "quadro"}” têm custo lançado em {draft.competence.substring(5, 7)}/{draft.competence.substring(0, 4)}. Custo de cada pessoa = horas × valor da hora.</p>
             <ul className="divide-y divide-primary/15">{autoPlans.map((p) => <li key={p.userId} className="flex justify-between gap-2 py-1 tabular-nums"><span className="truncate">{p.name}</span><span className="shrink-0 text-muted-foreground">{p.hours.toLocaleString("pt-BR")} h × {formatBRL(p.rate)}/h = <span className="text-foreground font-medium">{formatBRL(p.hours * p.rate)}</span></span></li>)}</ul>
-            <p className="text-muted-foreground">Edite os campos acima para usar outros valores.</p>
+            <p className="text-muted-foreground">Horas previstas usam a maior carga individual, pois as pessoas trabalham em paralelo. Edite os campos acima para usar outros valores.</p>
           </div>}
           {canCosts && costMode && <div className="border-l-2 border-primary pl-3 space-y-3">
             {people.isError ? <Button type="button" variant="outline" size="sm" onClick={() => people.refetch()}><RefreshCw className="mr-1 h-3 w-3" />Tentar carregar custos novamente</Button>
@@ -226,8 +239,8 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
                 <ul className="divide-y text-xs">{personPlans.map((p, idx) => <li key={idx} className="flex items-center justify-between py-1 gap-2"><span className="truncate">{availablePeople.find((v) => v.id === p.userId)?.name ?? "Colaborador"} · {p.hours} h × {formatBRL(p.rate)}</span><Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Remover horas da pessoa" onClick={() => applyPlans(personPlans.filter((_, i) => i !== idx))}><Trash2 className="h-3 w-3" /></Button></li>)}</ul>
               </>}
           </div>}
-        </section>
-        <section className="space-y-3 border-t pt-4"><OpsLabel>03 · Despesas</OpsLabel><div className="grid gap-3 sm:grid-cols-2"><Numeric label="Despesas diretas (R$)" value={draft.direct_expenses} onChange={(v) => update("direct_expenses", v)} /><Numeric label="Custos compartilhados (R$)" value={draft.shared_costs} onChange={(v) => update("shared_costs", v)} /></div></section>
+        </Step>
+        <Step n={3} title="Outras despesas" hint="Gastos do próprio projeto e a parte dele nos custos gerais da equipe." totalLabel="Despesas" total={formatBRL(draft.direct_expenses + draft.shared_costs)}><div className="grid gap-3 sm:grid-cols-2"><Numeric label="Despesas diretas (R$)" value={draft.direct_expenses} onChange={(v) => update("direct_expenses", v)} /><Numeric label="Custos compartilhados (R$)" value={draft.shared_costs} onChange={(v) => update("shared_costs", v)} /></div></Step>
         <div className="flex flex-wrap items-center gap-3"><Button type="submit" disabled={!canSave || !valid || busy || !draft.name.trim()}><Save className="mr-2 h-4 w-4" />{busy ? "Aguarde…" : editing ? "Salvar alterações" : "Salvar cenário"}</Button>
           {!canSave && <span className="text-xs text-muted-foreground">Salvar exige permissão de lançamento de faturamento neste quadro.</span>}</div>
       </form>
@@ -238,7 +251,15 @@ export function PricingSimulator({ teamId, boards, can, isLoading }: Props) {
           <div className="px-5 py-4"><OpsLabel>Margem estimada</OpsLabel><p className={cn("font-ops-display text-3xl font-semibold tabular-nums", result.result < 0 && "text-destructive")}>{valid ? formatPct(result.margin) : "—"}</p><div className="mt-2 [&_*]:!text-ops-ink-foreground/70"><MarginRuler margin={valid ? result.margin : null} target={draft.margin_target} /></div></div>
         </section>
         {!valid ? <p role="alert" className="text-sm text-destructive">Confira os valores: use números positivos e percentuais entre 0 e 100.</p> : result.minimum === null && <p role="alert" className="text-sm text-destructive border-l-2 border-destructive pl-3">Impostos, custos variáveis e meta somam 100% ou mais. Não há preço mínimo viável com essas premissas.</p>}
-        <dl className="divide-y text-sm">{[["Receita líquida", result.netRevenue], ["Custo da equipe", draft.team_cost], ["Custos variáveis", result.variableCost], ["Despesas diretas", draft.direct_expenses], ["Custos compartilhados", draft.shared_costs], ["Custo total", result.totalCost], ["Resultado estimado", result.result]].map(([label, value]) => <div key={label} className="flex justify-between gap-3 py-2.5"><dt className="text-muted-foreground">{label}</dt><dd className={cn("tabular-nums font-medium text-right", label === "Resultado estimado" && resultTone(result.result))}>{valid ? formatBRL(Number(value)) : "—"}</dd></div>)}</dl>
+        <section className="rounded-xl border bg-card p-4"><h3 className="text-sm font-semibold mb-1">Como chegamos ao resultado</h3><p className="text-xs text-muted-foreground mb-3">Da receita estimada, saem impostos e custos até sobrar o resultado.</p>
+          <dl className="text-sm">{([["Receita estimada", draft.gross, "base"], ["Impostos", -result.tax, "out"], ["Custos variáveis", -result.variableCost, "out"], ["Receita líquida", result.netRevenue, "sub"], ["Custo da equipe", -draft.team_cost, "out"], ["Despesas diretas", -draft.direct_expenses, "out"], ["Custos compartilhados", -draft.shared_costs, "out"], ["Resultado estimado", result.result, "total"]] as [string, number, string][]).map(([label, value, kind]) => {
+            const pct = draft.gross > 0 ? Math.min(100, Math.abs(value) / draft.gross * 100) : 0;
+            return <div key={label} className={cn("py-2", kind === "sub" && "border-t mt-1 pt-2.5", kind === "total" && "border-t-2 border-foreground/20 mt-1 pt-3")}>
+              <div className="flex justify-between gap-3"><dt className={cn(kind === "out" ? "text-muted-foreground pl-3" : "font-medium")}>{kind === "out" ? "− " : ""}{label}</dt>
+                <dd className={cn("tabular-nums text-right", kind === "total" ? cn("font-semibold", resultTone(result.result)) : kind === "out" ? "text-muted-foreground" : "font-medium")}>{valid ? formatBRL(Math.abs(value) * (kind === "total" && value < 0 ? -1 : 1)) : "—"}</dd></div>
+              {valid && draft.gross > 0 && <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden"><div className={cn("h-full rounded-full", kind === "out" ? "bg-muted-foreground/40" : kind === "total" ? (value < 0 ? "bg-destructive" : "bg-primary") : "bg-foreground/70")} style={{ width: `${pct}%` }} /></div>}
+            </div>;
+          })}</dl></section>
         <p className="text-xs text-muted-foreground">Estimativa · alíquota e meta sujeitas à validação financeira.</p>
       </aside>
     </div>
