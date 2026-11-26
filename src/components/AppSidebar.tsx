@@ -467,7 +467,7 @@ export function AppSidebar() {
                           activeClassName="bg-gray-100 dark:bg-zinc-800 text-primary font-medium"
                         >
                           <Landmark className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                          <span className="text-sm text-gray-700 dark:text-gray-200">Gestão Financeira</span>
+                          <span className="text-sm text-gray-700 dark:text-gray-200">Painel Financeiro</span>
                         </NavLink>
                       </DropdownMenuItem>
                     )}
