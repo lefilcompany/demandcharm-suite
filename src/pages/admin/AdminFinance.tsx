@@ -64,7 +64,7 @@ export default function AdminFinance() {
   return (
     <div className="mx-auto max-w-5xl space-y-5">
       <section className="rounded-xl bg-ops-ink p-5 text-ops-ink-foreground shadow-xl md:p-7">
-        <p className="font-ops-label text-[11px] uppercase tracking-[0.2em] text-primary">Inteligência Financeira · Admin</p>
+        <p className="font-ops-label text-[11px] uppercase tracking-[0.2em] text-primary">Painel Financeiro · Admin</p>
         <h1 className="mt-2 font-ops-display text-3xl font-semibold uppercase leading-none md:text-4xl">Qual projeto você quer abrir?</h1>
         <p className="mt-2 max-w-xl text-sm text-ops-ink-foreground/70">
           Escolha um projeto para ver resultados, custos e rateios dos quadros ligados a ele. Quadros sem projeto ficam agrupados em “Sem projeto”.

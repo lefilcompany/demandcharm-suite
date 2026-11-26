@@ -54,7 +54,7 @@ export function ProjectFinanceSummary({ projectId, from, to, onRange }: { projec
         </div>
       ) : !r || !m0 ? <Skeleton className="h-28 w-full rounded-xl" /> : (
         <section aria-label="Resultado do projeto" className="rounded-xl bg-ops-ink text-ops-ink-foreground shadow-xl overflow-hidden">
-          {/* Mesmo "ledger" do Sumário da Inteligência Financeira: resultado em destaque + entradas/saídas */}
+          {/* Mesmo "ledger" do Sumário do Painel Financeiro: resultado em destaque + entradas/saídas */}
           <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
             <div className="px-5 py-5 sm:px-6 border-b lg:border-b-0 lg:border-r border-ops-ink-foreground/10 flex flex-col justify-center">
               <div className="text-sm font-semibold uppercase tracking-wider text-ops-ink-foreground/80">Resultado do período</div>

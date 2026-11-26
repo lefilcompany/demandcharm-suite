@@ -84,7 +84,7 @@ export function AppSidebar() {
         { title: "Meus Quadros", url: "/app/boards", icon: LayoutGrid },
         ...(canProjects ? [{ title: "Projetos", url: "/app/projects", icon: Briefcase }] : []),
         ...(financeAccess.hasModule && selectedTeamId
-          ? [{ title: "Inteligência Financeira", url: "/app/finance", icon: Landmark }]
+          ? [{ title: "Painel Financeiro", url: "/app/finance", icon: Landmark }]
           : []),
         ...(selectedTeamId
           ? [{ title: "Participantes", url: `/app/teams/${selectedTeamId}`, icon: UsersRound, end: true }]
@@ -139,10 +139,10 @@ export function AppSidebar() {
   // Loja de Serviços temporarily hidden (keep code for future re-activation)
   const requesterMenuItems: any[] = [];
 
-  // Inteligência Financeira temporarily hidden from sidebar (keep code for future re-activation)
+  // Painel Financeiro temporarily hidden from sidebar (keep code for future re-activation)
   const financeMenuItems: typeof baseMenuItems = [];
   // const financeMenuItems = financeAccess.hasModule && !isRequester ? [{
-  //   title: "Inteligência Financeira",
+  //   title: "Painel Financeiro",
   //   url: "/app/finance",
   //   icon: Landmark
   // }] : [];

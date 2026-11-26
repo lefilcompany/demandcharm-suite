@@ -22,7 +22,7 @@ export function generateProfitabilityPdf(input: {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
-  const meta = { title: "Inteligência Financeira", subtitle: `${input.teamName} · Rentabilidade ${input.periodLabel}`, generatedAt: new Date(), scopeLabel: input.scopeLabel, authorName: input.authorName };
+  const meta = { title: "Painel Financeiro", subtitle: `${input.teamName} · Rentabilidade ${input.periodLabel}`, generatedAt: new Date(), scopeLabel: input.scopeLabel, authorName: input.authorName };
   drawHeader(doc, meta);
   let y = 44;
 

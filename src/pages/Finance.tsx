@@ -204,7 +204,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="max-w-md text-center space-y-3">
           <Lock className="h-8 w-8 mx-auto text-muted-foreground" />
-          <h1 className="text-xl font-semibold">Sem acesso à Inteligência Financeira</h1>
+          <h1 className="text-xl font-semibold">Sem acesso ao Painel Financeiro</h1>
           <p className="text-sm text-muted-foreground">Os números financeiros são liberados pessoa a pessoa. Peça ao dono da equipe com permissão de configuração para liberar seu acesso.</p>
           <Button asChild variant="outline"><Link to="/app">Voltar ao dashboard</Link></Button>
         </div>
@@ -335,7 +335,7 @@ export default function Finance({ teamId: forcedTeamId, teamName, boardScope }: 
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <OpsLabel>{currentTeam?.name ?? "Equipe"}</OpsLabel>
-          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Inteligência Financeira</h1>
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Painel Financeiro</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-1.5">
           <MonthRangeField from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />

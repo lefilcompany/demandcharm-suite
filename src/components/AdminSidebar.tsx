@@ -20,7 +20,7 @@ const navItems = [
   { to: "/admin/plans", icon: CreditCard, label: "Planos" },
   { to: "/admin/coupons", icon: Ticket, label: "Cupons" },
   { to: "/admin/teams", icon: Building2, label: "Equipes" },
-  { to: "/admin/finance", icon: Wallet, label: "Inteligência Financeira" },
+  { to: "/admin/finance", icon: Wallet, label: "Painel Financeiro" },
   { to: "/admin/users", icon: Users, label: "Usuários" },
   { to: "/admin/email-test", icon: MailCheck, label: "Teste de e-mail" },
   { to: "/admin/push-test", icon: BellRing, label: "Teste de push" },
